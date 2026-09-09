@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": ".factory/manifest.json",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "template version applied"
+    },
+    "toolchain": {
+      "type": "string",
+      "enum": [
+        "vite-plus"
+      ],
+      "default": "vite-plus"
+    },
+    "files": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "template": {
+            "type": "string",
+            "description": "sha256 of the template file at apply/update time"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "managed",
+              "added",
+              "deleted"
+            ],
+            "default": "managed"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "version",
+    "files"
+  ]
+}

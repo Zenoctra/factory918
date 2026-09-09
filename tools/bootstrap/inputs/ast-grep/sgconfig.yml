@@ -1,0 +1,6 @@
+# ast-grep project config (DRAFT; verify keys against ast-grep docs at M0).
+# Cross-language structural rules that encode opinions everywhere at once. TypeScript-only rules live in oxlint-plugin-project/.
+ruleDirs:
+  - ast-grep/rules
+testConfigs:
+  - testDir: ast-grep/rule-tests

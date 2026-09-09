@@ -1,0 +1,7 @@
+id: no-console-log-ts
+valid:
+  - "logger.info('started')"
+  - "console.error('boom')"
+invalid:
+  - "console.log('started')"
+  - "console.log(a, b)"

@@ -1,0 +1,22 @@
+# Keeps the repo's labels in sync with .github/labels.json (create or update; never deletes).
+name: Labels
+on:
+  push:
+    branches: [main]
+    paths: [".github/labels.json", ".github/workflows/labels.yml"]
+  workflow_dispatch:
+permissions:
+  issues: write
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          jq -c '.[]' .github/labels.json | while read -r l; do
+            name="$(printf '%s' "$l" | jq -r .name)"; color="$(printf '%s' "$l" | jq -r .color)"; desc="$(printf '%s' "$l" | jq -r .description)"
+            gh label create "$name" --color "$color" --description "$desc" --force
+          done

@@ -1,0 +1,11 @@
+# appended to the project's .gitignore by `factory apply`
+.artifacts/
+.scratch/
+.plans/
+.claude/state/
+.claude/settings.local.json
+.vite-hooks/_/
+.repos/*/
+!.repos/README.md
+!.repos/sources.json
+.factory/merge/

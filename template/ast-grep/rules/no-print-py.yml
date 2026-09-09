@@ -1,0 +1,11 @@
+id: no-print-py
+language: Python
+severity: error
+message: No print() in shipped code; use the project logger (CODING_STANDARDS.md, "Structured telemetry").
+rule:
+  pattern: print($$$ARGS)
+files:
+  - "python/**/*.py"
+ignores:
+  - "**/tests/**"
+  - "**/scripts/**"

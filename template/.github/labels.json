@@ -1,0 +1,92 @@
+[
+  {
+    "name": "needs-triage",
+    "color": "D4C5F9",
+    "description": "Incoming; not yet categorised"
+  },
+  {
+    "name": "needs-info",
+    "color": "FBCA04",
+    "description": "Waiting on the reporter or a decision"
+  },
+  {
+    "name": "ready-for-agent",
+    "color": "0E8A16",
+    "description": "Fully specified; an agent can pick this up"
+  },
+  {
+    "name": "ready-for-human",
+    "color": "1D76DB",
+    "description": "Needs a human hand"
+  },
+  {
+    "name": "wontfix",
+    "color": "FFFFFF",
+    "description": "Rejected; reason recorded in .out-of-scope/"
+  },
+  {
+    "name": "bug",
+    "color": "D73A4A",
+    "description": "Something is broken"
+  },
+  {
+    "name": "enhancement",
+    "color": "A2EEEF",
+    "description": "New behaviour"
+  },
+  {
+    "name": "wayfinder:map",
+    "color": "5319E7",
+    "description": "A wayfinder decision map"
+  },
+  {
+    "name": "wayfinder:research",
+    "color": "BFD4F2",
+    "description": "Wayfinder research ticket (AFK)"
+  },
+  {
+    "name": "wayfinder:prototype",
+    "color": "BFD4F2",
+    "description": "Wayfinder prototype ticket"
+  },
+  {
+    "name": "wayfinder:grilling",
+    "color": "BFD4F2",
+    "description": "Wayfinder grilling ticket (HITL)"
+  },
+  {
+    "name": "wayfinder:task",
+    "color": "BFD4F2",
+    "description": "Wayfinder task ticket"
+  },
+  {
+    "name": "size:XS",
+    "color": "E0E0E0",
+    "description": "0-9 effective changed lines (test files excluded in mixed PRs)."
+  },
+  {
+    "name": "size:S",
+    "color": "C2E0C6",
+    "description": "10-29 effective changed lines."
+  },
+  {
+    "name": "size:M",
+    "color": "FEF2C0",
+    "description": "30-99 effective changed lines."
+  },
+  {
+    "name": "size:L",
+    "color": "F9D0C4",
+    "description": "100-499 effective changed lines."
+  },
+  {
+    "name": "size:XL",
+    "color": "E99695",
+    "description": "500-999 effective changed lines."
+  },
+  {
+    "name": "size:XXL",
+    "color": "B60205",
+    "description": "1,000+ effective changed lines."
+  }
+]

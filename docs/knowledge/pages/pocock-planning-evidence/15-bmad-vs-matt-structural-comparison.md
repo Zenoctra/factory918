@@ -1,0 +1,28 @@
+<!-- lines: 28 | source: pages/pocock-planning-evidence.md | part 15/17 | title: Pocock Planning Evidence (brief) — BMAD vs Matt: structural comparison -->
+
+## Contents (line numbers are for the Read tool's offset)
+- L6: BMAD vs Matt: structural comparison
+
+## BMAD vs Matt: structural comparison
+
+BMAD's own framing (v4 README, quoted via kirodotdev/Kiro#1463): "**Agentic Planning:** Dedicated agents (Analyst, PM, Architect) collaborate with you to create detailed, consistent PRDs and Architecture documents. **Context-Engineered Development:** The Scrum Master agent then transforms these detailed plans into hyper-detailed development stories that contain everything the Dev agent needs ... This two-phase approach eliminates both planning inconsistency and context loss - the biggest problems in AI-assisted development." Current README (v6, 52.7k stars) reframes as Clarify → Plan → Build and verify → Learn, with "Durable context" as a selling point, and admits "Coding assistants are effective at implementation, but they often turn unstated assumptions into code."
+
+| Dimension | BMAD-METHOD | Matt's skills |
+| --- | --- | --- |
+| Who writes the plan | Persona agents (Analyst → PM → Architect → PO shards → SM writes stories); the human answers elicitation prompts | The human, interrogated by one grilling agent; `to-spec` then transcribes "no interview, just synthesis" |
+| Document hops before code | Brief → PRD → Architecture → sharded docs → story files (4–5 generated documents, each summarising the last) | Conversation → spec → tickets (2 documents; wayfinder adds a map of decision tickets before the spec) |
+| Where decisions are made | Inside generated documents, by persona agents, reviewed after the fact | In the conversation, by the human, before any document; the spec "does not decide anything" |
+| Where detail lives when the dev agent runs | The story file ("hyper-detailed ... everything the Dev agent needs") assembled by the SM agent from the sharded architecture | The ticket plus the parent spec plus CONTEXT.md/ADRs in the repo; ticket "sized to fit a single fresh context window" |
+| What survives after shipping | The doc tree (docs/prd.md, docs/architecture/, stories/) stays in the repo | The docs say the spec is "throwaway once the work ships"; CONTEXT.md and ADRs are what is meant to last |
+| Model-run or human-run | Model-run pipeline with human elicitation checkpoints; users automate whole epics (HN suchuanyi: "Now one command delivers a complete Epic") | Human-run: every planning skill is `disable-model-invocation: true`; dispatch of tickets is manual; "there is no auto-dispatch mode" |
+| Framework's own failure log | Issues #95 "Dev agent frequently implements stories with tests but skips compilation and test execution, checking off tasks without validation"; #387 "Claude Code not following Dev-Agent instructions"; #497 dev agent "fails to load architecture files after brownfield workflow"; #2538 "Excessive noise in generated code (epic/story comments, AI slop)" | Issues #595, #924, #341, #826, #944, #931 above |
+| Where Manuel's complaint lands | Summarisation loss is structural: each hop is a model summarising a model's output | Summarisation loss is reduced to one hop (conversation → spec) but is still reported (#341, #924, #1015) |
+
+**Migration reports.** Only two found, both thin:
+
+- HN, taffydavid, 2026-05-03: "I just spent a week training up in spec driven development through bmad, which was awful, and speckit which was ok but not great. Both had what seemed like unnecessary ceremony around the specs, generating fields of spec documents which presumably fill up the context window quickly. I just kept thinking 'this should be using something simpler, all this markdown is unnecessary'. This seems like the answer to that thought!" (commenting on a grill-me thread; no follow-up on results).
+- Matt's ~2,000-student feedback tweet, above (aggregate, unquantified).
+
+Nobody who wrote up a BMAD → Pocock migration with before/after numbers was found. The closest BMAD-side first-hand account (dev.to, arch4g, 2025-12-30): "it took roughly 12 to 16 hours before the first line of code was written"; "I tried to be clever and tell it something like: 'don't read everything, just put stuff into files and summarize.' In practice, that didn't really work"; but also "stories became 'the superpower'" and "everything is written down, you're not relying on your memory or on some fragile chat context." BMAD defenders on HN (redact207, sminchev) report onboarding several SaaS projects and reaching "2-3 iterations" per fix; those are self-reports too.
+
+**Is Matt's system "the same philosophy"?** [inferred] Partly. Both are spec-first and both put a generated ticket/story between the plan and the code. The differences that matter for Manuel's specific burn (hallucinated, over-summarised stories that could not build): (1) there is one generative summarisation hop, not four, and it summarises a human conversation rather than another model's document; (2) the human is forced to answer the questions, so the content of the spec is things the human said; (3) tickets are meant to be vertical slices verified by a test at a pre-agreed seam, so a story that cannot build fails loudly at the first ticket. The evidence says (1)–(3) do not eliminate drift: #341, #924 and #1015 are the same disease at lower dose, and #595's 75% rework figure shows what happens when acceptance criteria are model-written and nobody checks them. The system's answer to that is "the quiz step exists for exactly this" and "reconcile the criteria yourself", i.e. the human is the safeguard. That is the design, not a bug, and it is the opposite of BMAD's "eliminates ... context loss" claim.

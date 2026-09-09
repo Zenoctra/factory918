@@ -1,0 +1,7 @@
+# Factory918 repo (not the template's .gitignore.factory)
+.DS_Store
+__pycache__/
+*.pyc
+tools/bootstrap/_out/
+.claude/settings.local.json
+.claude/state/

@@ -1,0 +1,17 @@
+{
+  "_comment": "Merged into package.json by `factory apply`. `vp create` writes the rest.",
+  "scripts": {
+    "dev": "vp dev",
+    "build": "vp build",
+    "test": "vp test run",
+    "lint": "vp lint --report-unused-disable-directives",
+    "fmt": "vp fmt",
+    "fmt:check": "vp fmt --check",
+    "typecheck": "tsc --noEmit",
+    "check": "vp check",
+    "prepare": "vp hooks enable"
+  },
+  "engines": {
+    "node": "^24"
+  }
+}

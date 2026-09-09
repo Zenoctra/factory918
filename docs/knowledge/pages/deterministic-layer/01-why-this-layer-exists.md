@@ -1,0 +1,12 @@
+<!-- lines: 12 | source: pages/deterministic-layer.md | part 1/12 | title: The Deterministic Layer (reference page) — Why this layer exists -->
+
+## Contents (line numbers are for the Read tool's offset)
+- L6: Why this layer exists
+
+## Why this layer exists
+
+Every instruction you write for an agent has to be noticed, remembered and obeyed by a model that starts each session with no memory. A rule that runs as a program has none of those problems. That is the whole argument for this layer, and all three of the senior people in your set make it independently. Lauren Tan's principle is the bluntest: "Textual instructions are easy to miss. They require the reader to notice, remember, and comply. Structural mechanisms (lint rules, metadata flags, runtime checks, automation scripts) enforce the rule without cooperation." And then: "The instruction IS the symptom." primary Theo credits her for the idea and built his repo around it: his 156-line `AGENTS.md` contains no formatting rules, no lint-like rules and no library tutorials, because a pre-commit hook formats, six custom lint rules and two review agents enforce, and the library source is vendored for the agent to imitate. Matt's version is a category in his retro skill, "Automated checks: are there automated checks that could catch errors the agent made? Linting, typing, tests, filesystem linters?", and a rule in his code review: "skip anything tooling already enforces." primary
+
+Two consequences follow for you specifically. First, this layer is what turns "steering verification" from a judgment call into a menu: you cannot steer toward a check you do not know exists, so most of this page is the menu. Second, this layer is the actual ladder out of being the funnel. Boris Cherny's steps of AI adoption (Anthropic, 2026-07-16) define the move from Step 1, where a human "reads almost every change before merge," to Step 2, where "Claude checks its own work — tests, build, lint" before the human sees diffs, by one requirement: "Build self-verification loop, enable auto mode, automate code review." secondary That requirement is this page.
+
+One correction to the framing in your message, because it changes what you take from Theo. "`any` is the enemy" is not "ALL"; it is TypeScript's `any` type, the escape hatch that turns off type checking for a value. The line sits in his Taste section next to "Inferred types over annotations." It matters here because the type checker is the strongest rung on the ladder below, and `any` is how an agent quietly removes it. primary

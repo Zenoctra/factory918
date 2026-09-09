@@ -1,0 +1,33 @@
+[project]
+name = "<name>"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = []
+
+[dependency-groups]
+dev = ["pytest>=8", "pyright>=1.1", "ruff>=0.16"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "N", "SIM", "TID", "RUF", "PL", "PT", "T20"]   # T20: no print in shipped code
+ignore = ["PLR0913"]                                                                  # too-many-arguments: judgment, not a rule
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"os.system".msg = "Use subprocess.run with a list; see CODING_STANDARDS.md"
+# Add the project's own banned APIs here as corrections recur (the ledger decides).
+
+[tool.ruff.lint.per-file-ignores]
+# Debt ceilings for old code; delete the entry when the file is clean.
+# "legacy/thing.py" = ["T20"]
+
+[tool.pyright]
+typeCheckingMode = "strict"
+pythonVersion = "3.12"
+reportMissingTypeStubs = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

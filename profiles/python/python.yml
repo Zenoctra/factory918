@@ -1,0 +1,22 @@
+name: Python
+on:
+  pull_request:
+    paths: ["python/**", ".github/workflows/python.yml"]
+  push:
+    branches: [main]
+    paths: ["python/**"]
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults: { run: { working-directory: python/<name> } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with: { enable-cache: true }
+      - run: uv sync --frozen
+      - run: uv run ruff format --check .
+      - run: uv run ruff check .
+      - run: uv run pyright
+      - run: uv run pytest
+      - run: uv audit

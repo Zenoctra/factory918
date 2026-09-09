@@ -1,0 +1,5 @@
+id: no-print-py
+valid:
+  - "log.info('started')"
+invalid:
+  - "print('started')"

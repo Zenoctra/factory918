@@ -1,0 +1,6 @@
+id: no-console-log-ts
+language: TypeScript
+severity: error
+message: No console.log in shipped code; use the project logger (CODING_STANDARDS.md, "Structured telemetry").
+rule:
+  pattern: console.log($$$ARGS)

@@ -1,0 +1,180 @@
+<!-- lines: 180 | source: notes/4-ras-mic.md | part 1/1 | title: Research note: Ras Mic -->
+
+## Contents (line numbers are for the Read tool's offset)
+- L17: Who he is (brief, sourced)
+- L25: Evidence inventory
+- L45: His workflow as described
+- L87: Published skills / repos / templates
+- L105: The six axes
+- L114: The 2–5 distinctive ideas worth Manuel's attention
+- L141: What's beginner-friendly vs what's marketing/hype
+- L158: Sources
+
+# Ras Mic (Michael Shimeles) — Workflow, Skills & Ideas
+
+Research date: 2026-09-04. Firsthand evidence = files and git history in cloned repos (paths under `research/ (the pinned upstream copies; see research/README.md)`). Everything from videos/podcasts is **secondhand** (show notes and third-party write-ups); no transcript source was reachable, YouTube and X were blocked from this environment (429 / robots.txt). Quotes are marked with who is quoting whom.
+
+## Who he is (brief, sourced)
+
+- Michael Shimeles, Toronto, bio "Full Stack Engineer"; links to X `@rasmic`, YouTube `@rasmic`, site rasmic.xyz; 2.5k GitHub followers, 66 repos ([github.com/michaelshimeles](https://github.com/michaelshimeles)).
+- Self-description on his site: "I'm a full-stack engineer. I run a software studio and AI consultancy, and I make YouTube videos about AI, agentic engineering, and software development." Studio is Fabrika (heyfabrika.com) ([rasmic.xyz](https://www.rasmic.xyz)).
+- Recurring guest ("Professor Ras Mic") on Greg Isenberg's *The Startup Ideas Podcast* — at least nine episodes since Sept 2024 ([wisdomsparks.com/people/ras-mic](https://wisdomsparks.com/people/ras-mic)). Channel size ~100K subscribers per a third-party profile ([magpieai.store](https://magpieai.store/people/ras-mic)) — unverified.
+- Pinned repos: `ralphy` (3k stars), `nextjs-starter-kit` (3k stars), `boringcomputers/nehemiah` (302), `skills` (301), `self-sync` (88), `adam` (72) ([github.com/michaelshimeles](https://github.com/michaelshimeles)).
+- **Commercial context that matters for reading his workflow:** his sponsorship page lists past sponsors "Greptile, WorkOS, Macroscope, Clerk, Convex, Framer, Composio, LiveKit, Neon, Cal.com, Windsurf, and Cursor" ([rasmic.xyz/youtube](https://www.rasmic.xyz/youtube)). His published review loop is built on Greptile; his agent runtime project (`adam`) is built on Convex; he uses Cursor Cloud agents.
+
+## Evidence inventory
+
+| Source | Date | Type | What it tells us |
+|---|---|---|---|
+| `michaelshimeles/skills` — local clone `https://github.com/michaelshimeles/skills/blob/513f8a2/` | 2026-07-13 → 2026-09-03 (33 commits; last commit yesterday) | Firsthand: README, AGENTS.md, 7 SKILL.md files, git log | His actual published workflow, verbatim; commit messages show him running his own loop ("address greptile review feedback (greploop iteration 1..4)") |
+| `michaelshimeles/ralphy` — local clone `https://github.com/michaelshimeles/ralphy/blob/506eea0/` | 2026-01-15 → 2026-02-05 (358 commits; 351 in Jan, 7 in Feb, none since) | Firsthand: README, `ralphy.sh` prompt builder, config schema | His autonomous-loop tool; the exact prompt he sends to Claude Code; dormant since Feb 2026 with 26 open issues / 17 open PRs |
+| `boringcomputers/nehemiah` — local clone `https://github.com/boringcomputers/nehemiah/blob/fea6f0a/` | 2026-06-30 → 2026-08-11 (159 commits) | Firsthand: co-author trailers, `.hermes/plans/`, `.agents/skills/`, `docs/nehemiah/` (ADRs, threat model, implementation status) | How he builds a real product with agents: 107/159 commits co-authored by Claude, 22 by Cursor, 9 by Devin; Hermes-driven 28-task plan |
+| `michaelshimeles/adam` — local clone `https://github.com/michaelshimeles/adam/blob/47669e9/` | 2026-07-08 → 2026-07-29 (89 commits) | Firsthand: `AGENTS.md`, `.agents/skills/`, branch names | Multi-harness parallel work: branches `cursor/*`, `devin/*`, `codex/*`; AGENTS.md written by Cursor Agent; testing skill written by Devin |
+| Podcast: "Claude Code Clearly Explained (and how to use it)" | 2026-01-19 | Secondhand: Apple Podcasts show notes/timestamps ([link](https://podcasts.apple.com/lt/podcast/claude-code-clearly-explained-and-how-to-use-it/id1593424985?i=1000745796041)); summaries at [buzzrag](https://buzzrag.com/article/demystifying-claude-code-planning-execution) (2026-01-20) and [usefollowed](https://usefollowed.com/episodes/greg-isenberg-claude-code-clearly-explained-and-how-to-use-it) | Beginner advice: junior-engineer framing, plan in features+tests, Plan Mode, AskUserQuestion, "Don't start with Ralph", his Ralph setup, "skip obsessing over MCP/skills/plugins" |
+| Podcast: "Building AI Agents (Clearly Explained)" = YouTube "How AI agents & Claude skills work (Clearly Explained)" (`S_oN3vlzpMw`) | 2026-04-08 (podcast); thefuturist write-up dated 2026-09-02 | Secondhand: [Apple Podcasts](https://podcasts.apple.com/de/podcast/building-ai-agents-clearly-explained/id1593424985?i=1000760318125), [getpodcast](https://getpodcast.com/uk/podcast/where-it-happens2/building-ai-agents-clearly-explained_f6ff72c701), [whatfinger](https://startup.whatfinger.com/2026/04/08/ai-agents-claude-skills-clearly-explained/), [thefuturist](https://www.thefuturist.co/how-ai-agents-claude-skills-work-clearly-explained/) | Context windows, "agent md files are largely unnecessary", skills/progressive disclosure, how he creates and recursively refines skills, when to add sub-agents |
+| Podcast: "What are Agentic Loops?" | 2026-06-09 | Secondhand: [wisdomsparks](https://wisdomsparks.com/startup-ideas-podcast/what-are-agentic-loops-367/), [whatfinger 06-09](https://startup.whatfinger.com/2026/06/09/wtf-is-a-loop-peter-steinberger-vs-boris-cherny/), [whatfinger 06-18](https://startup.whatfinger.com/2026/06/18/agentic-loops-the-future-of-prompting-ill-break-it-down-in-60s/), [metacast](https://metacast.app/podcast/the-startup-ideas-podcast/4AmeLXJl/what-are-agentic-loops/ANmSJflh) | His daily code-review loop (Cursor + GitHub + Greptile, 5/5 target), "slop machine", human-in-the-loop stance, token-budget advice |
+| Podcast: "I Ranked EVERY AI Tool Overrated or Underrated" | 2025-07-14 | Secondhand: [wisdomsparks](https://wisdomsparks.com/startup-ideas-podcast/ras-mic-271/) | Claude Code "extremely underrated"; GitHub branching guidance |
+| Podcast: "MCP, Clearly Explained" | 2025-03-14 | Secondhand: [wisdomsparks](https://wisdomsparks.com/startup-ideas-podcast/model-context-protocol-mcp-clearly-explained/) | His MCP explainer (pedagogy, not workflow) |
+| Agent Native podcast (Riley Brown): "Claude Code Replaced Cursor for Me… Here's Why" | 2025-07-11 | Secondhand: [rss.com](https://rss.com/podcasts/a-new-vibe/2110566/) | Switched primary tool from Cursor to Claude Code mid-2025 |
+| Medium (Alex Dunlop): "Ralphy: The Best Ralph Loop Plugin Yet" | 2026-01-21 | Secondhand, paywalled preview ([link](https://medium.com/vibe-coding/someone-finally-built-the-ralph-loop-i-wanted-8f3050b7b181)) | Reception: 1,000 stars in 3 days |
+| skills.sh listing | fetched 2026-09-04 | Third-party install counts ([link](https://skills.sh/michaelshimeles/skills)) | code-structure 102 installs; the rest 7–16 each |
+| X/Twitter `@Rasmic` | — | **Not accessible** (x.com, xcancel, syndication all robots-blocked). Only search snippet found: a post about Claude Code being blocked in Ethiopia ([x.com/Rasmic/status/2009177884544364688](https://x.com/Rasmic/status/2009177884544364688)) | No usable workflow evidence from X |
+| YouTube "I fixed Ralph. Meet Ralphy" (`cdIJ92Tx20Y`) | ~Jan 2026 (unverified) | Not fetched (YouTube 429) | Exists; his own launch video for ralphy |
+| Video ID `5G9PAIUs5Pk` from the brief | — | **Could not verify** — search returns nothing for it. The Jan-2026 episode's YouTube ID appears to be `zxMjOqM7DFs` ([search result](https://www.youtube.com/watch?v=zxMjOqM7DFs)) | Treat the ID in the brief as possibly wrong |
+
+## His workflow as described
+
+Two workflows exist: what he tells beginners on the podcast (Jan 2026) and what his repos show him doing (Jul–Sep 2026). They are consistent but differ in ambition.
+
+**A. The beginner workflow he teaches (Jan 19, 2026 episode; secondhand from show notes/summaries)**
+
+1. Treat the agent "like junior engineers" — "Clear inputs → clean outputs" (Apple Podcasts key takeaways). As quoted by buzzrag: "However good your inputs are will dictate how good your output is."
+2. Describe **features, not products**: "A lot of times people will describe a product, not describe features, and will be frustrated with AI" (buzzrag quoting him). Plan features *and their tests* before building (chapter "Claude Code Best Practices", 01:22).
+3. Use **Plan Mode** (chapter 05:31) and the **AskUserQuestion tool** (09:30), which "interviews you about the specifics of your plan" — UI/UX decisions, technical constraints, cost (buzzrag).
+4. **Don't start with Ralph automation — get reps first** (14:52). Tesla analogy as quoted by buzzrag: "Imagine not knowing how to drive, but then buying a Tesla for the self-driving stuff."
+5. His Ralph setup = "progress tracking + tests + linting" (18:41). Firsthand confirmation in `ralphy.sh`: the loop prompt ends every iteration with `ONLY WORK ON A SINGLE TASK.`, `Do not proceed if tests fail.`, `Do not proceed if linting fails.`, appends to a progress file, commits, and stops on `<promise>COMPLETE</promise>` (`https://github.com/michaelshimeles/ralphy/blob/506eea0/ralphy.sh` lines 1616–1666).
+6. "Tools tips: skip obsessing over MCP/skills/plugins" (23:48 chapter title).
+7. Context hygiene: "restart sessions before quality degrades" (Apple); usefollowed's summary adds "Don't exceed 50% of token context window in single sessions" (secondhand paraphrase).
+8. Terminal: recommends Ghostty to lower terminal intimidation (usefollowed).
+
+**B. The skills-era workflow (Apr 2026 episode; secondhand)**
+
+- "The models are good now" (00:42) — the differentiator is context. As quoted by thefuturist: "The models are good now — the differentiator is the context."
+- Agent/Claude .md files load every turn; "95% of users can skip them entirely" (thefuturist/whatfinger quoting him). Skills instead use progressive disclosure; thefuturist reports his numbers as ~53 tokens/turn for a skill stub vs 944+ for an equivalent agent.md (unverified).
+- Skill creation method (09:17): as quoted by thefuturist, "The best way to create a skill is to walk through the workflow with the agent step by step, achieve a successful run, and then have the agent write the skill based on that real context."
+- Recursive refinement (20:40): "Recursively refine skills by feeding failures back into the agent and having it update the skill file" (thefuturist). Example: his YouTube-analytics report generator, eight data sources, clean after five iterations.
+- Scaling: one agent first; "Only after building reliable skills did he add sub-agents for marketing, business, and personal tasks" (thefuturist). Jumping to multi-agent "optimizes for what looks cool rather than what is productive."
+
+**C. The review-loop workflow (Jun 2026 episode; secondhand) — and the repo that encodes it (firsthand)**
+
+- Daily loop: Cursor (harness) + GitHub + Greptile (reviewer). Greptile scores each push out of 5; the agent reads the review, fixes, pushes, "repeating until hitting '5/5 or stops after five turns'"; ships only above 4/5 (whatfinger 06-09/06-18).
+- Position: "Human-in-the-loop remains the strongest setup today." Loops "shine in confined, fixed-feedback work: code review, SEO pages, and other binary tasks"; wide-open loops "make heavy assumptions and burn serious tokens" and "can turn into a slop machine"; app-building loops "crack past 1,000 lines of code" (whatfinger quoting him).
+- The `skills` repo's `AGENTS.md` is that loop written down as a four-beat cycle (verbatim, `https://github.com/michaelshimeles/skills/blob/513f8a2/AGENTS.md`):
+  1. "**Isolate — `/new-feature`.** Every new feature starts in a fresh Git worktree branched from `origin/main` ... Never build on `main`."
+  2. "**Build — `/code-structure`.** Write code to the service-layer architecture..."
+  3. "**Prove — `/evidence-driven-testing`.** Verify with the repo's checks plus runtime evidence. Capture the **before** state while reproducing the issue..."
+  4. "**Ship — `/before-and-after`, then `/greploop`.** ... Run `/greploop` ... until Greptile reports **5/5 with zero unresolved comments**. Finish by presenting the PR URL."
+  Plus: "Run `/unslop` over anything a person will read", and "Do not merge the PR unless explicitly instructed."
+- He runs it on himself: the repo's log has eleven commits titled "address greptile review feedback (greploop iteration N)" between 2026-08-28 and 2026-09-03, and trailers `Co-authored-by: Cursor` (13) and `Co-Authored-By: Claude Fable 5.1` (11) (`git log` in the clone).
+
+**D. Real-product workflow (nehemiah/adam; firsthand)**
+
+- Plan first, big: `.hermes/plans/2026-08-08_204915-nehemiah.md` (835 lines) opens with "> **For Hermes:** Use subagent-driven-development skill to implement this plan task-by-task." and lays out 9 phases / 28 tasks with per-task "Files: Create/Modify" lists (`https://github.com/boringcomputers/nehemiah/blob/fea6f0a/.hermes/plans/...`). That header and format match the Superpowers `writing-plans`/`subagent-driven-development` skills, i.e., he runs Hermes Agent with Superpowers-style skills.
+- Docs are produced alongside: `docs/nehemiah/` contains ADRs, `threat-model.md`, `runbooks/`, `slo.md`, `dogfood.md`, and an `implementation-status.md` whose table has a "Local evidence boundary" column and states "**locally verified** means that the behavior is represented by automated unit, integration, race, build, or static checks... It does not substitute for..." — the same evidence-not-claims stance as his skill.
+- Parallel agents on branches, human merges: adam's PRs come from `cursor/*`, `devin/*`, `codex/*` branches; nehemiah's from `stack/*` and `devin/*`. Commit trailers in nehemiah: 71 "Claude Opus 4.8", 29 "Claude Fable 5", 22 Cursor, 9 Devin.
+- Agents write the agent docs: adam's `AGENTS.md` ("## Cursor Cloud specific instructions") was committed by "Cursor Agent" (2026-07-12); both `.agents/skills/testing-*/SKILL.md` files were committed by `devin-ai-integration[bot]` and end with a "## Devin Secrets Needed" section.
+
+## Published skills / repos / templates
+
+| Name | URL | What it is | Notable content (verbatim) |
+|---|---|---|---|
+| `skills` (repo) | https://github.com/michaelshimeles/skills — local: `https://github.com/michaelshimeles/skills/blob/513f8a2/` | 7 Claude Code skills + an `AGENTS.md` template; 301 stars; 3 skills his own, 4 vendored | README: "Drop it into a repo alongside the skills and fill in the repo-specific callouts (checks, invariants, environment)." Install: `cp -r code-structure ~/.claude/skills/` |
+| `new-feature` (his) | `.../new-feature/SKILL.md` | Worktree-per-task with a scope check against open PRs | "**Claude Code**: the harness creates and manages worktrees itself (under `.claude/worktrees/<name>`). **Skip steps 3–4 below**"; "**Scope check**: run `gh pr list` and skim the open PRs' changed files ... If your task needs files another open PR is editing, **stop and ask for direction**"; "Worktrees do **not** isolate shared resources: dev-server ports, shared databases, and dependency lockfiles are global." |
+| `code-structure` (his; 102 installs on skills.sh) | `.../code-structure/SKILL.md` | Two-layer "actions vs service layer" architecture rule | "Actions orchestrate domain rules (the 'why/when'), while a service layer centralizes reusable operational mechanics (the 'how')."; "Extraction trigger: Logic repeated across 2+ callers / Don't: Logic used once (over-abstraction)"; "New feature? → Write in action first → See repeated ops? → Extract to service" |
+| `evidence-driven-testing` (his; v1.2) | `.../evidence-driven-testing/SKILL.md` + `scripts/evidence.py` | Agent records itself testing via computer use; annotations burned into `evidence.mp4`; `report.md`; headless fallback | "Use whenever a change needs verifiable evidence that it works, instead of prose claims"; "The video must show the actual test session being driven live. Never present scripted playback, stitched clips, or synthetic footage"; "**Bug fixes**: reproduce and capture the failure **before** writing the fix"; headless: number captures "`01-precondition-signed-in.png`, `02-it-saves-on-blur-passed.png`" plus an `assertions.md`; "Evidence complements the repo's checks (typecheck/build/tests); it never replaces them." |
+| `greploop` / `greploop-apps` (vendored from greptileai/skills; MIT) | `.../greploop/SKILL.md` | Review-fix-push loop until Greptile 5/5 with zero unresolved comments | His one edit vs upstream (diff against `https://github.com/greptileai/skills/blob/646e2df/greploop/SKILL.md`): upstream "**Max 5 iterations**" became "`--max-iterations N` (optional, default **10**)". `greploop-apps` tags `@greptile-apps` to bypass the file-count limit. |
+| `before-and-after` (vendored from vercel-labs) | `.../before-and-after/SKILL.md` | Before/after screenshot table for PRs via `@vercel/before-and-after` + `agent-browser` | README: "A PR needs visual proof that a UI change does what it claims" |
+| `unslop` (vendored from cursor/plugins pstack) | `.../unslop/SKILL.md` | Strip AI tells from human-facing prose | He removed `disable-model-invocation: true` and rewrote the description so it auto-triggers: "Cut AI tells from text you write or edit for a human reader (commit messages, PR titles and bodies, docs, code comments, replies)." |
+| `AGENTS.md` (template) | `.../AGENTS.md` | One-page workflow tying the skills together; multi-agent rules | "Never force-push to `main` — and never plain `--force` anywhere; only `--force-with-lease`, only on your own task branch."; "Resolve lockfile conflicts by regenerating, never by hand-merging."; "If a conflict can't be resolved confidently, stop and report instead of guessing." |
+| `ralphy` | https://github.com/michaelshimeles/ralphy — local: `https://github.com/michaelshimeles/ralphy/blob/506eea0/` | Autonomous PRD loop (bash + npm CLI) across 8 engines; worktree/sandbox parallelism; `--browser` via agent-browser; 3k stars; dormant since 2026-02-05 | Original README (first commit): "Ralph uses Claude Code's `--dangerously-skip-permissions` flag to run autonomously". `.ralphy/config.yaml` has `rules:` and `boundaries: never_touch:`. Note: `CLAUDE.md`, `.cursorrules` and the README "Key principles"/"micro-tasks" text were contributed by Sajeel Ahmad (2026-01-31), not written by him. |
+| Project-level skills in his apps | `boringcomputers-nehemiah/.agents/skills/testing-preview/SKILL.md`; `michaelshimeles-adam/.agents/skills/testing-builder-deploy/SKILL.md` | "How to test feature X end-to-end" skills, written by Devin | Sections: prerequisites, "How to Set Up a Test VM", "Key Test Cases", "Architecture Notes", "Common Failure Modes", "Devin Secrets Needed" |
+| `nextjs-starter-kit` | https://github.com/michaelshimeles/nextjs-starter-kit | Next.js 15 SaaS starter (Better Auth, Drizzle/Neon, Polar, OpenAI chatbot); 3k stars | No CLAUDE.md/AGENTS.md/skills — pre-dates his agent workflow (secondhand from page fetch) |
+| CLAUDE.md templates | — | **No evidence found** that he publishes a CLAUDE.md template; his stated position (Apr 2026) is most people should skip such files, though his `skills` repo ships an `AGENTS.md` and Ralphy's `--init` generates rules/boundaries. |
+| Hooks / MCP servers | `boringcomputers-nehemiah/packages/mcp/` | Ships an MCP server for his product; no published hooks | No evidence of hooks in any of his repos (`grep` found no `.claude/settings` or hooks config). |
+
+## The six axes
+
+1. **Team/development architecture** — Solo builder orchestrating several harnesses in parallel. Nehemiah: 154/159 commits by him, the remainder by Devin bot and one drive-by; trailers show Claude (107), Cursor (22), Devin (9) as co-authors. Adam: PR branches `cursor/*`, `devin/*`, `codex/*`. Each agent gets its own worktree/branch; he is the merge point ("Do not merge the PR unless explicitly instructed", AGENTS.md). Sub-agents: on the podcast he warns against starting multi-agent and says he only added sub-agents (marketing/business/personal) after skills were reliable (thefuturist, secondhand). His Hermes plan explicitly delegates via "subagent-driven-development" (firsthand).
+2. **Brownfield handling** — He does not talk about brownfield per se. What exists: (a) AGENTS.md's instruction to add "commands & checks, hard invariants (security and architecture rules), an environment quick reference, local test infrastructure (stubs, fixtures), and anything that can't be tested locally"; (b) Ralphy's `.ralphy/config.yaml` with `rules` and `boundaries.never_touch` (e.g. `src/legacy/**`), injected into every prompt (`ralphy.sh` `build_prompt`); (c) the scope check against open PRs before touching files; (d) project-scoped "how to test X" skills in `.agents/skills/` that record gotchas and "Common Failure Modes" — his practical form of documentation-for-agents; (e) adam's AGENTS.md is a list of "non-obvious caveats discovered while setting up the cloud environment", not a codebase tour. His anti-CLAUDE.md stance (Apr 2026) is about token cost of always-loaded files; the substitute is on-demand skills.
+3. **Adding new code & handling changes** — Plan in features + tests, Plan Mode, AskUserQuestion (Jan 2026, secondhand). Firsthand: worktree per task; write in the action layer first, extract services only on repetition (`code-structure`); Ralph prompt requires tests and lint to pass before proceeding; PR body "must explain what changed, how it was tested (every claim backed by evidence), before/after proof, and any risks or follow-up work"; Greptile loop to 5/5; rebase onto `origin/main` and rerun checks before pushing; `--force-with-lease` only. Review is machine-first (Greptile) then human merge. In nehemiah the planning artefacts are heavier: ADRs, threat model, implementation-status with evidence boundaries.
+4. **Tools/harness** — Claude Code (primary since mid-2025: "extremely underrated" Jul 2025; "replaced Cursor for me" Jul 2025), but he still uses Cursor as a harness (June 2026 review loop; Cursor Cloud agents in adam), plus Devin, Codex, Hermes Agent, and OpenClaw/Paperclip are mentioned. Ralphy supports 8 engines. Supporting tools: Greptile (sponsor), `gh`, `agent-browser` and `@vercel/before-and-after`, `cua-driver`, ffmpeg recorder, Playwright headless, Ghostty terminal, Convex (sponsor). MCP: he explained it in Mar 2025 and ships one, but told beginners to "skip obsessing over MCP/skills/plugins" in Jan 2026. Hooks: no evidence. Starter kit: `nextjs-starter-kit` is a SaaS boilerplate, not an agent starter.
+5. **Preferences/opinions** — For: clear inputs, features-not-products, planning with tests, reps before automation, human-in-the-loop, loops only for "binary" fixed-feedback tasks, evidence over prose, plain human prose (unslop), small composable skills, service-layer separation, "audacity + taste" as the differentiator of 2026 software. Against: always-loaded agent.md/claude.md for most users, premature multi-agent setups "for what looks cool", wide-open autonomous loops ("slop machine"), tool-obsession for beginners. "Clearly Explained" is his pedagogy brand: mechanics first (context window contents, token costs), then method. Notable arc: he built the popular Ralph loop tool in Jan 2026 and by June 2026 was the podcast's voice for restraint.
+6. **His skills and how they fit** — Seven skills, four vendored; he curates more than he authors. The three originals each cover one beat: isolation (`new-feature`), design (`code-structure`), proof (`evidence-driven-testing`); vendored skills cover shipping (`before-and-after`, `greploop`) and prose (`unslop`). AGENTS.md is the router that names which skill to run at which beat. Adoption is modest (148 skills.sh installs; `code-structure` is 69% of them).
+
+## The 2–5 distinctive ideas worth Manuel's attention
+
+**1. "Prove it, don't claim it" — evidence attached to every PR.**
+His framing: use evidence-driven-testing "whenever a change needs verifiable evidence that it works, instead of prose claims"; for bug fixes, "reproduce and capture the failure **before** writing the fix"; "Evidence complements the repo's checks... it never replaces them" (SKILL.md, firsthand). He applies the same stance to his own product docs ("Local evidence boundary" column, nehemiah `implementation-status.md`).
+Why distinctive: Matt Pocock's skills are text-and-test oriented (`tdd`, `code-review`, `to-spec`); pstack has the same *principle* (`principle-prove-it-works`, `show-me-your-work`) but Ras Mic's version is a concrete protocol with a recorder script, Jest-style `test_start`/`assertion` annotations, and a headless fallback (numbered screenshots + `assertions.md`). T3 Code is a harness UI, not a method.
+Caveats: the full path needs ffmpeg/GUI/computer-use and a `gh`-connected PR; a beginner should start with the headless path and the before/after table. Agents tend to claim success; making them show a screenshot is the cheap, high-leverage part.
+
+**2. Loops only where the feedback is fixed and binary; humans stay in the loop everywhere else.**
+His framing (secondhand): "Loops shine in confined, fixed-feedback work: code review, SEO pages, and other binary tasks"; wide-open loops "can turn into a slop machine"; "Human-in-the-loop remains the strongest setup today." Concretely: a review loop that stops at 5/5 or after N turns, and a ship threshold of >4/5. Firsthand: the greploop cap is a parameter (`--max-iterations`, default 10) and AGENTS.md forbids the agent from merging.
+Why distinctive: he wrote Ralphy (3k stars) and then stopped maintaining it within a month (last commit 2026-02-05) while publicly narrowing where loops belong — the opposite of the "let it run overnight" pitch common around Ralph loops (pstack ships a `ralph-loop` plugin; Pocock has `loop-me` in progress). He also ties the advice to cost: "Reserve slash goal and similar loops for the $200/month plan, since the $20 and $100 tiers burn through fast" (whatfinger quoting him).
+Caveats: Greptile is a sponsor and the loop is built on it; any reviewer with a score and a stop condition would do (Claude Code's own review, CodeRabbit). Token costs apply to every loop iteration.
+
+**3. Skills are written *after* a successful run, then patched from failures; skip always-loaded agent files until you need them.**
+His framing (secondhand, thefuturist): "walk through the workflow with the agent step by step, achieve a successful run, and then have the agent write the skill based on that real context"; "Recursively refine skills by feeding failures back into the agent and having it update the skill file"; "95% of users can skip [agent.md/claude.md] entirely." Firsthand corroboration: his project testing skills were written by the agent (Devin) after doing the work; his README says descriptions should be "trigger-focused ('Use when...')".
+Why distinctive: Pocock's approach is spec-first (`grill-me`, `to-spec`, `writing-for-agents`) and he ships a CLAUDE.md; pstack encodes lessons via `continual-learning`/`reflect`/`create-verification-skill` but inside a 40-skill system. Ras Mic's version is the minimal loop: do it once by hand with the agent, then ask the agent to write the SKILL.md, then fix the file when it fails.
+Caveats: the "95%" and the 53-vs-944 token figures are his claims relayed by third parties; Anthropic's guidance still uses CLAUDE.md, and his own repos carry AGENTS.md. For a beginner the workable rule is: keep the always-loaded file tiny, put procedures in skills.
+
+**4. A one-page AGENTS.md that names four beats and seven skills — curate, don't author.**
+His framing (firsthand): "Every task moves through the same four beats, each backed by a skill... isolate (`new-feature`) → build (`code-structure`) → prove (`evidence-driven-testing`) → ship (`before-and-after` + `greploop`), with `unslop` applied to everything written for humans." Multi-agent rules are concrete: scope check against open PRs, one worktree per agent, `--force-with-lease` only, regenerate lockfiles, "stop and report instead of guessing."
+Why distinctive: it is the shortest complete agent SDLC among the compared sets — Pocock ships ~30 skills, pstack ~40 plus playbooks; Ras Mic vendors four from Vercel/Greptile/pstack and adds three. The `new-feature` skill also documents that Claude Code manages worktrees itself, so the skill degrades gracefully per harness.
+Caveats: assumes GitHub + PR flow and a reviewer bot; a solo beginner without PRs can drop beats 1 and 4 and keep "build → prove".
+
+**5. (Beginner-first) "Describe features and tests, not the product," and let the agent interview you.**
+His framing (secondhand): "A lot of times people will describe a product, not describe features, and will be frustrated with AI"; use AskUserQuestion so the tool "interviews you about the specifics of your plan"; "Imagine not knowing how to drive, but then buying a Tesla for the self-driving stuff" on skipping reps.
+Why distinctive: not novel — Pocock's `grill-me` does the interview — but Ras Mic's is the most beginner-legible version and pairs it with a concrete "don't automate yet" rule.
+Caveats: this is podcast advice with no artefact; the only firsthand trace is `example-prd.md`'s checkbox-per-feature format in Ralphy.
+
+## What's beginner-friendly vs what's marketing/hype
+
+**Beginner-friendly and usable now**
+- Features-and-tests planning, Plan Mode, AskUserQuestion, session restarts (Jan 2026).
+- `code-structure`: 116 lines, no tooling, clear do/don't table — the most-installed skill for a reason.
+- The headless half of `evidence-driven-testing` (screenshots named after assertions, an `assertions.md`) and the `before-and-after` table.
+- The AGENTS.md git rules (`--force-with-lease`, no hand-merged lockfiles, stop-and-ask on overlap).
+- The stance that human-in-the-loop beats autonomous loops for app building.
+
+**Marketing / hype / needs discounting**
+- Podcast packaging: "Clearly Explained" branding, Greg Isenberg's "$100K/month" style titles, chapter names like "Skill Maxxing".
+- Sponsor entanglement: Greptile (the reviewer his whole ship beat depends on), Cursor, Convex, Windsurf are listed past sponsors on his site. The workflow may still be sound; the tool choices are not neutral.
+- Ralphy's 3k stars vs. reality: 351 commits in January 2026, 7 in February, nothing since; 26 open issues, 17 open PRs. Treat it as a historical artefact and a good example of his own "loops become slop machines" lesson.
+- Quantitative claims ("95% can skip", "53 vs 944 tokens", "crack past 1,000 lines") come only through third-party summaries; no transcript could be checked.
+- The full evidence recorder (ffmpeg with libx264/ass, X11/Wayland/avfoundation, cua-driver) is engineered for his agent-VM product context (nehemiah ships "coding agents preinstalled") and is far beyond a beginner's setup.
+- His real work (Firecracker microVMs, Effect, Go daemons, Hermes-driven 28-task plans) is senior-engineer territory; the beginner advice is calibrated for the podcast audience, not a description of how he himself works.
+
+## Sources
+
+Firsthand (local clones)
+- `https://github.com/michaelshimeles/skills/blob/513f8a2/` — README.md, AGENTS.md, `*/SKILL.md`, `git log` (https://github.com/michaelshimeles/skills)
+- `https://github.com/michaelshimeles/ralphy/blob/506eea0/` — README.md, ralphy.sh, example-prd.md, cli/src/execution/prompt.ts, `git log` (https://github.com/michaelshimeles/ralphy)
+- `https://github.com/boringcomputers/nehemiah/blob/fea6f0a/` — .hermes/plans/2026-08-08_204915-nehemiah.md, .agents/skills/testing-preview/SKILL.md, docs/nehemiah/*, CONTRIBUTING.md, `git log` (https://github.com/boringcomputers/nehemiah)
+- `https://github.com/michaelshimeles/adam/blob/47669e9/` — AGENTS.md, .agents/skills/testing-builder-deploy/SKILL.md, `git log` (https://github.com/michaelshimeles/adam)
+- `https://github.com/greptileai/skills/blob/646e2df/greploop/SKILL.md` (upstream for diff)
+- Comparison sets: `research/1-matt-pocock/skills-repo/`, `research/3-pstack/upstream-cursor-plugin/`, `research/2-theo-t3code-excerpts/`
+
+Web
+- https://github.com/michaelshimeles (profile), https://github.com/michaelshimeles/nextjs-starter-kit, https://github.com/michaelshimeles/ralphy (issue/PR counts)
+- https://www.rasmic.xyz and https://www.rasmic.xyz/youtube (bio; sponsor list)
+- https://skills.sh/michaelshimeles/skills (install counts)
+- https://podcasts.apple.com/lt/podcast/claude-code-clearly-explained-and-how-to-use-it/id1593424985?i=1000745796041 (2026-01-19)
+- https://buzzrag.com/article/demystifying-claude-code-planning-execution (2026-01-20); https://usefollowed.com/episodes/greg-isenberg-claude-code-clearly-explained-and-how-to-use-it
+- https://podcasts.apple.com/de/podcast/building-ai-agents-clearly-explained/id1593424985?i=1000760318125 (2026-04-08); https://getpodcast.com/uk/podcast/where-it-happens2/building-ai-agents-clearly-explained_f6ff72c701; https://startup.whatfinger.com/2026/04/08/ai-agents-claude-skills-clearly-explained/; https://www.thefuturist.co/how-ai-agents-claude-skills-work-clearly-explained/ (dated 2026-09-02); https://www.youtube.com/watch?v=S_oN3vlzpMw (not fetchable)
+- https://wisdomsparks.com/people/ras-mic (episode list); https://wisdomsparks.com/startup-ideas-podcast/what-are-agentic-loops-367/; https://startup.whatfinger.com/2026/06/09/wtf-is-a-loop-peter-steinberger-vs-boris-cherny/; https://startup.whatfinger.com/2026/06/18/agentic-loops-the-future-of-prompting-ill-break-it-down-in-60s/; https://metacast.app/podcast/the-startup-ideas-podcast/4AmeLXJl/what-are-agentic-loops/ANmSJflh
+- https://wisdomsparks.com/startup-ideas-podcast/ras-mic-271/ (2025-07-14); https://wisdomsparks.com/startup-ideas-podcast/model-context-protocol-mcp-clearly-explained/ (2025-03-14)
+- https://rss.com/podcasts/a-new-vibe/2110566/ (Agent Native, 2025-07-11)
+- https://medium.com/vibe-coding/someone-finally-built-the-ralph-loop-i-wanted-8f3050b7b181 (2026-01-21)
+- https://magpieai.store/people/ras-mic (third-party profile; subscriber figure unverified)
+- Not reachable: x.com/Rasmic (robots), YouTube pages (429), video ID `5G9PAIUs5Pk` (unresolvable)

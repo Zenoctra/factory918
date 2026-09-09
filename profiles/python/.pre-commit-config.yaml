@@ -1,0 +1,5 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.0          # pin to the installed ruff
+    hooks:
+      - id: ruff-format   # formatter only on commit; CI owns lint, types, tests
