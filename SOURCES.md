@@ -10,7 +10,7 @@ Upstream pins for everything vendored into `template/`. Pinned copies of each up
 
 ## Patches (applied in code by `tools/bootstrap/build_template.py`; to be re-applied by `factory918 sync`)
 
-1. Namespace: `pstack:<name>` → `<name>` in all vendored pstack markdown and the session mandate; mandate gains a PHASES block.
+1. Namespace: `pstack:<name>` → `<name>` in all vendored pstack markdown and the session mandate; mandate gains a PHASES block. The sweep also covers `*.ts` under `poteto-mode/scripts/`, where `model-matrix.test.ts` asserts the `<!-- models:begin -->` markers that `setup-pstack/SKILL.md` writes.
 2. Router: Ticket playbook line added before "Opening a PR" in `poteto-mode/SKILL.md`; `playbooks/ticket.md` added.
 3. `playbooks/opening-a-pr.md`: "Run `/no-comments` before review." replaced by keep-comments + spec-review + review-ladder; the subagent sentence drops `/no-comments`.
 4. `playbooks/babysit.md`: step 8 made conditional on an external bot being listed in `docs/agents/review-ladder.md`.

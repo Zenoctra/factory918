@@ -5,7 +5,9 @@ import { defineConfig } from "vite-plus";
 export default defineConfig({
   test: {
     environment: "node",
-    exclude: [".repos/**", "node_modules/**", "dist/**"],
+    // Vendored code is read-only upstream: .repos/ holds dependency sources,
+    // .agents/skills/ holds the pstack and Pocock skills with their own test suites.
+    exclude: [".repos/**", ".agents/skills/**", "node_modules/**", "dist/**"],
     hookTimeout: 60_000,
     testTimeout: 60_000,
   },
@@ -14,7 +16,7 @@ export default defineConfig({
     "*": "vp fmt --no-error-on-unmatched-pattern",
   },
   fmt: {
-    ignorePatterns: [".repos/**", "dist/**", "node_modules/**", "pnpm-lock.yaml", "*.tsbuildinfo", ".artifacts/**"],
+    ignorePatterns: [".repos/**", ".agents/skills/**", "dist/**", "node_modules/**", "pnpm-lock.yaml", "*.tsbuildinfo", ".artifacts/**"],
     sortPackageJson: {},
   },
   lint: {

@@ -48,6 +48,11 @@ Each fact was checked by running the command named. Scratch project: a copy of `
 8. **`vite-plus` publishes the `vp` binary directly on npm** with per-platform optional dependencies and no install scripts, so `npm install -g vite-plus@0.3.1` is a pinnable alternative to `curl -fsSL https://vite.plus | bash`. Source: `npm view vite-plus --json`.
 9. **The Vite+ installer takes `VP_NODE_MANAGER=yes|no`** to skip its interactive prompt. With `yes` it installs `node`, `npm`, `npx`, `pnpm`, `pnpx`, `yarn`, `yarnpkg`, `bun`, and `bunx` shims and selects the version each project declares. Source: lines 1072 to 1135 of the installer script served by `https://vite.plus`.
 10. **`gh` is installed but not authenticated.** `gh auth status` reports no logged-in host. `factory918 labels`, `doctor`, and every PR step need `gh auth login` first.
+11. **The template holds 71 skills, and they reconcile against the pins.** 51 come from the open-pstack port (52 directories there, minus `no-comments`), 14 from mattpocock/skills (13 by name plus `spec-review`, renamed from `code-review`), and 6 are ours: `factory918`, `factory-start`, `knowledge`, `mode-plan`, `mode-build`, `factory-doctor`. Source: directory comparison against `research/`.
+12. **Every skill directory has a `SKILL.md`, no two declare the same `name:`, and every `name:` matches its directory.** Source: a loop over `template/.agents/skills/*/SKILL.md`.
+13. **Eleven skills carry `disable-model-invocation: true` in frontmatter**, and they are exactly the ones decision 3 names: Matt's seven planning entry points, our two mode switches, and `factory-start` and `factory-doctor`. `factory918` and `knowledge` stay model-invocable, so an unsure agent can reach them. `automate-me` mentions the flag in its body only, because it authors skills; that is documentation, not config.
+14. **The 21 principle skills carry `user-invocable: false`**, matching §5.1.
+15. **Patches 1, 2, 3, and 9 landed.** The Ticket playbook exists and the router routes any issue reference to it; `opening-a-pr.md` keeps comments and names `spec-review` and the review ladder; the only remaining `/no-comments` strings are the deliberate override and the two decision records.
 
 ## Deviations from the spec, and the fix
 
@@ -59,6 +64,10 @@ Each fact was checked by running the command named. Scratch project: a copy of `
 | 4 | §7.2 pins `engines.node ^24` | The machine runs Node 22.17.0 | Enable the Vite+ node manager, which selects each project's declared version. Decided with Manuel on 2026-09-09; containers were considered and rejected. |
 | 5 | §8.3 `doctor` checks `claude --version` | The `claude` CLI is not on PATH; Manuel runs the Claude Code desktop app | Make the check advisory, not a failure. A desktop-app user has no CLI binary and needs none. |
 | 6 | T3 Code pins `vite-plus@0.3.0` | Latest is 0.3.1 | Pin 0.3.1, the version actually installed, and record it in `docs/adr/0001-toolchain.md`. |
+| 7 | §9 M1 accepts "69 skill directories minus `no-comments` (68)" | The true count is 71, and it reconciles: 51 + 14 + 6 | Correct the M1 acceptance number to 71. The README already says 71. |
+| 8 | §5.4.1 sweeps the `pstack:` namespace across `.agents/skills/**/*.md` | The sweep skipped `.ts`, so `setup-pstack/SKILL.md` wrote `<!-- models:begin -->` while `model-matrix.test.ts` still asserted `<!-- pstack:models:begin -->` | Done: markers fixed and the widened scope recorded in `SOURCES.md`, so `factory918 sync` re-applies it. |
+| 9 | §7.2 excludes only `.repos/**` from the test run | The skills tree holds 11 vendored `*.test.ts` files, so `vp test run` would run pstack's own suite in every project and fail on defect 8 | Done: `.agents/skills/**` added to `test.exclude` and `fmt.ignorePatterns`. Vendored code is read-only upstream and belongs to neither the project's suite nor its formatter. |
+| 10 | §7.2 `lint` has no ignore list at all | oxlint would lint both `.repos/**` and `.agents/skills/**` | Blocked: the key that ignores paths in `vite.config.ts` `lint` needs `vp` to confirm. Add it as soon as `vp` is installed. |
 
 ## Blocked
 

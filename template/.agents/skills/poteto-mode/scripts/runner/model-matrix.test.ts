@@ -326,8 +326,8 @@ describe("model matrix", () => {
     expect(setup).toContain("Show any rolling-alias migrations");
     expect(setup).toContain("Every documented role remains present.");
     expect(setup).toContain("An effort-only rerun cannot change a role's family.");
-    expect(setup).toContain("<!-- pstack:models:begin -->");
-    expect(setup).toContain("<!-- pstack:models:end -->");
+    expect(setup).toContain("<!-- models:begin -->");
+    expect(setup).toContain("<!-- models:end -->");
   });
 
   it("binds Claude-native dispatch to the matrix mapping", () => {
