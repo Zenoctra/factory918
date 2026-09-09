@@ -1,5 +1,5 @@
 {
-  "_comment": "Merged into package.json by `factory apply`. `vp create` writes the rest.",
+  "_comment": "Merged into package.json by `factory918 apply`. `vp create` writes the rest.",
   "scripts": {
     "dev": "vp dev",
     "build": "vp build",
@@ -9,9 +9,14 @@
     "fmt:check": "vp fmt --check",
     "typecheck": "tsc --noEmit",
     "check": "vp check",
-    "prepare": "vp hooks enable"
+    "prepare": "vp hooks enable",
+    "sg": "ast-grep scan",
+    "sg:test": "ast-grep test"
   },
   "engines": {
     "node": "^24"
+  },
+  "devDependencies": {
+    "@ast-grep/cli": "0.45.3"
   }
 }

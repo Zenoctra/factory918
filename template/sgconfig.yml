@@ -1,0 +1,8 @@
+# ast-grep project config. Lives at the project root so `ast-grep scan` and
+# `ast-grep test` work with no flags from where CI and agents run.
+# Cross-language structural rules that encode opinions everywhere at once;
+# TypeScript-only rules live in oxlint-plugin-project/.
+ruleDirs:
+  - ast-grep/rules
+testConfigs:
+  - testDir: ast-grep/rule-tests

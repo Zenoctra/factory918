@@ -27,7 +27,7 @@ jobs:
           cache: true
           run-install: true
       - run: vp check
-      - run: vp dlx @ast-grep/cli scan --config ast-grep/sgconfig.yml   # cross-language rules; verify invocation at M0
+      - run: pnpm sg   # cross-language ast-grep rules; sgconfig.yml is at the repo root
       - run: pnpm typecheck
       - run: vp build
   test:

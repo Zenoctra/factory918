@@ -1,0 +1,8 @@
+id: no-print-py
+snapshots:
+  print('started'):
+    labels:
+    - source: print('started')
+      style: primary
+      start: 0
+      end: 16

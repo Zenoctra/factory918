@@ -75,7 +75,7 @@ cmd_doctor() {
   chk "slim knowledge present"        "[ -f docs/factory918/PHILOSOPHY.md ] && [ -f docs/factory918/MANUAL.md ]"
   chk "glue skills resolve"           "[ -f .agents/skills/factory918/SKILL.md ] && [ -f .agents/skills/factory-start/SKILL.md ] && [ -f .agents/skills/knowledge/SKILL.md ]"
   chk "ledger exists"                 "[ -f docs/agents/ledger.md ]"
-  chk "ast-grep rules test"           "vp dlx @ast-grep/cli test --config ast-grep/sgconfig.yml"
+  chk "ast-grep rules test"           "pnpm sg:test"
   return $fail
 }
 
