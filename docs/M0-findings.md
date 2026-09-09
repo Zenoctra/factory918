@@ -4,7 +4,7 @@ Ground truth for the Factory918 build: the tool versions installed on Manuel's m
 
 Machine: macOS 15.6.1, arm64. Date: 2026-09-09.
 
-Status: **incomplete.** The Vite+ items are blocked on installing `vp`; see "Blocked" at the end.
+Status: **incomplete.** ast-grep, the skill manifest, and the Python profile are verified. The Vite+ items wait on installing `vp`; see "Blocked" at the end.
 
 ## Tool versions
 
@@ -21,7 +21,7 @@ Status: **incomplete.** The Vite+ items are blocked on installing `vp`; see "Blo
 | ast-grep | 0.45.3 | `brew install ast-grep` | cross-language rules, §7.11 |
 | xcodebuild, xcrun | present | Xcode | React Native profile evidence capture |
 
-Not installed: `vp`, pnpm, ruff, pyright, pytest, the `claude` CLI, adb, eas, expo.
+Not installed: `vp`, pnpm, the `claude` CLI, adb, eas, expo. `ruff`, `pyright`, and `pytest` need no install; `uv run --with` resolves them per project.
 
 Registry versions, read on 2026-09-09 from `registry.npmjs.org`:
 
@@ -36,7 +36,7 @@ Registry versions, read on 2026-09-09 from `registry.npmjs.org`:
 
 ## Verified facts
 
-Each fact was checked by running the command named. Scratch project: a copy of `template/ast-grep` with one violating TypeScript file and one violating Python file.
+Each fact was checked by running the command named. Two scratch projects: a copy of `template/ast-grep` with one violating TypeScript file and one violating Python file, and a copy of `profiles/python/pyproject.toml` with a module that calls `print` and `os.system`.
 
 1. **`ruleDirs` resolves relative to the directory holding `sgconfig.yml`**, not to the project root. `ast-grep test` with the shipped config failed with `Cannot read rule directory .../ast-grep/ast-grep/rules`. Source: `ast-grep test`, ast-grep 0.45.3.
 2. **`ast-grep scan` exits 1 when an `error`-severity rule matches**, and 0 when none match. It is a valid CI gate. Source: `ast-grep scan; echo $?`.
@@ -53,6 +53,11 @@ Each fact was checked by running the command named. Scratch project: a copy of `
 13. **Eleven skills carry `disable-model-invocation: true` in frontmatter**, and they are exactly the ones decision 3 names: Matt's seven planning entry points, our two mode switches, and `factory-start` and `factory-doctor`. `factory918` and `knowledge` stay model-invocable, so an unsure agent can reach them. `automate-me` mentions the flag in its body only, because it authors skills; that is documentation, not config.
 14. **The 21 principle skills carry `user-invocable: false`**, matching §5.1.
 15. **Patches 1, 2, 3, and 9 landed.** The Ticket playbook exists and the router routes any issue reference to it; `opening-a-pr.md` keeps comments and names `spec-review` and the review ladder; the only remaining `/no-comments` strings are the deliberate override and the two decision records.
+16. **The Python profile's `select` list is valid on ruff 0.16.6, and both encoded opinions fire.** `T201` reports `print("running")`, and `TID251` reports `os.system(cmd)` with the profile's own message, "Use subprocess.run with a list; see CODING_STANDARDS.md". `ruff check` exits 1 on violations. Source: `uv run --with 'ruff>=0.16' ruff check` against `profiles/python/pyproject.toml`.
+17. **`per-file-ignores` works as the debt ceiling the profile claims.** Adding `"m.py" = ["T20"]` dropped the `print` finding and left the banned-API finding, so a ceiling silences one rule for one file without weakening the rest.
+18. **`ruff format --check` reports an unformatted file** and names how many files would be reformatted.
+19. **`pyright` strict flags an untyped function** with `reportMissingParameterType` and `reportUnknownParameterType`, so `typeCheckingMode = "strict"` in `pyproject.toml` reaches the CLI. Version resolved: pyright 1.1 or newer through uv.
+20. **The Python profile needs no machine-wide installs.** `uv run --with 'ruff>=0.16' ruff check` resolves and caches the tool per project, which is the invocation §7.10 already specifies. A new machine needs `uv` and nothing else for Python.
 
 ## Deviations from the spec, and the fix
 
@@ -71,7 +76,7 @@ Each fact was checked by running the command named. Scratch project: a copy of `
 
 ## Blocked
 
-`npm install -g vite-plus@0.3.1` and `uv tool install ruff pyright` both need Manuel to run them or approve them; auto mode refuses machine-wide installs. Until `vp` exists, these spec items are unverified:
+`npm install -g vite-plus@0.3.1` needs Manuel to run it or approve it; auto mode refuses machine-wide installs. Until `vp` exists, these spec items are unverified:
 
 - `vp create --no-interactive` flags, and whether `--git` and `--hooks` exist.
 - `vp hooks enable` and `vp hooks status`, and whether `vp install` already installs hooks (which would retire the `prepare` script).
@@ -81,4 +86,4 @@ Each fact was checked by running the command named. Scratch project: a copy of `
 - `@oxlint/plugins` exports: `definePlugin`, `defineRule`, and `context.sourceCode.getAllComments()`.
 - The subcommand that enables the node manager after an npm install of `vp`.
 - `voidzero-dev/setup-vp@v1` inputs, which can only be confirmed on a real CI run.
-- The ruff `select` codes and `TID251` banned-API behaviour, and `pyright` strict mode.
+- The `lint` key that ignores `.repos/**` and `.agents/skills/**` in `vite.config.ts` (deviation 10).
