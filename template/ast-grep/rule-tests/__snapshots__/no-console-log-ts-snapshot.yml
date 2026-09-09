@@ -2,13 +2,13 @@ id: no-console-log-ts
 snapshots:
   console.log('started'):
     labels:
-    - source: console.log('started')
-      style: primary
-      start: 0
-      end: 22
+      - source: console.log('started')
+        style: primary
+        start: 0
+        end: 22
   console.log(a, b):
     labels:
-    - source: console.log(a, b)
-      style: primary
-      start: 0
-      end: 17
+      - source: console.log(a, b)
+        style: primary
+        start: 0
+        end: 17

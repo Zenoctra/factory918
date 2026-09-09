@@ -4,13 +4,15 @@ Ground truth for the Factory918 build: the tool versions installed on Manuel's m
 
 Machine: macOS 15.6.1, arm64. Date: 2026-09-09.
 
-Status: **incomplete.** ast-grep, the skill manifest, and the Python profile are verified. The Vite+ items wait on installing `vp`; see "Blocked" at the end.
+Status: **complete**, except the two checks that need a GitHub repository. `factory918 apply` on a fresh `vp create` monorepo now passes every gate: format, lint, types, tests, ast-grep and build.
 
 ## Tool versions
 
 | Tool | Version | How it got here | Spec said |
 |---|---|---|---|
-| node | 22.17.0 | already present | `engines.node ^24`; T3 Code runs `^24.13.1` |
+| vp | 0.3.1 | `https://vite.plus` installer, `VP_VERSION=0.3.1 VP_NODE_MANAGER=yes` | `vite-plus` 0.3.0 |
+| node | 24.21.0 | Vite+ node manager (was 22.17.0 on the host) | `engines.node ^24`; T3 Code runs `^24.13.1` |
+| pnpm | 12.3.4 | Vite+ node manager | T3 Code pins `pnpm@11.10.0` |
 | npm | 10.9.2 | already present | n/a |
 | python3 | 3.14.6 | already present | n/a |
 | git | 2.51.2 | already present | n/a |
@@ -21,7 +23,7 @@ Status: **incomplete.** ast-grep, the skill manifest, and the Python profile are
 | ast-grep | 0.45.3 | `brew install ast-grep` | cross-language rules, §7.11 |
 | xcodebuild, xcrun | present | Xcode | React Native profile evidence capture |
 
-Not installed: `vp`, pnpm, the `claude` CLI, adb, eas, expo. `ruff`, `pyright`, and `pytest` need no install; `uv run --with` resolves them per project.
+Not installed: the `claude` CLI, adb, eas, expo. `ruff`, `pyright`, and `pytest` need no install; `uv run --with` resolves them per project.
 
 Registry versions, read on 2026-09-09 from `registry.npmjs.org`:
 
@@ -59,6 +61,26 @@ Each fact was checked by running the command named. Two scratch projects: a copy
 19. **`pyright` strict flags an untyped function** with `reportMissingParameterType` and `reportUnknownParameterType`, so `typeCheckingMode = "strict"` in `pyproject.toml` reaches the CLI. Version resolved: pyright 1.1 or newer through uv.
 20. **The Python profile needs no machine-wide installs.** `uv run --with 'ruff>=0.16' ruff check` resolves and caches the tool per project, which is the invocation §7.10 already specifies. A new machine needs `uv` and nothing else for Python.
 
+### Vite+
+
+21. **`npm install -g vite-plus` fails on this machine.** The npm global prefix is `/usr/local`, owned by `root:wheel`, so a global install needs `sudo`. The vendor installer writes to `~/.local/share/vite-plus` and needs no elevation. Source: `npm config get prefix`, and the EACCES from the install attempt.
+22. **Vite+ 0.3.1 requires Node `^20.19.0 || ^22.18.0 || >=24.11.0`.** The host's 22.17.0 missed the range by one patch release, which the node manager resolved by installing 24.21.0. Source: the `EBADENGINE` warning.
+23. **`vp env doctor` reports the whole install**: bin, data, cache, config and state directories, managed mode for Node and the package manager, every shim, and PATH resolution. It is the right first line of `factory918 doctor` on a new machine.
+24. **`vp create` accepts `--directory <DIR>`, `--no-interactive`, `--git`, `--hooks` and `--no-agent`.** `--hooks` is the default in non-interactive mode. The built-in templates are `vite:monorepo`, `vite:application`, `vite:library` and `vite:generator`. Source: `vp create --help`, `vp create --list`.
+25. **`vp create` writes `AGENTS.md`, `vite.config.ts` and `.vite-hooks/pre-commit`**, all three of which Factory918 owns. Its `AGENTS.md` is a 27-line block delimited by `<!--VITE PLUS START-->` and `<!--VITE PLUS END-->`; its `staged` config is `vp check --fix`, a thick hook, against decision 5.
+26. **`vp config` only refreshes an existing delimited block.** Run against an `AGENTS.md` with no markers it changes nothing, so the scaffold's `"prepare": "vp config"` is safe beside Factory918's own letter.
+27. **`vp hooks enable | status | disable` all exist**, the default hooks directory is `.vite-hooks`, and `status` prints the preference, `core.hooksPath` and the dispatcher state.
+28. **`vp check` runs format, then lint, then types, and stops at the first stage that fails.** An unformatted file hides every lint and type error behind it, so anything that writes files must format before the gate runs.
+29. **`lint.ignorePatterns` is the key that scopes the linter.** Source: `node_modules/vite-plus/docs/config/lint.md:12`. Vite+ ships its own docs locally, which retires §7.9's plan to vendor them into `docs/tools/vite-plus.md`.
+30. **All three lint opinions fire.** A type error reports as `typescript(TS2322)`, `typescript/no-explicit-any` as `typescript(no-explicit-any)`, `no-console` as `eslint(no-console)`, and the custom rule as `project(no-todo-without-issue)`. A stale directive reports as `Unused oxlint-disable directive`.
+31. **`options.typeAware` and `options.typeCheck` work together**, and `vp check` catches type errors on its own, so a separate `tsc --noEmit` pass adds nothing.
+32. **The `jsPlugins` string form `"./oxlint-plugin-project/index.ts"` loads.** The scaffold's object form is not required.
+33. **The commit hook formats on commit.** A file staged as `export const z   =    1;` was committed as `export const z = 1;`.
+34. **`vp build` at the repo root asks for a package; the monorepo form is `vp run -r build`.**
+35. **pnpm 12 gates the native binary `@ast-grep/cli` builds, and reads the approval from `allowBuilds` in `pnpm-workspace.yaml`**, not from `pnpm.onlyBuiltDependencies` in `package.json`. Unapproved, the binary still runs but warns and resolves itself on every invocation.
+36. **A bare `vp create` project passes `vp check` completely.** Every formatting failure seen later came from files Factory918 or pnpm added.
+37. **`factory918 apply` on a fresh monorepo now passes format, lint, types, tests, `ast-grep scan`, `ast-grep test` and `vp run -r build`.** The four remaining `doctor` failures need a human: `gh auth login`, a GitHub repository for labels, `/setup-pstack` for the models sheet, and `/factory-start` to fill the `AGENTS.md` slots.
+
 ## Deviations from the spec, and the fix
 
 | # | Spec says | Truth | Fix |
@@ -72,18 +94,24 @@ Each fact was checked by running the command named. Two scratch projects: a copy
 | 7 | §9 M1 accepts "69 skill directories minus `no-comments` (68)" | The true count is 71, and it reconciles: 51 + 14 + 6 | Correct the M1 acceptance number to 71. The README already says 71. |
 | 8 | §5.4.1 sweeps the `pstack:` namespace across `.agents/skills/**/*.md` | The sweep skipped `.ts`, so `setup-pstack/SKILL.md` wrote `<!-- models:begin -->` while `model-matrix.test.ts` still asserted `<!-- pstack:models:begin -->` | Done: markers fixed and the widened scope recorded in `SOURCES.md`, so `factory918 sync` re-applies it. |
 | 9 | §7.2 excludes only `.repos/**` from the test run | The skills tree holds 11 vendored `*.test.ts` files, so `vp test run` would run pstack's own suite in every project and fail on defect 8 | Done: `.agents/skills/**` added to `test.exclude` and `fmt.ignorePatterns`. Vendored code is read-only upstream and belongs to neither the project's suite nor its formatter. |
-| 10 | §7.2 `lint` has no ignore list at all | oxlint would lint both `.repos/**` and `.agents/skills/**` | Blocked: the key that ignores paths in `vite.config.ts` `lint` needs `vp` to confirm. Add it as soon as `vp` is installed. |
+| 10 | §7.2 `lint` has no ignore list at all | oxlint linted the vendored skills through the `.claude/skills` symlink and reported 159 errors | Done: `lint.ignorePatterns` added, covering `.repos/**`, `.agents/skills/**` and `.claude/skills/**`. `test.exclude` and `fmt.ignorePatterns` gained the symlink path too. |
+| 11 | §8.1 `apply` never overwrites a file that exists locally | `vp create` writes `AGENTS.md`, `vite.config.ts` and `.vite-hooks/pre-commit` seconds earlier, so Factory918's versions never landed and every session loaded Vite+'s blurb instead of Manuel's letter | Done: `init` passes `--no-agent`, and `apply --scaffold` replaces the four files Factory918 owns. `apply` without the flag keeps its additive rule for projects that already exist. |
+| 12 | §8.1 `init` runs `vp create <tpl> ... -- "$dir"` | That passes the target directory as a template option, so the project scaffolds into the current directory | Done: `--directory "$dir"`. |
+| 13 | §8.3 `doctor` checks for duplicate skill names | macOS `wc -l` pads its output, so `[ "       0" = 0 ]` was false and the check could never pass | Done: compare the text instead of counting it. |
+| 14 | §8.3 `doctor` checks that `/factory-start` filled the slots | It greps whatever `AGENTS.md` is present, so it passed on Vite+'s file and hid deviation 11 | Done: a preceding check asserts the file is Factory918's. |
+| 15 | §8.1 `apply` merges `package.scripts.json` | It printed a TODO, so no scripts, engines or devDependencies were ever merged | Done: merged with `jq`; the project's own values win. |
+| 16 | §7.3 the plugin imports `@oxlint/plugins` | Nothing declared it, so the plugin failed to load and **all** linting stopped before analysis | Done: pinned at 1.82.0 in the template's devDependencies. |
+| 17 | §7.3 ships the rule with a test beside it | The test imported `vitest`, which is not resolvable, and asserted `expect(true).toBe(true)` | Done: imports `vite-plus/test`, the scaffold's own idiom, and tests the rule's two real seams in 10 cases. |
+| 18 | §7.3 reads `context.options[0]?.maxOccurrences` | `options[0]` is `JsonValue`, so the property access does not typecheck | Done: `debtCeiling()` narrows the value at runtime, with no cast, per `CODING_STANDARDS.md`. |
+| 19 | §7.3's rule explains itself in a comment | The comment contains a bare `TODO`, so the rule reported its own source file | Done: reworded. The rule was right. |
+| 20 | §7.2 keeps a separate `"typecheck": "tsc --noEmit"` | `typescript` is not a root dependency, so `pnpm typecheck` exits 127, and `vp check` already reports type errors | Done: dropped from the scripts, CI and `doctor`. |
+| 21 | §7.8 CI runs `vp build` | At the root of a monorepo that asks for a package | Done: `vp run -r build`. |
+| 22 | §7.2 scripts alias `dev`, `build`, `test`, `lint`, `fmt` and `check` | All six are `vp` built-ins, and vp prints a note about the ambiguity | Done: the template now ships only `prepare`, `sg` and `sg:test`. |
+| 23 | §7.9 vendors Vite+'s docs into `docs/tools/vite-plus.md` | Vite+ installs its own docs at `node_modules/vite-plus/docs` | Point `AGENTS.md` at the local path instead of copying it. |
 
-## Blocked
+## Still open
 
-`npm install -g vite-plus@0.3.1` needs Manuel to run it or approve it; auto mode refuses machine-wide installs. Until `vp` exists, these spec items are unverified:
-
-- `vp create --no-interactive` flags, and whether `--git` and `--hooks` exist.
-- `vp hooks enable` and `vp hooks status`, and whether `vp install` already installs hooks (which would retire the `prepare` script).
-- Multi-glob `staged`, needed by the Python profile's `"*.py": "uv run ruff format"`.
-- `vp lint` rule names: `typescript/no-explicit-any` and `no-console`.
-- Whether `options.typeAware` and `options.typeCheck` work together on this toolchain.
-- `@oxlint/plugins` exports: `definePlugin`, `defineRule`, and `context.sourceCode.getAllComments()`.
-- The subcommand that enables the node manager after an npm install of `vp`.
-- `voidzero-dev/setup-vp@v1` inputs, which can only be confirmed on a real CI run.
-- The `lint` key that ignores `.repos/**` and `.agents/skills/**` in `vite.config.ts` (deviation 10).
+- `voidzero-dev/setup-vp@v1` inputs, which only a real CI run can confirm (M5).
+- Multi-glob `staged` for the Python profile's `"*.py": "uv run ruff format"` (M6).
+- `vp migrate` on a brownfield repo (M8).
+- `gh auth login` and `/setup-pstack` are human steps; `/factory-start` is M4.

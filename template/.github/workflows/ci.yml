@@ -27,9 +27,8 @@ jobs:
           cache: true
           run-install: true
       - run: vp check
-      - run: pnpm sg   # cross-language ast-grep rules; sgconfig.yml is at the repo root
-      - run: pnpm typecheck
-      - run: vp build
+      - run: pnpm sg # cross-language ast-grep rules; sgconfig.yml is at the repo root
+      - run: vp run -r build
   test:
     name: Test
     runs-on: ubuntu-latest

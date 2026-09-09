@@ -11,10 +11,35 @@ need() { command -v "$1" >/dev/null || { echo "missing: $1" >&2; exit 1; }; }
 
 sha() { sha256sum "$1" | cut -d' ' -f1; }
 
+approve_ast_grep() {
+  [ -f "$1" ] || return 0
+  python3 - "$1" <<'EOF'
+import re, sys, pathlib
+p = pathlib.Path(sys.argv[1]); t = p.read_text()
+if re.search(r'^\s+"?@ast-grep/cli"?:\s*true\s*$', t, re.M):
+    sys.exit(0)
+line = '  "@ast-grep/cli": true'
+if "allowBuilds:" in t:
+    t = re.sub(r'^\s+"?@ast-grep/cli"?:.*$', line, t, count=1, flags=re.M)
+    if line not in t:
+        t = t.replace("allowBuilds:", "allowBuilds:\n" + line, 1)
+else:
+    t = t.rstrip("\n") + "\nallowBuilds:\n" + line + "\n"
+p.write_text(t)
+EOF
+}
+
+FACTORY_OWNED="AGENTS.md CLAUDE.md vite.config.ts .vite-hooks/pre-commit"
+
 cmd_apply() {
   local dir="${1:-.}"; need jq
   shift || true
-  local profile=""; while [ $# -gt 0 ]; do case "$1" in --profile) profile="$2"; shift 2 ;; *) shift ;; esac; done
+  local profile="" scaffold=""
+  while [ $# -gt 0 ]; do case "$1" in
+    --profile) profile="$2"; shift 2 ;;
+    --scaffold) scaffold=1; shift ;;
+    *) shift ;;
+  esac; done
   if [ -n "$profile" ]; then
     [ -d "$F918_DIR/profiles/$profile" ] || { echo "unknown profile: $profile" >&2; exit 1; }
     echo "TODO: copy $F918_DIR/profiles/$profile files into $dir (python.yml -> .github/workflows/, pyproject.toml -> python/<name>/, fingerprint workflow -> .github/workflows/, eas.json.example -> apps/mobile/eas.json) and record the profile in .factory918/manifest.json"
@@ -26,7 +51,9 @@ cmd_apply() {
   (cd "$TEMPLATE" && find . -type f ! -name '.gitkeep' -print0) | while IFS= read -r -d '' rel; do
     rel="${rel#./}"
     case "$rel" in package.scripts.json|.gitignore.factory) continue ;; esac
-    if [ ! -e "$dir/$rel" ]; then
+    owned=""
+    [ -n "$scaffold" ] && case " $FACTORY_OWNED " in *" $rel "*) owned=1 ;; esac
+    if [ ! -e "$dir/$rel" ] || [ -n "$owned" ]; then
       mkdir -p "$dir/$(dirname "$rel")"; cp -p "$TEMPLATE/$rel" "$dir/$rel"
     fi
     h="$(sha "$TEMPLATE/$rel")"
@@ -36,17 +63,32 @@ cmd_apply() {
   mkdir -p "$dir/.claude"; [ -e "$dir/.claude/skills" ] || ln -s ../.agents/skills "$dir/.claude/skills"
   # Append gitignore entries once.
   grep -q '^\.artifacts/' "$dir/.gitignore" 2>/dev/null || cat "$TEMPLATE/.gitignore.factory" >> "$dir/.gitignore"
-  # Merge scripts/engines into package.json (TODO: use jq to merge without clobbering existing scripts).
-  echo "TODO: merge $TEMPLATE/package.scripts.json into $dir/package.json"
+  # Merge scripts, engines and devDependencies; the project's own values win.
+  if [ -f "$dir/package.json" ]; then
+    tmp="$(mktemp)"
+    jq -s '.[0] as $t | .[1]
+           | .scripts = (($t.scripts // {}) + (.scripts // {}))
+           | .engines = (($t.engines // {}) + (.engines // {}))
+           | .devDependencies = (($t.devDependencies // {}) + (.devDependencies // {}))' \
+      "$TEMPLATE/package.scripts.json" "$dir/package.json" > "$tmp" && mv "$tmp" "$dir/package.json"
+  fi
   chmod +x "$dir"/.claude/hooks/*.sh "$dir/.vite-hooks/pre-commit" 2>/dev/null || true
+  # pnpm gates the native binary @ast-grep/cli builds; approve it once so nobody is
+  # asked at install time. In a workspace the key lives in pnpm-workspace.yaml.
+  approve_ast_grep "$dir/pnpm-workspace.yaml"
+  # Install first: the lint plugin and the rule engine are devDependencies, and the
+  # gates report missing tooling as failure. Then format, because vp check stops at
+  # the first stage and an unformatted file would hide every lint and type error.
+  (cd "$dir" && vp install >/dev/null 2>&1) || true
+  (cd "$dir" && vp fmt >/dev/null 2>&1) || true
   cmd_doctor "$dir" || true
 }
 
 cmd_init() {
   local dir="$1"; shift; local template="${1:-vite:application}"
   need vp; need gh
-  vp create "$template" --no-interactive --git --hooks -- "$dir"   # verify exact flag syntax at M0
-  cmd_apply "$dir"
+  vp create "$template" --directory "$dir" --no-interactive --git --hooks --no-agent
+  cmd_apply "$dir" --scaffold
   (cd "$dir" && gh repo create --source=. --private --push) || echo "skipped gh repo create"
   cmd_labels "$dir"
   echo "Human-only steps: branch protection on main (require Check + Test), secrets. Generate a wizard with /wizard."
@@ -60,17 +102,17 @@ cmd_doctor() {
   chk "hooks installed"               "vp hooks status | grep -qi 'hooksPath'"
   chk ".claude/skills symlink"        "[ \"\$(readlink .claude/skills)\" = ../.agents/skills ]"
   chk "every skill has a name"        "! grep -L '^name:' .agents/skills/*/SKILL.md | grep ."
-  chk "no duplicate skill names"      "[ \"\$(grep -h '^name:' .agents/skills/*/SKILL.md | sort | uniq -d | wc -l)\" = 0 ]"
+  chk "no duplicate skill names"      "[ -z \"\$(grep -h '^name:' .agents/skills/*/SKILL.md | sort | uniq -d)\" ]"
   chk "gh authenticated"              "gh auth status"
   chk "labels present"                "gh label list --limit 200 | grep -q ready-for-agent"
   chk "ci workflow present"           "[ -f .github/workflows/ci.yml ]"
   chk "settings.json parses"          "jq . .claude/settings.json"
   chk "hooks executable"              "[ -x .claude/hooks/mode.sh ] && [ -x .claude/hooks/block-dangerous-git.sh ]"
   chk "state dir ignored"             "git check-ignore -q .claude/state/mode"
-  chk "vp check"                      "vp check"
-  chk "typecheck"                     "pnpm typecheck"
+  chk "vp check (format, lint, types)" "vp check"
   chk "tests"                         "vp test run"
   chk "models sheet"                  "[ -f \"\$HOME/.claude/pstack-models.md\" ]"
+  chk "AGENTS.md is Factory918's"     "grep -q 'factory918' AGENTS.md"
   chk "slots filled (/factory-start)" "! grep -q '<[A-Za-z].*slot\|<Project name>\|<One paragraph' AGENTS.md"
   chk "slim knowledge present"        "[ -f docs/factory918/PHILOSOPHY.md ] && [ -f docs/factory918/MANUAL.md ]"
   chk "glue skills resolve"           "[ -f .agents/skills/factory918/SKILL.md ] && [ -f .agents/skills/factory-start/SKILL.md ] && [ -f .agents/skills/knowledge/SKILL.md ]"

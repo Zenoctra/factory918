@@ -1,15 +1,7 @@
 {
-  "_comment": "Merged into package.json by `factory918 apply`. `vp create` writes the rest.",
+  "_comment": "Merged into package.json by `factory918 apply`. Only what `vp` has no built-in for: dev, build, test, lint, fmt and check are built-in commands, and `vp check` already covers types.",
   "scripts": {
-    "dev": "vp dev",
-    "build": "vp build",
-    "test": "vp test run",
-    "lint": "vp lint --report-unused-disable-directives",
-    "fmt": "vp fmt",
-    "fmt:check": "vp fmt --check",
-    "typecheck": "tsc --noEmit",
-    "check": "vp check",
-    "prepare": "vp hooks enable",
+    "prepare": "vp config",
     "sg": "ast-grep scan",
     "sg:test": "ast-grep test"
   },
@@ -17,6 +9,7 @@
     "node": "^24"
   },
   "devDependencies": {
-    "@ast-grep/cli": "0.45.3"
+    "@ast-grep/cli": "0.45.3",
+    "@oxlint/plugins": "1.82.0"
   }
 }

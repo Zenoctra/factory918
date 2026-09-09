@@ -7,7 +7,7 @@ export default defineConfig({
     environment: "node",
     // Vendored code is read-only upstream: .repos/ holds dependency sources,
     // .agents/skills/ holds the pstack and Pocock skills with their own test suites.
-    exclude: [".repos/**", ".agents/skills/**", "node_modules/**", "dist/**"],
+    exclude: [".repos/**", ".agents/skills/**", ".claude/skills/**", "node_modules/**", "dist/**"],
     hookTimeout: 60_000,
     testTimeout: 60_000,
   },
@@ -16,10 +16,28 @@ export default defineConfig({
     "*": "vp fmt --no-error-on-unmatched-pattern",
   },
   fmt: {
-    ignorePatterns: [".repos/**", ".agents/skills/**", "dist/**", "node_modules/**", "pnpm-lock.yaml", "*.tsbuildinfo", ".artifacts/**"],
+    ignorePatterns: [
+      ".repos/**",
+      ".agents/skills/**",
+      ".claude/skills/**",
+      "docs/factory918/**",
+      "dist/**",
+      "node_modules/**",
+      "pnpm-lock.yaml",
+      "*.tsbuildinfo",
+      ".artifacts/**",
+    ],
     sortPackageJson: {},
   },
   lint: {
+    // Vendored upstream code, reached through .agents/skills and the .claude/skills symlink.
+    ignorePatterns: [
+      ".repos/**",
+      ".agents/skills/**",
+      ".claude/skills/**",
+      "dist/**",
+      "node_modules/**",
+    ],
     plugins: ["eslint", "oxc", "typescript", "unicorn", "react"], // drop "react" for non-React projects
     jsPlugins: ["./oxlint-plugin-project/index.ts"],
     categories: { correctness: "error", suspicious: "warn", perf: "warn" },
