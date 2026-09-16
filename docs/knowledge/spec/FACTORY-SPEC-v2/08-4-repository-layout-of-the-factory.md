@@ -56,7 +56,7 @@ factory918/                           this repository (its own git repo)
     ├── docs/agents/
     │   ├── issue-tracker.md  domain.md  triage-labels.md      Matt's GitHub templates, pre-filled
     │   ├── review-ladder.md  evidence.md  feedback-loops.md   §7.5
-    │   ├── models.md                  the role→model defaults for /setup-pstack (§7.12)
+    │   ├── models.md                  the role→model table; `factory918 install` writes the sheet (§7.12, P5)
     │   └── ledger.md                  one line per surprise; rules are promoted from here
     ├── docs/adr/0001-toolchain.md
     ├── vite.config.ts                 fmt / lint / staged / test (§7.2)

@@ -17,7 +17,8 @@ The full design is `docs/FACTORY-SPEC-v2.md`. The reasoning is `docs/knowledge/c
                               agents, settings), docs/agents/, docs/adr/, vite.config.ts, oxlint plugin,
                               ast-grep/, .vite-hooks/, .github/ (CI, labels, PR template), .repos/
     profiles/                 vite-plus (default), react-native, python
-    patches/                  reserved for `factory918 sync`; the patch list lives in SOURCES.md today
+    patches/                  unified diffs against the upstream pins, applied in `series` order by `factory918 sync`
+    machine/                  per-machine files `factory918 install` writes: pstack's model sheet
     research/                 read-only corpus: notes/, pages/, and the pinned upstream sources
                               1-matt-pocock/  2-theo-t3code-excerpts/  3-pstack/  4-ras-mic/  superseded/
     tools/build_knowledge.py  regenerates docs/knowledge/ and the slim copies in template/docs/factory918/

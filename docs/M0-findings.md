@@ -135,6 +135,10 @@ M6, React Native: `apply --profile react-native` writes `apps/mobile/eas.json` a
 
 `sync`, run in this repository: 51 pstack skills and the agents re-copied from the open-pstack pin with `no-comments` and `comment-sicko.md` dropped, 14 Pocock skills re-copied with `code-review` landing as `spec-review`, our six skills and `ticket.md` kept, all eleven patches applied, and `git status` clean under `template/` afterwards. A patch that no longer applies is reported as `FAILED` and the command exits non-zero.
 
+## The models sheet (2026-09-16)
+
+The vendored `/setup-pstack` requires all four matrix families (Fable, Opus, Codex Sol, Grok) to pass a live probe before it writes anything, and pstack's launcher never falls back, so on a Claude-only machine the Feature playbook's default delegate (`grok:grok-4.6@xhigh`) would drop out on the first ticket. `factory918 install` now writes `~/.claude/pstack-models.md` from `machine/pstack-models.md`, every role on `claude:opus` or `claude:fable` with effort as the cost lever, and adds the `@` include to `~/.claude/CLAUDE.md`. Native lanes exist for every effort of both families (`.claude/agents/pstack-*-*.md`); nothing at dispatch time requires the other two families. pstack has no Sonnet family, so decision 13's Sonnet roles run `claude:opus@medium`. Decision P5. The first ticket on a real project is the live check of this sheet.
+
 ## Still open
 
 - The React Native profile's Expo app under `vp check`, the fingerprint workflow on a real PR, and a simulator screenshot (first mobile project).

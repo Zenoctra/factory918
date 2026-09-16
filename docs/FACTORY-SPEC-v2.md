@@ -167,7 +167,7 @@ factory918/                           this repository (its own git repo)
     ├── docs/agents/
     │   ├── issue-tracker.md  domain.md  triage-labels.md      Matt's GitHub templates, pre-filled
     │   ├── review-ladder.md  evidence.md  feedback-loops.md   §7.5
-    │   ├── models.md                  the role→model defaults for /setup-pstack (§7.12)
+    │   ├── models.md                  the role→model table; `factory918 install` writes the sheet (§7.12, P5)
     │   └── ledger.md                  one line per surprise; rules are promoted from here
     ├── docs/adr/0001-toolchain.md
     ├── vite.config.ts                 fmt / lint / staged / test (§7.2)
@@ -190,7 +190,7 @@ Why one skills folder: Claude Code reads `.claude/skills/`; Codex, T3 Code and R
 
 Take `plugins/pstack/skills/*` except `make-bot-ui` (not in the port) and `no-comments` (excluded by decision 4: comments stay); `plugins/pstack/agents/*` except `comment-sicko.md`; and the hook text `plugins/pstack/hooks/session-start-context.md` as raw material for our own mandate (§7.4). Reasons to vendor from this port rather than upstream or pstack-claude: it has already stripped `disable-model-invocation: true` from action skills (Claude Code's docs: with that flag "Claude cannot invoke through the Skill tool" **[primary: code.claude.com/docs/en/skills]**), marked the 21 principles `user-invocable: false`, substituted Cursor's `Task`/`AskQuestion`/`/loop`/`control-ui` with Claude Code equivalents, kept `paths: ["**/*.ts", "**/*.tsx"]` on `typescript-best-practices`, and is five minor versions newer than pstack-claude. Codex support is first-class when you want it.
 
-Model roles: run `/setup-pstack` once per machine; it writes `~/.claude/pstack-models.md` and adds `@~/.claude/pstack-models.md` to `~/.claude/CLAUDE.md` **[primary: open-pstack setup-pstack/SKILL.md]**. The defaults for Manuel's plan are in `template/docs/agents/models.md` (§7.12): Opus 5 default, Sonnet 5 for mechanical delegates and explorers, Fable 5.1 reserved, `arena` off. Decided (DECISIONS.md #13).
+Model roles: `factory918 install` writes them once per machine, since the vendored `/setup-pstack` refuses to save without Codex and Grok lanes (decision P5); it writes `~/.claude/pstack-models.md` and adds `@~/.claude/pstack-models.md` to `~/.claude/CLAUDE.md` **[primary: open-pstack setup-pstack/SKILL.md]**. The defaults for Manuel's plan are in `template/docs/agents/models.md` (§7.12): Opus 5 default, Sonnet 5 for mechanical delegates and explorers, Fable 5.1 reserved, `arena` off. Decided (DECISIONS.md #13).
 
 ### 5.2 From mattpocock/skills (planning only) **[primary: 6654f6b, v1.2.3]**
 

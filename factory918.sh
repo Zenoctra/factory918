@@ -76,6 +76,11 @@ cmd_install() {
   echo "installed: $home -> $F918_DIR"
   echo "installed: $bin/factory918"
   case ":$PATH:" in *":$bin:"*) ;; *) echo "add to your shell rc: export PATH=\"\$HOME/.local/bin:\$PATH\"" ;; esac
+  # The one user-level write the factory makes (spec §5.5): pstack's role sheet, from machine/.
+  if [ ! -f "$HOME/.claude/pstack-models.md" ]; then
+    mkdir -p "$HOME/.claude"; cp "$F918_DIR/machine/pstack-models.md" "$HOME/.claude/pstack-models.md"; echo "installed: ~/.claude/pstack-models.md"
+  fi
+  grep -qx '@~/.claude/pstack-models.md' "$HOME/.claude/CLAUDE.md" 2>/dev/null || { printf '@~/.claude/pstack-models.md\n' >> "$HOME/.claude/CLAUDE.md"; echo "installed: include line in ~/.claude/CLAUDE.md"; }
   command -v vp >/dev/null || echo "next: install Vite+ with  curl -fsSL https://vite.plus -o /tmp/vp.sh && VP_VERSION=0.3.1 VP_NODE_MANAGER=yes bash /tmp/vp.sh"
   command -v gh >/dev/null && gh auth status >/dev/null 2>&1 || echo "next: gh auth login"
 }
@@ -168,7 +173,7 @@ cmd_doctor() {
   chk "state dir ignored"             "git check-ignore -q .claude/state/mode"
   chk "vp check (format, lint, types)" "vp check"
   chk "tests"                         "vp test run"
-  [ -f "$HOME/.claude/pstack-models.md" ] && echo "PASS  models sheet" || echo "NOTE  models sheet: run /setup-pstack once on this machine"
+  [ -f "$HOME/.claude/pstack-models.md" ] && echo "PASS  models sheet" || echo "NOTE  models sheet: run factory918 install on this machine"
   chk "AGENTS.md is Factory918's"     "grep -q 'factory918' AGENTS.md"
   chk "slots filled (/factory-start)" "! grep -q '<[A-Za-z].*slot\|<Project name>\|<One paragraph' AGENTS.md"
   chk "slim knowledge present"        "[ -f docs/factory918/PHILOSOPHY.md ] && [ -f docs/factory918/MANUAL.md ]"

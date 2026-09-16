@@ -5,7 +5,7 @@ How to run a project through the system, from an empty directory to a merged pul
 ## The loop in one screen
 
 ```
-Machine    clone factory918  →  factory918 install  →  Vite+ installer  →  gh auth login  →  /setup-pstack   [once]
+Machine    clone factory918  →  factory918 install  →  Vite+ installer  →  gh auth login                    [once]
 Day 0      factory918 init  →  /factory-start (interview)  →  /factory-doctor
 Plan       /wayfinder (big, foggy)  or  /grill-with-docs (one feature)  →  /to-spec  →  /to-tickets     [human decides]
 Tickets    GitHub issues, label ready-for-agent, "Blocked by" edges; the frontier = tickets with no open blockers
@@ -21,11 +21,9 @@ If you do not know what to do next, `/factory918`: it maps the situation to the 
 
 Once per computer. Clone this repository anywhere, then from the clone:
 
-1. `./factory918.sh install`. It links `~/.factory918` to the clone (the `knowledge` skill and `$FACTORY918_HOME` default to it) and puts `factory918` in `~/.local/bin`. Add `~/.local/bin` to `PATH` if it prints that line.
+1. `./factory918.sh install`. It links `~/.factory918` to the clone (the `knowledge` skill and `$FACTORY918_HOME` default to it), puts `factory918` in `~/.local/bin`, and writes pstack's role sheet `~/.claude/pstack-models.md` with its include line in `~/.claude/CLAUDE.md` if they are missing. Add `~/.local/bin` to `PATH` if it prints that line.
 2. Install Vite+: `curl -fsSL https://vite.plus -o /tmp/vp.sh && VP_VERSION=0.3.1 VP_NODE_MANAGER=yes bash /tmp/vp.sh`, then open a new terminal. Vite+ then selects the Node and pnpm version each project declares; `vp env doctor` shows the state. Do not `npm install -g vite-plus`: the global prefix is root-owned on a stock macOS Node, and 0.3.1 needs a newer Node than the stock installer ships.
 3. `brew install gh uv ast-grep` (or the equivalents), then `gh auth login`. Python tooling needs nothing else; `uv run` resolves ruff, pyright and pytest per project.
-4. In any Claude Code session, `/setup-pstack` once. It writes `~/.claude/pstack-models.md`, the role-to-model table pstack reads. Until it has run, `factory918 doctor` prints a NOTE, not a failure.
-
 `factory918 doctor` on any project reports the machine state on its first lines.
 
 ## Day 0: a new project
@@ -77,16 +75,17 @@ The default is one monorepo per product: `apps/web`, `apps/mobile`, `apps/admin`
 
 ## Models and cost
 
-You are on the $200 Claude plan; the limit is shared across models and Fable 5.1 spends it fastest. Defaults written by `/setup-pstack` (edit `~/.claude/pstack-models.md` to change; one file):
+You are on the $200 Claude plan; the limit is shared across models and Fable 5.1 spends it fastest. `factory918 install` writes `~/.claude/pstack-models.md` (edit it to change a role; one file). pstack has no Sonnet family, so cheap work runs Opus at `medium` effort:
 
 | Role | Model | Why |
 |---|---|---|
 | Your interactive session (execution) | Opus 5 | strong, cheaper than Fable, the default worker |
 | Your interactive session (grilling) | Opus 5, switch to Fable for `/to-spec` + `/to-tickets` | judgment where it is the product, briefly |
-| Feature and refactoring delegates, `how` explorers, `why` investigators, swarm workers | Sonnet 5 | mechanical and read-only bulk |
+| Feature and refactoring delegates, `how` explorers, swarm workers | Opus 5 at medium effort | mechanical and read-only bulk |
 | Bug fix, perf issue, hillclimb | Opus 5 | needs reasoning, runs often |
 | Strongest judgment, prose, synthesis | Opus 5; Fable on request | override per ticket when the design is hard |
-| Panels (`how` critics, `architect` runners, `interrogate` reviewers) | Opus 5 + Sonnet 5; add Fable only for `interrogate` on a contested design | panels multiply cost by their size |
+| Panels (`how` critics, `architect` runners) | Opus 5 at high and medium effort | panels multiply cost by their size |
+| `interrogate` reviewers | Opus 5 at xhigh effort + Fable 5.1 | the contested path is where Fable earns its cost |
 | `arena` | off by default | the token burner; enable for a specific bake-off |
 
 Rough cost order of the skills, highest first: `arena`, `swarm`, `interrogate`, `how` in critique mode, `/wayfinder` with parallel research, `/to-tickets` on a large spec (one user reported 1.5M tokens for 14 tickets), then everything else. Check the usage page weekly; if Fable is over a third of spend, move a role down.
