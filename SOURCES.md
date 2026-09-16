@@ -8,7 +8,7 @@ Upstream pins for everything vendored into `template/`. Pinned copies of each up
 | github.com/mattpocock/skills (copy: `research/1-matt-pocock/skills-repo/`) | 6654f6b (2026-08-24; v1.2.3) | grilling, grill-me, grill-with-docs, domain-modeling, to-spec, to-tickets, wayfinder, research, prototype, setup-matt-pocock-skills, writing-for-agents, wizard, wait-what, code-review (→ spec-review); setup templates issue-tracker-github.md, domain.md, triage-labels.md; diagnosing-bugs Phase 1 ladder (quoted in docs/agents/feedback-loops.md) | MIT |
 | github.com/pingdotgg/t3code (excerpts: `research/2-theo-t3code-excerpts/`) | f559fe0b (2026-09-04) | `.github/workflows/pr-size.yml` verbatim; the shape of `ci.yml`, `vite.config.ts`, `.vite-hooks/pre-commit`, the custom-rule pattern, the AGENTS.md structure | MIT |
 
-## Patches (applied in code by `tools/bootstrap/build_template.py`; to be re-applied by `factory918 sync`)
+## Patches (unified diffs in `patches/`, applied in the order `patches/series` lists; the list below says what each one does)
 
 1. Namespace: `pstack:<name>` → `<name>` in all vendored pstack markdown and the session mandate; mandate gains a PHASES block. The sweep also covers `*.ts` under `poteto-mode/scripts/`, where `model-matrix.test.ts` asserts the `<!-- models:begin -->` markers that `setup-pstack/SKILL.md` writes.
 2. Router: Ticket playbook line added before "Opening a PR" in `poteto-mode/SKILL.md`; `playbooks/ticket.md` added.

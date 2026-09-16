@@ -1,0 +1,10 @@
+--- a/unslop/SKILL.md
++++ b/unslop/SKILL.md
+@@ -1,6 +1,6 @@
+ ---
+ name: unslop
+-description: Cut AI tells from any writing. Must always apply.
++description: Cut AI tells from any text written for a human reader (commit messages, PR titles and bodies, issue comments, docs, replies). Use whenever such text is about to be written or edited.
+ ---
+ 
+ # Unslop
