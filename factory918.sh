@@ -31,22 +31,60 @@ EOF
 
 FACTORY_OWNED="AGENTS.md CLAUDE.md vite.config.ts .vite-hooks/pre-commit"
 
+# Python package at python/<name>: pyproject, a package, a smoke test, the CI job, a lockfile,
+# and *.py in the commit hook. A profile is additive like apply: nothing that exists is replaced.
+apply_python() {
+  local dir="$1" name="$2" pkg="$1/python/$2" P="$F918_DIR/profiles/python"
+  need uv
+  mkdir -p "$pkg/src/$name" "$pkg/tests" "$dir/.github/workflows"
+  [ -f "$pkg/pyproject.toml" ] || sed "s/<name>/$name/g" "$P/pyproject.toml" > "$pkg/pyproject.toml"
+  [ -f "$pkg/src/$name/__init__.py" ] || printf '"""%s."""\n' "$name" > "$pkg/src/$name/__init__.py"
+  [ -f "$pkg/tests/test_smoke.py" ] || printf 'import %s\n\n\ndef test_imports() -> None:\n    assert %s.__doc__\n' "$name" "$name" > "$pkg/tests/test_smoke.py"
+  [ -f "$dir/.github/workflows/python.yml" ] || sed "s/<name>/$name/g" "$P/python.yml" > "$dir/.github/workflows/python.yml"
+  [ -f "$pkg/uv.lock" ] || (cd "$pkg" && uv lock -q)
+  # Same thin hook for Python: the formatter only, on commit.
+  if [ -f "$dir/vite.config.ts" ] && ! grep -q '"\*\.py"' "$dir/vite.config.ts"; then
+    python3 - "$dir/vite.config.ts" "$name" <<'EOF'
+import pathlib, re, sys
+p = pathlib.Path(sys.argv[1]); t = p.read_text()
+task = f'"*.py": "uv run --project python/{sys.argv[2]} ruff format",'
+t = re.sub(r'(\n(\s*)"\*": "vp fmt[^\n]*\n)', lambda m: m.group(1) + m.group(2) + task + "\n", t, count=1)
+p.write_text(t)
+EOF
+  fi
+}
+
+# Expo app files and the native-fingerprint signal. The app itself is one command the
+# human or the agent runs, printed at the end, because it downloads an Expo SDK.
+apply_react_native() {
+  local dir="$1" P="$F918_DIR/profiles/react-native"
+  mkdir -p "$dir/apps/mobile" "$dir/.github/workflows"
+  [ -f "$dir/apps/mobile/eas.json" ] || cp "$P/eas.json.example" "$dir/apps/mobile/eas.json"
+  [ -f "$dir/.github/workflows/mobile-fingerprint-check.yml" ] || cp "$P/mobile-fingerprint-check.yml" "$dir/.github/workflows/mobile-fingerprint-check.yml"
+  [ -f "$dir/apps/mobile/package.json" ] || echo "Next: (cd $dir && npx create-expo-app@latest apps/mobile --template blank-typescript), then vp install."
+}
+
 cmd_apply() {
   local dir="${1:-.}"; need jq
   shift || true
-  local profile="" scaffold=""
+  local profile="" scaffold="" name=""
   while [ $# -gt 0 ]; do case "$1" in
     --profile) profile="$2"; shift 2 ;;
+    --name) name="$2"; shift 2 ;;
     --scaffold) scaffold=1; shift ;;
     *) shift ;;
   esac; done
-  if [ -n "$profile" ]; then
-    [ -d "$F918_DIR/profiles/$profile" ] || { echo "unknown profile: $profile" >&2; exit 1; }
-    echo "TODO: copy $F918_DIR/profiles/$profile files into $dir (python.yml -> .github/workflows/, pyproject.toml -> python/<name>/, fingerprint workflow -> .github/workflows/, eas.json.example -> apps/mobile/eas.json) and record the profile in .factory918/manifest.json"
-  fi
   mkdir -p "$dir/.factory918"
   local manifest="$dir/.factory918/manifest.json"
-  [ -f "$manifest" ] || echo '{"version":"'"$VERSION"'","files":{}}' > "$manifest"
+  [ -f "$manifest" ] || echo '{"version":"'"$VERSION"'","files":{},"profiles":[]}' > "$manifest"
+  if [ -n "$profile" ]; then
+    case "$profile" in
+      python) apply_python "$dir" "${name:-$(basename "$(cd "$dir" && pwd)")}" ;;
+      react-native) apply_react_native "$dir" ;;
+      *) echo "unknown profile: $profile (python | react-native)" >&2; exit 1 ;;
+    esac
+    tmp="$(mktemp)"; jq --arg p "$profile" '.profiles = ((.profiles // []) + [$p] | unique)' "$manifest" > "$tmp" && mv "$tmp" "$manifest"
+  fi
   # Copy every managed file that does not exist locally; record its hash. Never overwrite an existing file here.
   (cd "$TEMPLATE" && find . -type f ! -name '.gitkeep' -print0) | while IFS= read -r -d '' rel; do
     rel="${rel#./}"
@@ -88,6 +126,7 @@ cmd_init() {
   local dir="$1"; shift; local template="${1:-vite:application}"
   need vp; need gh
   vp create "$template" --directory "$dir" --no-interactive --git --hooks --no-agent
+  git -C "$dir" branch -M main   # vp create uses the machine default; CI, the guard and protection assume main
   cmd_apply "$dir" --scaffold
   (cd "$dir" && gh repo create --source=. --private --push) || echo "skipped gh repo create"
   cmd_labels "$dir"

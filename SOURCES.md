@@ -17,5 +17,5 @@ Upstream pins for everything vendored into `template/`. Pinned copies of each up
 5. `unslop/SKILL.md`: trigger-focused description so it fires on human-facing text.
 6. `code-review` → `spec-review` (directory, `name:`, first heading).
 7. Session mandate replaced by ours (`template/.claude/hooks/session-mandate.md`).
-8. `mobile-fingerprint-check.yml` copied verbatim into `profiles/react-native/` (T3 Code, MIT).
+8. `mobile-fingerprint-check.yml` copied into `profiles/react-native/` (T3 Code, MIT) with two edits: `runs-on: ubuntu-latest` instead of T3's Blacksmith runner, and the watched paths reduced to `apps/mobile/**`, `packages/shared/**` and the workspace files.
 9. Every remaining `/no-comments` reference removed from `poteto-mode/` (router step list, `playbooks/autopilot-full.md`, `playbooks/autopilot-stack.md`, `playbooks/multi-phase-plan.md`, `references/codex-tools.md`), since the skill is not vendored (decision 4).

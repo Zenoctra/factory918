@@ -1,4 +1,4 @@
-<!-- lines: 43 | source: core/DECISIONS.md | part 1/1 | title: Factory918: decisions -->
+<!-- lines: 45 | source: core/DECISIONS.md | part 1/1 | title: Factory918: decisions -->
 
 ## Contents (line numbers are for the Read tool's offset)
 - L12: Settled (2026-09-09)
@@ -40,4 +40,6 @@ Mobile profile Expo/RN (decision 10); Python supported both as a monorepo packag
 | # | Decision | Choice | Reason |
 |---|---|---|---|
 | P1 | Dev environment isolation | No containers for the dev toolchain. Vite+'s node manager selects the Node and package-manager version each project declares. A `compose.yml` slot covers backing services when a project needs one | Decision 10 makes mobile Expo/RN, and an iOS simulator cannot run in a Linux container, so containers would split the environment in two from day one. The write hook calls `vp fmt` on every agent edit, and routing that through `docker exec` costs latency on every write. On a brownfield repo a container is the opposite of `apply` being additive. Vite+ already gives per-project version isolation for the JavaScript toolchain, `uv` gives it for Python, and CI is the gate that has to be clean. Revisit if a project brings conflicting system-level dependencies. Manuel, 2026-09-09. |
+| P3 | Branch protection on private repositories | Not enforced by GitHub until Manuel chooses: GitHub Pro, public repositories, or none. Until then "the agent never merges" rests on `AGENTS.md`, the git guard hook and the human; `factory918 init` prints the protection step as a human-only step | GitHub's free plan refuses branch protection and rulesets on private repositories (verified 2026-09-16 on the M5 throwaway). Decision 8 makes repositories private by default, so the two collide and only Manuel can pick. |
+| P4 | Python package name | `factory918 apply --profile python` names the package after the project directory; `--name <name>` overrides | The spec says `python/<name>` and never says where the name comes from. A default that needs no question keeps Day 0 short. |
 | P2 | Tool versions in CI | Pin every tool CI runs to an exact version, as a devDependency where the tool publishes one | `dlx` and `npx` resolve the latest version, so a rule engine or formatter can change under a project with no diff to show for it. Spec §0 rule 1 already says to pin what you install; this extends it to what CI fetches. First applied to `@ast-grep/cli` 0.45.3 in M0. |

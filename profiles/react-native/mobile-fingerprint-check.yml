@@ -15,8 +15,6 @@ on:
   pull_request:
     paths:
       - apps/mobile/**
-      - packages/client-runtime/**
-      - packages/contracts/**
       - packages/shared/**
       - assets/**
       - scripts/**
@@ -32,7 +30,7 @@ concurrency:
 jobs:
   fingerprint:
     name: Native fingerprint diff
-    runs-on: blacksmith-8vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       issues: write
