@@ -5,7 +5,8 @@ How to run a project through the system, from an empty directory to a merged pul
 ## The loop in one screen
 
 ```
-Day 0      factory918 init  →  /factory-start (interview)  →  /factory918 doctor  →  /setup-pstack once per machine
+Machine    clone factory918  →  factory918 install  →  Vite+ installer  →  gh auth login  →  /setup-pstack   [once]
+Day 0      factory918 init  →  /factory-start (interview)  →  /factory-doctor
 Plan       /wayfinder (big, foggy)  or  /grill-with-docs (one feature)  →  /to-spec  →  /to-tickets     [human decides]
 Tickets    GitHub issues, label ready-for-agent, "Blocked by" edges; the frontier = tickets with no open blockers
 Execute    /poteto-mode "#N"  →  Ticket playbook  →  how/why → design → build → prove → PR "Closes #N"   [agent proceeds]
@@ -16,19 +17,29 @@ Retro      weekly: /reflect; promote recurring corrections to lint rules or AGEN
 
 If you do not know what to do next, `/factory918`: it maps the situation to the entry point.
 
+## Day 0: a new machine
+
+Once per computer. Clone this repository anywhere, then from the clone:
+
+1. `./factory918.sh install`. It links `~/.factory918` to the clone (the `knowledge` skill and `$FACTORY918_HOME` default to it) and puts `factory918` in `~/.local/bin`. Add `~/.local/bin` to `PATH` if it prints that line.
+2. Install Vite+: `curl -fsSL https://vite.plus -o /tmp/vp.sh && VP_VERSION=0.3.1 VP_NODE_MANAGER=yes bash /tmp/vp.sh`, then open a new terminal. Vite+ then selects the Node and pnpm version each project declares; `vp env doctor` shows the state. Do not `npm install -g vite-plus`: the global prefix is root-owned on a stock macOS Node, and 0.3.1 needs a newer Node than the stock installer ships.
+3. `brew install gh uv ast-grep` (or the equivalents), then `gh auth login`. Python tooling needs nothing else; `uv run` resolves ruff, pyright and pytest per project.
+4. In any Claude Code session, `/setup-pstack` once. It writes `~/.claude/pstack-models.md`, the role-to-model table pstack reads. Until it has run, `factory918 doctor` prints a NOTE, not a failure.
+
+`factory918 doctor` on any project reports the machine state on its first lines.
+
 ## Day 0: a new project
 
-1. `factory918 init <dir> --template vite:application` (or `vite:monorepo` for a multi-surface product, which is the default shape for Manuel's projects). This runs `vp create`, applies the template, creates the GitHub repo (private) and its labels, and prints the human-only steps.
+1. `factory918 init <dir> [vite:monorepo|vite:application|vite:library]` (`vite:monorepo` is the default shape for a multi-surface product). This runs `vp create` with the default branch set to `main` and Vite+'s own `AGENTS.md` suppressed, applies the template, installs dependencies, formats, creates the private GitHub repo and its labels, and prints the human-only steps.
 2. Open Claude Code in the project and run `/factory-start`. It interviews you, using Matt's grilling primitive, over the decisions the template cannot make for you: the one-paragraph description, the surfaces, the toolchain profiles in play (Vite+ web, React Native, Python), uncommon dependencies to vendor into `.repos/`, review bots, model tiers, repo visibility. It writes the `AGENTS.md` slots, `docs/adr/0001-toolchain.md`, `.repos/sources.json` and the review-ladder bot list. Until this has run, `factory918 doctor` reports the project as unconfigured.
-3. Do the human-only steps it lists: branch protection on `main` requiring `Check` and `Test`, any secrets. `/wizard` will generate a click-by-click script for them.
-4. `/setup-pstack` once per machine. It writes `~/.claude/pstack-models.md` (the role-to-model table; defaults in the "Models and cost" section below).
-5. `factory918 doctor` until every line is PASS.
+3. Do the human-only steps it lists: any secrets, and branch protection on `main` requiring `Check` and `Test` where the plan allows it. GitHub's free plan refuses protection on private repositories (decision P3); until that is settled, the PR page is the gate and the human checks it before merging. `/wizard` will generate a click-by-click script for the steps that exist.
+4. `/factory-doctor` until every line is PASS or NOTE.
 
 You are now in planning. A greenfield project has no code to grill against, so the first session is `/grill-me` or `/wayfinder` on the idea; the second is `/grill-with-docs` on the first feature once the scaffold exists.
 
 ## Day 0: an existing project
 
-`factory918 apply` is additive: it never overwrites a file you already have. Then: `vp migrate` if the project is not on Vite+; expect CI to fail on old code and use debt ceilings (`maxOccurrences` in `vite.config.ts` overrides, `per-file-ignores` in `pyproject.toml`) so new rules are absolute for new code and a ratchet for old code. Build the glossary with `/grill-with-docs help me document this repo`; expect fifty questions and answer them yourself, because an agent-authored glossary you do not understand is worse than none. Generate the verification skill with `/create-verification-skill` as soon as the app runs.
+`factory918 apply` is additive: it never overwrites a file you already have. If the repo came from `vp create` moments ago, `factory918 apply --scaffold` replaces the four files Vite+ scaffolds and Factory918 owns (`AGENTS.md`, `CLAUDE.md`, `vite.config.ts`, `.vite-hooks/pre-commit`); `init` does this for you. A Python package or a mobile app comes from `factory918 apply --profile python --name <pkg>` or `--profile react-native`; profile files are written once and are yours after that. Then: `vp migrate` if the project is not on Vite+; expect CI to fail on old code and use debt ceilings (`maxOccurrences` in `vite.config.ts` overrides, `per-file-ignores` in `pyproject.toml`) so new rules are absolute for new code and a ratchet for old code. Build the glossary with `/grill-with-docs help me document this repo`; expect fifty questions and answer them yourself, because an agent-authored glossary you do not understand is worse than none. Generate the verification skill with `/create-verification-skill` as soon as the app runs.
 
 ## Planning
 
@@ -82,7 +93,7 @@ Rough cost order of the skills, highest first: `arena`, `swarm`, `interrogate`, 
 
 ## Updating the factory
 
-`factory918 update` performs a three-way merge per managed file: template-unchanged files keep your edits; locally-untouched files take the new template; files you deleted stay deleted; files changed on both sides are merged with `git merge-file`, and conflicts are written beside the file for you to resolve. `factory918 sync` re-vendors the upstream skills from the pins in `SOURCES.md` and re-applies the patches. Run `factory918 doctor` after either.
+`git -C ~/.factory918 pull`, then `factory918 update` in the project. It performs a three-way merge per managed file: template-unchanged files keep your edits; locally-untouched files take the new template; files you deleted stay deleted; files changed on both sides are merged with `git merge-file`, and a real collision is written beside the file as `<file>.factory-merge` with the usual conflict markers while your file is left alone. Resolve it, delete the `.factory-merge`, and run `factory918 doctor`. `factory918 sync` re-vendors the upstream skills from the pins in `SOURCES.md` and re-applies the patches. Run `factory918 doctor` after either.
 
 ## Troubleshooting
 
@@ -91,5 +102,7 @@ Rough cost order of the skills, highest first: `arena`, `swarm`, `interrogate`, 
 - **`gh issue create --label ready-for-agent` fails.** Labels are missing; `factory918 labels`.
 - **A hook blocked a git command.** By design: no pushes to `main`, no force-push, no destructive resets. Use `--force-with-lease` on your own branch or ask.
 - **CI red on old code after apply.** Add a debt ceiling for the file, then lower it as you migrate.
+- **`vp check` reports only formatting, but you expected lint or type errors too.** It stops at the first stage that fails. Run `vp fmt`, then `vp check` again to see the rest.
+- **A `.factory-merge` file appeared.** `factory918 update` found a line changed both by you and by the template. Merge it by hand into the real file, delete the `.factory-merge`.
 - **The agent claims verification it did not do.** Ask for the artifact path. If there is none, it did not verify. Add the case to the ledger.
 - **Something feels wrong and you cannot name it.** `/knowledge` with the question; it searches this corpus without reading files whole.

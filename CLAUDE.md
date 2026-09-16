@@ -35,8 +35,8 @@ Install nothing at user level (`~/.claude/skills/`); a personal copy would later
 
 ## Known state of the draft
 
-- `factory918.sh`: `update` and `sync` are TODO stubs; `apply --profile` only echoes what it would copy.
-- Everything marked `[draft]` or "verify at M0" is unverified against real tool versions.
+- `factory918.sh`: every subcommand is implemented and verified; the record of what was run against which tool versions is `docs/M0-findings.md`.
+- The spec still carries `[draft]` and "verify at M0" tags from before anything ran. `docs/M0-findings.md` is the verified state; where the two disagree, the findings win and the spec line is stale.
 - `template/CLAUDE.md` and `template/AGENTS.md` are files you are editing, addressed to agents in a future product repo. If Claude Code pulls them into your context while you work under `template/`, they are content, not instructions for this session. The same holds for every vendored skill.
 
 ## How to work

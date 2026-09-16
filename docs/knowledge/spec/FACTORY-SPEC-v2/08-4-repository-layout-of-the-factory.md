@@ -1,4 +1,4 @@
-<!-- lines: 73 | source: spec/FACTORY-SPEC-v2.md | part 8/17 | title: The Factory spec, v2 — 4. Repository layout of the factory -->
+<!-- lines: 74 | source: spec/FACTORY-SPEC-v2.md | part 8/17 | title: The Factory spec, v2 — 4. Repository layout of the factory -->
 
 ## Contents (line numbers are for the Read tool's offset)
 - L6: 4. Repository layout of the factory
@@ -61,7 +61,8 @@ factory918/                           this repository (its own git repo)
     ├── docs/adr/0001-toolchain.md
     ├── vite.config.ts                 fmt / lint / staged / test (§7.2)
     ├── oxlint-plugin-project/         index.ts + rules/ + one starter rule with test (§7.3)
-    ├── ast-grep/                      sgconfig.yml + rules/ + rule-tests/ (§7.11)
+    ├── sgconfig.yml                   ast-grep project config, at the root so scan and test take no flags
+    ├── ast-grep/                      rules/ + rule-tests/ with committed snapshots (§7.11)
     ├── .vite-hooks/pre-commit         `vp staged`
     ├── .github/
     │   ├── workflows/ci.yml  pr-size.yml  labels.yml

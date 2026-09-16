@@ -26,7 +26,7 @@ The full design is `docs/FACTORY-SPEC-v2.md`. The reasoning is `docs/knowledge/c
 
 ## Status
 
-Draft. Nothing has been run against real tool versions. Milestones M0–M8 with acceptance checks are in `docs/FACTORY-SPEC-v2.md` §9. `factory918 update` and `sync` are stubs; `apply --profile` echoes.
+Milestones M0 to M7 are done and their acceptance checks ran; `docs/M0-findings.md` records every tool version and every place the tools disagreed with the spec. M8 is the first real project. `factory918 install` once per machine, then `factory918 init` per project.
 
 ## Licenses
 

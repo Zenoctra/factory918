@@ -52,7 +52,7 @@ export default defineConfig({
     ],
     options: {
       reportUnusedDisableDirectives: "error", // a stale disable comment is itself an error
-      typeAware: true, // docs recommend both; fall back to false if your TS setup conflicts, and keep `pnpm typecheck`
+      typeAware: true, // vp check reports type errors with these on, so there is no separate tsc pass
       typeCheck: true,
     },
   },

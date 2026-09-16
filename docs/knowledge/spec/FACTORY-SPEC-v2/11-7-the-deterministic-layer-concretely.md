@@ -75,12 +75,12 @@ Line-by-line: `test` is Vitest; `.repos` is excluded so vendored sources are nev
     "fmt:check": "vp fmt --check",
     "typecheck": "tsc --noEmit",
     "check": "vp check",
-    "prepare": "vp hooks enable"
+    "prepare": "vp config"
   }
 }
 ```
 
-`vp hooks enable` installs the git-hook dispatcher under `.vite-hooks/_` (git-ignored) and sets `core.hooksPath`; the project-owned `.vite-hooks/pre-commit` is committed **[primary: viteplus.dev/guide/commit-hooks]**. Verify at M1 with `vp hooks status`; if `vp install` already installs hooks, drop the `prepare` line.
+`vp config` (what `vp create` itself writes as `prepare`) installs the git-hook dispatcher under `.vite-hooks/_` (git-ignored), sets `core.hooksPath`, and refreshes Vite+'s delimited block in `AGENTS.md` if one exists; the project-owned `.vite-hooks/pre-commit` is committed **[primary: viteplus.dev/guide/commit-hooks; verified M0]**. `dev`, `build`, `test`, `lint`, `fmt` and `check` are `vp` built-ins and are not aliased as scripts; the template's scripts are `prepare`, `sg` and `sg:test` only, and `vp check` covers types, so there is no `typecheck` script.
 
 ### 7.3 The custom lint plugin (DRAFT)
 
