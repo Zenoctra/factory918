@@ -9,7 +9,7 @@ VERSION="$(cat "$F918_DIR/VERSION" 2>/dev/null || echo 0.1.0)"
 usage() { sed -n '2,3p' "$0"; exit 1; }
 need() { command -v "$1" >/dev/null || { echo "missing: $1" >&2; exit 1; }; }
 
-sha() { sha256sum "$1" | cut -d' ' -f1; }
+sha() { if command -v sha256sum >/dev/null; then sha256sum "$1"; else shasum -a 256 "$1"; fi | cut -d' ' -f1; }
 
 approve_ast_grep() {
   [ -f "$1" ] || return 0
@@ -168,15 +168,103 @@ cmd_labels() {
   done
 }
 
+# Three-way merge per docs/FACTORY-SPEC-v2.md §8.2. For each managed path: O is the template
+# file at the version the project recorded (a git tag in this repo), N the template now, L the
+# project's file. Conflicts land beside the file as <file>.factory-merge; L is left alone.
 cmd_update() {
-  # Three-way merge per docs/FACTORY-SPEC-v2.md §8.2. TODO: implement with `git merge-file -p L O N`.
-  # Needs: the project's recorded template version (manifest), the template at that version (git tag in this repo), the new template.
-  echo "TODO: factory918 update (see docs/FACTORY-SPEC-v2.md §8.2)"; exit 2
+  local dir="${1:-.}"; need jq; need git
+  local manifest="$dir/.factory918/manifest.json"
+  [ -f "$manifest" ] || { echo "no $manifest: run factory918 apply first" >&2; exit 1; }
+  python3 - "$F918_DIR" "$TEMPLATE" "$dir" "$manifest" "$VERSION" <<'EOF'
+import hashlib, json, pathlib, subprocess, sys
+f918, template, project, manifest_path, new_version = sys.argv[1:6]
+template, project = pathlib.Path(template), pathlib.Path(project)
+manifest = json.loads(pathlib.Path(manifest_path).read_text())
+old_version, files = manifest["version"], manifest["files"]
+sha = lambda b: hashlib.sha256(b).hexdigest()
+
+def old_template(rel):
+    r = subprocess.run(["git", "-C", f918, "show", f"v{old_version}:template/{rel}"], capture_output=True)
+    return r.stdout if r.returncode == 0 else None
+
+skip = {"package.scripts.json", ".gitignore.factory"}
+new = {p.relative_to(template).as_posix(): p for p in template.rglob("*") if p.is_file() and p.name != ".gitkeep"}
+report = {"added": [], "updated": [], "kept": [], "merged": [], "conflicts": [], "deleted": [], "unchanged": []}
+for rel in sorted(set(new) | set(files)):
+    if rel in skip:
+        continue
+    entry, N, L = files.get(rel), new.get(rel), project / rel
+    n_bytes = N.read_bytes() if N else None
+    if entry is None:                                  # new in the template
+        if L.exists() and L.read_bytes() != n_bytes:
+            (project / (rel + ".factory-merge")).write_bytes(n_bytes); report["conflicts"].append(rel)
+        else:
+            L.parent.mkdir(parents=True, exist_ok=True); L.write_bytes(n_bytes); report["added"].append(rel)
+        files[rel] = {"template": sha(n_bytes), "state": "added"}
+        continue
+    if entry.get("state") == "deleted":
+        continue
+    if not L.exists():                                 # deleted locally on purpose; never re-add
+        entry["state"] = "deleted"; report["deleted"].append(rel); continue
+    if N is None:                                      # gone from the template; the project keeps it
+        report["kept"].append(rel); continue
+    l_bytes, recorded = L.read_bytes(), entry["template"]
+    if sha(n_bytes) == recorded:
+        report["unchanged"].append(rel); continue
+    if sha(l_bytes) == recorded:                       # untouched locally: take the new template
+        L.write_bytes(n_bytes); entry["template"] = sha(n_bytes); report["updated"].append(rel); continue
+    O = old_template(rel)                              # both changed: merge on the recorded base
+    if O is None or sha(O) != recorded:
+        (project / (rel + ".factory-merge")).write_bytes(n_bytes); report["conflicts"].append(rel + " (no base at v" + old_version + ")")
+        entry["template"] = sha(n_bytes); continue
+    base = project / (rel + ".factory-base"); base.write_bytes(O)
+    r = subprocess.run(["git", "merge-file", "-p", "-L", "project", "-L", f"template v{old_version}", "-L", f"template v{new_version}", str(L), str(base), str(N)], capture_output=True)
+    base.unlink()
+    if r.returncode == 0:
+        L.write_bytes(r.stdout); report["merged"].append(rel)
+    else:
+        (project / (rel + ".factory-merge")).write_bytes(r.stdout); report["conflicts"].append(rel)
+    entry["template"] = sha(n_bytes)
+manifest["version"] = new_version
+pathlib.Path(manifest_path).write_text(json.dumps(manifest, indent=2) + "\n")
+for k in ("added", "updated", "merged", "kept", "deleted", "conflicts"):
+    for rel in report[k]:
+        print(f"{k:9s} {rel}")
+print(f"template {old_version} -> {new_version}: {len(report['unchanged'])} unchanged. "
+      f"{len(report['conflicts'])} to resolve by hand (*.factory-merge)." if report["conflicts"] else
+      f"template {old_version} -> {new_version}: {len(report['unchanged'])} unchanged.")
+EOF
+  cmd_doctor "$dir" || true
 }
 
+# Rebuild template/.agents/skills from the pinned copies under research/ and re-apply
+# patches/series. Vendoring never touches the network: update the pins in research/ first.
+# Our own skills and playbooks stay; VERSION is bumped by hand in the commit that lands this.
 cmd_sync() {
-  # Re-vendor upstream skills from SOURCES.md pins, re-apply patches/, bump VERSION. TODO.
-  echo "TODO: factory918 sync (see docs/FACTORY-SPEC-v2.md §8.1 and SOURCES.md)"; exit 2
+  need git
+  local skills="$TEMPLATE/.agents/skills"
+  local pstack="$F918_DIR/research/3-pstack/open-pstack-claude-code-port/plugins/pstack"
+  local matt="$F918_DIR/research/1-matt-pocock/skills-repo/skills"
+  local ours="factory918 factory-start knowledge mode-plan mode-build factory-doctor"
+  local keep_files="poteto-mode/playbooks/ticket.md"
+  local tmp; tmp="$(mktemp -d)"
+  for k in $keep_files; do mkdir -p "$tmp/keep/$(dirname "$k")"; cp "$skills/$k" "$tmp/keep/$k"; done
+  for d in "$pstack"/skills/*/; do n="$(basename "$d")"; [ "$n" = no-comments ] && continue; rm -rf "$skills/$n"; cp -R "$d" "$skills/$n"; done
+  for n in grilling grill-me grill-with-docs domain-modeling to-spec to-tickets wayfinder research prototype setup-matt-pocock-skills writing-for-agents wizard wait-what; do
+    src="$(find "$matt" -maxdepth 2 -type d -name "$n" | head -1)"; rm -rf "$skills/$n"; cp -R "$src" "$skills/$n"; done
+  rm -rf "$skills/spec-review"; cp -R "$matt/engineering/code-review" "$skills/spec-review"
+  for k in $keep_files; do cp "$tmp/keep/$k" "$skills/$k"; done
+  rm -rf "$TEMPLATE/.claude/agents"; mkdir -p "$TEMPLATE/.claude/agents"; cp "$pstack"/agents/*.md "$TEMPLATE/.claude/agents/"; rm -f "$TEMPLATE/.claude/agents/comment-sicko.md"
+  local failed=0
+  while read -r p; do
+    [ -n "$p" ] || continue
+    if git -C "$skills" apply --check "$F918_DIR/patches/$p" 2>/dev/null; then git -C "$skills" apply "$F918_DIR/patches/$p"; echo "applied  $p"
+    else echo "FAILED   $p (upstream moved; rewrite the patch)"; failed=1; fi
+  done < "$F918_DIR/patches/series"
+  rm -rf "$tmp"
+  for n in $ours; do [ -f "$skills/$n/SKILL.md" ] || { echo "missing our skill: $n" >&2; failed=1; }; done
+  echo "vendored: $(ls -d "$skills"/*/ | wc -l | tr -d ' ') skills. Review with git status, bump VERSION, commit."
+  return $failed
 }
 
 cmd_sync_repos() {

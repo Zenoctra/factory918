@@ -129,6 +129,12 @@ M6, Python: `factory918 apply --profile python --name demo` on a fresh monorepo 
 
 M6, React Native: `apply --profile react-native` writes `apps/mobile/eas.json` and `mobile-fingerprint-check.yml`, and prints the `create-expo-app` command. The workflow no longer names T3 Code's paid Blacksmith runner or its package names (`ubuntu-latest`, `packages/shared/**`), so patch 8 in `SOURCES.md` is no longer verbatim. Scaffolding an Expo app under `vp check` and the simulator screenshot are not run here; they are the first checks on Manuel's first mobile project.
 
+## M7 acceptance (2026-09-16)
+
+`update`, run from a throwaway clone of this repository tagged v0.3.0 and v0.4.0 against a project applied at 0.3.0: a local edit to `AGENTS.md` survived and the template's change to the same file merged in cleanly with no `.factory-merge`; `docs/agents/new-in-0.4.md` was added; `docs/agents/feedback-loops.md`, deleted locally, stayed deleted and the manifest records `deleted`; `CODING_STANDARDS.md`, edited on the same line on both sides, produced `CODING_STANDARDS.md.factory-merge` with `<<<<<<< project` / `>>>>>>> template v0.4.0` markers and the project's file untouched; 245 files were unchanged. `git merge-file` supplies the merge, so the markers are the ones every reviewer knows. Profile files (`python/<name>/`, `eas.json`, the profile workflows) are written once by `apply --profile` and not managed by `update`.
+
+`sync`, run in this repository: 51 pstack skills and the agents re-copied from the open-pstack pin with `no-comments` and `comment-sicko.md` dropped, 14 Pocock skills re-copied with `code-review` landing as `spec-review`, our six skills and `ticket.md` kept, all eleven patches applied, and `git status` clean under `template/` afterwards. A patch that no longer applies is reported as `FAILED` and the command exits non-zero.
+
 ## Still open
 
 - The React Native profile's Expo app under `vp check`, the fingerprint workflow on a real PR, and a simulator screenshot (first mobile project).
