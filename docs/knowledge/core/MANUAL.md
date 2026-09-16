@@ -32,7 +32,7 @@ Review     spec-review (always) → external bot (if configured) → interrogate
 Retro      weekly: /reflect; promote recurring corrections to lint rules or AGENTS.md lines; delete rules that never fire
 ```
 
-If you do not know what to do next, `/factory918`: it maps the situation to the entry point.
+If you do not know what to do next, or you are new here, `/factory918`: it runs the doctor, gives the next step, and once everything passes maps the situation to the entry point. `factory918 doctor` is the checklist itself; every failing line says how to fix it.
 
 ## Day 0: a new machine
 

@@ -9,6 +9,10 @@ argument-hint: "Optional: one line about the project to seed the interview"
 
 The template has been applied and the files below still contain `<slots>`. Your job is to fill them by interviewing the human, not by guessing. Explore the repo first so you ask only what you cannot observe.
 
+## 0. Preflight
+
+Run `factory918 doctor`. Every line above `slots filled` must be `PASS` or `NOTE` before the interview: it needs the toolchain, the hooks and the template in place. On a `FAIL`, stop and hand the user the fix printed under it, in one sentence. If `factory918` is not on PATH, or the doctor says this is not a Factory918 project, the next step is `factory918 install`, `factory918 init` or `factory918 apply`, not this interview; say which.
+
 ## 1. Explore (silently)
 
 Read `AGENTS.md`, `package.json`, `vite.config.ts`, `pnpm-workspace.yaml` if present, the directory tree two levels deep, and `git remote -v`. Note: which surfaces exist (`apps/*`), whether `apps/mobile` or `python/` exist, which dependencies look uncommon (not in the top thousand npm packages, or pinned to an unusual major), and whether `~/.claude/pstack-models.md` exists.

@@ -1,11 +1,22 @@
 ---
 name: factory918
-description: The roof over this repo's two routers. Use when unsure which entry point applies, when a request spans planning and execution, when the user asks "what do I do now" or how Factory918 works, or before starting work in a repo you have not worked in this session.
+description: The one entry point to Factory918, for a person who knows nothing about it as much as for an agent mid-task. Use when the user is new here, asks "what do I do now", "how do I set this up" or how Factory918 works, when unsure which entry point applies, when a request spans planning and execution, or before starting work in a repo you have not worked in this session.
 ---
 
 # Factory918: what do I do now
 
-Read the phase first: `cat .claude/state/mode` (missing means `execute`). Then match the situation below, name the entry point, and stop. Do not run it yourself unless the user asked for the work; this skill routes.
+## Step 0: is this machine and this project set up?
+
+Run `factory918 doctor` from the repo root. It is the checklist: one line per requirement, `PASS`, `FAIL` with its fix on the next line, or `NOTE` for something optional. Read the first `FAIL` and give the user that one fix as the next step, in one plain sentence with the command, then stop. Come back to this skill after each step; the table below applies only once every line is `PASS` or `NOTE`.
+
+Two cases the doctor cannot say itself:
+
+- `factory918` is not on PATH: the factory is not installed on this machine. Next step: in the factory918 clone (`~/.factory918` on a machine where it was installed; otherwise ask where the clone is), run `./factory918.sh install`, add `~/.local/bin` to PATH, open a new terminal.
+- The user is new to all of this: say in two sentences what they are looking at (a template plus a CLI that puts a planning-then-execution workflow into a project, with checks that run without a model), and that `docs/factory918/MANUAL.md` is the tour. Then give the next step.
+
+## Step 1: route
+
+Read the phase: `cat .claude/state/mode` (missing means `execute`). Match the situation below, name the entry point, and stop. Do not run it yourself unless the user asked for the work; this skill routes.
 
 ## Situations
 

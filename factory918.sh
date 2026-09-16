@@ -154,32 +154,40 @@ cmd_init() {
   echo "Human-only steps: branch protection on main (require Check + Test), secrets. Generate a wizard with /wizard."
 }
 
+# Each FAIL line carries its fix, so an agent reading the table can guide a person who has
+# never seen this system. PASS needs nothing; NOTE is optional.
 cmd_doctor() {
   local dir="${1:-.}"; local fail=0
-  chk() { if eval "$2" >/dev/null 2>&1; then echo "PASS  $1"; else echo "FAIL  $1"; fail=1; fi; }
+  chk() { if eval "$2" >/dev/null 2>&1; then echo "PASS  $1"; else echo "FAIL  $1"; echo "      fix: $3"; fail=1; fi; }
   cd "$dir"
-  chk "factory918 installed"          "command -v factory918 && [ -d \"\${FACTORY918_HOME:-\$HOME/.factory918}/docs/knowledge\" ]"
-  chk "vp on PATH"                    "command -v vp"
-  chk "vp env doctor"                 "vp env doctor"
-  chk "hooks installed"               "vp hooks status | grep -qi 'hooksPath'"
-  chk ".claude/skills symlink"        "[ \"\$(readlink .claude/skills)\" = ../.agents/skills ]"
-  chk "every skill has a name"        "! grep -L '^name:' .agents/skills/*/SKILL.md | grep ."
-  chk "no duplicate skill names"      "[ -z \"\$(grep -h '^name:' .agents/skills/*/SKILL.md | sort | uniq -d)\" ]"
-  chk "gh authenticated"              "gh auth status"
-  chk "labels present"                "gh label list --limit 200 | grep -q ready-for-agent"
-  chk "ci workflow present"           "[ -f .github/workflows/ci.yml ]"
-  chk "settings.json parses"          "jq . .claude/settings.json"
-  chk "hooks executable"              "[ -x .claude/hooks/mode.sh ] && [ -x .claude/hooks/block-dangerous-git.sh ]"
-  chk "state dir ignored"             "git check-ignore -q .claude/state/mode"
-  chk "vp check (format, lint, types)" "vp check"
-  chk "tests"                         "vp test run"
-  [ -f "$HOME/.claude/pstack-models.md" ] && echo "PASS  models sheet" || echo "NOTE  models sheet: run factory918 install on this machine"
-  chk "AGENTS.md is Factory918's"     "grep -q 'factory918' AGENTS.md"
-  chk "slots filled (/factory-start)" "! grep -q '<[A-Za-z].*slot\|<Project name>\|<One paragraph' AGENTS.md"
-  chk "slim knowledge present"        "[ -f docs/factory918/PHILOSOPHY.md ] && [ -f docs/factory918/MANUAL.md ]"
-  chk "glue skills resolve"           "[ -f .agents/skills/factory918/SKILL.md ] && [ -f .agents/skills/factory-start/SKILL.md ] && [ -f .agents/skills/knowledge/SKILL.md ]"
-  chk "ledger exists"                 "[ -f docs/agents/ledger.md ]"
-  chk "ast-grep rules test"           "pnpm sg:test"
+  if [ ! -f .factory918/manifest.json ]; then
+    echo "FAIL  this directory is not a Factory918 project"
+    echo "      fix: factory918 init <new-dir> to create one, or factory918 apply here to add Factory918 to an existing repo"
+    return 1
+  fi
+  chk "factory918 installed"          "command -v factory918 && [ -d \"\${FACTORY918_HOME:-\$HOME/.factory918}/docs/knowledge\" ]" "in the factory918 clone run ./factory918.sh install, add ~/.local/bin to PATH, open a new terminal"
+  chk "vp on PATH"                    "command -v vp" "curl -fsSL https://vite.plus -o /tmp/vp.sh && VP_VERSION=0.3.1 VP_NODE_MANAGER=yes bash /tmp/vp.sh, then open a new terminal"
+  chk "vp env doctor"                 "vp env doctor" "run vp env doctor and follow its output"
+  chk "hooks installed"               "vp hooks status | grep -qi 'hooksPath'" "vp hooks enable (no .git means this is not a repository yet: git init first)"
+  chk ".claude/skills symlink"        "[ \"\$(readlink .claude/skills)\" = ../.agents/skills ]" "rm -rf .claude/skills && ln -s ../.agents/skills .claude/skills"
+  chk "every skill has a name"        "! grep -L '^name:' .agents/skills/*/SKILL.md | grep ." "factory918 update restores the vendored skills; a skill you wrote needs a name: line in its frontmatter"
+  chk "no duplicate skill names"      "[ -z \"\$(grep -h '^name:' .agents/skills/*/SKILL.md | sort | uniq -d)\" ]" "rename or remove one of the two skills that share a name (grep -h ^name: .agents/skills/*/SKILL.md | sort | uniq -d)"
+  chk "gh authenticated"              "gh auth status" "gh auth login (brew install gh first if it is missing)"
+  chk "labels present"                "gh label list --limit 200 | grep -q ready-for-agent" "factory918 labels (needs a GitHub remote; factory918 init creates one, or gh repo create --private --source=. --push)"
+  chk "ci workflow present"           "[ -f .github/workflows/ci.yml ]" "factory918 update restores it"
+  chk "settings.json parses"          "jq . .claude/settings.json" "fix the JSON in .claude/settings.json, or factory918 update to restore the template copy"
+  chk "hooks executable"              "[ -x .claude/hooks/mode.sh ] && [ -x .claude/hooks/block-dangerous-git.sh ]" "chmod +x .claude/hooks/*.sh"
+  chk "state dir ignored"             "git check-ignore -q .claude/state/mode" "append the lines from the factory clone's template/.gitignore.factory to .gitignore"
+  chk "vp check (format, lint, types)" "vp check" "vp fmt, then vp check, and fix what it reports; it stops at the first failing stage"
+  chk "tests"                         "vp test run" "vp test run and read the failing test"
+  [ -f "$HOME/.claude/pstack-models.md" ] && echo "PASS  models sheet" || echo "NOTE  models sheet"; echo "      fix: factory918 install writes ~/.claude/pstack-models.md"
+  chk "AGENTS.md is Factory918's"     "grep -q 'factory918' AGENTS.md" "factory918 apply --scaffold replaces the AGENTS.md that vp create wrote"
+  chk "slots filled (/factory-start)" "! grep -q '<[A-Za-z].*slot\|<Project name>\|<One paragraph' AGENTS.md" "open Claude Code here and run /factory-start, the Day-0 interview; it fills every <slot>"
+  chk "slim knowledge present"        "[ -f docs/factory918/PHILOSOPHY.md ] && [ -f docs/factory918/MANUAL.md ]" "factory918 update restores docs/factory918/"
+  chk "glue skills resolve"           "[ -f .agents/skills/factory918/SKILL.md ] && [ -f .agents/skills/factory-start/SKILL.md ] && [ -f .agents/skills/knowledge/SKILL.md ]" "factory918 update restores the factory918, factory-start and knowledge skills"
+  chk "ledger exists"                 "[ -f docs/agents/ledger.md ]" "factory918 update restores docs/agents/ledger.md"
+  chk "ast-grep rules test"           "pnpm sg:test" "vp install (the rule engine is a devDependency), then pnpm sg:test; a rule without a snapshot needs ast-grep test --update-all"
+  [ "$fail" = 0 ] && echo "all clear" || echo "start with the first FAIL"
   return $fail
 }
 

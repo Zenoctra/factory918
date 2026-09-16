@@ -139,6 +139,10 @@ M6, React Native: `apply --profile react-native` writes `apps/mobile/eas.json` a
 
 The vendored `/setup-pstack` requires all four matrix families (Fable, Opus, Codex Sol, Grok) to pass a live probe before it writes anything, and pstack's launcher never falls back, so on a Claude-only machine the Feature playbook's default delegate (`grok:grok-4.6@xhigh`) would drop out on the first ticket. `factory918 install` now writes `~/.claude/pstack-models.md` from `machine/pstack-models.md`, every role on `claude:opus` or `claude:fable` with effort as the cost lever, and adds the `@` include to `~/.claude/CLAUDE.md`. Native lanes exist for every effort of both families (`.claude/agents/pstack-*-*.md`); nothing at dispatch time requires the other two families. pstack has no Sonnet family, so decision 13's Sonnet roles run `claude:opus@medium`. Decision P5. The first ticket on a real project is the live check of this sheet.
 
+## Guided entry (2026-09-16)
+
+`factory918 doctor` now prints the fix under every failing line and refuses, with one guided line, to run outside a Factory918 project. `/factory918` runs it first and hands a new user the first fix as their only next step; `/factory-start` runs the same preflight before interviewing. In this clone with `~/.local/bin` not yet on PATH, `/factory918 I'm new, what do I do?` produced the PATH line and nothing else, which is the intended behaviour.
+
 ## Still open
 
 - The React Native profile's Expo app under `vp check`, the fingerprint workflow on a real PR, and a simulator screenshot (first mobile project).

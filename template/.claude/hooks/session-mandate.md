@@ -1,5 +1,5 @@
 <FACTORY918>
-This repo runs Factory918: Matt Pocock's skills for planning, pstack for execution, a deterministic layer under both. If you are unsure what to do, invoke the `factory918` skill; it routes. The reasoning is in `docs/factory918/PHILOSOPHY.md`; day-to-day steps are in `docs/factory918/MANUAL.md`; a `knowledge` skill looks things up without reading files whole.
+This repo runs Factory918: Matt Pocock's skills for planning, pstack for execution, a deterministic layer under both. If you or the user are unsure what to do, or the user is new to this system, invoke the `factory918` skill; it checks the setup and gives the next step. The reasoning is in `docs/factory918/PHILOSOPHY.md`; day-to-day steps are in `docs/factory918/MANUAL.md`; a `knowledge` skill looks things up without reading files whole.
 
 Phases. A hook prints the current phase at every prompt. In `planning`, the human decides, questions are read-only, no production code is written, and poteto-mode does not apply. In `execute`, before responding to any non-trivial engineering task (a feature, bug fix, refactor, debugging, performance work, any multi-step code change) invoke the `poteto-mode` skill with the Skill tool and follow it; an issue reference (`#N`, `owner/repo#N`, an issue URL) means its Ticket playbook. Pure questions and trivial one-line edits need neither.
 

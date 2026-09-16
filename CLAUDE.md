@@ -1,5 +1,7 @@
 # Factory918
 
+If you are here to *use* Factory918 rather than build it, or the person you are helping is: type `/factory918` in Claude Code, in this folder or in any project. It checks what is set up on this machine and in the project, and gives the next step. `docs/knowledge/core/MANUAL.md` is the tour. The rest of this file is for the model finishing this repository.
+
 This repository is Factory918: a template and a small CLI that load an agent-skill system into any project. Matt Pocock's skills for planning, pstack's for execution, a Theo-style deterministic layer (formatter, lint, types, tests, CI, review) underneath, and a few glue skills that make them one system. Manuel designed it; you are finishing it. It is a draft (v0.2.0): nothing in it has been run yet.
 
 ## Read in this order, before anything else

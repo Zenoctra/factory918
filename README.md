@@ -2,6 +2,14 @@
 
 A template repository and a small CLI that load Manuel's agent-driven development system into any project: Matt Pocock's skills for planning (grill → spec → tickets on GitHub), pstack's skills for execution (one ticket → one verified PR), a Theo-style deterministic layer underneath (Vite+ formatter, oxlint, types, tests, CI, review ladder), profiles for React Native and Python, and the glue that makes them one system (`/factory918`, `/factory-start`, `/knowledge`, the Ticket playbook, a phase hook).
 
+## Start here
+
+1. Clone this repository and run `./factory918.sh install` in it; add `~/.local/bin` to `PATH`; open a new terminal.
+2. `factory918 init <dir>` for a new project, or `factory918 apply` inside an existing one.
+3. Open Claude Code in the project and type `/factory918`. It checks the setup, tells you the next step, and explains what each step is for. The first one is `/factory-start`.
+
+At any point, `factory918 doctor` is the checklist: every line that fails says how to fix it.
+
 The full design is `docs/FACTORY-SPEC-v2.md`. The reasoning is `docs/knowledge/core/PHILOSOPHY.md`; the day-to-day loop is `MANUAL.md`; the settled choices are `DECISIONS.md`. If you are the model finishing this repo, `CLAUDE.md` tells you where to start.
 
 ## Layout
