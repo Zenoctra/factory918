@@ -117,6 +117,10 @@ M2: `INDEX.md` lists all 118 files with exact line counts, no chunk exceeds 240 
 
 Glue-skill fixes from that review: `factory-doctor` duplicated the CLI's check list and drifted within one milestone, so it now runs `factory918 doctor` and reports the table; it is model-invocable because it is read-only, and `factory-start` can reach it. `knowledge` said the index was under 100 lines (it is 127) and named the wrong fallback path (`docs/knowledge`; projects carry `docs/factory918`, with no mini-TOC). The router's last step read `/factory918 doctor`, which is not a command.
 
+## M4 acceptance (2026-09-16)
+
+Each hook was fed the JSON Claude Code sends and checked on exit code, state file and output. `mode.sh`: `/grill-with-docs` and `/to-tickets` set `planning`; `#42`, `/mode-build` and `/poteto-mode` set `execute`; a plain prompt leaves the state alone and prints the current phase. `block-dangerous-git.sh`: exit 2 with a BLOCKED line for pushes to `main` or `master`, `-f` and `--force`, `reset --hard`, `clean -f`, `branch -D`, `checkout .` and `restore .`; exit 0 for a feature-branch push, `--force-with-lease`, `git status`, and a pipeline that merely mentions `main`. `session-start.sh` prints the mandate, which names `factory918`. `format-on-write.sh` formatted a file written as `{a:1,\n b:2}` to `{ a: 1, b: 2 }`, exited 0 on a `.txt`, and left a vendored skill file byte-identical, because it goes through `vp fmt` and the project's ignore list. The interview half of M4 (`/factory-start` on a real project) needs a human in a session and is the first thing to run on Manuel's first project.
+
 ## Still open
 
 - `voidzero-dev/setup-vp@v1` inputs, which only a real CI run can confirm (M5).
