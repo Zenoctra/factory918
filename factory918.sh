@@ -99,6 +99,7 @@ cmd_doctor() {
   chk() { if eval "$2" >/dev/null 2>&1; then echo "PASS  $1"; else echo "FAIL  $1"; fail=1; fi; }
   cd "$dir"
   chk "vp on PATH"                    "command -v vp"
+  chk "vp env doctor"                 "vp env doctor"
   chk "hooks installed"               "vp hooks status | grep -qi 'hooksPath'"
   chk ".claude/skills symlink"        "[ \"\$(readlink .claude/skills)\" = ../.agents/skills ]"
   chk "every skill has a name"        "! grep -L '^name:' .agents/skills/*/SKILL.md | grep ."

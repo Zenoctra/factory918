@@ -109,6 +109,14 @@ Each fact was checked by running the command named. Two scratch projects: a copy
 | 22 | §7.2 scripts alias `dev`, `build`, `test`, `lint`, `fmt` and `check` | All six are `vp` built-ins, and vp prints a note about the ambiguity | Done: the template now ships only `prepare`, `sg` and `sg:test`. |
 | 23 | §7.9 vendors Vite+'s docs into `docs/tools/vite-plus.md` | Vite+ installs its own docs at `node_modules/vite-plus/docs` | Point `AGENTS.md` at the local path instead of copying it. |
 
+## M1 and M2 acceptance (2026-09-16)
+
+M1: the 71 skills reconcile (fact 11), no duplicate names (12), the invocation flags match decision 3 (13), and the patches landed (15). `patches/` now holds eleven unified diffs plus `series`; copying the pins, dropping `no-comments`, renaming `code-review` to `spec-review`, adding `ticket.md` and applying the series reproduces `template/.agents/skills` byte-for-byte.
+
+M2: `INDEX.md` lists all 118 files with exact line counts, no chunk exceeds 240 lines, and every mini-TOC entry resolves to its heading (checked programmatically, not five spot checks). `/knowledge why do comments stay` answered with `DECISIONS.md:19` after 143 lines read. The `factory918` table names an entry point in every row.
+
+Glue-skill fixes from that review: `factory-doctor` duplicated the CLI's check list and drifted within one milestone, so it now runs `factory918 doctor` and reports the table; it is model-invocable because it is read-only, and `factory-start` can reach it. `knowledge` said the index was under 100 lines (it is 127) and named the wrong fallback path (`docs/knowledge`; projects carry `docs/factory918`, with no mini-TOC). The router's last step read `/factory918 doctor`, which is not a command.
+
 ## Still open
 
 - `voidzero-dev/setup-vp@v1` inputs, which only a real CI run can confirm (M5).

@@ -22,7 +22,7 @@ Read the phase first: `cat .claude/state/mode` (missing means `execute`). Then m
 | A PR that needs to get green | execute | Babysit via `/poteto-mode "babysit PR N"`. Never merges. |
 | A PR the user wants merged | — | The human merges. Say so. |
 | A question about this system, a term, or a reason | either | `/knowledge <question>`. Reads ranges, not files. |
-| A new project directory | — | `factory918 init`, then `/factory-start`, then `/factory918 doctor` (via `/factory-doctor`). |
+| A new project directory | — | `factory918 init`, then `/factory-start`, then `/factory-doctor`. |
 | A project that has not run `/factory-start` (AGENTS.md still has `<slots>`) | — | `/factory-start` before anything else. |
 | A recurring correction in the ledger | execute | `/reflect`, then encode: lint rule (oxlint plugin or `ast-grep/rules/`), banned API, or one `AGENTS.md` line. |
 | A human-only step (secrets, dashboards, branch protection) | either | `/wizard`. |

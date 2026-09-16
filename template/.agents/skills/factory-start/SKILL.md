@@ -39,4 +39,4 @@ Stop when the frontier of questions is empty and the human confirms.
 
 ## 4. Report
 
-List every file written, the human-only steps still open, and the first planning command to run (`/grill-me` for an empty project, `/grill-with-docs` once code exists). Then run `/factory-doctor`.
+List every file written, the human-only steps still open, and the first planning command to run (`/grill-me` for an empty project, `/grill-with-docs` once code exists). Then run `factory918 doctor` and include its table.

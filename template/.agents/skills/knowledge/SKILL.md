@@ -10,11 +10,11 @@ The corpus is large (the four source systems, six research notes, three referenc
 
 ## Where the corpus is
 
-`$FACTORY918_HOME/docs/knowledge` if that variable is set; else `~/.factory918/docs/knowledge`; else this project's `docs/knowledge` (slim: philosophy, manual, decisions, glossary only). Call it `$KB`.
+`$FACTORY918_HOME/docs/knowledge` if that variable is set; else `~/.factory918/docs/knowledge`; else this project's `docs/factory918` (slim: philosophy, manual, decisions and glossary only, with no header or mini-TOC, so take line numbers from grep and `wc -l`). Call it `$KB`.
 
 ## Procedure
 
-1. **Index first.** Read `$KB/INDEX.md` (it is under 100 lines). Every file is listed with its purpose, its line count and when to read it.
+1. **Index first.** Read `$KB/INDEX.md` whole; it is the one file meant to be read whole. Every file is listed with its purpose, its line count and when to read it.
 2. **Grep before you read.** `rg -n -i "<two or three terms>" $KB --glob '*.md' | head -40`. Prefer terms that would appear in a heading. If the question is about a term, try `GLOSSARY.md` and `DECISIONS.md` first.
 3. **Open the mini-TOC, not the file.** Every chunked file begins with a header block: `<!-- lines: N -->` and a `## Contents` list with line numbers per section. Read the first 30 lines of the candidate file only.
 4. **Read the section, in a range.** Use the Read tool with `offset` and `limit` from the TOC. Hard rule: never read more than 150 lines in one call, and never read a file whose header says more than 200 lines without a range.
