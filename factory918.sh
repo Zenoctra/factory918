@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# DRAFT skeleton of the Factory918 CLI. Subcommands: init | apply [--profile name] | doctor | update | sync | sync-repos | labels | knowledge
-# Implemented per docs/FACTORY-SPEC-v2.md §8. Marked TODO where the implementing model must write the logic.
+# The Factory918 CLI. Subcommands: install | init | apply [--profile name] [--name n] | doctor | update | sync | sync-repos | labels | knowledge
+# Implemented per docs/FACTORY-SPEC-v2.md §8; verified against the tool versions in docs/M0-findings.md.
 set -euo pipefail
 F918_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TEMPLATE="$F918_DIR/template"
@@ -62,6 +62,22 @@ apply_react_native() {
   [ -f "$dir/apps/mobile/eas.json" ] || cp "$P/eas.json.example" "$dir/apps/mobile/eas.json"
   [ -f "$dir/.github/workflows/mobile-fingerprint-check.yml" ] || cp "$P/mobile-fingerprint-check.yml" "$dir/.github/workflows/mobile-fingerprint-check.yml"
   [ -f "$dir/apps/mobile/package.json" ] || echo "Next: (cd $dir && npx create-expo-app@latest apps/mobile --template blank-typescript), then vp install."
+}
+
+# Per machine, once: ~/.factory918 points at this clone (the knowledge skill's fallback and
+# $FACTORY918_HOME's default), and ~/.local/bin/factory918 puts the CLI on PATH.
+cmd_install() {
+  local home="$HOME/.factory918" bin="$HOME/.local/bin"
+  if [ -e "$home" ] && [ "$(cd "$home" && pwd -P)" != "$(cd "$F918_DIR" && pwd -P)" ]; then
+    echo "$home already points elsewhere: $(readlink "$home" || echo "$home"). Move it aside or set FACTORY918_HOME." >&2; exit 1
+  fi
+  [ -e "$home" ] || ln -s "$F918_DIR" "$home"
+  mkdir -p "$bin"; ln -sf "$F918_DIR/factory918.sh" "$bin/factory918"
+  echo "installed: $home -> $F918_DIR"
+  echo "installed: $bin/factory918"
+  case ":$PATH:" in *":$bin:"*) ;; *) echo "add to your shell rc: export PATH=\"\$HOME/.local/bin:\$PATH\"" ;; esac
+  command -v vp >/dev/null || echo "next: install Vite+ with  curl -fsSL https://vite.plus -o /tmp/vp.sh && VP_VERSION=0.3.1 VP_NODE_MANAGER=yes bash /tmp/vp.sh"
+  command -v gh >/dev/null && gh auth status >/dev/null 2>&1 || echo "next: gh auth login"
 }
 
 cmd_apply() {
@@ -137,6 +153,7 @@ cmd_doctor() {
   local dir="${1:-.}"; local fail=0
   chk() { if eval "$2" >/dev/null 2>&1; then echo "PASS  $1"; else echo "FAIL  $1"; fail=1; fi; }
   cd "$dir"
+  chk "factory918 installed"          "command -v factory918 && [ -d \"\${FACTORY918_HOME:-\$HOME/.factory918}/docs/knowledge\" ]"
   chk "vp on PATH"                    "command -v vp"
   chk "vp env doctor"                 "vp env doctor"
   chk "hooks installed"               "vp hooks status | grep -qi 'hooksPath'"
@@ -151,7 +168,7 @@ cmd_doctor() {
   chk "state dir ignored"             "git check-ignore -q .claude/state/mode"
   chk "vp check (format, lint, types)" "vp check"
   chk "tests"                         "vp test run"
-  chk "models sheet"                  "[ -f \"\$HOME/.claude/pstack-models.md\" ]"
+  [ -f "$HOME/.claude/pstack-models.md" ] && echo "PASS  models sheet" || echo "NOTE  models sheet: run /setup-pstack once on this machine"
   chk "AGENTS.md is Factory918's"     "grep -q 'factory918' AGENTS.md"
   chk "slots filled (/factory-start)" "! grep -q '<[A-Za-z].*slot\|<Project name>\|<One paragraph' AGENTS.md"
   chk "slim knowledge present"        "[ -f docs/factory918/PHILOSOPHY.md ] && [ -f docs/factory918/MANUAL.md ]"
@@ -277,6 +294,7 @@ cmd_sync_repos() {
 }
 
 case "${1:-}" in
+  install) cmd_install ;;
   init) shift; cmd_init "$@" ;;
   apply) shift; cmd_apply "$@" ;;
   doctor) shift; cmd_doctor "$@" ;;
