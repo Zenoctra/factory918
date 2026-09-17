@@ -51,7 +51,7 @@ If the project is not on Vite+ yet, run `vp migrate` first: `apply` merges Vite+
 
 ## Tickets
 
-A ticket is a GitHub issue with `## What to build`, `## Acceptance criteria` (checkboxes), `## Blocked by`, a `## Parent` pointing at the spec, and the `ready-for-agent` label. The frontier is every ticket whose blockers are closed. You pick which one runs next; the system never auto-dispatches. Tickets close when their PR merges (the PR says `Closes #N`); never close one by hand.
+A ticket is a GitHub issue with `## What to build`, `## Acceptance criteria` (checkboxes), `## Blocked by`, a `## Parent` pointing at the spec, and the `ready-for-agent` label. The frontier is every ticket whose blockers are closed. A quick fix you describe in conversation gets a ticket too, if it will end in a PR: the agent files one with your words quoted, tells you the number, and proceeds; edit the issue if the words are wrong. You pick which one runs next; the system never auto-dispatches. Tickets close when their PR merges (the PR says `Closes #N`); never close one by hand.
 
 ## Execution
 
