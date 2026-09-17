@@ -1,4 +1,4 @@
-<!-- lines: 138 | source: core/MANUAL.md | part 1/1 | title: Factory918: the manual -->
+<!-- lines: 149 | source: core/MANUAL.md | part 1/1 | title: Factory918: the manual -->
 
 ## Contents (line numbers are for the Read tool's offset)
 - L23: The loop in one screen
@@ -9,12 +9,12 @@
 - L70: Tickets
 - L74: Execution
 - L82: Pull requests, review and merge
-- L86: Retro and the ledger
-- L90: Multi-surface products
-- L94: Models and cost
-- L111: Updating the factory
-- L115: Troubleshooting
-- L127: Where to read more
+- L97: Retro and the ledger
+- L101: Multi-surface products
+- L105: Models and cost
+- L122: Updating the factory
+- L126: Troubleshooting
+- L138: Where to read more
 
 # Factory918: the manual
 
@@ -81,11 +81,22 @@ A ticket is a GitHub issue with `## What to build`, `## Acceptance criteria` (ch
 
 ## Pull requests, review and merge
 
-The agent opens the PR with a conventional plain-language title, a body that states the problem then the fix, a Verification section quoting each acceptance criterion with its evidence, before/after media for anything visible, and the model and harness that did the work. Then the review ladder in `docs/agents/review-ladder.md`: CI must be green; `spec-review` runs in a fresh context against the ticket and `CODING_STANDARDS.md`; an external bot is triaged only if one is listed; `interrogate` runs only when the design is contested. Babysit stops at merge-ready. You read the conversation and the Verification section, then merge. Reading every line is optional; reading the claims and their evidence is not.
+From a pull request to a merge, in order. Every rung runs without asking you; you enter at the end. The full ladder is `docs/agents/review-ladder.md`; missing rungs are skipped, never failed.
+
+1. **Before the PR.** A hook formats every file the agent writes, and each commit runs the formatter on the staged files and nothing else (decision 5: agent-authored repos commit often, so the commit hook stays thin and CI is the one full gate). The agent verifies on the real surface and files its proof under `.artifacts/<task>/`: numbered screenshots named after the assertion, an `assertions.md`, command outputs with exit codes. Evidence is uploaded to the PR and never committed; CI rejects a commit that contains it.
+2. **The PR itself.** A conventional plain-language title; the problem, then the fix; a Verification section quoting each acceptance criterion with its evidence; before/after media for anything visible; the model and harness that did the work. Ticket work says `Closes #N`, so the ticket closes itself on merge. One concern per PR.
+3. **Rung 0, CI.** The `Check` job rejects committed evidence, runs `vp check` (format, lint including the project's own rules, types), `pnpm sg` (the cross-language rules) and the build; the `Test` job runs the whole suite; `pr-size.yml` labels the size. This is the only place everything runs, which is why local checks stay targeted. Green here proves the code is well-formed and the tests pass. It proves nothing about whether it is the right change.
+4. **Rung 1, `spec-review`.** Once CI is green the agent runs it in a fresh context, so the reviewer is not the author. Two axes: Standards, against `CODING_STANDARDS.md` (the taste the implementer was deliberately not loaded with, so that review imposes it rather than the writer); Spec, against the originating ticket and its parent spec, the only check that the change is what was asked for. Act-on items get fixed; the rest are recorded in the PR body.
+5. **Rung 2, an external review bot**, only if one is listed in the ladder file; none is by default. Findings are verified against the source and fixed, or dismissed with a written reason; the agent asks by default on security, auth, data, billing and migrations.
+6. **Rung 3, `interrogate`**, a multi-tier review across models, only when the design is contested or the diff touches an invariant named in `CONTEXT.md`. It is the expensive rung, so it is conditional.
+7. **Babysit.** The agent polls checks and comments newer than its last push until everything is green on the latest commit, then stops at merge-ready.
+8. **Rung 4, you.** Read the conversation and the Verification section against its evidence. Reading every line is optional; reading the claims and their proof is not. Merge. The agent never merges.
+
+Where your judgment sits: before the work, in the ticket; after it, at the merge. In between, nothing asks you except an irreversible action: a force-push, a deletion, a deploy, a message outside the repo (decision 6). That is what "never block on the human" means here: the rungs are the safeguard, so the agent does not have to be.
 
 ## Retro and the ledger
 
-Once a week, or after a hard task: `/reflect`. Read the ledger (`docs/agents/ledger.md`, one line per surprise: date, model, what it did, what you wanted). A correction that has recurred becomes a rule at the strongest rung that can hold it: a lint rule in `oxlint-plugin-project/` or `ast-grep/rules/` (with a debt ceiling if old code violates it), a banned API, a line in `AGENTS.md`. Delete rules that never fire. This is the step that turns copied opinions into yours.
+Whenever an agent surprises you, add one line to `docs/agents/ledger.md`: date, model, what it did, what you wanted. Saying "note that for the ledger" to the agent is enough. Once a week, or after a hard task, `/factory-retro`: it reads the ledger, groups the corrections that recur, and proposes for each the strongest rung that can hold it (a type, a lint rule in `oxlint-plugin-project/` or `ast-grep/rules/` with a debt ceiling if old code violates it, a banned API, a helper, a test, or one line in `AGENTS.md`), then writes the ones you confirm and proves each one fires. A correction seen once waits. Delete rules that never fire. `/reflect` is pstack's complement: it mines the session you just had for learnings and routes them into skill edits; use it after a session that went unusually well or badly. The retro is the step that turns copied opinions into yours.
 
 ## Multi-surface products
 

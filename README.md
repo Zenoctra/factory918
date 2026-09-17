@@ -29,7 +29,7 @@ The factory lives once per machine at `~/.factory918`. To take an update: `git -
 
     factory918.sh             the CLI: install | init | apply [--scaffold] [--profile name] [--name n] | doctor | update | sync | sync-repos | labels | knowledge
     template/                 everything `factory918 apply` copies into a project: AGENTS.md, CLAUDE.md,
-                              CONTEXT.md, CODING_STANDARDS.md, .agents/skills/ (71 skills), .claude/ (hooks,
+                              CONTEXT.md, CODING_STANDARDS.md, .agents/skills/ (72 skills), .claude/ (hooks,
                               agents, settings), docs/agents/, docs/adr/, vite.config.ts, sgconfig.yml, the
                               oxlint plugin, ast-grep/, .vite-hooks/, .github/ (CI, labels, PR template), .repos/
     profiles/                 vite-plus (default), react-native, python

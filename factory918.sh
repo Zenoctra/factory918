@@ -103,6 +103,7 @@ cmd_apply() {
   local manifest="$dir/.factory918/manifest.json"
   [ -f "$manifest" ] || echo '{"version":"'"$VERSION"'","files":{},"profiles":[]}' > "$manifest"
   printf '{"factory":"%s"}\n' "$(cd "$F918_DIR" && pwd -P)" > "$dir/.factory918/local.json"   # git-ignored; the clone that applied
+  tmp="$(mktemp)"; jq 'del(.factory)' "$manifest" > "$tmp" && mv "$tmp" "$manifest"           # older manifests carried the path
   if [ -n "$profile" ]; then
     case "$profile" in
       python) apply_python "$dir" "${name:-$(basename "$(cd "$dir" && pwd)")}" ;;
@@ -195,7 +196,7 @@ cmd_doctor() {
   chk "AGENTS.md is Factory918's"     "grep -q 'factory918' AGENTS.md" "factory918 apply --scaffold replaces the AGENTS.md that vp create wrote"
   chk "slots filled (/factory-start)" "! grep -q '<[A-Za-z].*slot\|<Project name>\|<One paragraph' AGENTS.md" "open Claude Code here and run /factory-start, the Day-0 interview; it fills every <slot>"
   chk "slim knowledge present"        "[ -f docs/factory918/PHILOSOPHY.md ] && [ -f docs/factory918/MANUAL.md ]" "factory918 update restores docs/factory918/"
-  chk "glue skills resolve"           "[ -f .agents/skills/factory918/SKILL.md ] && [ -f .agents/skills/factory-start/SKILL.md ] && [ -f .agents/skills/knowledge/SKILL.md ]" "factory918 update restores the factory918, factory-start and knowledge skills"
+  chk "glue skills resolve"           "[ -f .agents/skills/factory918/SKILL.md ] && [ -f .agents/skills/factory-start/SKILL.md ] && [ -f .agents/skills/knowledge/SKILL.md ] && [ -f .agents/skills/factory-retro/SKILL.md ]" "factory918 update restores the factory918, factory-start, knowledge and factory-retro skills"
   chk "ledger exists"                 "[ -f docs/agents/ledger.md ]" "factory918 update restores docs/agents/ledger.md"
   chk "ast-grep rules test"           "pnpm sg:test" "vp install (the rule engine is a devDependency), then pnpm sg:test; a rule without a snapshot needs ast-grep test --update-all"
   [ "$fail" = 0 ] && echo "all clear" || echo "start with the first FAIL"
@@ -291,7 +292,7 @@ cmd_sync() {
   local skills="$TEMPLATE/.agents/skills"
   local pstack="$F918_DIR/research/3-pstack/open-pstack-claude-code-port/plugins/pstack"
   local matt="$F918_DIR/research/1-matt-pocock/skills-repo/skills"
-  local ours="factory918 factory-start knowledge mode-plan mode-build factory-doctor"
+  local ours="factory918 factory-start knowledge mode-plan mode-build factory-doctor factory-retro"
   local keep_files="poteto-mode/playbooks/ticket.md"
   local tmp; tmp="$(mktemp -d)"
   for k in $keep_files; do mkdir -p "$tmp/keep/$(dirname "$k")"; cp "$skills/$k" "$tmp/keep/$k"; done
