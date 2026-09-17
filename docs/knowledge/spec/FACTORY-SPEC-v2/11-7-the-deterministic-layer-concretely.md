@@ -1,4 +1,4 @@
-<!-- lines: 129 | source: spec/FACTORY-SPEC-v2.md | part 11/17 | title: The Factory spec, v2 — 7. The deterministic layer, concretely -->
+<!-- lines: 167 | source: spec/FACTORY-SPEC-v2.md | part 11/17 | title: The Factory spec, v2 — 7. The deterministic layer, concretely -->
 
 ## Contents (line numbers are for the Read tool's offset)
 - L9: 7. The deterministic layer, concretely
@@ -60,22 +60,22 @@ export default defineConfig({
 
 Line-by-line: `test` is Vitest; `.repos` is excluded so vendored sources are never tested. `staged` maps a glob to a command run on staged files; `"*"` with `--no-error-on-unmatched-pattern` means non-code files are ignored quietly **[primary: t3code vite.config.ts]**. `fmt.ignorePatterns` keeps the formatter off generated and vendored files. `lint.plugins` are oxlint's built-in rule sets; `jsPlugins` loads your custom rules; `categories` sets whole groups at once; `rules` pins specific ones; `overrides` is where per-file exceptions and debt ceilings live; `options.reportUnusedDisableDirectives` is the self-protection rule. `no-explicit-any` and `no-console` are the two opinions all three seniors share. Verify `typescript/no-explicit-any` and `no-console` names against `vp lint --help`/oxlint docs at install time; if `typeAware`/`typeCheck` conflict with your TypeScript setup, fall back to T3 Code's `false` values and keep the separate `typecheck` script.
 
-`package.json` scripts (DRAFT):
+`package.json` additions (`template/package.scripts.json`, merged by `factory918 apply`; `vp create` writes the rest):
 
 ```json
 {
-  "packageManager": "pnpm@<pinned>",
-  "engines": { "node": "^24" },
+  "_comment": "Merged into package.json by `factory918 apply`. Only what `vp` has no built-in for: dev, build, test, lint, fmt and check are built-in commands, and `vp check` already covers types.",
   "scripts": {
-    "dev": "vp dev",
-    "build": "vp build",
-    "test": "vp test run",
-    "lint": "vp lint --report-unused-disable-directives",
-    "fmt": "vp fmt",
-    "fmt:check": "vp fmt --check",
-    "typecheck": "tsc --noEmit",
-    "check": "vp check",
-    "prepare": "vp config"
+    "prepare": "vp config",
+    "sg": "ast-grep scan",
+    "sg:test": "ast-grep test"
+  },
+  "engines": {
+    "node": "^24"
+  },
+  "devDependencies": {
+    "@ast-grep/cli": "0.45.3",
+    "@oxlint/plugins": "1.82.0"
   }
 }
 ```
@@ -88,6 +88,7 @@ Line-by-line: `test` is Vitest; `.repos` is excluded so vendored sources are nev
 
 ```ts
 import { definePlugin } from "@oxlint/plugins";
+
 import noTodoWithoutIssue from "./rules/no-todo-without-issue.ts";
 
 export default definePlugin({
@@ -96,29 +97,66 @@ export default definePlugin({
 });
 ```
 
-`oxlint-plugin-project/rules/no-todo-without-issue.ts` (the starter rule; encodes "a TODO without a ticket is a plan committed to the repo," which Theo forbids):
+`oxlint-plugin-project/rules/no-todo-without-issue.ts` (the starter rule; an unticketed note is a plan committed to the repo, which Theo forbids). `debtCeiling` reads the option out of unvalidated JSON without a cast; both helpers are exported so `no-todo-without-issue.test.ts` beside it can test the rule's two seams through `vite-plus/test`. Verified M0: the rule reports `// TODO fix later` and reported its own explanatory comment until that was reworded.
 
 ```ts
 import { defineRule } from "@oxlint/plugins";
 
+// Shape follows pingdotgg/t3code's rules (defineRule, meta, create(context), context.report).
+// An unticketed note is a plan committed to the repo. Reference an issue, or file one and delete the note.
 const TODO = /\b(TODO|FIXME|HACK)\b(?![^\n]*#\d+)/u;
+
+/** True when a comment carries a TODO, FIXME or HACK with no `#123` beside it. */
+export function needsIssueReference(comment: string): boolean {
+  return TODO.test(comment);
+}
+
+/**
+ * Theo's debt ceiling: the first N occurrences pass and the (N+1)th is reported.
+ * The rule's options arrive as unvalidated JSON, so read the number out rather than casting.
+ */
+export function debtCeiling(option: unknown): number {
+  if (typeof option !== "object" || option === null) return 0;
+  if (!("maxOccurrences" in option)) return 0;
+  const value = option.maxOccurrences;
+  return typeof value === "number" ? value : 0;
+}
 
 export default defineRule({
   meta: {
     type: "problem",
-    docs: { description: "Disallow TODO/FIXME/HACK comments that do not reference a tracker issue (#123)." },
-    schema: [{ type: "object", properties: { maxOccurrences: { type: "integer", minimum: 0 } }, additionalProperties: false }],
+    docs: {
+      description:
+        "Disallow TODO/FIXME/HACK comments that do not reference a tracker issue (#123).",
+    },
+    schema: [
+      {
+        type: "object",
+        properties: {
+          maxOccurrences: {
+            type: "integer",
+            minimum: 0,
+            description: "Legacy debt ceiling for this file.",
+          },
+        },
+        additionalProperties: false,
+      },
+    ],
   },
   create(context) {
-    const allowed = context.options[0]?.maxOccurrences ?? 0;
+    const allowed = debtCeiling(context.options[0]);
     let seen = 0;
     return {
       Program() {
         for (const comment of context.sourceCode.getAllComments()) {
-          if (!TODO.test(comment.value)) continue;
+          if (!needsIssueReference(comment.value)) continue;
           seen++;
           if (seen <= allowed) continue;
-          context.report({ node: comment, message: "Reference a tracker issue: `TODO(#123): ...`, or file the ticket and delete the note." });
+          context.report({
+            node: comment,
+            message:
+              "Reference a tracker issue: `TODO(#123): ...`, or file the ticket and delete the note.",
+          });
         }
       },
     };

@@ -17,13 +17,13 @@ The literal transcript of the conversation that produced this system is not avai
 | `spec/FACTORY-SPEC-v2/05-1-what-manuel-needs-in-one-paragraph.md` | The Factory spec, v2 — 1. What Manuel needs, in one paragraph | 12 | Building or updating the factory itself. |
 | `spec/FACTORY-SPEC-v2/06-2-the-central-question-does-pstack-build-the-ci-.md` | The Factory spec, v2 — 2. The central question: does pstack build the CI stack on its own? | 38 | Building or updating the factory itself. |
 | `spec/FACTORY-SPEC-v2/07-3-the-system-end-to-end.md` | The Factory spec, v2 — 3. The system, end to end | 27 | Building or updating the factory itself. |
-| `spec/FACTORY-SPEC-v2/08-4-repository-layout-of-the-factory.md` | The Factory spec, v2 — 4. Repository layout of the factory | 74 | Building or updating the factory itself. |
+| `spec/FACTORY-SPEC-v2/08-4-repository-layout-of-the-factory.md` | The Factory spec, v2 — 4. Repository layout of the factory | 75 | Building or updating the factory itself. |
 | `spec/FACTORY-SPEC-v2/09-5-skill-manifest.md` | The Factory spec, v2 — 5. Skill manifest | 61 | Building or updating the factory itself. |
 | `spec/FACTORY-SPEC-v2/10-6-contradictions-between-the-vendored-skills-and.md` | The Factory spec, v2 — 6. Contradictions between the vendored skills, and how the factory resolves them | 23 | Building or updating the factory itself. |
-| `spec/FACTORY-SPEC-v2/11-7-the-deterministic-layer-concretely.md` | The Factory spec, v2 — 7. The deterministic layer, concretely | 129 | Building or updating the factory itself. |
+| `spec/FACTORY-SPEC-v2/11-7-the-deterministic-layer-concretely.md` | The Factory spec, v2 — 7. The deterministic layer, concretely | 167 | Building or updating the factory itself. |
 | `spec/FACTORY-SPEC-v2/12-7-the-deterministic-layer-concretely.md` | The Factory spec, v2 — 7. The deterministic layer, concretely | 128 | Building or updating the factory itself. |
 | `spec/FACTORY-SPEC-v2/13-7-the-deterministic-layer-concretely.md` | The Factory spec, v2 — 7. The deterministic layer, concretely | 13 | Building or updating the factory itself. |
-| `spec/FACTORY-SPEC-v2/14-8-factory918-sh-init-apply-doctor-update-sync-la.md` | The Factory spec, v2 — 8. `factory918.sh`: init, apply, doctor, update, sync, labels | 42 | Building or updating the factory itself. |
+| `spec/FACTORY-SPEC-v2/14-8-factory918-sh-init-apply-doctor-update-sync-la.md` | The Factory spec, v2 — 8. `factory918.sh`: init, apply, doctor, update, sync, labels | 43 | Building or updating the factory itself. |
 | `spec/FACTORY-SPEC-v2/15-9-milestones-for-the-implementing-model.md` | The Factory spec, v2 — 9. Milestones for the implementing model | 26 | Building or updating the factory itself. |
 | `spec/FACTORY-SPEC-v2/16-10-decisions.md` | The Factory spec, v2 — 10. Decisions | 8 | Building or updating the factory itself. |
 | `spec/FACTORY-SPEC-v2/17-11-glossary-of-tools-named-here.md` | The Factory spec, v2 — 11. Glossary of tools named here | 8 | Building or updating the factory itself. |

@@ -1,4 +1,4 @@
-# appended to the project's .gitignore by `factory apply`
+# appended to the project's .gitignore by `factory918 apply`
 .artifacts/
 .scratch/
 .plans/

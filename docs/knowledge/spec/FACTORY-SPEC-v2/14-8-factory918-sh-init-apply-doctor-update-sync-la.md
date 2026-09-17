@@ -1,17 +1,18 @@
-<!-- lines: 42 | source: spec/FACTORY-SPEC-v2.md | part 14/17 | title: The Factory spec, v2 — 8. `factory918.sh`: init, apply, doctor, update, sync, labels -->
+<!-- lines: 43 | source: spec/FACTORY-SPEC-v2.md | part 14/17 | title: The Factory spec, v2 — 8. `factory918.sh`: init, apply, doctor, update, sync, labels -->
 
 ## Contents (line numbers are for the Read tool's offset)
 - L9: 8. `factory918.sh`: init, apply, doctor, update, sync, labels
 - L11: 8.1 Commands
-- L22: 8.2 `update`: the merge you described, made precise
-- L38: 8.3 What `doctor` checks (also the M1 acceptance list)
+- L23: 8.2 `update`: the merge you described, made precise
+- L39: 8.3 What `doctor` checks (also the M1 acceptance list)
 
 ## 8. `factory918.sh`: init, apply, doctor, update, sync, labels
 
 ### 8.1 Commands
 
 - `factory918 init <dir> [--template vite:application|vite:library|vite:monorepo] [--no-github]` — `vp create <template> --no-interactive --git --hooks` **[primary: vp create flags]**, then `apply`, then `gh repo create` (if `--no-github` absent), `labels`, and a wizard (Matt's `wizard` skill output) for the human-only steps: branch protection, secrets, any provider dashboards.
-- `factory918 apply [<dir>] [--profile react-native|python]` — copies `template/` into the project (and, with `--profile`, the profile's files: workflow, `eas.json.example` or `pyproject.toml`, `python.yml`, `.pre-commit-config.yaml`), records applied profiles in the manifest, creates the `.claude/skills` symlink, writes `.factory/manifest.json` (template version + sha256 of every managed file as applied), and runs `doctor`. Additive on existing projects; never overwrites a file that exists locally unless it is byte-identical to the template.
+- `factory918 install` — once per machine: links `~/.factory918` to the clone, puts `factory918` in `~/.local/bin`, writes the models sheet (§7.12) if missing.
+- `factory918 apply [<dir>] [--scaffold] [--profile react-native|python] [--name <pkg>]` — copies `template/` into the project (`--scaffold`, used by `init`, replaces the files `vp create` just wrote that Factory918 owns: `AGENTS.md`, `CLAUDE.md`, `vite.config.ts`, `.vite-hooks/pre-commit`) (and, with `--profile`, the profile's files: workflow, `eas.json.example` or `pyproject.toml`, `python.yml`, `.pre-commit-config.yaml`), records applied profiles in the manifest, creates the `.claude/skills` symlink, writes `.factory/manifest.json` (template version + sha256 of every managed file as applied), and runs `doctor`. Additive on existing projects; never overwrites a file that exists locally unless it is byte-identical to the template.
 - `factory918 doctor` — the M1 acceptance checks (below) as a script; prints a table; exits non-zero on any failure.
 - `factory918 update` — three-way merge (§8.2).
 - `factory918 sync` — re-vendor upstream skills from `SOURCES.md` pins and re-apply `patches/`; bumps the template version.

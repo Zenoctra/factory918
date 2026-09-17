@@ -53,7 +53,7 @@ Deliberately **not** vendored: `implement` (replaced by the Ticket playbook), `t
 
 ### 5.5 Collision audit (done)
 
-Across the vendored set there are no duplicate directory names: Matt's `tdd`/`teach` are excluded; `research`, `prototype`, `wizard`, `wait-what` have no pstack counterpart; `spec-review` avoids the built-in `/code-review`; pstack references Claude Code's built-in `loop`, `run` and `verify` skills by design **[primary: open-pstack docs/reference.md]**. Claude Code resolves same-named skills by level (enterprise > personal > project) and namespaces plugins, so a personal `~/.claude/skills/` copy of any of these would override the project copy **[primary: skills docs]**; the factory therefore installs nothing at user level except the models sheet.
+Across the vendored set there are no duplicate directory names: Matt's `tdd`/`teach` are excluded; `research`, `prototype`, `wizard`, `wait-what` have no pstack counterpart; `spec-review` avoids the built-in `/code-review`; pstack references Claude Code's built-in `loop`, `run` and `verify` skills by design **[primary: open-pstack docs/reference.md]**. Claude Code resolves same-named skills by level (enterprise > personal > project) and namespaces plugins, so a personal `~/.claude/skills/` copy of any of these would override the project copy **[primary: skills docs]**; the factory therefore installs no skills at user level; `factory918 install` writes only the models sheet and its include line, the `~/.factory918` link and the `~/.local/bin/factory918` command.
 
 ---
 

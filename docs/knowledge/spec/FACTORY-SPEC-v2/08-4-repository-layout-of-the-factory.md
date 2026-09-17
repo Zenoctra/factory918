@@ -1,4 +1,4 @@
-<!-- lines: 74 | source: spec/FACTORY-SPEC-v2.md | part 8/17 | title: The Factory spec, v2 — 4. Repository layout of the factory -->
+<!-- lines: 75 | source: spec/FACTORY-SPEC-v2.md | part 8/17 | title: The Factory spec, v2 — 4. Repository layout of the factory -->
 
 ## Contents (line numbers are for the Read tool's offset)
 - L6: 4. Repository layout of the factory
@@ -11,9 +11,10 @@ factory918/                           this repository (its own git repo)
 ├── README.md
 ├── SOURCES.md                        upstream repos, shas, paths taken, exclusions, patches applied (feeds `factory918 sync`)
 ├── VERSION
-├── factory918.sh                     the CLI: init | apply [--profile] | doctor | update | sync | sync-repos | labels | knowledge
+├── factory918.sh                     the CLI: install | init | apply [--scaffold] [--profile name] [--name n] | doctor | update | sync | sync-repos | labels | knowledge
 ├── manifest.schema.json              what .factory918/manifest.json in a project looks like
-├── patches/                          patch files applied to vendored skills (§5.4); today the list lives in SOURCES.md
+├── patches/                          unified diffs against the upstream pins, applied in `series` order by `factory918 sync` (§5.4)
+├── machine/                          per-machine files `factory918 install` writes: pstack's model sheet (§7.12)
 ├── docs/FACTORY-SPEC-v2.md           this document
 ├── docs/knowledge/                   THE FULL CORPUS (not copied into projects; `/knowledge` reads it from here)
 │   ├── INDEX.md                      every file, its line count, when to read it

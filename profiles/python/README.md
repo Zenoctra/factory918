@@ -58,6 +58,7 @@ reportMissingTypeStubs = false
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["src"]
 addopts = "-q"
 ```
 
@@ -104,4 +105,4 @@ Same conventions as `docs/agents/evidence.md`. For scripts: the command, stdout,
 
 ## Verified and not
 
-Verified: tool names, the banned-api and per-file-ignores mechanisms, `uv audit`, Astral's ownership change (secondary). Not yet run: the exact `select` list against ruff 0.16 (rule codes move between releases; `ruff rule <CODE>` confirms), `setup-uv@v6` inputs, multi-glob `staged` in Vite+. All M0 checks.
+Verified on 2026-09-16 (see `docs/M0-findings.md`, M6): the `select` list against ruff 0.16.6, T201 and TID251 firing with the profile's message, `per-file-ignores` as a debt ceiling, pyright strict, `uv audit`, every step of `python.yml` locally, and a `"*.py"` task beside `"*"` in `staged`. `pythonpath = ["src"]` is required: nothing installs the package, so pytest cannot import it otherwise. `setup-uv@v6` on GitHub: first run on the M5 throwaway, 2026-09-17.
