@@ -91,13 +91,16 @@ cmd_install() {
 
 # Which preset of pstack's role sheet is active on this machine. pstack never falls back on its
 # own: when a lane drops out on quota, the human switches. No argument prints the active preset.
+presets() { local p; for p in "$F918_DIR"/machine/pstack-models.*.md; do p="${p##*/pstack-models.}"; echo "${p%.md}"; done; }
+
 cmd_models() {
-  local sheet="$HOME/.claude/pstack-models.md" preset="${1:-}"
+  local sheet="$HOME/.claude/pstack-models.md" preset="${1:-}" n
   if [ -z "$preset" ]; then
-    for p in "$F918_DIR"/machine/pstack-models.*.md; do n="${p##*/pstack-models.}"; n="${n%.md}"; cmp -s "$p" "$sheet" && { echo "active: $n"; return 0; }; done
+    [ -f "$sheet" ] || { echo "no sheet at $sheet yet: factory918 install writes the fable preset"; return 0; }
+    for n in $(presets); do cmp -s "$F918_DIR/machine/pstack-models.$n.md" "$sheet" && { echo "active: $n"; return 0; }; done
     echo "active: a sheet edited by hand (matches no preset in machine/)"; return 0
   fi
-  [ -f "$F918_DIR/machine/pstack-models.$preset.md" ] || { echo "no preset named $preset; have: $(ls "$F918_DIR"/machine/pstack-models.*.md | sed 's|.*/pstack-models\.||; s|\.md$||' | tr '\n' ' ')" >&2; exit 1; }
+  [ -f "$F918_DIR/machine/pstack-models.$preset.md" ] || { echo "no preset named $preset; have: $(presets | tr '\n' ' ')" >&2; exit 1; }
   mkdir -p "$HOME/.claude"; cp "$F918_DIR/machine/pstack-models.$preset.md" "$sheet"; echo "active: $preset -> $sheet"
 }
 
@@ -175,19 +178,25 @@ cmd_init() {
   git -C "$dir" branch -M main   # vp create uses the machine default; CI, the guard and protection assume main
   cmd_apply "$dir" --scaffold
   if [ -n "$github" ]; then
-    (cd "$dir" && gh repo create --source=. --private --push) || echo "skipped gh repo create"
-    # Owner-mode repository setting: merged branches are deleted so stacked PRs retarget to main.
-    (cd "$dir" && gh repo edit --delete-branch-on-merge >/dev/null 2>&1) || echo "note: could not set delete-branch-on-merge; tick \"delete branch\" when merging"
-    cmd_labels "$dir"
+    if (cd "$dir" && gh repo create --source=. --private --push); then
+      # Owner-mode repository setting: merged branches are deleted so stacked PRs retarget to main.
+      (cd "$dir" && gh repo edit --delete-branch-on-merge >/dev/null) || echo "note: could not set delete-branch-on-merge; delete branches after merging"
+      cmd_labels "$dir"
+    else
+      echo "skipped gh repo create; labels and repository settings wait until a remote exists"
+    fi
   fi
   echo "Next: open Claude Code in $dir and run /factory-start. Human-only steps such as secrets: /wizard writes the script."
 }
 
 # Each FAIL line carries its fix, so an agent reading the table can guide a person who has
 # never seen this system. PASS needs nothing; NOTE is optional.
+STALE_DAYS=14
+
 cmd_doctor() {
   local dir="${1:-.}"; local fail=0
   chk() { if eval "$2" >/dev/null 2>&1; then echo "PASS  $1"; else echo "FAIL  $1"; echo "      fix: $3"; fail=1; fi; }
+  note() { echo "NOTE  $1"; echo "      fix: $2"; }
   cd "$dir"
   if [ ! -f .factory918/manifest.json ]; then
     echo "FAIL  this directory is not a Factory918 project"
@@ -212,7 +221,7 @@ cmd_doctor() {
   chk "state dir ignored"             "git check-ignore -q .claude/state/mode" "append the lines from the factory clone's template/.gitignore.factory to .gitignore"
   chk "vp check (format, lint, types)" "vp check" "vp fmt, then vp check, and fix what it reports; it stops at the first failing stage"
   chk "tests"                         "vp test run" "vp test run and read the failing test"
-  [ -f "$HOME/.claude/pstack-models.md" ] && echo "PASS  models sheet" || echo "NOTE  models sheet"; echo "      fix: factory918 install writes ~/.claude/pstack-models.md"
+  [ -f "$HOME/.claude/pstack-models.md" ] && echo "PASS  models sheet" || note "models sheet" "factory918 install writes ~/.claude/pstack-models.md"
   chk "AGENTS.md is Factory918's"     "grep -q 'factory918' AGENTS.md" "factory918 apply --scaffold replaces the AGENTS.md that vp create wrote"
   chk "slots filled (/factory-start)" "! grep -q '<[A-Za-z].*slot\|<Project name>\|<One paragraph' AGENTS.md" "open Claude Code here and run /factory-start, the Day-0 interview; it fills every <slot>"
   chk "slim knowledge present"        "[ -f docs/factory918/PHILOSOPHY.md ] && [ -f docs/factory918/MANUAL.md ]" "factory918 update restores docs/factory918/"
@@ -220,9 +229,12 @@ cmd_doctor() {
   chk "ledger exists"                 "[ -f docs/agents/ledger.md ]" "factory918 update restores docs/agents/ledger.md"
   chk "ast-grep rules test"           "pnpm sg:test" "vp install (the rule engine is a devDependency), then pnpm sg:test; a rule without a snapshot needs ast-grep test --update-all"
   # Evidence is never committed and nothing prunes it; say when it is old, delete nothing.
-  if [ -d .artifacts ]; then
-    stale="$(find .artifacts -mindepth 1 -maxdepth 1 -type d -mtime +14 2>/dev/null | sed "s|^\./||" | tr "\\n" " ")"
-    [ -z "$stale" ] || { echo "NOTE  stale evidence: $stale"; echo "      fix: rm -rf .artifacts/<task> once its PR is merged"; }
+  # A directory's mtime moves only when its direct entries change, so a task still being
+  # written deeper down can be named; the NOTE deletes nothing, so that is acceptable.
+  local stale; stale="$(find .artifacts -mindepth 1 -maxdepth 1 -type d -mtime +$STALE_DAYS 2>/dev/null || true)"
+  if [ -n "$stale" ]; then
+    echo "NOTE  stale evidence, older than $STALE_DAYS days; remove each once its PR is merged:"
+    printf '%s\n' "$stale" | while IFS= read -r d; do echo "      rm -rf \"$d\""; done
   fi
   [ "$fail" = 0 ] && echo "all clear" || echo "start with the first FAIL"
   return $fail
