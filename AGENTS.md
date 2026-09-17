@@ -21,7 +21,7 @@ Files under `template/` and `profiles/` are content addressed to agents in a fut
 
 ## Phases
 
-The same two as a project. Planning (`/grill-with-docs`, `/to-spec`, `/to-tickets`) turns a change to the factory into tickets on this repository; execution (`/poteto-mode "#N"`) turns a ticket into a PR. A change that needs no design goes straight to a branch and a PR.
+The same two as a project. Planning (`/grill-with-docs`, `/to-spec`, `/to-tickets`) turns a change to the factory into tickets on this repository; execution (`/poteto-mode "#N"`) turns a ticket into a PR. A change that needs no design goes straight to a branch and a PR, with a quick ticket filed from the ask first (Ticket playbook), so the PR closes it and the review can read what was asked.
 
 ## The ways to hurt yourself
 

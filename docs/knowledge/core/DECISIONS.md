@@ -1,4 +1,4 @@
-<!-- lines: 74 | source: core/DECISIONS.md | part 1/1 | title: Factory918: decisions -->
+<!-- lines: 75 | source: core/DECISIONS.md | part 1/1 | title: Factory918: decisions -->
 
 ## Contents (line numbers are for the Read tool's offset)
 - L13: Settled (2026-09-09)
@@ -71,4 +71,5 @@ Travels anywhere without change: the planning skills, the execution playbooks, `
 | P7 | This clone runs on its own skills and hooks | `.claude/skills` and `.claude/hooks` in the factory link to `template/`'s, so every skill description loads here on every turn (about 3,700 tokens) | One source for skills and hooks, no drift between the factory and its projects, and the same standing cost a project pays. 2026-09-17. |
 | P8 | Stacked pull requests | A PR that depends on an unmerged PR is based on that branch; GitHub retargets it when the parent merges; Manuel merges in order | The frontier stays open without waiting on a merge (decision 6), and conflicts are avoided instead of resolved. PR #2 carried seven concerns as a bootstrap exception to one-concern-per-PR; it is not the norm. 2026-09-17. |
 | P9 | The lockfile on apply | `apply` runs `vp install --no-frozen-lockfile` and prints a failed install | `apply` is what changed `package.json`, pnpm refuses a stale lockfile whenever `CI` is set, and a hidden failure cost three CI runs. 2026-09-17. |
+| P10 | Quick tickets | Conversation work that will end in a PR gets a ticket first: the user's words as a blockquote, criteria from the falsifiability pass, filed without waiting. Work that ends in a commit on a branch needs none. Amends decision 7 | Without a ticket the Spec axis of `spec-review` has nothing legitimate to read and the ask lives only in a transcript. Quotes, never summaries, because a summary is the author's account of the author's work. 2026-09-17. |
 | P2 | Tool versions in CI | Pin every tool CI runs to an exact version, as a devDependency where the tool publishes one | `dlx` and `npx` resolve the latest version, so a rule engine or formatter can change under a project with no diff to show for it. Spec §0 rule 1 already says to pin what you install; this extends it to what CI fetches. First applied to `@ast-grep/cli` 0.45.3 in M0. |
