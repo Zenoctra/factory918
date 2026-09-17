@@ -29,7 +29,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: voidzero-dev/setup-vp@v1
         with:
+          version: "0.3.1" # the ADR pin
           node-version: "24"
+          run-install: false # the factory root has no package.json; the fixture installs its own
       - uses: astral-sh/setup-uv@v6
       - name: Day 0 on a fresh monorepo
         run: |
