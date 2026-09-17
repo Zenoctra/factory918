@@ -117,7 +117,7 @@ Work you start without a ticket, on a cadence:
 - After UI changes land: `/maintain-verification-skill` keeps `verify-<app>` honest.
 - Before a large feature, or monthly: `/thermo-nuclear-code-quality-review` on the area you are about to touch, or `/architect` to reshape it before code.
 - When the factory publishes a version: `git -C ~/.factory918 pull`, then `factory918 update` and `factory918 doctor` in each project.
-- Scratch: `.artifacts/`, `.scratch/` and `.plans/` are git-ignored and nothing prunes them. Delete `.artifacts/<task>/` once its PR is merged.
+- Scratch: `.artifacts/`, `.scratch/` and `.plans/` are git-ignored and nothing deletes them. `factory918 doctor` prints a NOTE naming `.artifacts/<task>/` directories older than two weeks; delete one once its PR is merged.
 
 ## Multi-surface products
 
