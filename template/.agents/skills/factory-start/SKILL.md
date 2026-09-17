@@ -1,6 +1,6 @@
 ---
 name: factory-start
-description: Day-0 interview for a project that just received the Factory918 template. Asks only the decisions the template cannot make, then writes them into AGENTS.md, ADR 0001, .repos/sources.json and the review ladder.
+description: Day-0 interview for a project that just received the Factory918 template. Use when the user asks for the interview, the setup questions, to set up or fill in the project details, day zero, or when AGENTS.md still has <slots>. Asks only the decisions the template cannot make, then writes them into AGENTS.md, ADR 0001, .repos/sources.json and the review ladder.
 disable-model-invocation: true
 argument-hint: "Optional: one line about the project to seed the interview"
 ---

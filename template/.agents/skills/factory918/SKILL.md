@@ -11,8 +11,28 @@ Run `factory918 doctor` from the repo root. It is the checklist: one line per re
 
 Two cases the doctor cannot say itself:
 
-- `factory918` is not on PATH: the factory is not installed on this machine. Next step: in the factory918 clone (`~/.factory918` on a machine where it was installed; otherwise ask where the clone is), run `./factory918.sh install`, add `~/.local/bin` to PATH, open a new terminal.
+- `factory918` is not on PATH: the factory is not installed on this machine. Next step: `git clone https://github.com/Zenoctra/factory918.git` if there is no clone yet (`~/.factory918` exists on a machine where it was installed), then in the clone run `./factory918.sh install`, add `~/.local/bin` to PATH, open a new terminal.
 - The user is new to all of this: say in two sentences what they are looking at (a template plus a CLI that puts a planning-then-execution workflow into a project, with checks that run without a model), and that `docs/factory918/MANUAL.md` is the tour. Then give the next step.
+
+## The user's own words for the setup
+
+People describe these steps without the command names. Match the meaning, then act: run a setup command when the user asks for that action (they are cheap and reversible, and the doctor confirms the result), but only name a skill, because a skill is a conversation the user has to be in.
+
+| The user says something like | They mean | Do |
+|---|---|---|
+| install it, set the factory up on this machine, put it on my laptop | machine setup | `./factory918.sh install` in the clone (clone first if there is none); then the PATH line and a new terminal |
+| get node working, vite is missing, `vp` not found, the toolchain | Vite+ | the installer line from `docs/factory918/MANUAL.md` "Day 0: a new machine"; new terminal |
+| log in to github, connect github, gh is not authenticated | `gh auth login` | it is interactive: tell them to run it in their terminal, then re-run the doctor |
+| start a new project, create the repo, scaffold it, spin one up | `factory918 init` | run it with the directory they name (ask for the directory if they gave none); `vite:monorepo` unless they say otherwise |
+| add this to my existing repo, put factory918 on this project, apply the template | `factory918 apply` | run it in the repo; add `--profile python --name <pkg>` or `--profile react-native` when they mention Python or mobile |
+| the interview, the questions, fill in the project details, day zero, AGENTS.md still has slots | `/factory-start` | name it; it is user-invoked and it asks them questions |
+| is everything set up, check it, health check, what is broken, diagnose | `factory918 doctor` | run it and explain the first FAIL in one sentence with its fix |
+| update, pull the latest, get the new version, upgrade the factory | `factory918 update` | `git -C ~/.factory918 pull`, then `factory918 update` in the project; explain any `.factory-merge` it leaves |
+| the labels are missing, `gh issue create` fails on a label | `factory918 labels` | run it (needs a GitHub remote) |
+| add python, add a mobile app, react native, expo | a profile | `factory918 apply --profile python --name <pkg>` or `--profile react-native` |
+| which model does what, make it cheaper, use Fable for this | the models sheet | edit `~/.claude/pstack-models.md`; `docs/agents/models.md` explains each role |
+| what is pstack, poteto, grilling, a ticket, the ledger, a rung | vocabulary | `/knowledge <term>`, or `docs/factory918/GLOSSARY.md` |
+| reinstall, start over, wipe it, remove factory918 | destructive | ask what exactly and confirm before deleting anything |
 
 ## Step 1: route
 
