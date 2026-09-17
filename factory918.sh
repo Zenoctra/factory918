@@ -149,13 +149,16 @@ cmd_apply() {
 }
 
 cmd_init() {
-  local dir="$1"; shift; local template="${1:-vite:application}"
-  need vp; need gh
+  local dir="$1"; shift; local template="vite:monorepo" github=1
+  while [ $# -gt 0 ]; do case "$1" in --no-github) github=""; shift ;; vite:*) template="$1"; shift ;; *) shift ;; esac; done
+  need vp; [ -z "$github" ] || need gh
   vp create "$template" --directory "$dir" --no-interactive --git --hooks --no-agent
   git -C "$dir" branch -M main   # vp create uses the machine default; CI, the guard and protection assume main
   cmd_apply "$dir" --scaffold
-  (cd "$dir" && gh repo create --source=. --private --push) || echo "skipped gh repo create"
-  cmd_labels "$dir"
+  if [ -n "$github" ]; then
+    (cd "$dir" && gh repo create --source=. --private --push) || echo "skipped gh repo create"
+    cmd_labels "$dir"
+  fi
   echo "Next: open Claude Code in $dir and run /factory-start. Human-only steps such as secrets: /wizard writes the script."
 }
 

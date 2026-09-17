@@ -9,6 +9,8 @@ description: The one entry point to Factory918, for a person who knows nothing a
 
 Run `factory918 doctor` from the repo root. It is the checklist: one line per requirement, `PASS`, `FAIL` with its fix on the next line, or `NOTE` for something optional. Read the first `FAIL` and give the user that one fix as the next step, in one plain sentence with the command, then stop. Come back to this skill after each step; the table below applies only once every line is `PASS` or `NOTE`.
 
+When the doctor says this is not a Factory918 project and the user has named a directory for a new project, that is not a failure to report: run `factory918 init <dir>` (see the table below) and then tell them to open Claude Code in that directory, where `/factory-start` and everything after it live. This clone of the factory is for machine setup and for creating projects; all project work happens in the project.
+
 Two cases the doctor cannot say itself:
 
 - `factory918` is not on PATH: the factory is not installed on this machine. Next step: `git clone https://github.com/Zenoctra/factory918.git` if there is no clone yet (`~/.factory918` exists on a machine where it was installed), then in the clone run `./factory918.sh install`, add `~/.local/bin` to PATH, open a new terminal.
