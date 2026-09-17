@@ -149,6 +149,10 @@ Everything queued after M7 landed in one pass. The spec's §4, §5.5, §7.2, §7
 
 The pass found one more real bug: run through the `~/.local/bin/factory918` symlink, the script took the link's directory as the factory, so `template/` and `profiles/` were empty from its point of view and `apply` copied nothing. Every earlier test had invoked `./factory918.sh` directly. Fixed by resolving the link; the doctor's first line now catches the class. Two hardenings fell out of the retest: an empty profile file no longer counts as present, and `.venv/` is git-ignored because `uv run` creates it inside the project. With the profile pushed to the M5 throwaway (PR 3), `python.yml` ran on GitHub for the first time and passed every step: `astral-sh/setup-uv@v6`, `uv sync --frozen`, `ruff format --check`, `ruff check`, `pyright`, `pytest`, `uv audit`.
 
+## First spec-review on the factory (2026-09-17)
+
+`/spec-review feat/reviews-read-the-ask` on PR #14 ran to completion with both axes: the Spec axis read issue #8 through the commit's `Closes #8`, the Standards axis read the new `CODING_STANDARDS.md` and `AGENTS.md`. It found four documented breaches and three smells on one axis and six spec findings on the other, six of which were fixed on the branch in the following commit; the report is a comment on #14.
+
 ## Still open
 
 - The React Native profile's Expo app under `vp check`, the fingerprint workflow on a real PR, and a simulator screenshot (first mobile project). The Python profile has now run end to end on GitHub.
