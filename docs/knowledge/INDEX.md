@@ -7,7 +7,7 @@ The literal transcript of the conversation that produced this system is not avai
 |---|---|---|---|
 | `core/PHILOSOPHY.md` | Factory918: philosophy | 64 | First. Whenever the spec is silent. |
 | `core/MANUAL.md` | Factory918: the manual | 170 | How to run the loop; what the human does at each point. |
-| `core/DECISIONS.md` | Factory918: decisions | 75 | Before overriding any vendored skill; these win. |
+| `core/DECISIONS.md` | Factory918: decisions | 76 | Before overriding any vendored skill; these win. |
 | `core/GLOSSARY.md` | Factory918: glossary | 69 | A term in AGENTS.md, a playbook or a ticket is unclear. |
 | `core/CONVERSATION-DIGEST.md` | How Factory918 was arrived at | 53 | Why something was chosen, historically; the corrections. |
 | `spec/FACTORY-SPEC-v2/01-preamble.md` | The Factory spec, v2 — (preamble) | 11 | Building or updating the factory itself. |
@@ -19,7 +19,7 @@ The literal transcript of the conversation that produced this system is not avai
 | `spec/FACTORY-SPEC-v2/07-3-the-system-end-to-end.md` | The Factory spec, v2 — 3. The system, end to end | 27 | Building or updating the factory itself. |
 | `spec/FACTORY-SPEC-v2/08-4-repository-layout-of-the-factory.md` | The Factory spec, v2 — 4. Repository layout of the factory | 75 | Building or updating the factory itself. |
 | `spec/FACTORY-SPEC-v2/09-5-skill-manifest.md` | The Factory spec, v2 — 5. Skill manifest | 61 | Building or updating the factory itself. |
-| `spec/FACTORY-SPEC-v2/10-6-contradictions-between-the-vendored-skills-and.md` | The Factory spec, v2 — 6. Contradictions between the vendored skills, and how the factory resolves them | 23 | Building or updating the factory itself. |
+| `spec/FACTORY-SPEC-v2/10-6-contradictions-between-the-vendored-skills-and.md` | The Factory spec, v2 — 6. Contradictions between the vendored skills, and how the factory resolves them | 24 | Building or updating the factory itself. |
 | `spec/FACTORY-SPEC-v2/11-7-the-deterministic-layer-concretely.md` | The Factory spec, v2 — 7. The deterministic layer, concretely | 167 | Building or updating the factory itself. |
 | `spec/FACTORY-SPEC-v2/12-7-the-deterministic-layer-concretely.md` | The Factory spec, v2 — 7. The deterministic layer, concretely | 128 | Building or updating the factory itself. |
 | `spec/FACTORY-SPEC-v2/13-7-the-deterministic-layer-concretely.md` | The Factory spec, v2 — 7. The deterministic layer, concretely | 13 | Building or updating the factory itself. |

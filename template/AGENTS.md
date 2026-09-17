@@ -34,7 +34,7 @@ Project terms live in `CONTEXT.md`. Decisions that were hard to reverse live in 
 
 **Planning** is `/wayfinder` (big and foggy), `/grill-with-docs` (one feature), then `/to-spec` and `/to-tickets`. In planning, decisions are the human's and facts are yours; questions are read-only; no production code is written; the output is tickets on GitHub with `Blocked by` edges.
 
-**Execution** is `/poteto-mode`. An issue reference in the request (`#N`, `owner/repo#N`, an issue URL) means the Ticket playbook. Match ceremony to the task: delegation is for breadth or adversarial review, not ordinary work. Anything the ticket settles is not re-asked; anything it does not settle is prototyped and presented, unless it is irreversible, in which case ask.
+**Execution** is `/poteto-mode`. An issue reference in the request (`#N`, `owner/repo#N`, an issue URL) means the Ticket playbook. Match ceremony to the task. Inside a playbook the writer is never the orchestrator: implementation is delegated to its own lane and the orchestrator reviews the diff it gets back; a trivial edit outside any playbook is the orchestrator's own. Anything the ticket settles is not re-asked; anything it does not settle is prototyped and presented, unless it is irreversible, in which case ask.
 
 A hook prints the current phase at every prompt. Follow it. `/mode-plan` and `/mode-build` switch it by hand.
 
