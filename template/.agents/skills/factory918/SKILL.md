@@ -31,6 +31,8 @@ People describe these steps without the command names. Match the meaning, then a
 | is everything set up, check it, health check, what is broken, diagnose | `factory918 doctor` | run it and explain the first FAIL in one sentence with its fix |
 | update, pull the latest, get the new version, upgrade the factory | `factory918 update` | `git -C ~/.factory918 pull`, then `factory918 update` in the project; explain any `.factory-merge` it leaves |
 | the labels are missing, `gh issue create` fails on a label | `factory918 labels` | run it (needs a GitHub remote) |
+| where does PR N stand, is it ready, is it safe to merge, review PR N for me | a merge read | read the checks, the comments and the Verification section; run `spec-review` if it has not run; answer with what changed, what proved it, what is unresolved, and a recommendation. Merging is theirs: never run `gh pr merge` |
+| we merged, bring my copy up to date, sync main, update the branches | after a merge | `git checkout main && git pull`; then rebase any open branch that was stacked on what merged |
 | add python, add a mobile app, react native, expo | a profile | `factory918 apply --profile python --name <pkg>` or `--profile react-native` |
 | which model does what, make it cheaper, use Fable for this | the models sheet | edit `~/.claude/pstack-models.md`; `docs/agents/models.md` explains each role |
 | the agent surprised me, note this for later, add that to the ledger | a ledger entry | append `YYYY-MM-DD \| model \| what it did \| what you wanted` to `docs/agents/ledger.md`; that is all, rules come later |
