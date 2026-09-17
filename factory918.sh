@@ -2,7 +2,10 @@
 # The Factory918 CLI. Subcommands: install | init | apply [--profile name] [--name n] | doctor | update | sync | sync-repos | labels | knowledge
 # Implemented per docs/FACTORY-SPEC-v2.md §8; verified against the tool versions in docs/M0-findings.md.
 set -euo pipefail
-F918_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Resolve the script's real location: ~/.local/bin/factory918 is a symlink into the clone.
+self="${BASH_SOURCE[0]}"
+while [ -L "$self" ]; do target="$(readlink "$self")"; case "$target" in /*) self="$target" ;; *) self="$(dirname "$self")/$target" ;; esac; done
+F918_DIR="$(cd "$(dirname "$self")" && pwd -P)"
 TEMPLATE="$F918_DIR/template"
 VERSION="$(cat "$F918_DIR/VERSION" 2>/dev/null || echo 0.1.0)"
 
@@ -167,9 +170,10 @@ cmd_doctor() {
     echo "      fix: factory918 init <new-dir> to create one, or factory918 apply here to add Factory918 to an existing repo"
     return 1
   fi
+  chk "factory files reachable"       "[ -d \"$TEMPLATE\" ] && [ -d \"$F918_DIR/profiles\" ]" "the factory918 command does not resolve to a clone (template/ missing beside it); run ./factory918.sh install from the clone"
   chk "factory918 installed"          "command -v factory918 && [ -d \"\${FACTORY918_HOME:-\$HOME/.factory918}/docs/knowledge\" ]" "in the factory918 clone run ./factory918.sh install, add ~/.local/bin to PATH, open a new terminal"
   chk "one factory on this machine"   "[ ! -e \"\$HOME/.factory918\" ] || [ \"\$(cd \"\$HOME/.factory918\" && pwd -P)\" = \"\$(cd \"\$(dirname \"\$(readlink \"\$(command -v factory918)\")\")\" && pwd -P)\" ]" "~/.factory918 and ~/.local/bin/factory918 point at different clones; run ./factory918.sh install from the one you want"
-  chk "vp matches the ADR pin"        "[ \"\$(vp --version | sed 's/^vp v//')\" = \"\$(sed -n 's/.*vite-plus \\([0-9][0-9.]*\\).*/\\1/p' docs/adr/0001-toolchain.md | head -1)\" ]" "docs/adr/0001-toolchain.md pins a different vite-plus than vp --version reports; update the ADR or run the Vite+ installer with VP_VERSION=<pin>"
+  chk "vp matches the ADR pin"        "[ \"\$(vp --version | head -1 | sed 's/^vp v//')\" = \"\$(sed -n 's/.*vite-plus \\([0-9][0-9.]*\\).*/\\1/p' docs/adr/0001-toolchain.md | head -1)\" ]" "docs/adr/0001-toolchain.md pins a different vite-plus than vp --version reports; update the ADR or run the Vite+ installer with VP_VERSION=<pin>"
   chk "vp on PATH"                    "command -v vp" "curl -fsSL https://vite.plus -o /tmp/vp.sh && VP_VERSION=0.3.1 VP_NODE_MANAGER=yes bash /tmp/vp.sh, then open a new terminal"
   chk "vp env doctor"                 "vp env doctor" "run vp env doctor and follow its output"
   chk "hooks installed"               "vp hooks status | grep -qi 'hooksPath'" "vp hooks enable (no .git means this is not a repository yet: git init first)"
