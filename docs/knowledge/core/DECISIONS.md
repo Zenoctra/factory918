@@ -1,9 +1,10 @@
-<!-- lines: 46 | source: core/DECISIONS.md | part 1/1 | title: Factory918: decisions -->
+<!-- lines: 71 | source: core/DECISIONS.md | part 1/1 | title: Factory918: decisions -->
 
 ## Contents (line numbers are for the Read tool's offset)
-- L12: Settled (2026-09-09)
-- L34: Defaults accepted by silence
-- L38: Provisional (added by agents; Manuel promotes or overrules)
+- L13: Settled (2026-09-09)
+- L35: Defaults accepted by silence
+- L39: What the factory assumes it owns
+- L63: Provisional (added by agents; Manuel promotes or overrules)
 
 # Factory918: decisions
 
@@ -34,6 +35,30 @@ The choices Manuel has made, with the reason each was made, so no agent re-deriv
 ## Defaults accepted by silence
 
 Mobile profile Expo/RN (decision 10); Python supported both as a monorepo package and standalone, monorepo first (11); full knowledge base in the factory repo only (14).
+
+## What the factory assumes it owns
+
+`init` and `apply` assume the repository is ours. Each assumption below is what a guest mode (issue #1 on the factory repository) has to detect from the host repository or ask the human, instead of imposing.
+
+| Assumption | Where it lives | In a repository we do not own |
+|---|---|---|
+| The always-loaded file is ours | `AGENTS.md`, `CLAUDE.md` | keep theirs; ours goes in `CLAUDE.local.md` |
+| Skills, agent definitions, hooks and `settings.json` are committed | `.agents/skills`, `.claude/` | present in the working tree, listed in `.git/info/exclude`; hooks in `settings.local.json` |
+| The toolchain is Vite+ on pnpm and Node 24 | `vite.config.ts`, `sgconfig.yml`, the oxlint plugin, `package.json` scripts (decision 9) | detect theirs: formatter, linter, test and build commands |
+| The commit hook is ours and formats only | `.vite-hooks/pre-commit`, `prepare` (decision 5) | keep theirs; ask whether ours may run beside it |
+| CI is our two jobs on `main`, plus size labels and the evidence check | `.github/workflows/*` | keep theirs; detect the protected branch; babysit watches their checks |
+| Format-on-write calls `vp fmt` | `.claude/hooks/format-on-write.sh` | call their formatter |
+| Issues are the tracker and our labels exist | `docs/agents/issue-tracker.md`, `.github/labels.json` | detect their labels; ask whether tickets go in their tracker at all |
+| PRs close their ticket, one concern each, our title style | `AGENTS.md` "Pull requests" | ask for their PR and branch conventions |
+| Comments stay | decision 4, `CODING_STANDARDS.md` | follow their standards; ask |
+| The review standard is `CODING_STANDARDS.md` | `spec-review` Standards axis | point the Standards axis at their document if one exists |
+| Never block on the human except irreversible actions | decision 6 | ask how much more conservative to be; a repository we do not own widens "irreversible" |
+| Evidence goes in `.artifacts/` and CI rejects it if committed | `docs/agents/evidence.md`, `ci.yml` | keep the convention locally; exclude the directory |
+| The manifest, ADR 0001, `CONTEXT.md`, `docs/agents/*` are committed | `apply` | exclude them; `CONTEXT.md` only if they want it |
+| Repositories are private, one monorepo per product | decision 8 | theirs to decide; no assumption |
+| The models sheet, the knowledge base and `/knowledge` are machine-level | `~/.claude`, `~/.factory918` (decision 14) | unchanged; nothing of theirs is touched |
+
+Travels anywhere without change: the planning skills, the execution playbooks, `spec-review` in a fresh context, babysit, the evidence conventions, the ledger and retro, and the rule that the agent never merges.
 
 ## Provisional (added by agents; Manuel promotes or overrules)
 
