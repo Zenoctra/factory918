@@ -153,7 +153,9 @@ cmd_init() {
   local dir="$1"; shift; local template="vite:monorepo" github=1
   while [ $# -gt 0 ]; do case "$1" in --no-github) github=""; shift ;; vite:*) template="$1"; shift ;; *) shift ;; esac; done
   need vp; [ -z "$github" ] || need gh
-  vp create "$template" --directory "$dir" --no-interactive --git --hooks --no-agent
+  # vp create refuses an absolute --directory: run it from the parent and pass the name.
+  mkdir -p "$(dirname "$dir")"
+  (cd "$(dirname "$dir")" && vp create "$template" --directory "$(basename "$dir")" --no-interactive --git --hooks --no-agent)
   git -C "$dir" branch -M main   # vp create uses the machine default; CI, the guard and protection assume main
   cmd_apply "$dir" --scaffold
   if [ -n "$github" ]; then
