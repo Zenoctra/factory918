@@ -68,6 +68,7 @@ apply_react_native() {
 # $FACTORY918_HOME's default), and ~/.local/bin/factory918 puts the CLI on PATH.
 cmd_install() {
   local home="$HOME/.factory918" bin="$HOME/.local/bin"
+  for tool in git jq python3; do command -v "$tool" >/dev/null || echo "missing: $tool (install it with your package manager; the CLI needs git, jq and python3)"; done
   if [ -e "$home" ] && [ "$(cd "$home" && pwd -P)" != "$(cd "$F918_DIR" && pwd -P)" ]; then
     echo "$home already points elsewhere: $(readlink "$home" || echo "$home"). Move it aside or set FACTORY918_HOME." >&2; exit 1
   fi
@@ -86,7 +87,7 @@ cmd_install() {
 }
 
 cmd_apply() {
-  local dir="${1:-.}"; need jq
+  local dir="${1:-.}"; need jq; need python3
   shift || true
   local profile="" scaffold="" name=""
   while [ $# -gt 0 ]; do case "$1" in
@@ -98,6 +99,7 @@ cmd_apply() {
   mkdir -p "$dir/.factory918"
   local manifest="$dir/.factory918/manifest.json"
   [ -f "$manifest" ] || echo '{"version":"'"$VERSION"'","files":{},"profiles":[]}' > "$manifest"
+  tmp="$(mktemp)"; jq --arg f "$(cd "$F918_DIR" && pwd -P)" '.factory = $f' "$manifest" > "$tmp" && mv "$tmp" "$manifest"
   if [ -n "$profile" ]; then
     case "$profile" in
       python) apply_python "$dir" "${name:-$(basename "$(cd "$dir" && pwd)")}" ;;
@@ -151,7 +153,7 @@ cmd_init() {
   cmd_apply "$dir" --scaffold
   (cd "$dir" && gh repo create --source=. --private --push) || echo "skipped gh repo create"
   cmd_labels "$dir"
-  echo "Human-only steps: branch protection on main (require Check + Test), secrets. Generate a wizard with /wizard."
+  echo "Next: open Claude Code in $dir and run /factory-start. Human-only steps such as secrets: /wizard writes the script."
 }
 
 # Each FAIL line carries its fix, so an agent reading the table can guide a person who has
@@ -166,13 +168,15 @@ cmd_doctor() {
     return 1
   fi
   chk "factory918 installed"          "command -v factory918 && [ -d \"\${FACTORY918_HOME:-\$HOME/.factory918}/docs/knowledge\" ]" "in the factory918 clone run ./factory918.sh install, add ~/.local/bin to PATH, open a new terminal"
+  chk "one factory on this machine"   "[ ! -e \"\$HOME/.factory918\" ] || [ \"\$(cd \"\$HOME/.factory918\" && pwd -P)\" = \"\$(cd \"\$(dirname \"\$(readlink \"\$(command -v factory918)\")\")\" && pwd -P)\" ]" "~/.factory918 and ~/.local/bin/factory918 point at different clones; run ./factory918.sh install from the one you want"
+  chk "vp matches the ADR pin"        "[ \"\$(vp --version | sed 's/^vp v//')\" = \"\$(sed -n 's/.*vite-plus \\([0-9][0-9.]*\\).*/\\1/p' docs/adr/0001-toolchain.md | head -1)\" ]" "docs/adr/0001-toolchain.md pins a different vite-plus than vp --version reports; update the ADR or run the Vite+ installer with VP_VERSION=<pin>"
   chk "vp on PATH"                    "command -v vp" "curl -fsSL https://vite.plus -o /tmp/vp.sh && VP_VERSION=0.3.1 VP_NODE_MANAGER=yes bash /tmp/vp.sh, then open a new terminal"
   chk "vp env doctor"                 "vp env doctor" "run vp env doctor and follow its output"
   chk "hooks installed"               "vp hooks status | grep -qi 'hooksPath'" "vp hooks enable (no .git means this is not a repository yet: git init first)"
   chk ".claude/skills symlink"        "[ \"\$(readlink .claude/skills)\" = ../.agents/skills ]" "rm -rf .claude/skills && ln -s ../.agents/skills .claude/skills"
   chk "every skill has a name"        "! grep -L '^name:' .agents/skills/*/SKILL.md | grep ." "factory918 update restores the vendored skills; a skill you wrote needs a name: line in its frontmatter"
   chk "no duplicate skill names"      "[ -z \"\$(grep -h '^name:' .agents/skills/*/SKILL.md | sort | uniq -d)\" ]" "rename or remove one of the two skills that share a name (grep -h ^name: .agents/skills/*/SKILL.md | sort | uniq -d)"
-  chk "gh authenticated"              "gh auth status" "gh auth login (brew install gh first if it is missing)"
+  chk "gh authenticated"              "gh auth status" "gh auth login (install gh first: brew, apt, dnf or winget)"
   chk "labels present"                "gh label list --limit 200 | grep -q ready-for-agent" "factory918 labels (needs a GitHub remote; factory918 init creates one, or gh repo create --private --source=. --push)"
   chk "ci workflow present"           "[ -f .github/workflows/ci.yml ]" "factory918 update restores it"
   chk "settings.json parses"          "jq . .claude/settings.json" "fix the JSON in .claude/settings.json, or factory918 update to restore the template copy"
@@ -205,6 +209,11 @@ cmd_update() {
   local dir="${1:-.}"; need jq; need git
   local manifest="$dir/.factory918/manifest.json"
   [ -f "$manifest" ] || { echo "no $manifest: run factory918 apply first" >&2; exit 1; }
+  need python3
+  local recorded; recorded="$(jq -r '.factory // ""' "$manifest")"
+  if [ -n "$recorded" ] && [ "$recorded" != "$(cd "$F918_DIR" && pwd -P)" ]; then
+    echo "warning: this project was applied from $recorded; updating from $(cd "$F918_DIR" && pwd -P). Merge bases come from this clone's tags." >&2
+  fi
   python3 - "$F918_DIR" "$TEMPLATE" "$dir" "$manifest" "$VERSION" <<'EOF'
 import hashlib, json, pathlib, subprocess, sys
 f918, template, project, manifest_path, new_version = sys.argv[1:6]

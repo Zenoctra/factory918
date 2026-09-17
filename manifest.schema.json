@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": ".factory/manifest.json",
+  "title": ".factory918/manifest.json",
   "type": "object",
   "properties": {
     "version": {
@@ -34,6 +34,21 @@
           }
         }
       }
+    },
+    "factory": {
+      "type": "string",
+      "description": "absolute path of the factory clone that ran apply; update warns when a different clone runs"
+    },
+    "profiles": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "python",
+          "react-native"
+        ]
+      },
+      "description": "profiles applied with factory918 apply --profile"
     }
   },
   "required": [
