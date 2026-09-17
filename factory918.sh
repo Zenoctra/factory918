@@ -144,7 +144,11 @@ cmd_apply() {
   # Install first: the lint plugin and the rule engine are devDependencies, and the
   # gates report missing tooling as failure. Then format, because vp check stops at
   # the first stage and an unformatted file would hide every lint and type error.
-  (cd "$dir" && vp install >/dev/null 2>&1) || true
+  # apply just changed package.json, so the lockfile must be regenerated; pnpm would otherwise
+  # refuse under CI. A failed install is reported, never hidden: every gate depends on it.
+  log="$(mktemp)"
+  if ! (cd "$dir" && vp install --no-frozen-lockfile) > "$log" 2>&1; then echo "warning: vp install failed:"; tail -8 "$log"; fi
+  rm -f "$log"
   (cd "$dir" && vp fmt >/dev/null 2>&1) || true
   cmd_doctor "$dir" || true
 }
