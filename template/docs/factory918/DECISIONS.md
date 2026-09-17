@@ -22,6 +22,7 @@ The choices Manuel has made, with the reason each was made, so no agent re-deriv
 | 14 | Knowledge base | Full corpus in the Factory918 repo; each project carries `PHILOSOPHY.md`, `MANUAL.md` and the `/knowledge` skill pointing at the factory clone | Projects stay light; one place to update. |
 | 15 | Name | Factory918 (`/factory918` router, `factory918` CLI) | Manuel's choice. |
 | 16 | Voice | "A note from Manuel" in `AGENTS.md` is written from his own sentences | Theo's rule that a copied voice is nobody's voice. |
+| 18 | Models, superseding 13 | Fable 5.1 at high effort writes the code (feature, refactoring, bug-fix, perf-issue, hillclimb) and does the judgment; Opus 5 is the junior (swarm workers, explorers, one lane of each panel); Astra joins the review panels once its slug is known; `factory918 models fable|opus` switches presets when a quota runs out, because pstack never falls back on its own; the interactive session runs on Fable when tickets or PRs are being written | Manuel: Fable writes much better mergeable code; Opus and Sol are the juniors; Astra is trusted for review. 2026-09-17. |
 | 17 | The Ticket playbook | Kept as one file wrapping pstack's playbooks rather than four edits to upstream files | Three new behaviours (read ticket, check blockers, falsifiability pass) and one line (`Closes #N`); one file survives `factory918 sync` cleanly. |
 
 ## Defaults accepted by silence

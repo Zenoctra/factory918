@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# The Factory918 CLI. Subcommands: install | init | apply [--profile name] [--name n] | doctor | update | sync | sync-repos | labels | knowledge
+# The Factory918 CLI. Subcommands: install | models [preset] | init | apply [--profile name] [--name n] | doctor | update | sync | sync-repos | labels | knowledge
 # Implemented per docs/FACTORY-SPEC-v2.md §8; verified against the tool versions in docs/M0-findings.md.
 set -euo pipefail
 # Resolve the script's real location: ~/.local/bin/factory918 is a symlink into the clone.
@@ -82,11 +82,23 @@ cmd_install() {
   case ":$PATH:" in *":$bin:"*) ;; *) echo "add to your shell rc: export PATH=\"\$HOME/.local/bin:\$PATH\"" ;; esac
   # The one user-level write the factory makes (spec §5.5): pstack's role sheet, from machine/.
   if [ ! -f "$HOME/.claude/pstack-models.md" ]; then
-    mkdir -p "$HOME/.claude"; cp "$F918_DIR/machine/pstack-models.md" "$HOME/.claude/pstack-models.md"; echo "installed: ~/.claude/pstack-models.md"
+    mkdir -p "$HOME/.claude"; cp "$F918_DIR/machine/pstack-models.fable.md" "$HOME/.claude/pstack-models.md"; echo "installed: ~/.claude/pstack-models.md (fable preset)"
   fi
   grep -qx '@~/.claude/pstack-models.md' "$HOME/.claude/CLAUDE.md" 2>/dev/null || { printf '@~/.claude/pstack-models.md\n' >> "$HOME/.claude/CLAUDE.md"; echo "installed: include line in ~/.claude/CLAUDE.md"; }
   command -v vp >/dev/null || echo "next: install Vite+ with  curl -fsSL https://vite.plus -o /tmp/vp.sh && VP_VERSION=0.3.1 VP_NODE_MANAGER=yes bash /tmp/vp.sh"
   command -v gh >/dev/null && gh auth status >/dev/null 2>&1 || echo "next: gh auth login"
+}
+
+# Which preset of pstack's role sheet is active on this machine. pstack never falls back on its
+# own: when a lane drops out on quota, the human switches. No argument prints the active preset.
+cmd_models() {
+  local sheet="$HOME/.claude/pstack-models.md" preset="${1:-}"
+  if [ -z "$preset" ]; then
+    for p in "$F918_DIR"/machine/pstack-models.*.md; do n="${p##*/pstack-models.}"; n="${n%.md}"; cmp -s "$p" "$sheet" && { echo "active: $n"; return 0; }; done
+    echo "active: a sheet edited by hand (matches no preset in machine/)"; return 0
+  fi
+  [ -f "$F918_DIR/machine/pstack-models.$preset.md" ] || { echo "no preset named $preset; have: $(ls "$F918_DIR"/machine/pstack-models.*.md | sed 's|.*/pstack-models\.||; s|\.md$||' | tr '\n' ' ')" >&2; exit 1; }
+  mkdir -p "$HOME/.claude"; cp "$F918_DIR/machine/pstack-models.$preset.md" "$sheet"; echo "active: $preset -> $sheet"
 }
 
 cmd_apply() {
@@ -338,6 +350,7 @@ cmd_sync_repos() {
 
 case "${1:-}" in
   install) cmd_install ;;
+  models) shift; cmd_models "$@" ;;
   init) shift; cmd_init "$@" ;;
   apply) shift; cmd_apply "$@" ;;
   doctor) shift; cmd_doctor "$@" ;;

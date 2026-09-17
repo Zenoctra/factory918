@@ -45,7 +45,7 @@ If the project is not on Vite+ yet, run `vp migrate` first: `apply` merges Vite+
 
 **What you do.** Answer the decisions; let the agent find the facts. Confirm the test seams when `/to-spec` asks; those become the pre-agreed seams `tdd` uses in execution. Approve the ticket breakdown; push back on over-decomposition (the most-reported friction). Create nothing by hand on GitHub; the skills publish.
 
-**Model choice.** Grill on Opus 5 (long sessions). Switch to Fable 5.1 with `/model` for `/to-spec` and `/to-tickets`, then switch back: synthesis is short and high-value, and the context carries across the switch.
+**Model choice.** Grill on Opus 5 (long sessions). Switch to Fable 5.1 with `/model` for `/to-spec` and `/to-tickets`, then switch back: synthesis is short and high-value, and the context carries across the switch. In execution, run the interactive session on Fable whenever tickets or PR bodies are being written: that prose is the handoff, and no delegate writes it.
 
 **Phase guard.** Typing a planning command sets the phase to planning; a hook prints "PHASE: planning" every turn and poteto-mode stays out. `/mode-build` or a ticket reference flips it back.
 
@@ -108,18 +108,17 @@ The default is one monorepo per product: `apps/web`, `apps/mobile`, `apps/admin`
 
 ## Models and cost
 
-You are on the $200 Claude plan; the limit is shared across models and Fable 5.1 spends it fastest. `factory918 install` writes `~/.claude/pstack-models.md` (edit it to change a role; one file). pstack has no Sonnet family, so cheap work runs Opus at `medium` effort:
+You are on the $200 Claude plan; the limit is shared across models and Fable 5.1 spends it fastest. Decision 18: Fable writes the code. `factory918 install` writes `~/.claude/pstack-models.md` from the `fable` preset; when Fable's quota runs out a lane drops out and the orchestrator says so, and `factory918 models opus` switches to the Opus preset (`factory918 models fable` switches back). One file, two presets:
 
-| Role | Model | Why |
+| Role | fable preset | opus preset |
 |---|---|---|
-| Your interactive session (execution) | Opus 5 | strong, cheaper than Fable, the default worker |
-| Your interactive session (grilling) | Opus 5, switch to Fable for `/to-spec` + `/to-tickets` | judgment where it is the product, briefly |
-| Feature and refactoring delegates, `how` explorers, swarm workers | Opus 5 at medium effort | mechanical and read-only bulk |
-| Bug fix, perf issue, hillclimb | Opus 5 | needs reasoning, runs often |
-| Strongest judgment, prose, synthesis | Opus 5; Fable on request | override per ticket when the design is hard |
-| Panels (`how` critics, `architect` runners) | Opus 5 at high and medium effort | panels multiply cost by their size |
-| `interrogate` reviewers | Opus 5 at xhigh effort + Fable 5.1 | the contested path is where Fable earns its cost |
-| `arena` | off by default | the token burner; enable for a specific bake-off |
+| Your interactive session | Fable when tickets or PRs are being written; Opus for casual turns | Opus |
+| Writers: feature, refactoring, bug fix, perf, hillclimb | Fable 5.1 high | Opus 5 high |
+| Judgment and prose, hardest tasks | Fable 5.1 high | Opus 5 xhigh |
+| Panels: `how` critics, `architect`, `arena` runners | Fable + Opus | Opus high + Opus medium |
+| `interrogate` reviewers, `arena` cross-judge | Fable + Opus xhigh, Astra when wired | Opus xhigh + Opus high |
+| Juniors: `how` explorers, swarm workers | Opus 5 medium | Opus 5 medium |
+| `arena` | off by default | off by default |
 
 Rough cost order of the skills, highest first: `arena`, `swarm`, `interrogate`, `how` in critique mode, `/wayfinder` with parallel research, `/to-tickets` on a large spec (one user reported 1.5M tokens for 14 tickets), then everything else. Check the usage page weekly; if Fable is over a third of spend, move a role down.
 
