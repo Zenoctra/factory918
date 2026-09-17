@@ -35,10 +35,6 @@
         }
       }
     },
-    "factory": {
-      "type": "string",
-      "description": "absolute path of the factory clone that ran apply; update warns when a different clone runs"
-    },
     "profiles": {
       "type": "array",
       "items": {
@@ -54,5 +50,6 @@
   "required": [
     "version",
     "files"
-  ]
+  ],
+  "description": "Committed with the project. The applying clone's path lives beside it in .factory918/local.json, which is git-ignored."
 }

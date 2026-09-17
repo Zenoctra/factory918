@@ -102,7 +102,7 @@ cmd_apply() {
   mkdir -p "$dir/.factory918"
   local manifest="$dir/.factory918/manifest.json"
   [ -f "$manifest" ] || echo '{"version":"'"$VERSION"'","files":{},"profiles":[]}' > "$manifest"
-  tmp="$(mktemp)"; jq --arg f "$(cd "$F918_DIR" && pwd -P)" '.factory = $f' "$manifest" > "$tmp" && mv "$tmp" "$manifest"
+  printf '{"factory":"%s"}\n' "$(cd "$F918_DIR" && pwd -P)" > "$dir/.factory918/local.json"   # git-ignored; the clone that applied
   if [ -n "$profile" ]; then
     case "$profile" in
       python) apply_python "$dir" "${name:-$(basename "$(cd "$dir" && pwd)")}" ;;
@@ -217,7 +217,7 @@ cmd_update() {
   local manifest="$dir/.factory918/manifest.json"
   [ -f "$manifest" ] || { echo "no $manifest: run factory918 apply first" >&2; exit 1; }
   need python3
-  local recorded; recorded="$(jq -r '.factory // ""' "$manifest")"
+  local recorded; recorded="$(jq -r '.factory // ""' "$dir/.factory918/local.json" 2>/dev/null)"
   if [ -n "$recorded" ] && [ "$recorded" != "$(cd "$F918_DIR" && pwd -P)" ]; then
     echo "warning: this project was applied from $recorded; updating from $(cd "$F918_DIR" && pwd -P). Merge bases come from this clone's tags." >&2
   fi
