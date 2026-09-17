@@ -1,10 +1,10 @@
-<!-- lines: 76 | source: core/DECISIONS.md | part 1/1 | title: Factory918: decisions -->
+<!-- lines: 77 | source: core/DECISIONS.md | part 1/1 | title: Factory918: decisions -->
 
 ## Contents (line numbers are for the Read tool's offset)
 - L13: Settled (2026-09-09)
 - L35: Defaults accepted by silence
 - L39: What the factory assumes it owns
-- L63: Provisional (added by agents; Manuel promotes or overrules)
+- L64: Provisional (added by agents; Manuel promotes or overrules)
 
 # Factory918: decisions
 
@@ -56,6 +56,7 @@ Mobile profile Expo/RN (decision 10); Python supported both as a monorepo packag
 | Evidence goes in `.artifacts/` and CI rejects it if committed | `docs/agents/evidence.md`, `ci.yml` | keep the convention locally; exclude the directory |
 | The manifest, ADR 0001, `CONTEXT.md`, `docs/agents/*` are committed | `apply` | exclude them; `CONTEXT.md` only if they want it |
 | Repositories are private, one monorepo per product | decision 8 | theirs to decide; no assumption |
+| `init` sets repository settings: delete the head branch on merge, so stacked PRs retarget | `cmd_init` | never touched; a guest edits no settings |
 | The models sheet, the knowledge base and `/knowledge` are machine-level | `~/.claude`, `~/.factory918` (decision 14) | unchanged; nothing of theirs is touched |
 
 Travels anywhere without change: the planning skills, the execution playbooks, `spec-review` in a fresh context, babysit, the evidence conventions, the ledger and retro, and the rule that the agent never merges.
