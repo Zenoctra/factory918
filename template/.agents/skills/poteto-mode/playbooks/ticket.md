@@ -15,9 +15,9 @@
 
 ### Quick ticket
 
-**Work that started in conversation and will end in a PR gets a ticket first, in the user's own words.** Then it is Ticket work. A change that ends in a commit on a branch needs none.
+**Work that started in conversation and will end in a PR gets a ticket first, in the words that decided it.** Then it is Ticket work. A change that ends in a commit on a branch needs none.
 
-1. File it before starting: `gh issue create --label ready-for-agent --title "<the ask in six words>" --body "<body>"`. The body's **What to build** is the user's message, or the sentences of it that carry the ask, as a blockquote. Quote; never paraphrase or summarize: the review reads this to check the work against what the human said. No **Parent**, no **Blocked by**.
+1. File it before starting: `gh issue create --label ready-for-agent --title "<the ask in six words>" --body "<body>"`. The body's **What to build** is the exchange that carries the decision, quoted and attributed: the user's ask as a `> user:` blockquote; where the agent proposed something and the user approved it, the proposal and the approval as their own `> agent:` and `> user:` blockquotes. Quote; never paraphrase or summarize, and put nothing in the ticket that neither said: the reviewers read this to check the work against what was decided, and the writer inherits the reasoning, not a flattened ask. No **Parent**, no **Blocked by**.
 2. Its **Acceptance criteria** come from the falsifiability pass (step 3 above): one checkbox per observation that would fail today, in the user's terms.
 3. Reply with the number and the criteria in one line, then proceed; do not wait. The human edits the issue if the words are wrong.
 4. From here it is the Ticket playbook: the PR says `Closes #N`, `spec-review` reads the issue, the merge closes it.
