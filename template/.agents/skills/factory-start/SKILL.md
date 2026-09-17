@@ -27,7 +27,7 @@ Call the Skill tool with "grilling" over exactly these decisions, in this order,
 4. **Uncommon dependencies to vendor.** For each candidate from exploration: vendor its source and agent guide into `.repos/` (yes/no), and its git URL and ref.
 5. **Review ladder.** Any external review bot to list (default none). Whether `interrogate` should run on every PR or only when contested (default contested).
 6. **Models.** Confirm the defaults in `docs/agents/models.md` or change a role. Fable 5.1 is reserved by default.
-7. **Repository.** Private (default). Branch protection on `main` requiring `Check` and `Test` (human-only step; offer `/wizard`).
+7. **Repository.** Private (default) or public. Merging stays the human's act either way.
 8. **Anything the human already knows will hurt.** Existing invariants, forbidden directories, data that must never be touched. These become "The ways to hurt yourself" entries.
 
 Stop when the frontier of questions is empty and the human confirms.
