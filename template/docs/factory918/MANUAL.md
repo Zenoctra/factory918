@@ -74,6 +74,14 @@ From a pull request to a merge, in order. Every rung runs without asking you; yo
 7. **Babysit.** The agent polls checks and comments newer than its last push until everything is green on the latest commit, then stops at merge-ready.
 8. **Rung 4, you.** Read the conversation and the Verification section against its evidence. Reading every line is optional; reading the claims and their proof is not. Merge. The agent never merges.
 
+**Your merge, step by step.** You never need the git syntax for any of this; say the words and the agent runs the commands.
+
+1. Ask for a read, not a diff: "where does PR N stand?" or "is PR N safe to merge?". The agent reads the checks, the comments and the Verification section, runs `spec-review` if it has not run, and answers with what changed, what proved it, what is unresolved, and a recommendation.
+2. It is ready when: CI is green on the latest commit; `spec-review` has no open act-on item; every claim in the Verification section points at evidence you could open; no comment is unresolved; and it does one thing. If any of those is missing, say "fix that and come back".
+3. Merge on GitHub: the PR page's green **Merge** button. That click is the human act, and the git guard makes sure it stays yours: `gh pr merge` is blocked for the agent.
+4. If PRs are stacked (one based on another), merge them in order; GitHub retargets the next one to `main` by itself.
+5. Then tell the agent "we merged PR N, bring my copy up to date". It switches to `main`, pulls, and re-stacks any open branches.
+
 Where your judgment sits: before the work, in the ticket; after it, at the merge. In between, nothing asks you except an irreversible action: a force-push, a deletion, a deploy, a message outside the repo (decision 6). That is what "never block on the human" means here: the rungs are the safeguard, so the agent does not have to be.
 
 ## Retro and the ledger
