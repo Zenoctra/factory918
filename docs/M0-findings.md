@@ -152,6 +152,5 @@ The pass found one more real bug: run through the `~/.local/bin/factory918` syml
 ## Still open
 
 - The React Native profile's Expo app under `vp check`, the fingerprint workflow on a real PR, and a simulator screenshot (first mobile project). The Python profile has now run end to end on GitHub.
-- `gh auth refresh -s delete_repo`, then delete the M5 throwaway repository (PRs 1 to 3 are its evidence).
 - `vp migrate` on a brownfield repo (M8).
 - `gh auth login` and `/setup-pstack` are human steps; `/factory-start` is M4.
