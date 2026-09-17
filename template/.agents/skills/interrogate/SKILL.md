@@ -23,14 +23,16 @@ Package the diff (or file contents) plus any surrounding context files the revie
 
 ## Step 2, State the Intent
 
-Before spawning reviewers, state the intent explicitly. What is this code trying to accomplish? Derive this from:
+Before spawning reviewers, state the intent explicitly. What is this code trying to accomplish?
+
+If the branch's commits or the PR reference a ticket (`#N`, `Closes #N`), fetch it (`gh issue view N --json title,body`) and use its **What to build** and **Acceptance criteria** verbatim as the intent: those are the human's words, and reviewers must not review against the author's account of the author's work. Only when there is no ticket, derive the intent from:
 
 - The user's message
 - Commit messages
 - PR description if one exists
 - The code itself
 
-Write one clear paragraph. Reviewers challenge whether the work achieves the intent well, not whether the intent itself is correct. If you're unsure about the intent, ask the user before proceeding.
+Write one clear paragraph and say which source it came from. Reviewers challenge whether the work achieves the intent well, not whether the intent itself is correct. If you're unsure about the intent, ask the user before proceeding.
 
 ## Step 3, Spawn Reviewers
 

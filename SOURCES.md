@@ -15,7 +15,8 @@ Upstream pins for everything vendored into `template/`. Pinned copies of each up
 3. `playbooks/opening-a-pr.md`: "Run `/no-comments` before review." replaced by keep-comments + spec-review + review-ladder; the subagent sentence drops `/no-comments`.
 4. `playbooks/babysit.md`: step 8 made conditional on an external bot being listed in `docs/agents/review-ladder.md`.
 5. `unslop/SKILL.md`: trigger-focused description so it fires on human-facing text.
-6. `code-review` → `spec-review` (directory, `name:`, first heading).
+6. `code-review` → `spec-review` (directory, `name:`, first heading); and step 2.4 no longer asks the author where the spec is: without a ticket, a passed path or a spec file, the Spec axis skips and says "no spec: Standards axis only".
 7. Session mandate replaced by ours (`template/.claude/hooks/session-mandate.md`).
 8. `mobile-fingerprint-check.yml` copied into `profiles/react-native/` (T3 Code, MIT) with two edits: `runs-on: ubuntu-latest` instead of T3's Blacksmith runner, and the watched paths reduced to `apps/mobile/**`, `packages/shared/**` and the workspace files.
+10. `interrogate/SKILL.md` step 2: when a ticket exists, its What to build and Acceptance criteria are the intent verbatim; the author's PR description and commit messages are used only without one.
 9. Every remaining `/no-comments` reference removed from `poteto-mode/` (router step list, `playbooks/autopilot-full.md`, `playbooks/autopilot-stack.md`, `playbooks/multi-phase-plan.md`, `references/codex-tools.md`), since the skill is not vendored (decision 4).
