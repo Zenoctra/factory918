@@ -39,6 +39,10 @@ The same two as a project. Planning (`/grill-with-docs`, `/to-spec`, `/to-ticket
 - The fixture flow, which is what CI runs: `vp create vite:monorepo --directory /tmp/fx --no-interactive --git --hooks --no-agent`, then `./factory918.sh apply /tmp/fx --scaffold --profile python --name demo`, then in `/tmp/fx`: `vp check`, `vp test run`, `pnpm sg:test`, and the steps of `.github/workflows/python.yml` inside `python/demo`.
 - Anything verified against a tool version gets a dated line in `docs/M0-findings.md`.
 
+## Agent skills
+
+The issue tracker this repository uses, and how skills read and write it, is `docs/agents/issue-tracker.md`. Domain documentation layout is `docs/agents/domain.md`; the triage label vocabulary is `docs/agents/triage-labels.md`. All three are the template's copies; edit them under `template/docs/agents/`, then copy.
+
 ## Pull requests
 
 Conventional plain-language title; the problem, then the fix; a Verification section naming what ran; one concern per PR; end with the model and harness. After CI is green, `spec-review` in a fresh context. You never merge. A decision you had to make goes under Provisional in `DECISIONS.md`; a surprise goes to `docs/agents/ledger.md`.
