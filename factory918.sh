@@ -40,11 +40,11 @@ apply_python() {
   local dir="$1" name="$2" pkg="$1/python/$2" P="$F918_DIR/profiles/python"
   need uv
   mkdir -p "$pkg/src/$name" "$pkg/tests" "$dir/.github/workflows"
-  [ -f "$pkg/pyproject.toml" ] || sed "s/<name>/$name/g" "$P/pyproject.toml" > "$pkg/pyproject.toml"
-  [ -f "$pkg/src/$name/__init__.py" ] || printf '"""%s."""\n' "$name" > "$pkg/src/$name/__init__.py"
-  [ -f "$pkg/tests/test_smoke.py" ] || printf 'import %s\n\n\ndef test_imports() -> None:\n    assert %s.__doc__\n' "$name" "$name" > "$pkg/tests/test_smoke.py"
-  [ -f "$dir/.github/workflows/python.yml" ] || sed "s/<name>/$name/g" "$P/python.yml" > "$dir/.github/workflows/python.yml"
-  [ -f "$pkg/uv.lock" ] || (cd "$pkg" && uv lock -q)
+  [ -s "$pkg/pyproject.toml" ] || sed "s/<name>/$name/g" "$P/pyproject.toml" > "$pkg/pyproject.toml"
+  [ -s "$pkg/src/$name/__init__.py" ] || printf '"""%s."""\n' "$name" > "$pkg/src/$name/__init__.py"
+  [ -s "$pkg/tests/test_smoke.py" ] || printf 'import %s\n\n\ndef test_imports() -> None:\n    assert %s.__doc__\n' "$name" "$name" > "$pkg/tests/test_smoke.py"
+  [ -s "$dir/.github/workflows/python.yml" ] || sed "s/<name>/$name/g" "$P/python.yml" > "$dir/.github/workflows/python.yml"
+  [ -s "$pkg/uv.lock" ] || (cd "$pkg" && uv lock -q)
   # Same thin hook for Python: the formatter only, on commit.
   if [ -f "$dir/vite.config.ts" ] && ! grep -q '"\*\.py"' "$dir/vite.config.ts"; then
     python3 - "$dir/vite.config.ts" "$name" <<'EOF'
@@ -62,9 +62,9 @@ EOF
 apply_react_native() {
   local dir="$1" P="$F918_DIR/profiles/react-native"
   mkdir -p "$dir/apps/mobile" "$dir/.github/workflows"
-  [ -f "$dir/apps/mobile/eas.json" ] || cp "$P/eas.json.example" "$dir/apps/mobile/eas.json"
-  [ -f "$dir/.github/workflows/mobile-fingerprint-check.yml" ] || cp "$P/mobile-fingerprint-check.yml" "$dir/.github/workflows/mobile-fingerprint-check.yml"
-  [ -f "$dir/apps/mobile/package.json" ] || echo "Next: (cd $dir && npx create-expo-app@latest apps/mobile --template blank-typescript), then vp install."
+  [ -s "$dir/apps/mobile/eas.json" ] || cp "$P/eas.json.example" "$dir/apps/mobile/eas.json"
+  [ -s "$dir/.github/workflows/mobile-fingerprint-check.yml" ] || cp "$P/mobile-fingerprint-check.yml" "$dir/.github/workflows/mobile-fingerprint-check.yml"
+  [ -s "$dir/apps/mobile/package.json" ] || echo "Next: (cd $dir && npx create-expo-app@latest apps/mobile --template blank-typescript), then vp install."
 }
 
 # Per machine, once: ~/.factory918 points at this clone (the knowledge skill's fallback and
