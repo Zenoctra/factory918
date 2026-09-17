@@ -1,28 +1,29 @@
-<!-- lines: 124 | source: core/MANUAL.md | part 1/1 | title: Factory918: the manual -->
+<!-- lines: 138 | source: core/MANUAL.md | part 1/1 | title: Factory918: the manual -->
 
 ## Contents (line numbers are for the Read tool's offset)
-- L22: The loop in one screen
-- L37: Day 0: a new machine
-- L46: Day 0: a new project
-- L55: Day 0: an existing project
-- L59: Planning
-- L69: Tickets
-- L73: Execution
-- L81: Pull requests, review and merge
-- L85: Retro and the ledger
-- L89: Multi-surface products
-- L93: Models and cost
-- L110: Updating the factory
-- L114: Troubleshooting
+- L23: The loop in one screen
+- L38: Day 0: a new machine
+- L47: Day 0: a new project
+- L56: Day 0: an existing project
+- L60: Planning
+- L70: Tickets
+- L74: Execution
+- L82: Pull requests, review and merge
+- L86: Retro and the ledger
+- L90: Multi-surface products
+- L94: Models and cost
+- L111: Updating the factory
+- L115: Troubleshooting
+- L127: Where to read more
 
 # Factory918: the manual
 
-How to run a project through the system, from an empty directory to a merged pull request, and what the human does at each point. Written for Manuel and for any agent that needs to know what "now" means. Skill names are slash commands in Claude Code; file paths are relative to the project.
+How to run a project through the system, from an empty directory to a merged pull request, and what the human does at each point. Written for whoever runs a project on it and for any agent that needs to know what "now" means. The last section says where everything else is and when it is worth reading. Skill names are slash commands in Claude Code; file paths are relative to the project.
 
 ## The loop in one screen
 
 ```
-Machine    clone factory918  →  factory918 install  →  Vite+ installer  →  gh auth login                    [once]
+Machine    clone factory918  →  factory918 install  →  PATH line  →  Vite+ installer  →  gh auth login      [once]
 Day 0      factory918 init  →  /factory-start (interview)  →  /factory-doctor
 Plan       /wayfinder (big, foggy)  or  /grill-with-docs (one feature)  →  /to-spec  →  /to-tickets     [human decides]
 Tickets    GitHub issues, label ready-for-agent, "Blocked by" edges; the frontier = tickets with no open blockers
@@ -36,11 +37,11 @@ If you do not know what to do next, or you are new here, `/factory918`: it runs 
 
 ## Day 0: a new machine
 
-Once per computer. Clone this repository anywhere, then from the clone:
+Once per computer. `git clone https://github.com/Zenoctra/factory918.git` anywhere, then from the clone:
 
 1. `./factory918.sh install`. It links `~/.factory918` to the clone (the `knowledge` skill and `$FACTORY918_HOME` default to it), puts `factory918` in `~/.local/bin`, and writes pstack's role sheet `~/.claude/pstack-models.md` with its include line in `~/.claude/CLAUDE.md` if they are missing. Add `~/.local/bin` to `PATH` if it prints that line.
 2. Install Vite+: `curl -fsSL https://vite.plus -o /tmp/vp.sh && VP_VERSION=0.3.1 VP_NODE_MANAGER=yes bash /tmp/vp.sh`, then open a new terminal. Vite+ then selects the Node and pnpm version each project declares; `vp env doctor` shows the state. Do not `npm install -g vite-plus`: the global prefix is root-owned on a stock macOS Node, and 0.3.1 needs a newer Node than the stock installer ships.
-3. `brew install gh uv ast-grep` (or the equivalents), then `gh auth login`. Python tooling needs nothing else; `uv run` resolves ruff, pyright and pytest per project.
+3. `brew install gh uv` (or the equivalents), then `gh auth login`. Python tooling needs nothing else; `uv run` resolves ruff, pyright and pytest per project. `ast-grep` is a per-project devDependency, not a global tool.
 `factory918 doctor` on any project reports the machine state on its first lines.
 
 ## Day 0: a new project
@@ -122,3 +123,16 @@ Rough cost order of the skills, highest first: `arena`, `swarm`, `interrogate`, 
 - **A `.factory-merge` file appeared.** `factory918 update` found a line changed both by you and by the template. Merge it by hand into the real file, delete the `.factory-merge`.
 - **The agent claims verification it did not do.** Ask for the artifact path. If there is none, it did not verify. Add the case to the ledger.
 - **Something feels wrong and you cannot name it.** `/knowledge` with the question; it searches this corpus without reading files whole.
+
+## Where to read more
+
+Everything below lives in the factory clone (`~/.factory918`); a project carries only the first four, under `docs/factory918/`.
+
+- `MANUAL.md` (this file): how the loop runs and what you do at each point. Read before the first project; return to "Troubleshooting".
+- `PHILOSOPHY.md`: why it is built this way, in twelve ordered beliefs, and how to decide when nothing else answers. Read once whole; read again when a rule fights you.
+- `DECISIONS.md`: every settled choice with its reason, and the provisional ones an agent made. Read before overriding a vendored skill or asking for a change; decisions beat every source.
+- `GLOSSARY.md`: the terms (ticket, spec, map, surface, rung, ledger). Open when a word in `AGENTS.md` or a playbook is unclear.
+- `docs/knowledge/INDEX.md`: the map of the whole corpus, every file with its size and when to read it. `/knowledge <question>` searches it for you without reading files whole; that is the fastest way to learn how any one part works.
+- `docs/knowledge/pages/`: the research behind the four sources (what Matt, Theo, pstack and Ras Mic each do), the deterministic layer explained from zero, and the evidence on planning with agents. Read for background, a section at a time.
+- `docs/FACTORY-SPEC-v2.md` and `docs/M0-findings.md`: the design and what was actually verified against real tools. Only if you are changing the factory itself.
+- `template/AGENTS.md`: the letter every agent in a project reads on every turn. Read it once to know what the agents have been told.
