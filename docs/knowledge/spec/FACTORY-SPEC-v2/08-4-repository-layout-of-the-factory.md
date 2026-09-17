@@ -11,7 +11,7 @@ factory918/                           this repository (its own git repo)
 ├── README.md
 ├── SOURCES.md                        upstream repos, shas, paths taken, exclusions, patches applied (feeds `factory918 sync`)
 ├── VERSION
-├── factory918.sh                     the CLI: install | init | apply [--scaffold] [--profile name] [--name n] | doctor | update | sync | sync-repos | labels | knowledge
+├── factory918.sh                     the CLI: install | models [preset] | init | apply [--scaffold] [--profile name] [--name n] | doctor | update | sync | sync-repos | labels | knowledge
 ├── manifest.schema.json              what .factory918/manifest.json in a project looks like
 ├── patches/                          unified diffs against the upstream pins, applied in `series` order by `factory918 sync` (§5.4)
 ├── machine/                          per-machine files `factory918 install` writes: pstack's model sheet (§7.12)

@@ -21,7 +21,7 @@ Files under `template/` and `profiles/` are content addressed to agents in a fut
 
 ## Phases
 
-The same two as a project. Planning (`/grill-with-docs`, `/to-spec`, `/to-tickets`) turns a change to the factory into tickets on this repository; execution (`/poteto-mode "#N"`) turns a ticket into a PR. A change that needs no design goes straight to a branch and a PR, with a quick ticket filed from the ask first (Ticket playbook), so the PR closes it and the review can read what was asked.
+The same two as a project. Planning (`/grill-with-docs`, `/to-spec`, `/to-tickets`) turns a change to the factory into tickets on this repository; execution (`/poteto-mode "#N"`) turns a ticket into a PR. A change that needs no design goes straight to a branch and a PR, with a quick ticket filed first (Ticket playbook, "Quick ticket"), so the PR closes it and the review can read what was asked.
 
 ## The ways to hurt yourself
 
@@ -45,4 +45,4 @@ The issue tracker this repository uses, and how skills read and write it, is `do
 
 ## Pull requests
 
-Conventional plain-language title; the problem, then the fix; a Verification section naming what ran; one concern per PR; end with the model and harness. Anything longer than a screen, a review comment included, opens with two plain lines for a person under the label `For a person:`. After CI is green, `spec-review` in a fresh context. You never merge. A decision you had to make goes under Provisional in `DECISIONS.md`; a surprise goes to `docs/agents/ledger.md`.
+A plain-sentence title (P14; the `type(scope):` form is for projects); the problem, then the fix; a Verification section naming what ran; one concern per PR; end with the model and harness. Long comments and reports open with two plain sentences for a person: the rule and its reason are in `template/AGENTS.md`, "Pull requests". After CI is green, `spec-review` in a fresh context. You never merge. A decision you had to make goes under Provisional in `DECISIONS.md`; a surprise goes to `docs/agents/ledger.md`.

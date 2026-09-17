@@ -8,3 +8,4 @@ One line per time an agent surprised you: `YYYY-MM-DD | model | what it did | wh
 2026-09-17 | fable | hid vp install failures behind || true, which cost three CI runs to find | report every failure a gate depends on
 2026-09-17 | fable | put seven concerns in PR #2 | one concern per PR; a bootstrap is still one PR per concern
 2026-09-17 | fable | recorded surprises in the findings file instead of the ledger it had just created | the ledger is the ledger
+2026-09-17 | fable | after changing a rule or renaming a file, left the decision record (P8, P10, P5) and two path references saying the old thing, across four PRs in one stack; the reviews caught all of them | before committing, grep for the old wording or path; a CI check that a renamed file is referenced nowhere would hold this

@@ -6,7 +6,7 @@ feature, refactoring: claude:opus@high
 bug-fix: claude:opus@high
 perf-issue: claude:opus@high
 hillclimb: claude:opus@high
-judgment and prose: claude:opus@high
+judgment and prose: claude:opus@xhigh
 hardest tasks: claude:opus@xhigh
 how explorer: claude:opus@medium
 how explainer: claude:opus@high

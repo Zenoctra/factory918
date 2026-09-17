@@ -70,13 +70,13 @@ If the project is not on Vite+ yet, run `vp migrate` first: `apply` merges Vite+
 
 ## Tickets
 
-A ticket is a GitHub issue with `## What to build`, `## Acceptance criteria` (checkboxes), `## Blocked by`, a `## Parent` pointing at the spec, and the `ready-for-agent` label. The frontier is every ticket whose blockers are closed. A PR based on another PR's branch shows no link to its ticket until it retargets to `main`; the link appears when the PR below it merges. A quick fix you describe in conversation gets a ticket too, if it will end in a PR: the agent files one with your words quoted, tells you the number, and proceeds; edit the issue if the words are wrong. Nothing runs on its own: you name the next ticket, or you hand the agent a list (see Execution). Tickets close when their PR merges (the PR says `Closes #N`); never close one by hand.
+A ticket is a GitHub issue with `## What to build`, `## Acceptance criteria` (checkboxes), `## Blocked by`, a `## Parent` pointing at the spec, and the `ready-for-agent` label. The frontier is every ticket whose blockers are closed. A PR based on another PR's branch shows no link to its ticket until it retargets to `main`; the link appears once it retargets. A quick fix you describe in conversation gets a ticket too, if it will end in a PR: the agent files one with your words quoted, tells you the number, and proceeds; edit the issue if the words are wrong. Nothing runs on its own: you name the next ticket, or you hand the agent a list (see Execution). Tickets close when their PR merges (the PR says `Closes #N`); never close one by hand.
 
 ## Execution
 
 `/poteto-mode "#42"` (or paste the issue URL). The Ticket playbook reads the issue and its parent spec, refuses to start if a blocker is open, and runs a falsifiability pass over the acceptance criteria: for each one it names the command or observation that would fail it today, and sends back any criterion that already passes, that another ticket owns, or that merely restates the request. Answer those notes, then it runs the matching pstack playbook (Feature, Bug fix, Refactoring, Perf issue) from step 1: `how` and `why` over the subsystem, design, delegated build with a reviewed diff, verification on the real surface, then Opening a PR and Babysit.
 
-**Several at once.** One ticket per `/poteto-mode "#N"` is the default, and a fresh session per ticket keeps the orchestrator's context clean. To drain the frontier instead: `/poteto-mode "autopilot-stack #4 #5 #8"`. pstack's autopilot-stack runs one owner lane per ticket in its own context and worktree, swarm-verifies each PR, keeps the chain rebased as `main` moves, and hands you one bottom-to-top list of verified PRs to land one at a time; it never merges. Its sibling `autopilot-full` merges on a clean verdict and is off here. Every unit needs a ticket, so quick tickets come first.
+**Several at once.** One ticket per `/poteto-mode "#N"` is the default, and a fresh session per ticket keeps the orchestrator's context clean. To drain the frontier instead: `/poteto-mode "autopilot-stack #4 #5 #8"`. pstack's autopilot-stack runs one owner lane per ticket in its own context and worktree, swarm-verifies each PR, keeps the chain rebased as `main` moves, and hands you one bottom-to-top list of verified PRs to land one at a time; it never merges (`playbooks/autopilot-stack.md` is the full procedure). It states its plan first and starts on your go, then runs without you; each owner runs the Ticket playbook for its ticket, so every unit needs a ticket and quick tickets come first. Its sibling `autopilot-full` is not used here: its merge step is blocked by the git guard.
 
 **What you do.** Not much until the PR exists. The agent proceeds on anything reversible and asks only before irreversible actions. If it goes wrong, note what you would have said earlier; that note is a ledger entry, and the ledger is where rules come from.
 
@@ -100,7 +100,7 @@ From a pull request to a merge, in order. Every rung runs without asking you; yo
 1. Ask for a read, not a diff: "where does PR N stand?" or "is PR N safe to merge?". The agent reads the checks, the comments and the Verification section, runs `spec-review` if it has not run, and answers with what changed, what proved it, what is unresolved, and a recommendation.
 2. It is ready when: CI is green on the latest commit; `spec-review` has no open act-on item; every claim in the Verification section points at evidence you could open; no comment is unresolved; and it does one thing. If any of those is missing, say "fix that and come back".
 3. Merge on GitHub: the PR page's green **Merge** button. That click is the human act, and the git guard makes sure it stays yours: `gh pr merge` is blocked for the agent.
-4. If PRs are stacked (one based on another), merge them in order. GitHub retargets the next one to `main` by itself only when the merged branch is deleted; `init` turns that on for repositories it creates, and elsewhere tick "delete branch" when you merge.
+4. If PRs are stacked (one based on another), merge them in order. GitHub retargets the next one to `main` by itself only when the merged branch is deleted; `init` turns that on for repositories it creates, and elsewhere delete the branch after merging (GitHub offers the button on the merged PR).
 5. Then tell the agent "we merged PR N, bring my copy up to date". It switches to `main`, pulls, and re-stacks any open branches.
 
 Where your judgment sits: before the work, in the ticket; after it, at the merge. In between, nothing asks you except an irreversible action: a force-push, a deletion, a deploy, a message outside the repo (decision 6). That is what "never block on the human" means here: the rungs are the safeguard, so the agent does not have to be.
@@ -127,7 +127,7 @@ The default is one monorepo per product: `apps/web`, `apps/mobile`, `apps/admin`
 
 ## Models and cost
 
-You are on the $200 Claude plan; the limit is shared across models and Fable 5.1 spends it fastest. Decision 18: Fable writes the code. `factory918 install` writes `~/.claude/pstack-models.md` from the `fable` preset; when Fable's quota runs out a lane drops out and the orchestrator says so, and `factory918 models opus` switches to the Opus preset (`factory918 models fable` switches back). One file, two presets:
+You are on the $200 Claude plan; the limit is shared across models and Fable 5.1 spends it fastest. Decision 18: Fable writes the code. `factory918 install` writes `~/.claude/pstack-models.md` from the `fable` preset; when Fable's quota runs out a lane drops out and the orchestrator says so, and `factory918 models opus` switches to the Opus preset (`factory918 models fable` switches back). A machine that ran `install` before decision 18 keeps its old sheet until `factory918 models fable` is run once. One file, two presets:
 
 | Role | fable preset | opus preset |
 |---|---|---|
@@ -139,7 +139,7 @@ You are on the $200 Claude plan; the limit is shared across models and Fable 5.1
 | Juniors: `how` explorers, swarm workers | Opus 5 medium | Opus 5 medium |
 | `arena` | off by default | off by default |
 
-Rough cost order of the skills, highest first: `arena`, `swarm`, `interrogate`, `how` in critique mode, `/wayfinder` with parallel research, `/to-tickets` on a large spec (one user reported 1.5M tokens for 14 tickets), then everything else. Check the usage page weekly; if Fable is over a third of spend, move a role down.
+Rough cost order of the skills, highest first: `arena`, autopilot-stack (one owner per ticket plus a swarm per PR), `swarm`, `interrogate`, `how` in critique mode, `/wayfinder` with parallel research, `/to-tickets` on a large spec (one user reported 1.5M tokens for 14 tickets), then everything else. Check the usage page weekly; if Fable is over a third of spend, move a role down.
 
 ## Updating the factory
 

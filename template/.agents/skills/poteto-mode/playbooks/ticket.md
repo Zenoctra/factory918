@@ -1,6 +1,6 @@
 ### Ticket
 
-**A ticket is the ask. Read it, prove its criteria can fail, run the matching playbook, end in a PR that closes it.** For any request carrying an issue reference: `#N`, `owner/repo#N`, or an issue URL.
+**A ticket is the ask. Read it, prove its criteria can fail, run the matching playbook, end in a PR that closes it.** For any request carrying an issue reference: `#N`, `owner/repo#N`, or an issue URL. A request carrying several references and `autopilot-stack` goes to that playbook instead; each of its owner lanes then runs this playbook for its own ticket.
 
 1. Read the ticket: `gh issue view N --json title,body,labels,state,comments`. Its **What to build** is the goal; its **Acceptance criteria** are the finish condition; its **Parent** is the spec: read it too (`gh issue view <parent>`), and read `CONTEXT.md` and the ADRs in the area.
 2. Check **Blocked by**. Every listed issue must be closed. If one is open, stop and report which; do not start.

@@ -137,7 +137,7 @@ M6, React Native: `apply --profile react-native` writes `apps/mobile/eas.json` a
 
 ## The models sheet (2026-09-16)
 
-The vendored `/setup-pstack` requires all four matrix families (Fable, Opus, Codex Sol, Grok) to pass a live probe before it writes anything, and pstack's launcher never falls back, so on a Claude-only machine the Feature playbook's default delegate (`grok:grok-4.6@xhigh`) would drop out on the first ticket. `factory918 install` now writes `~/.claude/pstack-models.md` from `machine/pstack-models.md`, every role on `claude:opus` or `claude:fable` with effort as the cost lever, and adds the `@` include to `~/.claude/CLAUDE.md`. Native lanes exist for every effort of both families (`.claude/agents/pstack-*-*.md`); nothing at dispatch time requires the other two families. pstack has no Sonnet family, so decision 13's Sonnet roles run `claude:opus@medium`. Decision P5. The first ticket on a real project is the live check of this sheet.
+The vendored `/setup-pstack` requires all four matrix families (Fable, Opus, Codex Sol, Grok) to pass a live probe before it writes anything, and pstack's launcher never falls back, so on a Claude-only machine the Feature playbook's default delegate (`grok:grok-4.6@xhigh`) would drop out on the first ticket. `factory918 install` now writes `~/.claude/pstack-models.md` from `machine/pstack-models.fable.md` (renamed on 2026-09-17 when the opus preset joined it), every role on `claude:opus` or `claude:fable` with effort as the cost lever, and adds the `@` include to `~/.claude/CLAUDE.md`. Native lanes exist for every effort of both families (`.claude/agents/pstack-*-*.md`); nothing at dispatch time requires the other two families. pstack has no Sonnet family, so decision 13's Sonnet roles run `claude:opus@medium`. Decision P5. The first ticket on a real project is the live check of this sheet.
 
 ## Guided entry (2026-09-16)
 
@@ -152,6 +152,10 @@ The pass found one more real bug: run through the `~/.local/bin/factory918` syml
 ## First spec-review on the factory (2026-09-17)
 
 `/spec-review feat/reviews-read-the-ask` on PR #14 ran to completion with both axes: the Spec axis read issue #8 through the commit's `Closes #8`, the Standards axis read the new `CODING_STANDARDS.md` and `AGENTS.md`. It found four documented breaches and three smells on one axis and six spec findings on the other, six of which were fixed on the branch in the following commit; the report is a comment on #14.
+
+## Merge mechanics and the doctor (2026-09-17)
+
+Verified on the factory repository itself: a stacked PR retargets to `main` only when the merged parent branch is deleted (PR #3 was stranded on `feat/self-host` when it was not); GitHub shows a closing-issue link only on PRs whose base is the default branch, so a stacked PR links its ticket once it retargets. `find -mtime +N` on a directory is supported by both BSD and GNU find and reads the directory's own mtime, which moves only when its direct entries change.
 
 ## Still open
 
