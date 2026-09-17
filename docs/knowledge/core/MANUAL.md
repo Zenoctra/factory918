@@ -37,11 +37,11 @@ If you do not know what to do next, or you are new here, `/factory918`: it runs 
 
 ## Day 0: a new machine
 
-Once per computer. `git clone https://github.com/Zenoctra/factory918.git` anywhere, then from the clone:
+Once per computer. You need `bash`, `git`, `jq` and `python3` (macOS: `brew install jq`; Debian and Ubuntu: `sudo apt install jq python3`; Windows: WSL, or Git Bash with the four on its PATH; Windows is untested). `git clone https://github.com/Zenoctra/factory918.git` anywhere, then from the clone:
 
 1. `./factory918.sh install`. It links `~/.factory918` to the clone (the `knowledge` skill and `$FACTORY918_HOME` default to it), puts `factory918` in `~/.local/bin`, and writes pstack's role sheet `~/.claude/pstack-models.md` with its include line in `~/.claude/CLAUDE.md` if they are missing. Add `~/.local/bin` to `PATH` if it prints that line.
-2. Install Vite+: `curl -fsSL https://vite.plus -o /tmp/vp.sh && VP_VERSION=0.3.1 VP_NODE_MANAGER=yes bash /tmp/vp.sh`, then open a new terminal. Vite+ then selects the Node and pnpm version each project declares; `vp env doctor` shows the state. Do not `npm install -g vite-plus`: the global prefix is root-owned on a stock macOS Node, and 0.3.1 needs a newer Node than the stock installer ships.
-3. `brew install gh uv` (or the equivalents), then `gh auth login`. Python tooling needs nothing else; `uv run` resolves ruff, pyright and pytest per project. `ast-grep` is a per-project devDependency, not a global tool.
+2. Install Vite+: `curl -fsSL https://vite.plus -o /tmp/vp.sh && VP_VERSION=0.3.1 VP_NODE_MANAGER=yes bash /tmp/vp.sh` (macOS and Linux; on Windows PowerShell, `irm https://vite.plus/ps1 | iex`), then open a new terminal. Vite+ then selects the Node and pnpm version each project declares; `vp env doctor` shows the state. Do not `npm install -g vite-plus`: the global prefix is root-owned on a stock macOS Node, and 0.3.1 needs a newer Node than the stock installer ships.
+3. Install `gh` and `uv` (macOS: `brew install gh uv`; Debian and Ubuntu: `sudo apt install gh` and `curl -LsSf https://astral.sh/uv/install.sh | sh`; Windows: `winget install GitHub.cli astral-sh.uv`), then `gh auth login`. Python tooling needs nothing else; `uv run` resolves ruff, pyright and pytest per project. `ast-grep` is a per-project devDependency, not a global tool.
 `factory918 doctor` on any project reports the machine state on its first lines.
 
 ## Day 0: a new project

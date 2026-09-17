@@ -4,7 +4,7 @@ A template and a small command-line tool that put an agent-driven development wo
 
 ## What you need
 
-Claude Code, a GitHub account, and a Mac with Homebrew (the tool is a bash script, so Linux works and Windows needs WSL). About fifteen minutes the first time.
+Claude Code, a GitHub account, and a shell with `bash`, `git`, `jq` and `python3`. Developed and tested on macOS. Linux is expected to work unchanged (the project-side checks already run on Ubuntu in CI). Windows is untested: use WSL, or Git Bash with those four tools on its PATH. About fifteen minutes the first time.
 
 ## Start here
 
