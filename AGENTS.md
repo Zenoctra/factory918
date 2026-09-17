@@ -45,4 +45,4 @@ The issue tracker this repository uses, and how skills read and write it, is `do
 
 ## Pull requests
 
-Conventional plain-language title; the problem, then the fix; a Verification section naming what ran; one concern per PR; end with the model and harness. After CI is green, `spec-review` in a fresh context. You never merge. A decision you had to make goes under Provisional in `DECISIONS.md`; a surprise goes to `docs/agents/ledger.md`.
+Conventional plain-language title; the problem, then the fix; a Verification section naming what ran; one concern per PR; end with the model and harness. Anything longer than a screen, a review comment included, opens with two plain lines for a person under the label `For a person:`. After CI is green, `spec-review` in a fresh context. You never merge. A decision you had to make goes under Provisional in `DECISIONS.md`; a surprise goes to `docs/agents/ledger.md`.
