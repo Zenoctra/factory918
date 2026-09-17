@@ -1,0 +1,54 @@
+# The factory's own gate. Job 1 checks the repository; job 2 does what a user does on day 0
+# and runs the gates a fresh project would run, so a template regression fails here first.
+name: Factory CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+concurrency:
+  group: factory-ci-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  factory:
+    name: Factory
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Shell syntax
+        run: bash -n factory918.sh && for f in template/.claude/hooks/*.sh; do bash -n "$f"; done
+      - name: Knowledge base is consistent and built from its sources
+        run: python3 tools/check_knowledge.py && python3 tools/build_knowledge.py && git diff --exit-code
+      - name: Vendored skills equal the pins plus the patches
+        run: ./factory918.sh sync > /dev/null && git diff --exit-code && test -z "$(git status --porcelain template)"
+  fixture:
+    name: Fixture
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: voidzero-dev/setup-vp@v1
+        with:
+          version: "0.3.1" # the ADR pin
+          node-version: "24"
+          run-install: false # the factory root has no package.json; the fixture installs its own
+      - uses: astral-sh/setup-uv@v6
+      - name: Day 0 on a fresh monorepo
+        run: |
+          git config --global user.name ci && git config --global user.email ci@factory918.invalid
+          (cd /tmp && vp create vite:monorepo --directory fx --no-interactive --git --hooks --no-agent)
+          ./factory918.sh apply /tmp/fx --scaffold --profile python --name demo | tail -30
+      - name: The gates a project runs
+        working-directory: /tmp/fx
+        run: vp check && vp test run && pnpm sg:test && pnpm sg
+      - name: The Python profile's job
+        working-directory: /tmp/fx/python/demo
+        run: uv sync --frozen && uv run ruff format --check . && uv run ruff check . && uv run pyright && uv run pytest && uv audit
+      - name: The rules fire
+        working-directory: /tmp/fx
+        run: |
+          printf '// TODO later\nexport const x = 1;\n' > packages/utils/src/probe.ts
+          if vp lint packages/utils/src/probe.ts > /dev/null 2>&1; then echo "no-todo-without-issue did not fire" && exit 1; fi
+          printf 'console.log("x");\n' > packages/utils/src/probe.ts
+          if pnpm sg > /dev/null 2>&1; then echo "ast-grep did not fire" && exit 1; fi
+          rm packages/utils/src/probe.ts
