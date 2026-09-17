@@ -37,7 +37,7 @@ You are now in planning. A greenfield project has no code to grill against, so t
 
 ## Day 0: an existing project
 
-`factory918 apply` is additive: it never overwrites a file you already have. If the repo came from `vp create` moments ago, `factory918 apply --scaffold` replaces the four files Vite+ scaffolds and Factory918 owns (`AGENTS.md`, `CLAUDE.md`, `vite.config.ts`, `.vite-hooks/pre-commit`); `init` does this for you. A Python package or a mobile app comes from `factory918 apply --profile python --name <pkg>` or `--profile react-native`; profile files are written once and are yours after that. Then: `vp migrate` if the project is not on Vite+; expect CI to fail on old code and use debt ceilings (`maxOccurrences` in `vite.config.ts` overrides, `per-file-ignores` in `pyproject.toml`) so new rules are absolute for new code and a ratchet for old code. Build the glossary with `/grill-with-docs help me document this repo`; expect fifty questions and answer them yourself, because an agent-authored glossary you do not understand is worse than none. Generate the verification skill with `/create-verification-skill` as soon as the app runs.
+If the project is not on Vite+ yet, run `vp migrate` first: `apply` merges Vite+ scripts and a devDependency into `package.json` and runs `vp install`, so the toolchain has to be there before it. Then `factory918 apply`. It is additive: it never overwrites a file you already have. If the repo came from `vp create` moments ago, `factory918 apply --scaffold` replaces the four files Vite+ scaffolds and Factory918 owns (`AGENTS.md`, `CLAUDE.md`, `vite.config.ts`, `.vite-hooks/pre-commit`); `init` does this for you. A Python package or a mobile app comes from `factory918 apply --profile python --name <pkg>` or `--profile react-native`; profile files are written once and are yours after that. Expect CI to fail on old code and use debt ceilings (`maxOccurrences` in `vite.config.ts` overrides, `per-file-ignores` in `pyproject.toml`) so new rules are absolute for new code and a ratchet for old code. Build the glossary with `/grill-with-docs help me document this repo`; expect fifty questions and answer them yourself, because an agent-authored glossary you do not understand is worse than none. Generate the verification skill with `/create-verification-skill` as soon as the app runs.
 
 ## Planning
 
@@ -79,6 +79,18 @@ Where your judgment sits: before the work, in the ticket; after it, at the merge
 ## Retro and the ledger
 
 Whenever an agent surprises you, add one line to `docs/agents/ledger.md`: date, model, what it did, what you wanted. Saying "note that for the ledger" to the agent is enough. Once a week, or after a hard task, `/factory-retro`: it reads the ledger, groups the corrections that recur, and proposes for each the strongest rung that can hold it (a type, a lint rule in `oxlint-plugin-project/` or `ast-grep/rules/` with a debt ceiling if old code violates it, a banned API, a helper, a test, or one line in `AGENTS.md`), then writes the ones you confirm and proves each one fires. A correction seen once waits. Delete rules that never fire. `/reflect` is pstack's complement: it mines the session you just had for learnings and routes them into skill edits; use it after a session that went unusually well or badly. The retro is the step that turns copied opinions into yours.
+
+## Maintenance
+
+Work you start without a ticket, on a cadence:
+
+- After any session that surprised you: one line in `docs/agents/ledger.md`. The phase hook reminds you when unreviewed lines exist and a week has passed since the last retro.
+- Weekly: `/factory-retro`. It reads the ledger and the week's transcripts, groups what recurred, proposes a rule for each and encodes what you confirm.
+- After a session that went unusually well or badly: `/reflect`, which turns that transcript into skill edits.
+- After UI changes land: `/maintain-verification-skill` keeps `verify-<app>` honest.
+- Before a large feature, or monthly: `/thermo-nuclear-code-quality-review` on the area you are about to touch, or `/architect` to reshape it before code.
+- When the factory publishes a version: `git -C ~/.factory918 pull`, then `factory918 update` and `factory918 doctor` in each project.
+- Scratch: `.artifacts/`, `.scratch/` and `.plans/` are git-ignored and nothing prunes them. Delete `.artifacts/<task>/` once its PR is merged.
 
 ## Multi-surface products
 

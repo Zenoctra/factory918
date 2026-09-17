@@ -41,8 +41,10 @@ The factory lives once per machine at `~/.factory918`. To take an update: `git -
     research/                 read-only corpus: notes/, pages/, and the pinned upstream sources
     tools/build_knowledge.py  regenerates docs/knowledge/ and the slim copies in template/docs/factory918/
     tools/bootstrap/          frozen: how template/ and profiles/ were first generated
-    CLAUDE.md  SOURCES.md  VERSION  manifest.schema.json  LICENSE
-    .claude/skills/           the router, the writing skills and `knowledge`, for Claude Code sessions in this clone
+    AGENTS.md  CLAUDE.md     how to work on the factory itself; the factory runs on its own skills and hooks
+    SOURCES.md  VERSION  manifest.schema.json  LICENSE
+    .claude/                  links to the template's skills and hooks, plus settings.json, for sessions in this clone
+    tools/check_knowledge.py  the knowledge-base checks CI and the maintainer run
 
 ## Status
 

@@ -10,7 +10,11 @@ The ledger is `docs/agents/ledger.md`: one line per time an agent surprised the 
 
 ## 1. Read the ledger
 
-Read the whole file; it is short by design. With fewer than two entries, say so and stop: nothing has recurred yet.
+Read the whole file; it is short by design.
+
+Then read what nobody wrote down. Claude Code keeps every session under `~/.claude/projects/<encoded cwd>/` (the cwd with `/` replaced by `-`), one `.jsonl` per session. Take the files modified since the last `<!-- retro -->` stamp in the ledger, or the last seven days if there is none, and skim each for the user correcting the agent (messages that push back on an approach, a skipped verification, a broken rule). A product decision ("make it blue instead") is not a correction; a process correction is. Add each one to the grouping below as an unwritten entry marked `(transcript)`. This is where most recurrences are found, so do it even when the ledger is empty.
+
+With fewer than two entries across both sources, say so and stop: nothing has recurred yet.
 
 ## 2. Group
 
@@ -33,6 +37,8 @@ Say in one sentence why each higher rung cannot hold it.
 ## 4. Confirm, then encode
 
 Show the table and the drafts and ask which to encode. Promoting a rule is the human's decision. For each confirmed one: write the rule and its test (a rule test and snapshot for ast-grep, a `*.test.ts` for the oxlint plugin, a `ruff check` run for a banned API), run the gate on the ledger's own example to prove it fires, and append ` -> promoted YYYY-MM-DD: <path>` to each ledger line it came from. When asked, delete a rule the ledger shows never fired.
+
+End by appending `<!-- retro YYYY-MM-DD -->` on its own line to the ledger; the phase hook reads it to know when the next retro is due.
 
 ## 5. Report
 
