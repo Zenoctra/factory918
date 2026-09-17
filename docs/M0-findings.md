@@ -143,9 +143,15 @@ The vendored `/setup-pstack` requires all four matrix families (Fable, Opus, Cod
 
 `factory918 doctor` now prints the fix under every failing line and refuses, with one guided line, to run outside a Factory918 project. `/factory918` runs it first and hands a new user the first fix as their only next step; `/factory-start` runs the same preflight before interviewing. In this clone with `~/.local/bin` not yet on PATH, `/factory918 I'm new, what do I do?` produced the PATH line and nothing else, which is the intended behaviour.
 
+## Worklist pass (2026-09-17)
+
+Everything queued after M7 landed in one pass. The spec's §4, §5.5, §7.2, §7.3 and §8.1 now match the template and the CLI; the manifest schema has its real path and the `profiles` and `factory` fields; the Python profile README carries `pythonpath` and says what was verified; branch protection is out of the interview, the router, the manual, the review ladder and `init`'s closing line. The doctor checks the `vp` version against the ADR pin, that the two machine symlinks resolve to the same clone, and that `template/` and `profiles/` are reachable from the command. `apply` records the applying clone's path in the manifest and `update` warns when a different clone runs. `install` names `git`, `jq` and `python3` when they are missing. The README and manual say which platforms this runs on and give Linux and Windows commands beside the macOS ones. The router carries a table of the phrases people use for each setup step and what to do for each.
+
+The pass found one more real bug: run through the `~/.local/bin/factory918` symlink, the script took the link's directory as the factory, so `template/` and `profiles/` were empty from its point of view and `apply` copied nothing. Every earlier test had invoked `./factory918.sh` directly. Fixed by resolving the link; the doctor's first line now catches the class. Two hardenings fell out of the retest: an empty profile file no longer counts as present, and `.venv/` is git-ignored because `uv run` creates it inside the project. With the profile pushed to the M5 throwaway (PR 3), `python.yml` ran on GitHub for the first time and passed every step: `astral-sh/setup-uv@v6`, `uv sync --frozen`, `ruff format --check`, `ruff check`, `pyright`, `pytest`, `uv audit`.
+
 ## Still open
 
-- The React Native profile's Expo app under `vp check`, the fingerprint workflow on a real PR, and a simulator screenshot (first mobile project).
-- `gh auth refresh -s delete_repo`, then delete the M5 throwaway repository.
+- The React Native profile's Expo app under `vp check`, the fingerprint workflow on a real PR, and a simulator screenshot (first mobile project). The Python profile has now run end to end on GitHub.
+- `gh auth refresh -s delete_repo`, then delete the M5 throwaway repository (PRs 1 to 3 are its evidence).
 - `vp migrate` on a brownfield repo (M8).
 - `gh auth login` and `/setup-pstack` are human steps; `/factory-start` is M4.
