@@ -15,6 +15,8 @@ Babysitting fails the same few ways every time. Each step below exists because t
 
    Stop conditions are forge-specific. On Origin, stop `drive` when the frontier is merge-ready: checks are green, `origin pr view` reports mergeable with no blockers, and `origin pr thread list` has no unresolved blockers. Origin does not wait for `READY`, `WAITING`, `ADVANCE`, or `COMPLETE`; those are GitHub watcher verdicts.
 
+   Merge-ready also needs the `spec-review` comment on the PR's latest commit to read `act-on items: 0`. A nonzero count, or no review comment on the latest commit, is a blocker of the same class as a red check, and the fix lands on this PR. Step 4's follow-up PR is not the route for it unless the reviewed PR has already merged.
+
    On GitHub, stop at `READY` for one PR (single or stack mode). Queued mode never emits `READY`; a blocker-free frontier is a non-terminal `WAITING` with reason `merge-queue`. Report that frontier merge-ready and stop the watcher. Do not leave it running until merges happen. That is Shipping's job. If another actor merges the frontier and the watcher reports `ADVANCE`, continue with the new frontier. `COMPLETE` is terminal if another actor finishes the queue.
 
    Watcher re-arms never authorize merging or arming merge-when-ready. Do not run `origin pr merge "$pr"` or `gh pr merge "$pr" --repo "$base_repo"` unless the user explicitly asked to merge, land, ship, or merge when ready. Route that request to `playbooks/shipping.md`. A stacked PR whose parent has no required checks may merge immediately into that parent when merge-when-ready is armed. This collapses review granularity. A lost-ref race can also mark it merged without updating the parent ref.

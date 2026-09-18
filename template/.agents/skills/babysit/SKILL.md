@@ -37,7 +37,7 @@ Inside poteto-mode, the **Babysit** playbook ([`../poteto-mode/playbooks/babysit
    - Idle but want to catch new comments: hourly.
 
 4. **When to stop.**
-   - Build is green, every comment resolved, branch merges cleanly → call it ready.
+   - Build is green, every comment resolved, the `spec-review` comment on the latest commit reads `act-on items: 0`, branch merges cleanly → call it ready.
    - You've run three rounds of fix → push → recheck and it still isn't fully green → stop, summarise what's still broken, and hand control back.
    - The next fix would force a design choice → pause and put it to the user with `AskUserQuestion`.
 

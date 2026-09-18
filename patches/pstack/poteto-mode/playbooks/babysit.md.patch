@@ -1,6 +1,14 @@
 --- a/poteto-mode/playbooks/babysit.md
 +++ b/poteto-mode/playbooks/babysit.md
-@@ -21,7 +21,7 @@
+@@ -15,13 +15,15 @@
+ 
+    Stop conditions are forge-specific. On Origin, stop `drive` when the frontier is merge-ready: checks are green, `origin pr view` reports mergeable with no blockers, and `origin pr thread list` has no unresolved blockers. Origin does not wait for `READY`, `WAITING`, `ADVANCE`, or `COMPLETE`; those are GitHub watcher verdicts.
+ 
++   Merge-ready also needs the `spec-review` comment on the PR's latest commit to read `act-on items: 0`. A nonzero count, or no review comment on the latest commit, is a blocker of the same class as a red check, and the fix lands on this PR. Step 4's follow-up PR is not the route for it unless the reviewed PR has already merged.
++
+    On GitHub, stop at `READY` for one PR (single or stack mode). Queued mode never emits `READY`; a blocker-free frontier is a non-terminal `WAITING` with reason `merge-queue`. Report that frontier merge-ready and stop the watcher. Do not leave it running until merges happen. That is Shipping's job. If another actor merges the frontier and the watcher reports `ADVANCE`, continue with the new frontier. `COMPLETE` is terminal if another actor finishes the queue.
+ 
+    Watcher re-arms never authorize merging or arming merge-when-ready. Do not run `origin pr merge "$pr"` or `gh pr merge "$pr" --repo "$base_repo"` unless the user explicitly asked to merge, land, ship, or merge when ready. Route that request to `playbooks/shipping.md`. A stacked PR whose parent has no required checks may merge immediately into that parent when merge-when-ready is armed. This collapses review granularity. A lost-ref race can also mark it merged without updating the parent ref.
  
     Answer a user question mid-loop and continue. Only an explicit stop ends the loop before the active forge's stop condition. On GitHub, that is `READY` in single or stack mode, or a `WAITING`/`merge-queue` report or `COMPLETE` in queued mode. On Origin, that is the merge-ready state defined above. For a GitHub queued stack, capture the PR list bottom-to-top once and pass the same frozen list to every rearm. Rediscovering the stack after a parent merges can lose retargeted descendants. Revise the list only for the sanctioned follow-up PR from step 4. Append it at the end, drop the merged owner, and rearm with the corrected snapshot. Step 4 creates that PR on top of the stack, so it merges last.
  7. **Classify CI before any retrigger.** Flake or infrastructure earns one fresh build, never a job retry, because a retry reuses the original ref snapshot. One retry only; an identical second failure means it was never flake, so reclassify and read the child logs instead of retrying blind. A failure in code the diff never touches means a stale base, so check with `git merge-base --is-ancestor` before assuming flake. A stale base reproduces every time and no number of rebuilds fixes it, so report it as needing a rebase instead of burning retries. Only a failure in the diff's own code gets a commit.
