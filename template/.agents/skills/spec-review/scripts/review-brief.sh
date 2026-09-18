@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # spec-review step 1. Runs the diff once, writes the review state the delegation hook reads, and
 # assembles the two reviewer briefs, so the orchestrator hands each lane a file and reads no code.
-#   review-brief.sh <fixed-point> [--ticket N] [--standards FILE ...] [--previous FILE] [--round N]
-#   review-brief.sh --paths P... --commits SHA... [--ticket N] [--standards FILE ...]
+#   review-brief.sh <fixed-point> [--ticket N] [--standards FILE ...] [--previous FILE] [--round N] [--blast-radius FILE]
+#   review-brief.sh --paths P... --commits SHA... [--ticket N] [--standards FILE ...] [--blast-radius FILE]
 # The second form is the sweep over units already on main: the fixed point is the word "paths"
 # and the diff is git show <commits> -- <paths>. Rerunning overwrites the previous state.
 # The PR comments that end a review carry a line `act-on items:` under `round: N of 3`; the round
@@ -11,22 +11,26 @@
 # the judgment's Noted and Dismissed items that cite a decision are carried into both briefs as
 # settled, each line once; --previous FILE supplies the comments instead of gh, and --round N the
 # round, for tests and a branch whose PR is elsewhere.
+# A cross-cutting diff (one that touches a hooks directory, a settings.json or the factory918
+# skill) is briefed only with its blast-radius grounding: --blast-radius FILE, else the PR body's
+# `## Blast Radius` section; without one the script refuses before writing any state.
 set -euo pipefail
 usage() {
-  echo "usage: review-brief.sh <fixed-point> [--ticket N] [--standards FILE ...] [--previous FILE] [--round N]" >&2
-  echo "       review-brief.sh --paths P... --commits SHA... [--ticket N] [--standards FILE ...]" >&2
+  echo "usage: review-brief.sh <fixed-point> [--ticket N] [--standards FILE ...] [--previous FILE] [--round N] [--blast-radius FILE]" >&2
+  echo "       review-brief.sh --paths P... --commits SHA... [--ticket N] [--standards FILE ...] [--blast-radius FILE]" >&2
   exit 1
 }
 skill="$(cd "$(dirname "$0")/.." && pwd -P)"
 root="$(git rev-parse --show-toplevel)"
 cd "$root"
-fixed="" ticket="" list="" previous="" round=""
+fixed="" ticket="" list="" previous="" round="" blast=""
 paths=() commits=() standards=()
 while [ $# -gt 0 ]; do
   case "$1" in
     --ticket) ticket="${2:-}"; [ -n "$ticket" ] || usage; list=""; shift ;;
     --previous) previous="${2:-}"; [ -f "$previous" ] || usage; list=""; shift ;;
     --round) round="${2:-}"; [ "$round" -gt 0 ] 2>/dev/null || usage; list=""; shift ;;
+    --blast-radius) blast="${2:-}"; [ -f "$blast" ] || usage; list=""; shift ;;
     --standards) list=standards ;;
     --paths) list=paths ;;
     --commits) list=commits ;;
@@ -173,6 +177,35 @@ if [ ! -s "$dir/diff" ]; then
   echo "review-brief: the diff is empty; nothing to review since $fixed" >&2
   exit 1
 fi
+# A cross-cutting path reaches every session and skill, so its diff alone cannot show the review
+# what it breaks: the brief also carries the author's blast-radius grounding (the blast-radius
+# skill's hand-back), from --blast-radius FILE or the PR body's `## Blast Radius` section, and is
+# refused without one. This is the one place the predicate lives; the Ticket playbook says it in
+# words. The leading `*` covers a project's own `.claude/hooks/` and the factory's `template/` copy.
+crossing=""
+while read -r p; do
+  case "$p" in
+    *.claude/hooks/*|*.claude/settings.json|*.agents/skills/factory918/*) crossing="$crossing $p" ;;
+  esac
+done < "$dir/files"
+grounding=""
+if [ -n "$crossing" ]; then
+  if [ -n "$blast" ]; then
+    grounding="$(cat "$blast")"
+  else
+    grounding="$(gh pr view --json body -q .body 2>/dev/null | awk '{ sub(/\r$/, "") }
+      p && (fence != "" || !/^## /)'"$fenced"'
+      /^## / { p = (h == "Blast Radius") }' || true)"
+  fi
+  grounding="$(printf '%s\n' "$grounding" | sed '/./,$!d')"
+  if ! printf '%s' "$grounding" | grep -q '[^[:space:]]'; then
+    rm -rf "$dir"
+    echo "review-brief: cross-cutting diff (${crossing# }) without a blast-radius grounding; run the blast-radius skill, put the result in the PR body's Blast Radius section or pass --blast-radius FILE" >&2
+    exit 1
+  fi
+elif [ -n "$blast" ]; then
+  echo "review-brief: the diff is not cross-cutting; $blast is not pasted" >&2
+fi
 state=.claude/state/review
 rm -rf "$state"
 mkdir -p "$state"
@@ -195,6 +228,8 @@ fi
 if [ ${#standards[@]} -eq 0 ] && [ -f CODING_STANDARDS.md ]; then standards=(CODING_STANDARDS.md); fi
 # The definition both reports rest on; SKILL.md step 4 carries it word for word (tests/spec-review/review-brief.sh holds them together).
 definition="A hard finding is wrong behavior in normal use: a command, hook, script or documented flow does something other than what the ticket or its own documentation says it does, on the path a user takes."
+# The blast-radius paragraph; SKILL.md step 4 carries it word for word (the same test holds them together).
+blast_rule="The sessions and skills this change reaches, as the author grounded them before the review. Check the diff against each one; the grounding is the author's claim, not evidence."
 count_rule='End the report with exactly one line `hard findings: N`, where N is the number of items under `## Would break` and nothing else.'
 common() {
   echo "Read nothing beyond this brief unless a finding needs the code around a hunk, and then read that one function or section, not the file. Run nothing."
@@ -207,6 +242,14 @@ common() {
   echo
   cat "$dir/stat"
   echo
+  if [ -n "$grounding" ]; then
+    echo "## Blast radius"
+    echo
+    echo "$blast_rule"
+    echo
+    printf '%s\n' "$grounding"
+    echo
+  fi
   echo "## Diff"
   echo
   if [ "$(wc -l < "$dir/diff")" -lt 500 ]; then
