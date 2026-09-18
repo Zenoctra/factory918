@@ -63,7 +63,7 @@ A reviewer that gets a diff command and two file names runs the diff and reads b
 
 - The commit list (the `git log <fixed-point>..HEAD --oneline` output).
 - The changed-file list with per-file line counts (the `--stat` output).
-- The diff itself, when it's under about 500 lines. Over that, paste the diff of each file under 150 lines and, for the rest, the exact per-file command (`git diff <fixed-point>...HEAD -- <path>`), so a reviewer runs at most the commands for the large files.
+- The diff itself, when it's under about 500 lines. Over that, write it to `.scratch/review/<fixed-point>.diff` and hand the path, so a reviewer reads one file and runs nothing.
 
 **Standards sub-agent prompt** adds:
 
@@ -77,7 +77,7 @@ A reviewer that gets a diff command and two file names runs the diff and reads b
 
 If the spec is missing, skip the Spec sub-agent and note this in the final report.
 
-The Standards sub-agent runs through the configured `standards reviewer` descriptor (`~/.claude/pstack-models.md`, default `claude:opus@medium`), resolved per [`provider-dispatch.md`](../poteto-mode/references/provider-dispatch.md), in `read-only` mode; a native lane is the matching `pstack-<family>-<effort>` subagent. The Spec sub-agent runs on the writer's lane, the `feature, refactoring` descriptor, because judging whether the work matches the ask is the senior's call. Without a models sheet, both run on the parent's subagent primitive at the parent's model.
+The Standards sub-agent runs through the configured `standards reviewer` descriptor (`~/.claude/pstack-models.md`, default `claude:opus@medium`), resolved per [`provider-dispatch.md`](../poteto-mode/references/provider-dispatch.md), in `read-only` mode; a native lane is the matching `pstack-<family>-<effort>` subagent. The Spec sub-agent runs on the writer's lane, the `feature, refactoring` descriptor, because judging whether the work matches the ask is the senior's call. A sheet without the `standards reviewer` row uses that default. Without a models sheet, both run on the parent's subagent primitive at the parent's model.
 
 ### 5. Aggregate
 
