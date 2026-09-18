@@ -16,5 +16,6 @@ reflect tooling, judgment, divergent, synthesizer: inherit-parent
 arena runners: claude:opus@high, claude:opus@medium
 arena cross-judge pool: claude:opus@xhigh, claude:opus@high
 swarm workers: claude:opus@medium
+standards reviewer: claude:opus@medium
 architect runners: claude:opus@high, claude:opus@medium
 interrogate reviewers: claude:opus@xhigh, claude:opus@high

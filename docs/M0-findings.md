@@ -159,8 +159,13 @@ Verified on the factory repository itself: a stacked PR retargets to `main` only
 
 `vp create` 0.3.1 refuses an absolute `--directory` ("Absolute path is not allowed"), so the fixture flow runs from `/tmp` with `--directory fx`.
 
+## What a review costs (2026-09-17)
+
+Measured on PR #37 with the brief shape of #39: the diff, the standards sections and the ticket pasted into each brief, nothing to fetch. The Standards sub-agent (`claude:opus`) cost 65,887 tokens over 2 tool uses; the Spec sub-agent (`claude:fable`) 55,627 over 1; the first run of the same review with a file pointer to the diff cost 70,112 and 57,376. A sub-agent that only replies "ok" with no tool costs 45,963 tokens here, so the floor of one sub-agent is about 46K and comes from the harness's context (the tool schemas and the skill list), not from discovery. Ticket #33 asked for one review under half of 130K; two sub-agents cannot reach it in this harness, whatever the brief. Pasting cuts tool uses, which is where the rest goes: from 4 to 2 on the Standards axis. Getting under 65K means one sub-agent per review, or the orchestrator running one axis itself, which is Manuel's call. To re-measure: dispatch each sub-agent with the Agent tool and read the `subagent_tokens` figure its result carries.
+
 ## Still open
 
+- A review costs two sub-agent floors (about 92K) before any reading; one sub-agent per review, or the orchestrator running one axis, would halve it. Manuel's call (ticket #33).
 - The React Native profile's Expo app under `vp check`, the fingerprint workflow on a real PR, and a simulator screenshot (first mobile project). The Python profile has now run end to end on GitHub.
 - `vp migrate` on a brownfield repo (M8).
 - `gh auth login` and `/setup-pstack` are human steps; `/factory-start` is M4.
