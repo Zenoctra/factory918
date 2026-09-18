@@ -2,11 +2,14 @@
 # Runs template/.agents/skills/spec-review/scripts/review-brief.sh in a temp repo and asserts that
 # each brief carries the report shape review-comment.sh enforces: the definition sentence, every
 # heading name, the item format and the count rule. A fake gh on PATH supplies the ticket body and
-# the ticket's comments, and reports no PR, so the Spec brief is written and the round is 1 unless
-# --round says otherwise. With --previous, only the judgment items that cite a decision carry into
-# both briefs; a fourth round is refused before any state is written. SKILL.md step 4 must carry
-# the definition and the settled paragraph word for word, so the skill and the script cannot drift
-# apart. Exits 1 on the first miss.
+# the ticket's comments, and the PR's earlier review comments when a fixture file names them (no
+# PR otherwise), so the Spec brief is written and the round is 1 unless the comments or --round say
+# otherwise. Only the judgment items that cite a decision carry into both briefs, from every earlier
+# comment, each line once; the round is one more than the highest `round: N of 3` among the comments,
+# so a rebuilt comment does not advance it; a fourth round is refused before any state is written;
+# a gh failure other than "no pull requests found" is printed and the run goes on. SKILL.md step 4
+# must carry the definition and the settled paragraph word for word, so the skill and the script
+# cannot drift apart. Exits 1 on the first miss.
 set -euo pipefail
 here="$(cd "$(dirname "$0")/../.." && pwd -P)"
 skill="$here/template/.agents/skills/spec-review"
@@ -22,19 +25,29 @@ git commit -qm "first"
 echo two > a.txt
 git commit -qam "second, no ticket named"
 mkdir bin
-# gh pr view: no PR for this branch. gh issue view: the body, or the author's comments already
-# formatted the way the script's jq expression formats them (one is by someone else and is left out).
-cat > bin/gh <<'EOF'
-#!/bin/sh
+# gh pr view: the file pr-comments, when it exists, is what the script's jq prints (each earlier
+# review comment's body, then a line holding only the record separator); pr-error, when it exists,
+# goes to stderr with exit 1; with neither there is no PR for this branch. gh issue view: the body,
+# or the author's comments already formatted the way the script's jq expression formats them (one
+# is by someone else and is left out).
+{
+  echo '#!/bin/sh'
+  echo "fx='$fx'"
+  cat <<'EOF'
 case "$*" in
-  "pr view"*) echo "no pull requests found for branch" >&2; exit 1 ;;
+  "pr view"*)
+    if [ -f "$fx/pr-error" ]; then cat "$fx/pr-error" >&2; exit 1; fi
+    if [ -f "$fx/pr-comments" ]; then cat "$fx/pr-comments"; exit 0; fi
+    echo 'no pull requests found for branch "x"' >&2; exit 1 ;;
   *"--json body"*) echo "What to build: the ticket body" ;;
   *"--json author,comments"*) printf '### 2026-09-17\n\nuser: the hook stays in bash.\n\n### 2026-09-18\n\nuser: the count is Act on plus Ask.\n\n' ;;
   *) echo "fake gh: unexpected args: $*" >&2; exit 2 ;;
 esac
 EOF
+} > bin/gh
 chmod +x bin/gh
 PATH="$fx/bin:$PATH"
+sep() { printf '\036\n'; }
 
 n=0
 # has <file> <text> <label>: the file contains the text as a fixed string.
@@ -61,7 +74,7 @@ printed() {
   n=$((n + 1))
 }
 
-bash "$skill/scripts/review-brief.sh" HEAD~1 --ticket 7 > out.txt
+bash "$skill/scripts/review-brief.sh" HEAD~1 --ticket 7 > out.txt 2> err.txt
 printed out.txt "ticket: #7
 round: 1 of 3
 .scratch/review/HEAD_1/standards-brief.md
@@ -70,6 +83,16 @@ std=.scratch/review/HEAD_1/standards-brief.md
 spec=.scratch/review/HEAD_1/spec-brief.md
 [ "$(cat .scratch/review/HEAD_1/round)" = 1 ] || { echo "FAIL: the round file does not say 1"; exit 1; }
 n=$((n + 1))
+[ ! -s err.txt ] || { echo "FAIL no PR: gh's 'no pull requests found' is printed:"; cat err.txt; exit 1; }
+n=$((n + 1))
+
+# Any other gh failure is printed, and the run goes on as round 1 with nothing carried.
+echo "HTTP 401: Bad credentials (https://api.github.com/graphql)" > pr-error
+bash "$skill/scripts/review-brief.sh" HEAD~1 --ticket 7 > out.txt 2> err.txt
+rm pr-error
+has err.txt "review-brief: gh could not read the PR's review comments (HTTP 401: Bad credentials (https://api.github.com/graphql))" "a gh failure other than no PR is printed"
+has out.txt "round: 1 of 3" "a gh failure other than no PR still runs round 1"
+lacks "$std" "## Settled in earlier rounds" "a gh failure other than no PR carries nothing"
 
 definition="A hard finding is wrong behavior in normal use: a command, hook, script or documented flow does something other than what the ticket or its own documentation says it does, on the path a user takes."
 count_rule='End the report with exactly one line `hard findings: N`, where N is the number of items under `## Would break` and nothing else.'
@@ -177,10 +200,63 @@ for f in "$std" "$spec"; do
 done
 
 # A comment posted from the GitHub web UI has CRLF line ends; the same items carry.
-sed 's/$/\r/' previous.md > previous-crlf.md
+awk '{ printf "%s\r\n", $0 }' previous.md > previous-crlf.md
 bash "$skill/scripts/review-brief.sh" HEAD~1 --ticket 7 --previous previous-crlf.md --round 3 > out.txt
 has out.txt "settled: carried 2, dropped 1 without a citation" "CRLF previous comment carries the same items"
 has "$std" "cites: DECISIONS.md P17" "CRLF previous comment: the cited item is in the brief"
+
+# A cited item with a trailing space or tab still cites; the brief carries it without the whitespace.
+awk '/cites: DECISIONS.md P17$/ { $0 = $0 " " } /cites: #74 comment 2026-09-17$/ { $0 = $0 "\t" } { print }' previous.md > previous-trailing.md
+bash "$skill/scripts/review-brief.sh" HEAD~1 --ticket 7 --previous previous-trailing.md --round 2 > out.txt
+has out.txt "settled: carried 2, dropped 1 without a citation" "trailing whitespace after the citation carries the same items"
+has "$std" "2. [S2] **Whole DECISIONS.md is writable.** Provisional rows are the agent's to add. cites: DECISIONS.md P17" "trailing space: the item is in the brief without it"
+has "$std" "1. [S1] **Hook in Python.** A port is a later ticket. cites: #74 comment 2026-09-17" "trailing tab: the item is in the brief without it"
+
+# The PR's earlier review comments, from gh. The round is one more than the highest `round: N of 3`
+# among them; a comment from before the line existed is round 1. A comment rebuilt in the same
+# round repeats its number and advances nothing; every comment's cited items carry, each line once.
+grep -v '^round: ' previous.md > previous-unnumbered.md
+{ cat previous-unnumbered.md; sep; } > pr-comments
+bash "$skill/scripts/review-brief.sh" HEAD~1 --ticket 7 > out.txt
+has out.txt "round: 2 of 3" "a comment without a round line is round 1, so the next is 2"
+has out.txt "settled: carried 2, dropped 1 without a citation" "the comment without a round line carries its items"
+# The rebuilt comment repeats round 1 and no longer holds the Noted item (settled, so not re-raised).
+grep -v '^1\. \[S1\]' previous.md > previous-rebuilt.md
+{ cat previous.md; sep; cat previous-rebuilt.md; sep; } > pr-comments
+bash "$skill/scripts/review-brief.sh" HEAD~1 --ticket 7 > out.txt
+printed out.txt "ticket: #7
+round: 2 of 3
+settled: carried 2, dropped 1 without a citation
+.scratch/review/HEAD_1/standards-brief.md
+.scratch/review/HEAD_1/spec-brief.md" "two comments both reading round 1 are round 1, so the next is 2, and their items carry once each"
+[ "$(cat .scratch/review/HEAD_1/round)" = 2 ] || { echo "FAIL: the round file does not say 2 after a rebuilt comment"; exit 1; }
+n=$((n + 1))
+for f in "$std" "$spec"; do
+  has "$f" "1. [S1] **Hook in Python.** A port is a later ticket. cites: #74 comment 2026-09-17" "$f carries the item only the first comment holds"
+  has "$f" "2. [S2] **Whole DECISIONS.md is writable.** Provisional rows are the agent's to add. cites: DECISIONS.md P17" "$f carries the item both comments hold"
+  [ "$(grep -cF 'cites: DECISIONS.md P17' "$f")" = 1 ] || { echo "FAIL: $f carries the item both comments hold twice"; exit 1; }
+  n=$((n + 1))
+done
+# Rounds 1, 2 and 3 were run: the fourth is refused before any state is written.
+sed 's/^round: 1 of 3$/round: 2 of 3/' previous.md > previous-2.md
+sed 's/^round: 1 of 3$/round: 3 of 3/' previous.md > previous-3.md
+{ cat previous.md; sep; cat previous-2.md; sep; cat previous-3.md; sep; } > pr-comments
+rm -rf .scratch .claude
+set +e
+out="$(bash "$skill/scripts/review-brief.sh" HEAD~1 --ticket 7 2>&1)"
+code=$?
+set -e
+if [ "$code" != 1 ] || [ "$out" != 'review-brief: three rounds were run on this PR; the remaining Act on items become tickets (`ticket: #N`), not a fourth round' ] || [ -e .claude/state/review ] || [ -e .scratch/review ]; then
+  echo "FAIL fourth round from the PR's comments: exit $code, wanted 1, the message and no state"
+  echo "  got: $out"
+  exit 1
+fi
+n=$((n + 1))
+# --round overrides what the comments say.
+bash "$skill/scripts/review-brief.sh" HEAD~1 --ticket 7 --round 3 > out.txt
+has out.txt "round: 3 of 3" "--round overrides the round the comments give"
+has out.txt "settled: carried 2, dropped 1 without a citation" "--round still carries the comments' items"
+rm pr-comments
 
 # The cited Dismissed item quotes a hunk whose lines look like cited items: a ``` line inside a
 # ```` block, and a ~~~ block quoting a ``` line. A fence closes only on its own character at

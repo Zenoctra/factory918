@@ -5,10 +5,12 @@
 #   review-brief.sh --paths P... --commits SHA... [--ticket N] [--standards FILE ...]
 # The second form is the sweep over units already on main: the fixed point is the word "paths"
 # and the diff is git show <commits> -- <paths>. Rerunning overwrites the previous state.
-# The round is one more than the PR comments that end a review (a line `act-on items:`), and a
-# fourth round is refused. From the latest such comment the judgment's Noted and Dismissed items
-# that cite a decision are carried into both briefs as settled; --previous FILE supplies that
-# comment body instead of gh, and --round N the round, for tests and a branch whose PR is elsewhere.
+# The PR comments that end a review carry a line `act-on items:` under `round: N of 3`; the round
+# is the highest N plus one (a comment without the line is round 1), so a comment rebuilt in the
+# same round does not advance it, and a fourth round is refused. From every such comment, in order,
+# the judgment's Noted and Dismissed items that cite a decision are carried into both briefs as
+# settled, each line once; --previous FILE supplies the comments instead of gh, and --round N the
+# round, for tests and a branch whose PR is elsewhere.
 set -euo pipefail
 usage() {
   echo "usage: review-brief.sh <fixed-point> [--ticket N] [--standards FILE ...] [--previous FILE] [--round N]" >&2
@@ -72,35 +74,42 @@ if [ -z "$ticket" ]; then
     *) ticket="${numbers%% *}"; ticket="${ticket#\#}" ;;
   esac
 fi
-# The round and the previous review comment come from the branch's PR: the comments that end
-# a review carry a line `act-on items:`. No PR, or no gh, is round 1 with nothing to carry.
-prev=""
-[ -z "$previous" ] || prev="$(cat "$previous")"
-if [ -z "$round" ] || [ -z "$previous" ]; then
-  ended='[.comments[] | select(.body | test("(^|\n)act-on items:"))] | (length | tostring), (last.body // "")'
-  pr="$(gh pr view --json comments -q "$ended" 2>/dev/null || true)"
-  n="$(printf '%s\n' "$pr" | head -1)"
-  case "$n" in ''|*[!0-9]*) n="" ;; esac
-  if [ -n "$n" ]; then
-    [ -n "$round" ] || round=$((n + 1))
-    [ -n "$previous" ] || [ "$n" -eq 0 ] || prev="$(printf '%s\n' "$pr" | tail -n +2)"
+# The earlier review comments come from the branch's PR: the comments that end a review carry a
+# line `act-on items:`. gh prints each such body followed by a line holding only the record
+# separator (US-ASCII 30), which is how the parse below tells one comment from the next. gh's
+# "no pull requests found" is round 1 with nothing carried and says nothing; any other failure is
+# printed, since the round gate and the carry rest on it, and the run goes on the same way.
+rs="$(printf '\036')"
+bodies=""
+if [ -n "$previous" ]; then
+  bodies="$(cat "$previous")"
+else
+  ended='[.comments[] | select(.body | test("(^|\n)act-on items:"))] | .[] | .body, "\u001e"'
+  out="$(mktemp)"
+  status=0
+  err="$(gh pr view --json comments -q "$ended" 2>&1 >"$out")" || status=$?
+  if [ "$status" -eq 0 ]; then
+    bodies="$(cat "$out")"
+  else
+    case "$err" in
+      *"no pull requests found"*) ;;
+      *) echo "review-brief: gh could not read the PR's review comments ($(printf '%s' "$err" | tr '\n' ' ')); round 1 unless --round says otherwise, nothing carried" >&2 ;;
+    esac
   fi
+  rm -f "$out"
 fi
-: "${round:=1}"
-if [ "$round" -gt 3 ]; then
-  echo "review-brief: three rounds were run on this PR; the remaining Act on items become tickets (\`ticket: #N\`), not a fourth round" >&2
-  exit 1
-fi
-[ -z "$ticket" ] || echo "ticket: #$ticket"
-echo "round: $round of 3"
-# What carries: the judgment's Noted and Dismissed items whose trailing field names a decision in
-# one of the three shapes; an item without one is dropped, since a reason alone can steer a reviewer.
-# The quoted hunks are fenced text and never items. The fence rule is the one review-comment.sh
-# parses the reports with, copied from there word for word (tests/spec-review/review-brief.sh
-# holds the two copies together): a fence opens on a line starting with three or more backticks
-# or tildes and closes only on a line of the same character, at least as long, followed by nothing
-# but spaces or tabs (no info string), so a hunk that quotes a fence stays inside its block; a
-# heading's name is the text after `## ` less trailing whitespace.
+# Each line loses its CR and trailing spaces or tabs first, so a comment posted from the web UI
+# parses like one posted by gh and the `cites:` anchor below holds; the separator line ends a
+# comment and resets the parse. The fence rule is the one review-comment.sh parses the reports
+# with, copied from there word for word (tests/spec-review/review-brief.sh holds the two copies
+# together): a fence opens on a line starting with three or more backticks or tildes and closes
+# only on a line of the same character, at least as long, followed by nothing but spaces or tabs
+# (no info string), so a hunk that quotes a fence stays inside its block; a heading's name is the
+# text after `## ` less trailing whitespace.
+split='
+  { sub(/\r$/, ""); sub(/[ \t]+$/, "") }
+  $0 == sep { fence = ""; h = ""; j = 0; if (r > top) top = r; r = 1; next }
+'
 fenced='
   /^(```|~~~)/ { match($0, /^(`+|~+)/); m = substr($0, 1, RLENGTH); rest = substr($0, RLENGTH + 1)
     if (fence == "") { fence = m; next }
@@ -108,12 +117,36 @@ fenced='
   fence != "" { next }
   /^## / { h = substr($0, 4); sub(/[ \t\r]+$/, "", h) }
 '
+# The round is one more than the highest `round: N of 3` line any comment carries, the last such
+# line in a comment being its own (a quoted hunk may hold one earlier); a comment without the line
+# is from before the line existed and is round 1. A comment rebuilt in the same round repeats its
+# N, so it advances nothing.
+top=0
+if [ -n "$bodies" ]; then
+  top="$(printf '%s\n' "$bodies" | awk -v sep="$rs" "$split$fenced"'
+    BEGIN { r = 1 }
+    /^round: [0-9]+ of 3$/ { r = substr($0, 8) + 0 }
+    END { if (r > top) top = r; print top }
+  ')"
+fi
+[ -n "$round" ] || round=$((top + 1))
+if [ "$round" -gt 3 ]; then
+  echo "review-brief: three rounds were run on this PR; the remaining Act on items become tickets (\`ticket: #N\`), not a fourth round" >&2
+  exit 1
+fi
+[ -z "$ticket" ] || echo "ticket: #$ticket"
+echo "round: $round of 3"
+# What carries: from every comment, in order, the judgment's Noted and Dismissed items whose
+# trailing field names a decision in one of the three shapes, each distinct line once, so a
+# decision from round one still reaches round three and a rebuilt comment repeats nothing. An
+# item without a citation is dropped, since a reason alone can steer a reviewer. The quoted hunks
+# are fenced text and never items.
 cites='cites: (user: "[^"]+" on #[0-9]+|DECISIONS\.md [A-Z]?[0-9]+|#[0-9]+ comment [0-9]{4}-[0-9]{2}-[0-9]{2})$'
 settled=""
-if [ -n "$prev" ]; then
-  judged="$(printf '%s\n' "$prev" | awk '{ sub(/\r$/, "") }'"$fenced"'
+if [ -n "$bodies" ]; then
+  judged="$(printf '%s\n' "$bodies" | awk -v sep="$rs" "$split$fenced"'
     /^## / { if (h == "Judgment") j = 1; next }
-    j && (h == "Noted" || h == "Dismissed") && /^[0-9]+\. /
+    j && (h == "Noted" || h == "Dismissed") && /^[0-9]+\. / && !seen[$0]++
   ')"
   settled="$(printf '%s\n' "$judged" | grep -E -- "$cites" || true)"
   carried="$(printf '%s' "$settled" | grep -c . || true)"

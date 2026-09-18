@@ -339,6 +339,44 @@ round: 1 of 3
 act-on items: 1" "rerun with the dir argument after the state was cleared" "$dir"
 accept "$out" "the same with a trailing slash on the dir" "$dir/"
 
+# An Ask item the human answered moves to the bucket the answer settles. Moved as it stands, the
+# numbers no longer run 1..N in document order and the rerun is refused; renumbered, the rerun
+# prints the new count.
+printf '## Act on\n\n## Ask\n\n1. [S1] **Mysterious Name.** whether the name is a data term is the human'"'"'s call\n\n## Consider\n\n## Noted\n\n## Dismissed\n\n2. [S2] **Middle Man.** one caller, kept inline\n' > "$dir/judgment.md"
+accept "## Standards
+
+$(cat "$dir/standards-report.md")
+
+## Spec
+
+no spec: Standards axis only
+
+## Judgment
+
+$(cat "$dir/judgment.md")
+
+Standards: 0 would break of 2; Spec: no spec; judged: act on 0 (0 with a ticket), ask 1, consider 0, noted 0, dismissed 1; fixed point main.
+round: 1 of 3
+act-on items: 1" "an Ask item, counted" "$dir"
+printf '## Act on\n\n## Ask\n\n## Consider\n\n## Noted\n\n## Dismissed\n\n2. [S2] **Middle Man.** one caller, kept inline\n1. [S1] **Mysterious Name.** the human says the name is the domain term. cites: #7 comment 2026-09-18\n' > "$dir/judgment.md"
+refuse "$dir/judgment.md item '2. [S2] **Middle Man.** one caller, kept inline' is numbered 2 where 1 was expected; number the items 1..N continuously across the headings, in document order" "an Ask item moved without renumbering" "$dir"
+printf '## Act on\n\n## Ask\n\n## Consider\n\n## Noted\n\n## Dismissed\n\n1. [S2] **Middle Man.** one caller, kept inline\n2. [S1] **Mysterious Name.** the human says the name is the domain term. cites: #7 comment 2026-09-18\n' > "$dir/judgment.md"
+accept "## Standards
+
+$(cat "$dir/standards-report.md")
+
+## Spec
+
+no spec: Standards axis only
+
+## Judgment
+
+$(cat "$dir/judgment.md")
+
+Standards: 0 would break of 2; Spec: no spec; judged: act on 0 (0 with a ticket), ask 0, consider 0, noted 0, dismissed 2; fixed point main.
+round: 1 of 3
+act-on items: 0" "an Ask item moved and renumbered, the same round" "$dir"
+
 # The same rerun with the dir spelled ./<dir>/ and as its absolute path, the state present and
 # naming the dir: each spelling is the dir the state names, so the state is cleared.
 for spelling in "./$dir/" "$(git rev-parse --show-toplevel)/$dir"; do
