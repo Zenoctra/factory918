@@ -207,6 +207,11 @@ cmd_doctor() {
   chk "glue skills resolve"           "[ -f .agents/skills/factory918/SKILL.md ] && [ -f .agents/skills/factory-start/SKILL.md ] && [ -f .agents/skills/knowledge/SKILL.md ] && [ -f .agents/skills/factory-retro/SKILL.md ]" "factory918 update restores the factory918, factory-start, knowledge and factory-retro skills"
   chk "ledger exists"                 "[ -f docs/agents/ledger.md ]" "factory918 update restores docs/agents/ledger.md"
   chk "ast-grep rules test"           "pnpm sg:test" "vp install (the rule engine is a devDependency), then pnpm sg:test; a rule without a snapshot needs ast-grep test --update-all"
+  # Evidence is never committed and nothing prunes it; say when it is old, delete nothing.
+  if [ -d .artifacts ]; then
+    stale="$(find .artifacts -mindepth 1 -maxdepth 1 -type d -mtime +14 2>/dev/null | sed "s|^\./||" | tr "\\n" " ")"
+    [ -z "$stale" ] || { echo "NOTE  stale evidence: $stale"; echo "      fix: rm -rf .artifacts/<task> once its PR is merged"; }
+  fi
   [ "$fail" = 0 ] && echo "all clear" || echo "start with the first FAIL"
   return $fail
 }
