@@ -44,6 +44,13 @@ else
   git rev-parse --verify -q "$fixed^{commit}" >/dev/null || { echo "review-brief: $fixed does not resolve to a commit" >&2; exit 1; }
   id="$(printf '%s' "$fixed" | tr -c 'A-Za-z0-9._-' '_')"
 fi
+# The smell baseline is SKILL.md step 3's bullets, each with its fix arrow; a resync that moves
+# them must fail here, before any state is written, not leave a brief with no baseline.
+smells="$(sed -n '/^### 3\./,/^### 4\./p' "$skill/SKILL.md" | grep '^- \*\*.*→' || true)"
+if [ -z "$smells" ]; then
+  echo "review-brief: no smell baseline found in $skill/SKILL.md (no line matching '^- **...→' between '### 3.' and '### 4.'); nothing written" >&2
+  exit 1
+fi
 dir=".scratch/review/$id"
 rm -rf "$dir"
 mkdir -p "$dir"
@@ -81,8 +88,6 @@ if [ -n "$ticket" ]; then
   [ -n "$spec" ] || echo "review-brief: gh could not fetch #$ticket; no spec" >&2
 fi
 if [ ${#standards[@]} -eq 0 ] && [ -f CODING_STANDARDS.md ]; then standards=(CODING_STANDARDS.md); fi
-smells="$(sed -n '/^### 3\./,/^### 4\./p' "$skill/SKILL.md" | grep '^- \*\*.*→')"
-
 common() {
   echo "Read nothing beyond this brief unless a finding needs the code around a hunk, and then read that one function or section, not the file. Run nothing."
   echo
