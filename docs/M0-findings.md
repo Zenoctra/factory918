@@ -155,7 +155,7 @@ The pass found one more real bug: run through the `~/.local/bin/factory918` syml
 
 ## Merge mechanics and the doctor (2026-09-17)
 
-Verified on the factory repository itself: a stacked PR retargets to `main` only when the merged parent branch is deleted (PR #3 was stranded on `feat/self-host` when it was not); GitHub shows a closing-issue link only on PRs whose base is the default branch, so a stacked PR links its ticket once it retargets. `find -mtime +N` on a directory is supported by both BSD and GNU find and reads the directory's own mtime, which moves only when its direct entries change.
+Verified on the factory repository itself: a stacked PR retargets to `main` only when the merged parent branch is deleted (PR #3 was stranded on `feat/self-host` when it was not); GitHub shows a closing-issue link only on PRs whose base is the default branch, so a stacked PR links its ticket once it retargets. `find -mtime +N` on a directory is supported by both BSD and GNU find and reads the directory's own mtime, which moves only when its direct entries change. 2026-09-17: the doctor's branch line was exercised on the fixture, which has no `origin`, so it compares against local `main`; `main`, and a branch at the same commit as `main`, print PASS; a merged branch prints the `already in main` NOTE, and so does a branch at `main~1` with no commits of its own, since git cannot tell the two apart; a branch with its own commit behind `main` prints the `behind main` NOTE; an unborn `main` and a detached HEAD each get their own NOTE. `vp create` 0.3.1 refuses an absolute `--directory` ("Absolute path is not allowed"), so the fixture flow runs from `/tmp` with `--directory fx`.
 
 ## Still open
 
