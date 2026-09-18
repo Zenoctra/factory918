@@ -256,6 +256,10 @@ cmd_doctor() {
   chk "no duplicate skill names"      "[ -z \"\$(grep -h '^name:' .agents/skills/*/SKILL.md | sort | uniq -d)\" ]" "rename or remove one of the two skills that share a name (grep -h ^name: .agents/skills/*/SKILL.md | sort | uniq -d)"
   chk "gh authenticated"              "gh auth status" "gh auth login (install gh first: brew, apt, dnf or winget)"
   chk "labels present"                "gh label list --limit 200 | grep -q ready-for-agent" "factory918 labels (needs a GitHub remote; factory918 init creates one, or gh repo create --private --source=. --push)"
+  # No remote or no auth prints nothing here; the two lines above already say so.
+  local dbm; dbm="$(gh repo view --json deleteBranchOnMerge --jq .deleteBranchOnMerge 2>/dev/null || true)"
+  if [ "$dbm" = true ]; then echo "PASS  delete-branch-on-merge"
+  elif [ "$dbm" = false ]; then note "delete-branch-on-merge" "gh repo edit --delete-branch-on-merge; without it a stacked PR stays on its merged parent's branch instead of retargeting to main"; fi
   chk "ci workflow present"           "[ -f .github/workflows/ci.yml ]" "factory918 update restores it"
   chk "settings.json parses"          "jq . .claude/settings.json" "fix the JSON in .claude/settings.json, or factory918 update to restore the template copy"
   chk "hooks executable"              "[ -x .claude/hooks/mode.sh ] && [ -x .claude/hooks/block-dangerous-git.sh ]" "chmod +x .claude/hooks/*.sh"
