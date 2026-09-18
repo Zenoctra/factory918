@@ -28,6 +28,7 @@ max_lines=200
 block() { echo "$1" >&2; exit 2; }
 
 # A path from a tool call or a command token, made repo-relative; fails when it is outside the repo.
+# The tr alphabet is the one tokens() encodes with index(" \t|;&<>", c): keep the two in step.
 relative() {
   local p base dir
   p="$(printf '%s' "$1" | tr '\001\002\003\004\005\006\007' ' \t|;&<>')"
@@ -44,7 +45,7 @@ classify() {
   case "$1" in .claude/state/*|.artifacts/*|.scratch/*|.plans/*) echo untracked; return ;; esac
   git -C "$root" ls-files --error-unmatch -- "$1" >/dev/null 2>&1 || { echo untracked; return; }
   case "$1" in
-    docs/agents/*|DECISIONS.md|*/DECISIONS.md|M0-findings.md|*/M0-findings.md) echo owned ;;
+    docs/agents/*|docs/knowledge/core/DECISIONS.md|docs/M0-findings.md) echo owned ;;
     *) echo lane ;;
   esac
 }
@@ -52,12 +53,20 @@ classify() {
 guard_write() {
   [ "$phase" = execute ] || return 0
   [ "$(classify "$1")" = lane ] || return 0
-  block "BLOCKED: writing $1 is a lane's job (P11). Brief a writer lane with the paths, the data shape and the success criteria, then review its diff. Your own files are docs/agents/*, DECISIONS.md, docs/M0-findings.md and the untracked directories."
+  block "BLOCKED: writing $1 is a lane's job (P11). Brief a writer lane with the paths, the data shape and the success criteria, then review its diff. Your own files are docs/agents/*, docs/knowledge/core/DECISIONS.md, docs/M0-findings.md and the untracked directories."
+}
+
+# Under review: the changed files, and the directory holding their diff, briefs and reports.
+in_review() {
+  [ -f "$review/files" ] || return 1
+  grep -Fxq -- "$1" "$review/files" && return 0
+  case "$1" in "$(cat "$review/dir")"/*) return 0 ;; esac
+  return 1
 }
 
 guard_read() {
   local n
-  if [ -f "$review/files" ] && grep -Fxq -- "$1" "$review/files"; then
+  if in_review "$1"; then
     block "BLOCKED: $1 is under review (fixed point $(cat "$review/fixed-point")); the orchestrator does not read the code under review. The reviewers have the diff in their briefs; wait for their reports, or rm -rf .claude/state/review to abandon the review."
   fi
   [ "$phase" = execute ] && [ "$2" = whole ] || return 0
@@ -65,6 +74,22 @@ guard_read() {
   n="$(wc -l < "$root/$1" 2>/dev/null | tr -d ' ')" || return 0
   [ "$n" -gt "$max_lines" ] || return 0
   block "BLOCKED: $1 is $n lines; reading it whole is the explorer lane's job. Read it in ranges with offset and limit ($max_lines lines at most), ask /knowledge, or brief an explorer and read its report."
+}
+
+# scan_git <args>: under review, git diff, git show and git log -p reach the diff without a path.
+scan_git() {
+  local a
+  if [ -f "$review/files" ]; then
+    case "${1:-}" in
+      diff|show) guard_diff "git $1" ;;
+      log) for a in "$@"; do case "$a" in -p|--patch) guard_diff "git log $a" ;; esac; done ;;
+    esac
+  fi
+  [ "${1:-}" = show ] || return 0
+  for a in "$@"; do case "$a" in *:*) target_read "${a#*:}" whole ;; esac; done
+}
+guard_diff() {
+  block "BLOCKED: $1 shows the code under review (fixed point $(cat "$review/fixed-point")); the orchestrator does not read it. The reviewers have the diff in their briefs; wait for their reports, or rm -rf .claude/state/review to abandon the review."
 }
 
 target_write() { local rel; rel="$(relative "$1")" || return 0; guard_write "$rel"; }
@@ -160,7 +185,7 @@ scan_segment() {
     cat) for a in "$@"; do case "$a" in -*) ;; *) target_read "$a" whole ;; esac; done ;;
     head) scan_head "$@" ;;
     sed) scan_sed "$@" ;;
-    git) [ "${1:-}" = show ] && for a in "$@"; do case "$a" in *:*) target_read "${a#*:}" whole ;; esac; done ;;
+    git) scan_git "$@" ;;
   esac
   return 0
 }

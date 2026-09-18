@@ -13,18 +13,21 @@ git config user.email test@factory918.invalid
 git config user.name test
 seq 1 250 | sed 's/^/echo /' > big.sh
 seq 1 10 > small.md
-mkdir -p docs/agents .scratch .claude/state
+mkdir -p docs/agents docs/knowledge/core template/docs/factory918 .scratch .claude/state
 echo ledger > docs/agents/ledger.md
 echo findings > docs/M0-findings.md
+echo decisions > docs/knowledge/core/DECISIONS.md
+echo generated > template/docs/factory918/DECISIONS.md
 git add -A
 git commit -qm fixture
 echo scratch > .scratch/x.txt
 echo execute > .claude/state/mode
 export CLAUDE_PROJECT_DIR="$fx"
 
-write_msg="BLOCKED: writing big.sh is a lane's job (P11). Brief a writer lane with the paths, the data shape and the success criteria, then review its diff. Your own files are docs/agents/*, DECISIONS.md, docs/M0-findings.md and the untracked directories."
+write_msg() { echo "BLOCKED: writing $1 is a lane's job (P11). Brief a writer lane with the paths, the data shape and the success criteria, then review its diff. Your own files are docs/agents/*, docs/knowledge/core/DECISIONS.md, docs/M0-findings.md and the untracked directories."; }
+diff_msg="BLOCKED: git diff shows the code under review (fixed point main); the orchestrator does not read it. The reviewers have the diff in their briefs; wait for their reports, or rm -rf .claude/state/review to abandon the review."
 cap_msg="BLOCKED: big.sh is 250 lines; reading it whole is the explorer lane's job. Read it in ranges with offset and limit (200 lines at most), ask /knowledge, or brief an explorer and read its report."
-review_msg="BLOCKED: big.sh is under review (fixed point main); the orchestrator does not read the code under review. The reviewers have the diff in their briefs; wait for their reports, or rm -rf .claude/state/review to abandon the review."
+review_msg() { echo "BLOCKED: $1 is under review (fixed point main); the orchestrator does not read the code under review. The reviewers have the diff in their briefs; wait for their reports, or rm -rf .claude/state/review to abandon the review."; }
 
 n=0
 code=0
@@ -56,14 +59,17 @@ path() { jq -cn --arg p "$fx/$1" '{file_path:$p}'; }
 ranged() { jq -cn --arg p "$fx/$1" --argjson l "$2" '{file_path:$p,limit:$l}'; }
 bash_cmd() { jq -cn --arg c "$1" '{command:$c}'; }
 
-expect 2 "$write_msg" orchestrator Write "$(path big.sh)" "orchestrator Write to big.sh"
-expect 2 "$write_msg" orchestrator Edit "$(path big.sh)" "orchestrator Edit of big.sh"
+expect 2 "$(write_msg big.sh)" orchestrator Write "$(path big.sh)" "orchestrator Write to big.sh"
+expect 2 "$(write_msg big.sh)" orchestrator Edit "$(path big.sh)" "orchestrator Edit of big.sh"
+expect 2 "$(write_msg big.sh)" orchestrator NotebookEdit "$(jq -cn --arg p "$fx/big.sh" '{notebook_path:$p}')" "orchestrator NotebookEdit of big.sh"
+expect 2 "$(write_msg template/docs/factory918/DECISIONS.md)" orchestrator Write "$(path template/docs/factory918/DECISIONS.md)" "Write to the template's DECISIONS.md"
+expect 2 "$(write_msg big.sh)" orchestrator Bash "$(bash_cmd 'echo x >> big.sh')" "append to big.sh"
 expect 2 "$cap_msg" orchestrator Bash "$(bash_cmd 'cat big.sh')" "cat big.sh"
-expect 2 "$write_msg" orchestrator Bash "$(bash_cmd "sed -i '' s/a/b/ big.sh")" "sed -i big.sh"
-expect 2 "$write_msg" orchestrator Bash "$(bash_cmd 'cat > big.sh <<EOF
+expect 2 "$(write_msg big.sh)" orchestrator Bash "$(bash_cmd "sed -i '' s/a/b/ big.sh")" "sed -i big.sh"
+expect 2 "$(write_msg big.sh)" orchestrator Bash "$(bash_cmd 'cat > big.sh <<EOF
 echo hello
 EOF')" "heredoc into big.sh"
-expect 2 "$write_msg" orchestrator Bash "$(bash_cmd 'echo x | tee big.sh')" "tee big.sh"
+expect 2 "$(write_msg big.sh)" orchestrator Bash "$(bash_cmd 'echo x | tee big.sh')" "tee big.sh"
 expect 2 "$cap_msg" orchestrator Bash "$(bash_cmd 'git show HEAD:big.sh')" "git show HEAD:big.sh"
 expect 2 "$cap_msg" orchestrator Bash "$(bash_cmd 'head -n 300 big.sh')" "head -n 300 big.sh"
 expect 2 "$cap_msg" orchestrator Bash "$(bash_cmd "sed -n '10,\$p' big.sh")" "sed -n to the end"
@@ -77,6 +83,8 @@ expect 0 "" orchestrator Bash "$(bash_cmd 'grep -n echo big.sh | wc -l')" "grep 
 expect 0 "" orchestrator Write "$(path .claude/state/todo.md)" "Write to .claude/state"
 expect 0 "" orchestrator Write "$(path docs/agents/ledger.md)" "Write to the ledger"
 expect 0 "" orchestrator Write "$(path docs/M0-findings.md)" "Write to the findings"
+expect 0 "" orchestrator Write "$(path docs/knowledge/core/DECISIONS.md)" "Write to the core DECISIONS.md"
+expect 0 "" orchestrator Bash "$(bash_cmd 'git diff main...HEAD')" "git diff with no review in progress"
 expect 0 "" orchestrator Write "$(path new-file.sh)" "Write to a file git does not track"
 expect 0 "" orchestrator Bash "$(bash_cmd 'cat .scratch/x.txt')" "cat under .scratch"
 
@@ -84,20 +92,31 @@ mkdir -p .claude/state/review .scratch/review/main
 echo main > .claude/state/review/fixed-point
 echo big.sh > .claude/state/review/files
 echo .scratch/review/main > .claude/state/review/dir
+echo diff > .scratch/review/main/diff
 expect 0 "" orchestrator Read "$(path small.md)" "Read of an unlisted file under review"
-expect 2 "$review_msg" orchestrator Read "$(ranged big.sh 5)" "ranged Read of big.sh under review"
-expect 2 "$review_msg" orchestrator Bash "$(bash_cmd 'head -n 5 big.sh')" "head of big.sh under review"
+expect 2 "$(review_msg big.sh)" orchestrator Read "$(ranged big.sh 5)" "ranged Read of big.sh under review"
+expect 2 "$(review_msg big.sh)" orchestrator Bash "$(bash_cmd 'head -n 5 big.sh')" "head of big.sh under review"
+expect 2 "$diff_msg" orchestrator Bash "$(bash_cmd 'git diff main...HEAD')" "git diff under review"
+expect 2 "${diff_msg/git diff/git show}" orchestrator Bash "$(bash_cmd 'git show HEAD')" "git show under review"
+expect 2 "${diff_msg/git diff/git log -p}" orchestrator Bash "$(bash_cmd 'git log -p -1')" "git log -p under review"
+expect 0 "" orchestrator Bash "$(bash_cmd 'git log --oneline -3')" "git log without a patch under review"
+expect 2 "$(review_msg .scratch/review/main/diff)" orchestrator Bash "$(bash_cmd 'cat .scratch/review/main/diff')" "cat of the review diff under review"
+expect 2 "$(review_msg .scratch/review/main/diff)" orchestrator Read "$(path .scratch/review/main/diff)" "Read of the review diff under review"
 
 expect 0 "" agent Write "$(path big.sh)" "sub-agent Write to big.sh"
 expect 0 "" agent Bash "$(bash_cmd 'cat big.sh')" "sub-agent cat big.sh"
 expect 0 "" agent Bash "$(bash_cmd "sed -i '' s/a/b/ big.sh")" "sub-agent sed -i big.sh"
 expect 0 "" agent Read "$(path big.sh)" "sub-agent Read big.sh whole"
 expect 0 "" agent Read "$(ranged big.sh 5)" "sub-agent Read of big.sh under review"
+expect 0 "" agent Bash "$(bash_cmd 'git diff main...HEAD')" "sub-agent git diff under review"
+expect 0 "" agent Bash "$(bash_cmd 'cat .scratch/review/main/diff')" "sub-agent cat of the review diff"
+expect 0 "" agent NotebookEdit "$(jq -cn --arg p "$fx/big.sh" '{notebook_path:$p}')" "sub-agent NotebookEdit of big.sh"
+expect 0 "" agent Write "$(path template/docs/factory918/DECISIONS.md)" "sub-agent Write to the template's DECISIONS.md"
 
 echo planning > .claude/state/mode
 expect 0 "" orchestrator Write "$(path big.sh)" "planning: Write to big.sh"
 expect 0 "" orchestrator Read "$(path small.md)" "planning: Read small.md"
-expect 2 "$review_msg" orchestrator Read "$(ranged big.sh 5)" "planning: Read of big.sh under review"
+expect 2 "$(review_msg big.sh)" orchestrator Read "$(ranged big.sh 5)" "planning: Read of big.sh under review"
 
 set +e
 err="$(printf 'not json' | bash "$hook" 2>&1 >/dev/null)"
