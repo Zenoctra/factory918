@@ -1,4 +1,4 @@
-<!-- lines: 23 | source: spec/FACTORY-SPEC-v2.md | part 10/17 | title: The Factory spec, v2 — 6. Contradictions between the vendored skills, and how the factory resolves them -->
+<!-- lines: 24 | source: spec/FACTORY-SPEC-v2.md | part 10/17 | title: The Factory spec, v2 — 6. Contradictions between the vendored skills, and how the factory resolves them -->
 
 ## Contents (line numbers are for the Read tool's offset)
 - L6: 6. Contradictions between the vendored skills, and how the factory resolves them
@@ -19,5 +19,6 @@
 | pstack's `/deslop`, `control-ui`, `/loop` | port substitutions | Already substituted by open-pstack (bundled deslop; Claude's `verify`, `run`, `loop`). No change. | — |
 | Model slugs in playbook text (Grok, Sol) | feature.md, poteto-mode | Overridden by the models sheet; text left alone so `factory918 sync` stays clean. | ~/.claude/pstack-models.md |
 | Matt's `to-tickets` needs labels that setup does not create | docs/engineering/triage.md ("Create the five state labels and two category labels yourself") | `factory918 labels` creates them with `gh label create --force`; `labels.yml` keeps them in sync. | factory918.sh, .github/labels.json |
+| Delegation inside a task: Theo's "delegation is for breadth or adversarial review, not ordinary tasks" vs pstack's playbooks ("delegate implementation; the gain is review separation") | Theo's AGENTS.md vs feature.md, bug-fix.md, refactoring.md, perf-issue.md | pstack decides execution (belief 7): inside a playbook a separate lane writes and the orchestrator reviews; trivial edits outside a playbook stay with the orchestrator. The Theo sentence was removed from the template's AGENTS.md (P11). | DECISIONS.md P11; AGENTS.md "Phases" |
 
 ---
