@@ -264,6 +264,9 @@ cmd_doctor() {
   chk "settings.json parses"          "jq . .claude/settings.json" "fix the JSON in .claude/settings.json, or factory918 update to restore the template copy"
   chk "hooks executable"              "[ -x .claude/hooks/mode.sh ] && [ -x .claude/hooks/block-dangerous-git.sh ]" "chmod +x .claude/hooks/*.sh"
   chk "state dir ignored"             "git check-ignore -q .claude/state/mode" "append the lines from the factory clone's template/.gitignore.factory to .gitignore"
+  if [ -f .claude/state/review/files ]; then
+    note "a review state is left behind: .claude/state/review ($(cat .claude/state/review/fixed-point), $(wc -l < .claude/state/review/files | tr -d ' ') files); reads of those files are blocked" "finish the review (spec-review step 5 runs review-comment.sh, which clears it) or rm -rf .claude/state/review"
+  fi
   chk "vp check (format, lint, types)" "vp check" "vp fmt, then vp check, and fix what it reports; it stops at the first failing stage"
   chk "tests"                         "vp test run" "vp test run and read the failing test"
   [ -f "$HOME/.claude/pstack-models.md" ] && echo "PASS  models sheet" || note "models sheet" "factory918 install writes ~/.claude/pstack-models.md"

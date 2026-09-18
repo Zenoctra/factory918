@@ -27,3 +27,8 @@ if [ "$mode" = planning ]; then
 else
   echo "PHASE: execute. New task? Playbook match or rigor needed -> invoke /poteto-mode. An issue reference (#N) -> the Ticket playbook. Casual turn or the user opts out -> don't."
 fi
+# A review in progress: spec-review step 1 writes this state, step 5 clears it, delegation.sh reads it.
+review="${CLAUDE_PROJECT_DIR:-.}/.claude/state/review"
+if [ -f "$review/files" ]; then
+  echo "REVIEW: $(cat "$review/fixed-point" 2>/dev/null || echo unknown), $(wc -l < "$review/files" | tr -d ' ') files under review; the orchestrator's reads of them are blocked until spec-review step 5 clears .claude/state/review"
+fi
