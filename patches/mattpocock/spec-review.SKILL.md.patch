@@ -31,7 +31,7 @@
  
  ### 3. Identify the standards sources
  
-@@ -57,26 +59,52 @@
+@@ -57,26 +59,58 @@
  
  ### 4. Spawn both sub-agents in parallel
  
@@ -83,11 +83,17 @@
 +
 +Each item is `1. [S2] **Title.** reason`: `[S2]` is the Standards report's second item and `[P1]` the Spec report's first, counted across every heading of that report in document order; the reason is one line. Every numbered item in both reports appears exactly once in the judgment; step 6 refuses a judgment that misses, repeats or invents a reference.
 +
++A `## Fix alongside` item from the Standards report goes under Act on when an Act on item's fix touches the same code, otherwise under Noted.
++
++An Ask item waits for the human. When the human answers, move it to the bucket the answer settles, with the answer as the one-line reason, and rerun `scripts/review-comment.sh <dir>` on the same reports; that is the same round, not a new one.
++
 +### 6. Aggregate
 +
 +Run `scripts/review-comment.sh`. It prints the two reports under `## Standards` and `## Spec` (or `no spec: Standards axis only`), the judgment under `## Judgment`, all verbatim, a one-line summary, and the final line `act-on items: N`, where N is the number of items under `## Act on` plus the number under `## Ask`; then it clears `.claude/state/review/`. Zero is written as `act-on items: 0`. Babysit reads this line, so it is always present and always last.
 +
-+It exits 1, printing why and clearing nothing, when a report is missing or has no `hard findings:` line (wait for the reviewer; do not write the report yourself); when a report's `hard findings: N` is larger than its `## Would break` item count (ask the reviewer to re-sort); when a report's or the judgment's `## ` headings are not the shape above; when `judgment.md` is missing; when the judgment's item count differs from the reports'; or when a `[S<n>]` or `[P<n>]` reference is missing, repeated or points at no item.
++It exits 1, printing why and clearing nothing, when a report is missing or has no `hard findings:` line (wait for the reviewer; do not write the report yourself); when a report's `hard findings: N` is larger than its `## Would break` item count (ask the reviewer to re-sort); when a report's or the judgment's `## ` headings are not the shape above; when `judgment.md` is missing; when the judgment's item count differs from the reports'; or when a `[S<n>]` or `[P<n>]` reference is missing, repeated or points at no item. An off-shape report goes back to its reviewer with the refusal text; a new round is not started for it.
++
++With the review dir as its argument, `scripts/review-comment.sh .scratch/review/<id>`, it reruns on the same reports after the state is gone: an Ask item the human answered, or a report sent back and rewritten. Same round.
 +
 +Do **not** merge or rerank findings across the two reports, because the two axes are deliberately separate (see _Why two axes_), and do not pick a single winner across axes: that's the reranking the separation exists to prevent. The judgment is a third section, not a rewrite of either report.
 +

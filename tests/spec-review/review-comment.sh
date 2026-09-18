@@ -26,18 +26,20 @@ reset() {
   echo main > "$state/fixed-point"
   echo a.sh > "$state/files"
   echo "$dir" > "$state/dir"
+  cp "$state/fixed-point" "$dir/fixed-point"
 }
+# run [dir]: the script, with the review dir as its argument when given.
 run() {
   set +e
-  out="$(bash "$script" 2>&1)"
+  out="$(bash "$script" "$@" 2>&1)"
   code=$?
   set -e
 }
-# refuse <message> <label>: exit 1, that one line on stderr, the state as it was (kept, or absent).
+# refuse <message> <label> [dir]: exit 1, that one line on stderr, the state as it was (kept, or absent).
 refuse() {
   local had=no
   [ -f "$state/dir" ] && had=yes
-  run
+  run "${@:3}"
   if [ "$code" != 1 ] || [ "$out" != "review-comment: $1" ] || [ "$([ -f "$state/dir" ] && echo yes || echo no)" != "$had" ]; then
     echo "FAIL $2: exit $code, wanted 1 and the state as it was"
     echo "  got:    $out"
@@ -46,9 +48,9 @@ refuse() {
   fi
   n=$((n + 1))
 }
-# accept <stdout> <label>: exit 0, exactly that output, the state cleared.
+# accept <stdout> <label> [dir]: exit 0, exactly that output, the state cleared.
 accept() {
-  run
+  run "${@:3}"
   if [ "$code" != 0 ] || [ "$out" != "$1" ] || [ -e "$state" ]; then
     echo "FAIL $2: exit $code, wanted 0 and the state cleared"
     echo "  got:"; printf '%s\n' "$out"
@@ -61,7 +63,7 @@ empty_standards() { printf '## Would break\n\n## Standards breaches\n\n## Fix al
 empty_spec() { printf '## Would break\n\n## Latent\n\n## Not asked for\n\nhard findings: 0\n'; }
 empty_judgment() { printf '## Act on\n\n## Ask\n\n## Consider\n\n## Noted\n\n## Dismissed\n'; }
 
-refuse "no review in progress ($state/dir is missing); run scripts/review-brief.sh first" "no state"
+refuse "no review in progress ($state/dir is missing); run scripts/review-brief.sh first, or pass the review dir to rerun a finished review" "no state"
 
 reset
 refuse "$dir/standards-report.md is missing; wait for the Standards reviewer" "no Standards report"
@@ -225,5 +227,23 @@ $(cat "$dir/judgment.md")
 
 Standards: 0 would break of 2; Spec: no spec; judged: act on 0, ask 0, consider 0, noted 0, dismissed 2; fixed point main.
 act-on items: 0" "Dismissed only"
+
+# The state is gone now. The judgment is re-sorted (an Ask item answered, say) and the script
+# reruns on the same reports with the dir as its argument, reading the fixed point from the dir.
+printf '## Act on\n\n1. [S1] **Mysterious Name.** the human wants it renamed\n\n## Ask\n\n## Consider\n\n## Noted\n\n## Dismissed\n\n1. [S2] **Middle Man.** one caller, kept inline\n' > "$dir/judgment.md"
+accept "## Standards
+
+$(cat "$dir/standards-report.md")
+
+## Spec
+
+no spec: Standards axis only
+
+## Judgment
+
+$(cat "$dir/judgment.md")
+
+Standards: 0 would break of 2; Spec: no spec; judged: act on 1, ask 0, consider 0, noted 0, dismissed 1; fixed point main.
+act-on items: 1" "rerun with the dir argument after the state was cleared" "$dir"
 
 echo "ok $n assertions"

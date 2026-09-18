@@ -2,16 +2,24 @@
 # spec-review step 6. Prints the review comment: the two reports and the orchestrator's judgment,
 # verbatim under their headings, then act-on items counted from the judgment's Act on and Ask
 # lists, and clears the review state so the delegation hook stops blocking the reviewed files.
-# No arguments: it reads .claude/state/review/dir. Exits 1, clearing nothing, when a file is
-# missing or off its shape: a count line above the Would-break items, a heading outside the
-# shape, or a judgment that does not name every report item exactly once.
+# No arguments: it reads .claude/state/review/dir. One argument, the review dir
+# (.scratch/review/<id>): it reads that dir instead, so a judgment re-sorted after the human
+# answers an Ask item, or a report sent back for its shape, reruns on the same reports once the
+# state is gone; the state is cleared only when it exists and names this dir. Exits 1, clearing
+# nothing, when a file is missing or off its shape: a count line above the Would-break items, a
+# heading outside the shape, or a judgment that does not name every report item exactly once.
 set -euo pipefail
 root="$(git rev-parse --show-toplevel)"
 cd "$root"
 state=.claude/state/review
-[ -f "$state/dir" ] || { echo "review-comment: no review in progress ($state/dir is missing); run scripts/review-brief.sh first" >&2; exit 1; }
-dir="$(cat "$state/dir")"
 fail() { echo "review-comment: $*" >&2; exit 1; }
+if [ $# -gt 0 ]; then
+  dir="${1%/}"
+  [ -d "$dir" ] || fail "$dir is not a directory; pass the .scratch/review/<id> review-brief.sh wrote"
+else
+  [ -f "$state/dir" ] || fail "no review in progress ($state/dir is missing); run scripts/review-brief.sh first, or pass the review dir to rerun a finished review"
+  dir="$(cat "$state/dir")"
+fi
 
 # The shape is `## ` headings holding numbered items; fenced code (the quoted hunks) is skipped.
 headings() { awk '/^```/ { fence = !fence; next } fence { next } /^## / { print substr($0, 4) }' "$1"; }
@@ -46,13 +54,13 @@ report() {
 report "$dir/standards-report.md" "Would break" "Standards breaches" "Fix alongside"
 s_total="$(count "$dir/standards-report.md")"
 s_wb="$(count "$dir/standards-report.md" "Would break")"
-spec="" p_total=0 p_wb=0
+has_spec="" p_total=0 p_wb=0
 if [ -f "$dir/spec-brief.md" ]; then
   [ -f "$dir/spec-report.md" ] || fail "$dir/spec-report.md is missing; wait for the Spec reviewer"
   report "$dir/spec-report.md" "Would break" "Latent" "Not asked for"
   p_total="$(count "$dir/spec-report.md")"
   p_wb="$(count "$dir/spec-report.md" "Would break")"
-  spec="$p_wb would break of $p_total"
+  has_spec=yes
 fi
 
 [ -f "$dir/judgment.md" ] || fail "$dir/judgment.md is missing; sort every report item into Act on, Ask, Consider, Noted or Dismissed with a one-line reason (SKILL.md step 5), then rerun"
@@ -80,7 +88,7 @@ cat "$dir/standards-report.md"
 echo
 echo "## Spec"
 echo
-if [ -n "$spec" ]; then cat "$dir/spec-report.md"; else echo "no spec: Standards axis only"; fi
+if [ -n "$has_spec" ]; then cat "$dir/spec-report.md"; else echo "no spec: Standards axis only"; fi
 echo
 echo "## Judgment"
 echo
@@ -88,6 +96,10 @@ cat "$dir/judgment.md"
 echo
 act="$(count "$dir/judgment.md" "Act on")"
 ask="$(count "$dir/judgment.md" "Ask")"
-echo "Standards: $s_wb would break of $s_total; Spec: ${spec:-no spec}; judged: act on $act, ask $ask, consider $(count "$dir/judgment.md" Consider), noted $(count "$dir/judgment.md" Noted), dismissed $(count "$dir/judgment.md" Dismissed); fixed point $(cat "$state/fixed-point")."
+if [ -n "$has_spec" ]; then spec="$p_wb would break of $p_total"; else spec="no spec"; fi
+if [ -f "$state/fixed-point" ]; then fixed="fixed point $(cat "$state/fixed-point")"
+elif [ -f "$dir/fixed-point" ]; then fixed="fixed point $(cat "$dir/fixed-point")"
+else fixed="fixed point unknown"; fi
+echo "Standards: $s_wb would break of $s_total; Spec: $spec; judged: act on $act, ask $ask, consider $(count "$dir/judgment.md" Consider), noted $(count "$dir/judgment.md" Noted), dismissed $(count "$dir/judgment.md" Dismissed); $fixed."
 echo "act-on items: $((act + ask))"
-rm -rf "$state"
+if [ -f "$state/dir" ] && [ "$(cat "$state/dir")" = "$dir" ]; then rm -rf "$state"; fi

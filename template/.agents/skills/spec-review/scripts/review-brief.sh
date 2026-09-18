@@ -92,6 +92,7 @@ mkdir -p "$state"
 echo "$fixed" > "$state/fixed-point"
 cp "$dir/files" "$state/files"
 echo "$dir" > "$state/dir"
+cp "$state/fixed-point" "$dir/fixed-point"
 
 spec=""
 if [ -n "$ticket" ]; then
