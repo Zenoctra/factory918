@@ -9,11 +9,12 @@ pstack's matrix has four families: `claude:fable`, `claude:opus`, `codex:gpt-5.6
 | feature, refactoring, bug-fix, perf-issue, hillclimb | `claude:fable@high` | the writers; Fable's code is what gets merged |
 | judgment and prose, hardest tasks | `claude:fable@high` | judgment is the product |
 | how critics, architect runners, arena runners | `claude:fable@high, claude:opus@high` | a senior and a junior lane; panels multiply cost by their size |
-| interrogate reviewers, arena cross-judge pool | `claude:fable@high, claude:opus@xhigh` (Astra to be added) | the contested path; model diversity is the point |
+| interrogate reviewers | `claude:fable@high, claude:opus@xhigh` | the contested path; model diversity is the point; Astra joins here (#29) |
+| arena cross-judge pool | `claude:opus@xhigh, claude:fable@high` | a judge from a different lane than the base candidate |
 | how explorer, swarm workers | `claude:opus@medium` | read-only bulk and mechanical fan-out: the junior |
 | how explainer | `claude:opus@high` | |
 | why and reflect roles | `inherit-parent` | they need the parent session's MCP surface |
 
 The `opus` preset puts the writers on `claude:opus@high` and the judgment on `claude:opus@xhigh`, for when Fable's quota is spent.
 
-Interactive session: Opus 5 for execution and for grilling; switch to Fable 5.1 with `/model` for `/to-spec` and `/to-tickets`, then switch back. Check the usage page weekly; if Fable is over a third of spend, move a role down.
+Interactive session: Fable 5.1 whenever tickets or PR bodies are being written, since that prose is the handoff and no delegate writes it; Opus 5 for casual turns and long grilling, switching to Fable for `/to-spec` and `/to-tickets`. Check the usage page weekly; if Fable is over a third of spend, move a role down.

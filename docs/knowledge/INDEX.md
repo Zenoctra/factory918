@@ -7,7 +7,7 @@ The literal transcript of the conversation that produced this system is not avai
 |---|---|---|---|
 | `core/PHILOSOPHY.md` | Factory918: philosophy | 64 | First. Whenever the spec is silent. |
 | `core/MANUAL.md` | Factory918: the manual | 171 | How to run the loop; what the human does at each point. |
-| `core/DECISIONS.md` | Factory918: decisions | 79 | Before overriding any vendored skill; these win. |
+| `core/DECISIONS.md` | Factory918: decisions | 81 | Before overriding any vendored skill; these win. |
 | `core/GLOSSARY.md` | Factory918: glossary | 69 | A term in AGENTS.md, a playbook or a ticket is unclear. |
 | `core/CONVERSATION-DIGEST.md` | How Factory918 was arrived at | 53 | Why something was chosen, historically; the corrections. |
 | `spec/FACTORY-SPEC-v2/01-preamble.md` | The Factory spec, v2 — (preamble) | 11 | Building or updating the factory itself. |
@@ -23,7 +23,7 @@ The literal transcript of the conversation that produced this system is not avai
 | `spec/FACTORY-SPEC-v2/11-7-the-deterministic-layer-concretely.md` | The Factory spec, v2 — 7. The deterministic layer, concretely | 167 | Building or updating the factory itself. |
 | `spec/FACTORY-SPEC-v2/12-7-the-deterministic-layer-concretely.md` | The Factory spec, v2 — 7. The deterministic layer, concretely | 128 | Building or updating the factory itself. |
 | `spec/FACTORY-SPEC-v2/13-7-the-deterministic-layer-concretely.md` | The Factory spec, v2 — 7. The deterministic layer, concretely | 13 | Building or updating the factory itself. |
-| `spec/FACTORY-SPEC-v2/14-8-factory918-sh-init-apply-doctor-update-sync-la.md` | The Factory spec, v2 — 8. `factory918.sh`: init, apply, doctor, update, sync, labels | 43 | Building or updating the factory itself. |
+| `spec/FACTORY-SPEC-v2/14-8-factory918-sh-init-apply-doctor-update-sync-la.md` | The Factory spec, v2 — 8. `factory918.sh`: init, apply, doctor, update, sync, labels | 44 | Building or updating the factory itself. |
 | `spec/FACTORY-SPEC-v2/15-9-milestones-for-the-implementing-model.md` | The Factory spec, v2 — 9. Milestones for the implementing model | 26 | Building or updating the factory itself. |
 | `spec/FACTORY-SPEC-v2/16-10-decisions.md` | The Factory spec, v2 — 10. Decisions | 8 | Building or updating the factory itself. |
 | `spec/FACTORY-SPEC-v2/17-11-glossary-of-tools-named-here.md` | The Factory spec, v2 — 11. Glossary of tools named here | 8 | Building or updating the factory itself. |

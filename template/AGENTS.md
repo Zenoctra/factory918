@@ -69,12 +69,12 @@ The most common defect in agent-built projects is a change that works on the pat
 
 ## Pull requests
 
-- Work that started from a ticket ends in a PR that says `Closes #N`. Work that started from a conversation ends in a commit on a branch unless you are asked to file; if it is going to end in a PR, file a quick ticket first, quoting the decision exchange with attribution (Ticket playbook), so the PR closes it and the reviewers can read the ask.
+- Work that started from a ticket ends in a PR that says `Closes #N`. Work that started from a conversation ends in a commit on a branch unless you are asked to file; if it is going to end in a PR, file a quick ticket first (Ticket playbook, "Quick ticket"), so the PR closes it and the reviewers can read the ask.
 - Conventional commit titles in plain language: `fix(web): new sessions no longer spike CPU`.
 - Body: the problem in a sentence or two, then how you fixed it, then a **Verification** section quoting each acceptance criterion with the evidence path. End with the model and harness that did the work.
 - UI changes need before/after images. Motion or timing needs a short video. Upload them; never commit them.
 - One concern per PR. If the description says "also", split it.
-- Anything you write that runs longer than a screen (a review comment, a report, a long PR body) opens with two plain lines for a person, under the label `For a person:`. Reviewers ignore body prose by design, so the label is for people, not a signal to models.
+- Any comment or report you write that runs longer than about forty lines opens with two plain sentences for a person, under the label `For a person:`. PR bodies are exempt: their problem-then-fix opening is that summary. Reviewers ignore body prose by design, so the label is for people, not a signal to models.
 - After CI is green, run `spec-review` in a fresh context; then babysit: poll checks and comments newer than the last push, verify each bot finding against the source, fix real ones, dismiss false positives with a written reason. Stop when the bots are green on the latest commit. The review ladder is `docs/agents/review-ladder.md`.
 - You never merge. Merging is the human's act.
 
