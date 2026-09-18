@@ -2,9 +2,9 @@
 
 ## Contents (line numbers are for the Read tool's offset)
 - L13: Settled (2026-09-09)
-- L36: Defaults accepted by silence
-- L40: What the factory assumes it owns
-- L65: Provisional (added by agents; Manuel promotes or overrules)
+- L37: Defaults accepted by silence
+- L41: What the factory assumes it owns
+- L66: Provisional (added by agents; Manuel promotes or overrules)
 
 # Factory918: decisions
 
@@ -32,6 +32,7 @@ The choices Manuel has made, with the reason each was made, so no agent re-deriv
 | 16 | Voice | "A note from Manuel" in `AGENTS.md` is written from his own sentences | Theo's rule that a copied voice is nobody's voice. |
 | 17 | The Ticket playbook | Kept as one file wrapping pstack's playbooks rather than four edits to upstream files | Three new behaviours (read ticket, check blockers, falsifiability pass) and one line (`Closes #N`); one file survives `factory918 sync` cleanly. |
 | 18 | Models, superseding 13 | Fable 5.1 at high effort writes the code (feature, refactoring, bug-fix, perf-issue, hillclimb) and does the judgment; Opus 5 is the junior (swarm workers, explorers, one lane of each panel); Astra joins the review panels once its slug is known; `factory918 models fable|opus` switches presets when a quota runs out, because pstack never falls back on its own; the interactive session runs on Fable when tickets or PRs are being written | Manuel: Fable writes much better mergeable code; Opus and Sol are the juniors; Astra is trusted for review. 2026-09-17. |
+| 19 | Which phase the delegation hooks guard | The write guard and the whole-file read cap in `template/.claude/hooks/delegation.sh` apply in the `execute` phase only; the block on reading a file under review applies whenever `.claude/state/review/` exists. Sub-agents are never blocked: the hook input carries `agent_id` only for a sub-agent (verified 2026-09-18, `docs/M0-findings.md`) | The delegation rule is an execution rule (P11, belief 7). In planning, Matt's grilling skills find facts in the main session by design, so a read cap there adds friction without the rule to justify it. A review only runs in `execute`, so its block needs no phase gate. #74 left the read cap's phase open; the ticket's author recommended `execute` only in a comment. Promoted by Manuel, 2026-09-18, from P17. |
 
 ## Defaults accepted by silence
 
@@ -80,5 +81,4 @@ Travels anywhere without change: the planning skills, the execution playbooks, `
 | P14 | Commit and PR titles in this repository | Plain sentences (`Fix the ast-grep layout and pin the rule engine`); the `type(scope):` form stays the rule for projects | Every commit here since day one is a sentence, and the factory's own letter said "conventional plain-language title" without the prefix; the two files now say the same thing. 2026-09-17. |
 | P15 | Where a ticket starts | The Ticket playbook fetches, refuses a dirty checkout and branches from `origin/main` (or the parent PR's branch when stacking on purpose); `factory918 doctor` fetches `origin/main` on every run and opens with a branch line, so a fresh session sees where it is | A session inherits the branch the last one left, and PR #3 and the closing-PR shortcut both came from building on the wrong base. The fetch is the one network call the doctor did not already make through `gh`; offline it is skipped and the line compares against what is known. 2026-09-17. |
 | P16 | The Standards axis of `spec-review` is junior work | `standards reviewer: claude:opus@medium` in both presets, a factory-owned role that `/setup-pstack` does not know; the Spec axis stays on the writer's lane | Matching a pasted diff against pasted rules needs less judgment than deciding whether the work matches the ask, and every sub-agent costs its context floor whichever model runs it (ticket #33). 2026-09-17. |
-| P17 | Which phase the delegation hooks guard | The write guard and the whole-file read cap in `template/.claude/hooks/delegation.sh` apply in the `execute` phase only; the block on reading a file under review applies whenever `.claude/state/review/` exists. Sub-agents are never blocked: the hook input carries `agent_id` only for a sub-agent (verified 2026-09-18, `docs/M0-findings.md`) | The delegation rule is an execution rule (P11, belief 7). In planning, Matt's grilling skills find facts in the main session by design, so a read cap there adds friction without the rule to justify it. A review only runs in `execute`, so its block needs no phase gate. #74 left the read cap's phase open; the ticket's author recommended `execute` only in a comment. 2026-09-18. |
 | P2 | Tool versions in CI | Pin every tool CI runs to an exact version, as a devDependency where the tool publishes one | `dlx` and `npx` resolve the latest version, so a rule engine or formatter can change under a project with no diff to show for it. Spec §0 rule 1 already says to pin what you install; this extends it to what CI fetches. First applied to `@ast-grep/cli` 0.45.3 in M0. |
