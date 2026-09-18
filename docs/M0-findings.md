@@ -173,3 +173,5 @@ Verified on Claude Code 2.1.271 inside the desktop app 2.110.0 (Agent SDK 0.3.27
 - The React Native profile's Expo app under `vp check`, the fingerprint workflow on a real PR, and a simulator screenshot (first mobile project). The Python profile has now run end to end on GitHub.
 - `vp migrate` on a brownfield repo (M8).
 - `gh auth login` and `/setup-pstack` are human steps; `/factory-start` is M4.
+
+2026-09-18. The factory checkout has no `.claude/agents/`, so the `pstack-<family>-<effort>` lanes named in `models.md` do not exist here; the Agent tool's `model` field (`fable`, `opus`) dispatched every lane of #76 and effort could not be set. A project made by `factory918 apply` gets the lanes from `template/.claude/agents/`.

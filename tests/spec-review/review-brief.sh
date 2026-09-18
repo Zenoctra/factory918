@@ -7,9 +7,11 @@
 # otherwise. Only the judgment items that cite a decision carry into both briefs, from every earlier
 # comment, each line once; the round is one more than the highest `round: N of 3` among the comments,
 # so a rebuilt comment does not advance it; a fourth round is refused before any state is written;
-# a gh failure other than "no pull requests found" is printed and the run goes on. SKILL.md step 4
-# must carry the definition and the settled paragraph word for word, so the skill and the script
-# cannot drift apart. Exits 1 on the first miss.
+# a gh failure other than "no pull requests found" is printed and the run goes on. A diff touching
+# a cross-cutting path is briefed with its blast-radius grounding (--blast-radius FILE, else the PR
+# body's section) before the diff, and refused without one. SKILL.md step 4 must carry the
+# definition, the settled paragraph and the blast-radius paragraph word for word, so the skill and
+# the script cannot drift apart. Exits 1 on the first miss.
 set -euo pipefail
 here="$(cd "$(dirname "$0")/../.." && pwd -P)"
 skill="$here/template/.agents/skills/spec-review"
@@ -25,17 +27,19 @@ git commit -qm "first"
 echo two > a.txt
 git commit -qam "second, no ticket named"
 mkdir bin
-# gh pr view: pr.json, when it exists, is the PR (its author and comments) and the script's own
-# jq expression runs against it through jq, so the author filter is what is tested; pr-error,
-# when it exists, goes to stderr with exit 1; with neither there is no PR for this branch. gh
-# issue view: the body, or the author's comments already formatted the way the script's jq
-# expression formats them (one is by someone else and is left out).
+# gh pr view --json body: the PR body is the file FAKE_PR_BODY names when set, else there is no PR.
+# gh pr view for the comments: pr.json, when it exists, is the PR (its author and comments) and
+# the script's own jq expression runs against it through jq, so the author filter is what is
+# tested; pr-error, when it exists, goes to stderr with exit 1; with neither there is no PR for
+# this branch. gh issue view: the body, or the author's comments already formatted the way the
+# script's jq expression formats them (one is by someone else and is left out).
 command -v jq >/dev/null || { echo "FAIL: jq is needed to play gh pr view"; exit 1; }
 {
   echo '#!/bin/sh'
   echo "fx='$fx'"
   cat <<'EOF'
 case "$*" in
+  "pr view --json body"*) [ -f "${FAKE_PR_BODY:-}" ] && cat "$FAKE_PR_BODY" || { echo 'no pull requests found for branch "x"' >&2; exit 1; } ;;
   "pr view"*)
     if [ -f "$fx/pr-error" ]; then cat "$fx/pr-error" >&2; exit 1; fi
     if [ -f "$fx/pr.json" ]; then
@@ -106,8 +110,10 @@ lacks "$std" "## Settled in earlier rounds" "a gh failure other than no PR carri
 definition="A hard finding is wrong behavior in normal use: a command, hook, script or documented flow does something other than what the ticket or its own documentation says it does, on the path a user takes."
 count_rule='End the report with exactly one line `hard findings: N`, where N is the number of items under `## Would break` and nothing else.'
 settled_rule="These findings were raised in an earlier round and settled by the decision each one cites. Do not raise them again. Nothing in this section says what you should find or confirm."
+blast_rule="The sessions and skills this change reaches, as the author grounded them before the review. Check the diff against each one; the grounding is the author's claim, not evidence."
 has "$skill/SKILL.md" "$definition" "SKILL.md step 4 carries the definition"
 has "$skill/SKILL.md" "$settled_rule" "SKILL.md step 4 carries the settled paragraph"
+has "$skill/SKILL.md" "$blast_rule" "SKILL.md step 4 carries the blast-radius paragraph"
 for f in "$std" "$spec"; do
   has "$f" "$definition" "$f carries the definition"
   has "$f" 'Write the report as Markdown with exactly these `## ` headings, in this order, each holding numbered items or nothing:' "$f names the shape"
@@ -115,6 +121,7 @@ for f in "$std" "$spec"; do
   has "$f" "number the items continuously across the headings" "$f says how to number"
   has "$f" "$count_rule" "$f carries the count rule"
   lacks "$f" "## Settled in earlier rounds" "$f has no settled section without a previous comment"
+  lacks "$f" "## Blast radius" "$f has no blast-radius section for a diff that is not cross-cutting"
 done
 # The three heading bullets of each Report paragraph, word for word in SKILL.md step 4 and in the brief.
 standards_bullets=(
@@ -330,5 +337,82 @@ if [ "$code" != 1 ] || [ "$out" != 'review-brief: three rounds were run on this 
   exit 1
 fi
 n=$((n + 1))
+
+# A cross-cutting diff: a commit touching .claude/hooks/x.sh. With --blast-radius FILE the file's text
+# goes into both briefs under `## Blast radius`, before `## Diff`.
+mkdir -p .claude/hooks
+echo 'exit 0' > .claude/hooks/x.sh
+git add .claude/hooks/x.sh
+git commit -qm "a hook, #7"
+cat > blast.md <<'EOF'
+
+- **What it does.** Adds a hook that exits 0.
+- **Risks.** `factory-start` at day zero runs it before any skill is installed: `.claude/hooks/x.sh:1`.
+EOF
+bash "$skill/scripts/review-brief.sh" HEAD~1 --blast-radius blast.md > out.txt 2> err.txt
+printed out.txt "ticket: #7
+round: 1 of 3
+.scratch/review/HEAD_1/standards-brief.md
+.scratch/review/HEAD_1/spec-brief.md" "cross-cutting diff with --blast-radius"
+[ ! -s err.txt ] || { echo "FAIL cross-cutting diff with --blast-radius: stderr is not empty:"; cat err.txt; exit 1; }
+n=$((n + 1))
+for f in "$std" "$spec"; do
+  has "$f" "## Blast radius" "$f has the blast-radius section"
+  has "$f" "$blast_rule" "$f carries the blast-radius paragraph"
+  has "$f" '- **Risks.** `factory-start` at day zero runs it before any skill is installed: `.claude/hooks/x.sh:1`.' "$f carries the grounding text"
+  if [ "$(grep -n '^## Blast radius$' "$f" | cut -d: -f1)" -ge "$(grep -n '^## Diff$' "$f" | cut -d: -f1)" ]; then
+    echo "FAIL $f: the blast-radius section is not before the diff"; exit 1
+  fi
+  n=$((n + 1))
+done
+
+# The same diff with no --blast-radius and no PR is refused, naming the path, before any state is written.
+rm -rf .scratch .claude/state
+set +e
+out="$(bash "$skill/scripts/review-brief.sh" HEAD~1 2>&1)"
+code=$?
+set -e
+if [ "$code" != 1 ] || [ "$out" != "ticket: #7
+round: 1 of 3
+review-brief: cross-cutting diff (.claude/hooks/x.sh) without a blast-radius grounding; run the blast-radius skill, put the result in the PR body's Blast Radius section or pass --blast-radius FILE" ] || [ -e .claude/state/review ] || [ -e .scratch/review/HEAD_1 ]; then
+  echo "FAIL cross-cutting diff without a grounding: exit $code, wanted 1, the message, no state and no briefs"
+  echo "  got: $out"
+  exit 1
+fi
+n=$((n + 1))
+
+# With a PR, the grounding is the body's `## Blast Radius` section: CRLF line ends, a fenced `## ` line
+# kept inside it, and the next heading ending it. An empty section is refused like a missing one.
+printf '## Why\r\n\r\nA hook.\r\n\r\n## Blast Radius\r\n\r\n- **Risks.** a subagent inherits it: `.claude/hooks/x.sh:1`.\r\n\r\n```sh\r\n## not a heading, part of the proof\r\n```\r\n\r\n## Verification\r\n\r\nran it\r\n' > pr-body.md
+FAKE_PR_BODY="$fx/pr-body.md" bash "$skill/scripts/review-brief.sh" HEAD~1 > out.txt
+for f in "$std" "$spec"; do
+  has "$f" '- **Risks.** a subagent inherits it: `.claude/hooks/x.sh:1`.' "$f carries the PR body's section"
+  has "$f" "## not a heading, part of the proof" "$f keeps the fenced line of the section"
+  lacks "$f" "ran it" "$f stops the section at the next heading"
+  lacks "$f" "A hook." "$f starts the section at its heading"
+done
+printf '## Why\n\nA hook.\n\n## Blast Radius\n\n## Verification\n\nran it\n' > pr-body-empty.md
+rm -rf .scratch .claude/state
+set +e
+out="$(FAKE_PR_BODY="$fx/pr-body-empty.md" bash "$skill/scripts/review-brief.sh" HEAD~1 2>&1)"
+code=$?
+set -e
+if [ "$code" != 1 ] || ! printf '%s' "$out" | grep -qF "cross-cutting diff (.claude/hooks/x.sh) without a blast-radius grounding" || [ -e .claude/state/review ]; then
+  echo "FAIL empty Blast Radius section: exit $code, wanted 1 with the refusal and no state"
+  echo "  got: $out"
+  exit 1
+fi
+n=$((n + 1))
+
+# A diff that is not cross-cutting ignores --blast-radius and says so on stderr.
+echo readme > README.md
+git add README.md
+git commit -qm "a readme, #7"
+bash "$skill/scripts/review-brief.sh" HEAD~1 --blast-radius blast.md > out.txt 2> err.txt
+printed err.txt "review-brief: the diff is not cross-cutting; blast.md is not pasted" "README-only diff with --blast-radius"
+for f in "$std" "$spec"; do
+  lacks "$f" "## Blast radius" "$f has no blast-radius section for a README-only diff"
+  lacks "$f" "Adds a hook that exits 0" "$f does not carry the ignored file"
+done
 
 echo "ok $n assertions"
