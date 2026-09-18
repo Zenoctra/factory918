@@ -95,6 +95,8 @@ echo main > .claude/state/review/fixed-point
 echo big.sh > .claude/state/review/files
 echo .scratch/review/main > .claude/state/review/dir
 echo diff > .scratch/review/main/diff
+echo stat > .scratch/review/main/stat
+echo report > .scratch/review/main/standards-report.md
 expect 0 "" orchestrator Read "$(path small.md)" "Read of an unlisted file under review"
 expect 2 "$(review_msg big.sh)" orchestrator Read "$(ranged big.sh 5)" "ranged Read of big.sh under review"
 expect 2 "$(review_msg big.sh)" orchestrator Bash "$(bash_cmd 'head -n 5 big.sh')" "head of big.sh under review"
@@ -104,6 +106,8 @@ expect 2 "${diff_msg/git diff/git log -p}" orchestrator Bash "$(bash_cmd 'git lo
 expect 0 "" orchestrator Bash "$(bash_cmd 'git log --oneline -3')" "git log without a patch under review"
 expect 2 "$(review_msg .scratch/review/main/diff)" orchestrator Bash "$(bash_cmd 'cat .scratch/review/main/diff')" "cat of the review diff under review"
 expect 2 "$(review_msg .scratch/review/main/diff)" orchestrator Read "$(path .scratch/review/main/diff)" "Read of the review diff under review"
+expect 2 "$(review_msg .scratch/review/main/stat)" orchestrator Read "$(path .scratch/review/main/stat)" "Read of the review stat under review"
+expect 0 "" orchestrator Read "$(path .scratch/review/main/standards-report.md)" "Read of a report under review"
 
 expect 0 "" agent Write "$(path big.sh)" "sub-agent Write to big.sh"
 expect 0 "" agent Bash "$(bash_cmd 'cat big.sh')" "sub-agent cat big.sh"
