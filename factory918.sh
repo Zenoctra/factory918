@@ -378,14 +378,14 @@ cmd_sync() {
   local pstack="$F918_DIR/research/3-pstack/open-pstack-claude-code-port/plugins/pstack"
   local matt="$F918_DIR/research/1-matt-pocock/skills-repo/skills"
   local ours="factory918 factory-start knowledge mode-plan mode-build factory-doctor factory-retro"
-  local keep_files="poteto-mode/playbooks/ticket.md"
+  local keep_files="poteto-mode/playbooks/ticket.md spec-review/scripts/review-brief.sh spec-review/scripts/review-comment.sh"
   local tmp; tmp="$(mktemp -d)"
   for k in $keep_files; do mkdir -p "$tmp/keep/$(dirname "$k")"; cp "$skills/$k" "$tmp/keep/$k"; done
   for d in "$pstack"/skills/*/; do n="$(basename "$d")"; [ "$n" = no-comments ] && continue; rm -rf "$skills/$n"; cp -R "$d" "$skills/$n"; done
   for n in grilling grill-me grill-with-docs domain-modeling to-spec to-tickets wayfinder research prototype setup-matt-pocock-skills writing-for-agents wizard wait-what; do
     src="$(find "$matt" -maxdepth 2 -type d -name "$n" | head -1)"; rm -rf "$skills/$n"; cp -R "$src" "$skills/$n"; done
   rm -rf "$skills/spec-review"; cp -R "$matt/engineering/code-review" "$skills/spec-review"
-  for k in $keep_files; do cp "$tmp/keep/$k" "$skills/$k"; done
+  for k in $keep_files; do mkdir -p "$skills/$(dirname "$k")"; cp "$tmp/keep/$k" "$skills/$k"; done
   rm -rf "$TEMPLATE/.claude/agents"; mkdir -p "$TEMPLATE/.claude/agents"; cp "$pstack"/agents/*.md "$TEMPLATE/.claude/agents/"; rm -f "$TEMPLATE/.claude/agents/comment-sicko.md"
   local failed=0
   while read -r p; do
