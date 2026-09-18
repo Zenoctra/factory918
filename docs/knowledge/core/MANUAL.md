@@ -1,4 +1,4 @@
-<!-- lines: 170 | source: core/MANUAL.md | part 1/1 | title: Factory918: the manual -->
+<!-- lines: 172 | source: core/MANUAL.md | part 1/1 | title: Factory918: the manual -->
 
 ## Contents (line numbers are for the Read tool's offset)
 - L24: The loop in one screen
@@ -8,14 +8,14 @@
 - L61: Planning
 - L71: Tickets
 - L75: Execution
-- L83: Pull requests, review and merge
-- L106: Retro and the ledger
-- L110: Maintenance
-- L122: Multi-surface products
-- L126: Models and cost
-- L143: Updating the factory
-- L147: Troubleshooting
-- L159: Where to read more
+- L85: Pull requests, review and merge
+- L108: Retro and the ledger
+- L112: Maintenance
+- L124: Multi-surface products
+- L128: Models and cost
+- L145: Updating the factory
+- L149: Troubleshooting
+- L161: Where to read more
 
 # Factory918: the manual
 
@@ -70,11 +70,13 @@ If the project is not on Vite+ yet, run `vp migrate` first: `apply` merges Vite+
 
 ## Tickets
 
-A ticket is a GitHub issue with `## What to build`, `## Acceptance criteria` (checkboxes), `## Blocked by`, a `## Parent` pointing at the spec, and the `ready-for-agent` label. The frontier is every ticket whose blockers are closed. A PR based on another PR's branch shows no link to its ticket until it retargets to `main`; the link appears when the PR below it merges. A quick fix you describe in conversation gets a ticket too, if it will end in a PR: the agent files one with your words quoted, tells you the number, and proceeds; edit the issue if the words are wrong. You pick which one runs next; the system never auto-dispatches. Tickets close when their PR merges (the PR says `Closes #N`); never close one by hand.
+A ticket is a GitHub issue with `## What to build`, `## Acceptance criteria` (checkboxes), `## Blocked by`, a `## Parent` pointing at the spec, and the `ready-for-agent` label. The frontier is every ticket whose blockers are closed. A PR based on another PR's branch shows no link to its ticket until it retargets to `main`; the link appears when the PR below it merges. A quick fix you describe in conversation gets a ticket too, if it will end in a PR: the agent files one with your words quoted, tells you the number, and proceeds; edit the issue if the words are wrong. Nothing runs on its own: you name the next ticket, or you hand the agent a list (see Execution). Tickets close when their PR merges (the PR says `Closes #N`); never close one by hand.
 
 ## Execution
 
 `/poteto-mode "#42"` (or paste the issue URL). The Ticket playbook reads the issue and its parent spec, refuses to start if a blocker is open, and runs a falsifiability pass over the acceptance criteria: for each one it names the command or observation that would fail it today, and sends back any criterion that already passes, that another ticket owns, or that merely restates the request. Answer those notes, then it runs the matching pstack playbook (Feature, Bug fix, Refactoring, Perf issue) from step 1: `how` and `why` over the subsystem, design, delegated build with a reviewed diff, verification on the real surface, then Opening a PR and Babysit.
+
+**Several at once.** One ticket per `/poteto-mode "#N"` is the default, and a fresh session per ticket keeps the orchestrator's context clean. To drain the frontier instead: `/poteto-mode "autopilot-stack #4 #5 #8"`. pstack's autopilot-stack runs one owner lane per ticket in its own context and worktree, swarm-verifies each PR, keeps the chain rebased as `main` moves, and hands you one bottom-to-top list of verified PRs to land one at a time; it never merges. Its sibling `autopilot-full` merges on a clean verdict and is off here. Every unit needs a ticket, so quick tickets come first.
 
 **What you do.** Not much until the PR exists. The agent proceeds on anything reversible and asks only before irreversible actions. If it goes wrong, note what you would have said earlier; that note is a ledger entry, and the ledger is where rules come from.
 
