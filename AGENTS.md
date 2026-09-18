@@ -23,6 +23,8 @@ Files under `template/` and `profiles/` are content addressed to agents in a fut
 
 The same two as a project. Planning (`/grill-with-docs`, `/to-spec`, `/to-tickets`) turns a change to the factory into tickets on this repository; execution (`/poteto-mode "#N"`) turns a ticket into a PR. A change that needs no design goes straight to a branch and a PR, with a quick ticket filed first (Ticket playbook, "Quick ticket"), so the PR closes it and the review can read what was asked.
 
+Inside a playbook the writer is never the orchestrator: implementation is delegated to its own lane and the orchestrator reviews the diff it gets back. Reading in bulk, writing inside a playbook, and reviewing are lanes' jobs; the orchestrator briefs the lane and judges its result. The delegation hook holds this in the execute phase. If a rule in this file fights the task in front of you, say so loudly and get a sign-off before breaking it.
+
 ## The ways to hurt yourself
 
 1. **Git.** Never push to `main`, never force-push, never `reset --hard` or `clean -f`. The guard hook enforces it. Work on a branch, open a PR; Manuel merges.
@@ -34,6 +36,7 @@ The same two as a project. Planning (`/grill-with-docs`, `/to-spec`, `/to-ticket
 ## Verifying
 
 - `bash -n factory918.sh`.
+- `bash tests/hooks/delegation.sh`.
 - `python3 tools/build_knowledge.py` leaves `git status` clean, and `python3 tools/check_knowledge.py` passes.
 - `./factory918.sh sync` leaves `git status` clean.
 - The fixture flow, which is what CI runs: `vp create vite:monorepo --directory /tmp/fx --no-interactive --git --hooks --no-agent`, then `./factory918.sh apply /tmp/fx --scaffold --profile python --name demo`, then in `/tmp/fx`: `vp check`, `vp test run`, `pnpm sg:test`, and the steps of `.github/workflows/python.yml` inside `python/demo`.
