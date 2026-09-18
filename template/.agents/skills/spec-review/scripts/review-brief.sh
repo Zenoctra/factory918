@@ -14,7 +14,8 @@ usage() {
 skill="$(cd "$(dirname "$0")/.." && pwd -P)"
 root="$(git rev-parse --show-toplevel)"
 cd "$root"
-fixed="" ticket="" paths="" commits="" standards="" list=""
+fixed="" ticket="" list=""
+paths=() commits=() standards=()
 while [ $# -gt 0 ]; do
   case "$1" in
     --ticket) ticket="${2:-}"; [ -n "$ticket" ] || usage; list=""; shift ;;
@@ -23,23 +24,21 @@ while [ $# -gt 0 ]; do
     --commits) list=commits ;;
     -*) usage ;;
     *) case "$list" in
-         standards) standards="$standards $1" ;;
-         paths) paths="$paths $1" ;;
-         commits) commits="$commits $1" ;;
+         standards) standards+=("$1") ;;
+         paths) paths+=("$1") ;;
+         commits) commits+=("$1") ;;
          *) [ -z "$fixed" ] || usage; fixed="$1" ;;
        esac ;;
   esac
   shift
 done
-set -f
-if [ -n "$paths" ]; then
-  [ -n "$commits" ] && [ -z "$fixed" ] || usage
-  for c in $commits; do
+if [ ${#paths[@]} -gt 0 ]; then
+  [ ${#commits[@]} -gt 0 ] && [ -z "$fixed" ] || usage
+  for c in "${commits[@]}"; do
     git rev-parse --verify -q "$c^{commit}" >/dev/null || { echo "review-brief: $c does not resolve to a commit" >&2; exit 1; }
   done
-  set -- $commits
   fixed=paths
-  id="sweep-$(git rev-parse --short "$1")"
+  id="sweep-$(git rev-parse --short "${commits[0]}")"
 else
   [ -n "$fixed" ] || usage
   git rev-parse --verify -q "$fixed^{commit}" >/dev/null || { echo "review-brief: $fixed does not resolve to a commit" >&2; exit 1; }
@@ -49,11 +48,11 @@ dir=".scratch/review/$id"
 rm -rf "$dir"
 mkdir -p "$dir"
 if [ "$fixed" = paths ]; then
-  git show --format='commit %h %s' $commits -- $paths > "$dir/diff"
-  git show --stat --format='%h %s' $commits -- $paths > "$dir/stat"
-  git log --oneline --no-walk $commits > "$dir/log"
-  git show --name-only --format= $commits -- $paths | sed '/^$/d' | sort -u > "$dir/files"
-  messages="$(git log --format=%B --no-walk $commits)"
+  git show --format='commit %h %s' "${commits[@]}" -- "${paths[@]}" > "$dir/diff"
+  git show --stat --format='%h %s' "${commits[@]}" -- "${paths[@]}" > "$dir/stat"
+  git log --oneline --no-walk "${commits[@]}" > "$dir/log"
+  git show --name-only --format= "${commits[@]}" -- "${paths[@]}" | sed '/^$/d' | sort -u > "$dir/files"
+  messages="$(git log --format=%B --no-walk "${commits[@]}")"
 else
   git diff "$fixed...HEAD" > "$dir/diff"
   git diff "$fixed...HEAD" --stat > "$dir/stat"
@@ -81,7 +80,7 @@ if [ -n "$ticket" ]; then
   spec="$(gh issue view "$ticket" --json body -q .body 2>/dev/null || true)"
   [ -n "$spec" ] || echo "review-brief: gh could not fetch #$ticket; no spec" >&2
 fi
-if [ -z "$standards" ] && [ -f CODING_STANDARDS.md ]; then standards=CODING_STANDARDS.md; fi
+if [ ${#standards[@]} -eq 0 ] && [ -f CODING_STANDARDS.md ]; then standards=(CODING_STANDARDS.md); fi
 smells="$(sed -n '/^### 3\./,/^### 4\./p' "$skill/SKILL.md" | grep '^- \*\*.*→')"
 
 common() {
@@ -112,8 +111,8 @@ common() {
   common
   echo "## Standards"
   echo
-  if [ -n "$standards" ]; then
-    for f in $standards; do
+  if [ ${#standards[@]} -gt 0 ]; then
+    for f in "${standards[@]}"; do
       echo "### $f"
       echo
       cat "$f"
