@@ -262,10 +262,10 @@ cmd_doctor() {
   elif [ "$dbm" = false ]; then note "delete-branch-on-merge" "gh repo edit --delete-branch-on-merge; without it a stacked PR stays on its merged parent's branch instead of retargeting to main"; fi
   chk "ci workflow present"           "[ -f .github/workflows/ci.yml ]" "factory918 update restores it"
   chk "settings.json parses"          "jq . .claude/settings.json" "fix the JSON in .claude/settings.json, or factory918 update to restore the template copy"
-  chk "hooks executable"              "[ -x .claude/hooks/mode.sh ] && [ -x .claude/hooks/block-dangerous-git.sh ]" "chmod +x .claude/hooks/*.sh"
+  chk "hooks executable"              "[ -x .claude/hooks/mode.sh ] && [ -x .claude/hooks/block-dangerous-git.sh ] && [ -x .claude/hooks/delegation.sh ]" "chmod +x .claude/hooks/*.sh"
   chk "state dir ignored"             "git check-ignore -q .claude/state/mode" "append the lines from the factory clone's template/.gitignore.factory to .gitignore"
   if [ -f .claude/state/review/files ]; then
-    note "a review state is left behind: .claude/state/review ($(cat .claude/state/review/fixed-point), $(wc -l < .claude/state/review/files | tr -d ' ') files); reads of those files are blocked" "finish the review (spec-review step 5 runs review-comment.sh, which clears it) or rm -rf .claude/state/review"
+    note "a review state is left behind: .claude/state/review ($(cat .claude/state/review/fixed-point 2>/dev/null || echo unknown), $(wc -l < .claude/state/review/files | tr -d ' ') files); reads of those files are blocked" "finish the review (spec-review step 5 runs review-comment.sh, which clears it) or rm -rf .claude/state/review"
   fi
   chk "vp check (format, lint, types)" "vp check" "vp fmt, then vp check, and fix what it reports; it stops at the first failing stage"
   chk "tests"                         "vp test run" "vp test run and read the failing test"
