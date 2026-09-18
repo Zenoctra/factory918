@@ -95,8 +95,9 @@ echo "$dir" > "$state/dir"
 
 spec=""
 if [ -n "$ticket" ]; then
-  spec="$(gh issue view "$ticket" --json body -q .body 2>/dev/null || true)"
-  [ -n "$spec" ] || echo "review-brief: gh could not fetch #$ticket; no spec" >&2
+  err="$(gh issue view "$ticket" --json body -q .body 2>&1 >"$dir/ticket.md" || true)"
+  spec="$(cat "$dir/ticket.md")"
+  [ -n "$spec" ] || echo "review-brief: gh could not fetch #$ticket ($(printf '%s' "$err" | tr '\n' ' ')); no spec" >&2
 fi
 if [ ${#standards[@]} -eq 0 ] && [ -f CODING_STANDARDS.md ]; then standards=(CODING_STANDARDS.md); fi
 common() {
