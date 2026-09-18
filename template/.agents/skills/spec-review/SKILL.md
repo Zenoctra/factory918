@@ -22,6 +22,8 @@ Run `scripts/review-brief.sh <fixed-point>` (the script beside this skill; add `
 
 The script confirms the fixed point resolves and the diff is non-empty, and exits 1 with a message otherwise. A bad ref or empty diff fails here, not inside two parallel sub-agents.
 
+One PR gets at most three rounds, and a round is over when its comment is posted. The script reads the branch's PR comments that carry a line `act-on items:` (`gh pr view --json comments`); the round is one more than the highest `round: N of 3` line among them (a comment without one is round 1), so a comment rebuilt in the same round does not advance it. It writes the round to `<dir>/round`, prints `round: N of 3`, and exits 1 before writing any state when three rounds were run: what remains under Act on is then fixed on this PR and marked `fixed: <sha>` (step 5), not reviewed in a fourth round. Only comments by the PR's author, the account the orchestrator posts under, are read; a comment by anyone else neither counts a round nor reaches the briefs. No PR is round 1 with nothing carried; any other `gh` failure is printed and treated the same way, so the run goes on and you see why. `--round N` sets the round directly and `--previous FILE` supplies the earlier review comments from a file instead of `gh`, for a branch whose PR is elsewhere.
+
 A sweep over units already on `main`, named by paths and commits, is the same skill with the same state, not a second mode: `scripts/review-brief.sh --paths P... --commits SHA...` writes the word `paths` as the fixed point and `git show <commits> -- <paths>` as the diff.
 
 ### 2. Identify the spec source
@@ -32,6 +34,8 @@ Look for the originating spec, in this order:
 2. A path the user passed as an argument.
 3. A spec file under `docs/`, `specs/`, or `.scratch/` matching the branch name or feature.
 4. If nothing is found, the **Spec** sub-agent skips and the report says, in these words, "no spec: Standards axis only". Never use the PR description, a commit message, or your own account of the change as the spec: those are the author's words, and the Spec axis exists to check the work against the human's. A spec arrives only as a ticket, a path the user passed, or a spec file.
+
+With a ticket, the script fetches its body and the comments posted by the ticket's author (`gh issue view N --json author,comments`, the login that opened the ticket), and pastes both into the Spec brief; comments by anyone else, and the PR's own comments, are never spec.
 
 ### 3. Identify the standards sources
 
@@ -66,16 +70,27 @@ The briefs are the two files step 1 wrote, `<dir>/standards-brief.md` and `<dir>
 - The commit list (the `git log <fixed-point>..HEAD --oneline` output).
 - The changed-file list with per-file line counts (the `--stat` output).
 - The diff itself, when it's under about 500 lines. Over that, the brief hands the path `<dir>/diff`, so a reviewer reads one file and runs nothing.
+- `## Settled in earlier rounds`, from round two on: the Noted and Dismissed items that carry a `cites:` field (step 5) from every earlier round's comment, verbatim, in comment order and each line once, under exactly this paragraph: "These findings were raised in an earlier round and settled by the decision each one cites. Do not raise them again. Nothing in this section says what you should find or confirm." An item without a citation is dropped (the script prints how many it carried and dropped), and when nothing carries the section is absent. The section tells a reviewer what is closed, never what to find: a brief that named an expected result would be leading the witness.
 
 **The Standards brief** adds:
 
 - The standards files named by `--standards` (default `CODING_STANDARDS.md`), pasted whole, so pass only the files that apply to the changed files. **Plus the smell baseline from step 3** pasted in full (the sub-agent has no other access to it).
-- The report shape. The definition first, word for word as the script writes it: "A hard finding is wrong behavior in normal use: a command, hook, script or documented flow does something other than what the ticket or its own documentation says it does, on the path a user takes." Then exactly these `## ` headings, in this order, each holding numbered items or nothing: `## Would break` (a breach of a documented standard that produces wrong behavior in normal use), `## Standards breaches` (documented-standard breaches that do not change behavior), `## Fix alongside` (baseline smells and other judgement calls; they are fixed only when a would-break fix already touches that code; they never count). Each item opens with `1. **Title.** body`, cites the standard and quotes the hunk in a fenced block, numbered continuously across the headings. A documented repo standard overrides the baseline; skip anything tooling enforces; read nothing beyond the brief but the code around a hunk; under 400 words. The last line is `hard findings: N`, where N is the number of items under `## Would break` and nothing else.
+- The report shape. The definition first, word for word as the script writes it: "A hard finding is wrong behavior in normal use: a command, hook, script or documented flow does something other than what the ticket or its own documentation says it does, on the path a user takes." Then exactly these `## ` headings, in this order, each holding numbered items or nothing, word for word as the script writes them:
+  - `## Would break`: a breach of a documented standard that produces wrong behavior in normal use. Cite the standard (file + the rule) and quote the hunk.
+  - `## Standards breaches`: documented-standard breaches that do not change behavior. Cite the standard and quote the hunk.
+  - `## Fix alongside`: baseline smells and other judgement calls. Name the smell and quote the hunk. They are fixed only when a would-break fix already touches that code; they never count.
+
+  Each item opens with `1. **Title.** body`, with the quoted hunk in a fenced block under it, numbered continuously across the headings. A documented repo standard overrides the baseline; skip anything tooling enforces; read nothing beyond the brief but the code around a hunk; under 400 words. The last line is `hard findings: N`, where N is the number of items under `## Would break` and nothing else.
 
 **The Spec brief** adds:
 
-- The ticket body pasted in (What to build and Acceptance criteria, verbatim), and the relevant section of the parent spec when there is one. Not a `gh` command or an issue number: the sub-agent fetches nothing.
-- The report shape. The same definition, then exactly these `## ` headings, in this order: `## Would break` (a requirement missing, partial, or implemented so that normal use does something other than the ticket says), `## Latent` (edge cases, visibility, policy, wording; anything a user would not hit in normal use), `## Not asked for` (behaviour in the diff the ticket did not ask for). Each item opens with `1. **Title.** body` and quotes the spec line it rests on in a fenced block (a criterion can carry `## ` or `1. ` lines, and only fenced text is exempt from the report shape), numbered continuously across the headings; read nothing beyond the brief but the code around a hunk; under 400 words. The last line is `hard findings: N`, the number of items under `## Would break` and nothing else.
+- The ticket body pasted in (What to build and Acceptance criteria, verbatim), then the ticket author's comments under `## Comments by the ticket's author (#N)`, each under `### <YYYY-MM-DD>` (absent when there are none), and the relevant section of the parent spec when there is one. Not a `gh` command or an issue number: the sub-agent fetches nothing.
+- The report shape. The same definition, then exactly these `## ` headings, in this order, each holding numbered items or nothing, word for word as the script writes them:
+  - `## Would break`: a requirement missing, partial, or implemented so that normal use does something other than the ticket says.
+  - `## Latent`: edge cases, visibility, policy, wording; anything a user would not hit in normal use.
+  - `## Not asked for`: behaviour in the diff the ticket did not ask for.
+
+  Each item opens with `1. **Title.** body` and quotes the spec line it rests on in a fenced block (a criterion can carry `## ` or `1. ` lines, and only fenced text is exempt from the report shape), numbered continuously across the headings; read nothing beyond the brief but the code around a hunk; under 400 words. The last line is `hard findings: N`, the number of items under `## Would break` and nothing else.
 
 If the spec is missing, the script writes no Spec brief; skip the Spec sub-agent, and step 6 says so in the final report.
 
@@ -93,23 +108,29 @@ Five `## ` headings, in this order, each holding numbered items or nothing:
 - `## Noted`: valid but not actionable here.
 - `## Dismissed`: wrong, nitpicky or missing context, and why.
 
-Each item is `1. [S2] **Title.** reason`: `[S2]` is the Standards report's second item and `[P1]` the Spec report's first, counted across every heading of that report in document order; the reason is one line. Every numbered item in both reports appears exactly once in the judgment; step 6 refuses a judgment that misses, repeats or invents a reference.
+Each item is `1. [S2] **Title.** reason`: `[S2]` is the Standards report's second item and `[P1]` the Spec report's first, counted across every heading of that report in document order; the reason is one line. Number the judgment's items the same way, 1..N continuously across the five headings; step 6 refuses a numbering that restarts under a heading. Every numbered item in both reports appears exactly once in the judgment; step 6 refuses a judgment that misses, repeats or invents a reference.
 
 A `## Fix alongside` item from the Standards report goes under Act on when an Act on item's fix touches the same code, otherwise under Noted.
 
-An Ask item waits for the human. When the human answers, move it to the bucket the answer settles, with the answer as the one-line reason, and rerun `scripts/review-comment.sh <dir>` on the same reports; that is the same round, not a new one.
+An Ask item waits for the human. When the human answers, move it to the bucket the answer settles, with the answer as the one-line reason, renumber the items so the written numbers run 1..N in document order again, and rerun `scripts/review-comment.sh <dir>` on the same reports; that is the same round, not a new one.
+
+Three trailing fields, each with one grammar:
+
+- `cites: <decision>` on a Noted or Dismissed item names the decision it rests on, one of `user: "<quoted words>" on #N` (a `user:` blockquote in the ticket body), `DECISIONS.md <row id>` (`P17`, `19`) or `#N comment <YYYY-MM-DD>` (a ticket comment by the ticket's author). Nothing else counts. Only a cited item carries into every later round's briefs as settled; an uncited Noted or Dismissed item is a normal one and the next round's reviewer may raise it again. An item you cannot cite is not settled, however sure you are.
+- `ticket: #N` on an Act on item means the finding was filed as its own ticket because it is outside this PR's scope, in any round, and step 6 does not count it.
+- `fixed: <sha>` on an Act on item names the commit on this PR that fixed it, and step 6 does not count it either. At round three the Act on items are fixed on this PR by a fix lane; then you mark each `fixed: <sha>`, renumber, and rerun `scripts/review-comment.sh <dir>`. Those fixes are not reviewed again: Manuel's rule is that after three passes the rest is found the hard way. An Ask item is never fixed or filed away; it waits for the human.
 
 ### 6. Aggregate
 
-Run `scripts/review-comment.sh`. It prints the two reports under `## Standards` and `## Spec` (or `no spec: Standards axis only`), the judgment under `## Judgment`, all verbatim, a one-line summary, and the final line `act-on items: N`, where N is the number of items under `## Act on` plus the number under `## Ask`; then it clears `.claude/state/review/`. Zero is written as `act-on items: 0`. Babysit reads this line, so it is always present and always last.
+Run `scripts/review-comment.sh`. It prints the two reports under `## Standards` and `## Spec` (or `no spec: Standards axis only`), the judgment under `## Judgment`, all verbatim, a one-line summary, the line `round: N of 3` from `<dir>/round` (1 when the file is missing), and the final line `act-on items: N`, where N is the number of items under `## Act on` without a `fixed:` or `ticket:` field plus the number under `## Ask`; then it clears `.claude/state/review/`. Zero is written as `act-on items: 0`. Babysit reads this line, so it is always present and always last.
 
-It exits 1, printing why and clearing nothing, when a report is missing or has no `hard findings:` line (wait for the reviewer; do not write the report yourself); when a report's `hard findings: N` is larger than its `## Would break` item count (ask the reviewer to re-sort); when a report's or the judgment's `## ` headings are not the shape above; when `judgment.md` is missing; when the judgment's item count differs from the reports'; or when a `[S<n>]` or `[P<n>]` reference is missing, repeated or points at no item. An off-shape report goes back to its reviewer with the refusal text; a new round is not started for it.
+It exits 1, printing why and clearing nothing, when a report is missing or has no `hard findings:` line (wait for the reviewer; do not write the report yourself); when a report's `hard findings: N` is larger than its `## Would break` item count (ask the reviewer to re-sort); when a report's or the judgment's `## ` headings are not the shape above; when a report's or the judgment's items are not numbered 1..N continuously across its headings, in document order; when `judgment.md` is missing; when the judgment's item count differs from the reports'; when a `[S<n>]` or `[P<n>]` reference is missing, repeated or points at no item; or when `<dir>/round` holds no number (rerun `review-brief.sh`). An off-shape report goes back to its reviewer with the refusal text; a new round is not started for it.
 
-With the review dir as its argument, `scripts/review-comment.sh .scratch/review/<id>`, it reruns on the same reports after the state is gone: an Ask item the human answered, or a report sent back and rewritten. Same round.
+With the review dir as its argument, `scripts/review-comment.sh .scratch/review/<id>`, it reruns on the same reports after the state is gone: an Ask item the human answered, or a report sent back and rewritten. Same round; the `round:` line comes from the dir.
 
 Do **not** merge or rerank findings across the two reports, because the two axes are deliberately separate (see _Why two axes_), and do not pick a single winner across axes: that's the reranking the separation exists to prevent. The judgment is a third section, not a rewrite of either report.
 
-You write only what goes above the script's output: the two plain sentences for a person. Nothing else in the comment is yours.
+You write only what goes above the script's output: the two plain sentences for a person. Nothing else in the comment is yours. They end with a signature, the model and harness: `Claude Fable 5.1 on Claude Code` when the comment is posted without the human's approval, and `Claude Fable 5.1 on Claude Code, approved by <name>` when the human approved it before posting; only an approved comment posted from the author's account counts as the author's words.
 
 ## Why two axes
 

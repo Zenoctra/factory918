@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Runs template/.agents/skills/spec-review/scripts/review-comment.sh against fixture reports and
 # judgments in a temp repo and asserts the exact stdout of each accepted shape and the exact
-# refusal line of each rejected one. A refusal leaves the review state in place; an accepted
+# refusal line of each rejected one. Report and judgment items are numbered 1..N across the headings. A refusal leaves the review state in place; an accepted
 # run clears it. Exits 1 on the first miss.
 set -euo pipefail
 here="$(cd "$(dirname "$0")/../.." && pwd -P)"
@@ -19,14 +19,18 @@ state=.claude/state/review
 n=0
 code=0
 out=""
+# rearm: the review state an accepted run cleared, with the fixture files kept.
+rearm() {
+  mkdir -p "$dir" "$state"
+  echo main > "$state/fixed-point"
+  echo main > "$dir/fixed-point"
+  echo a.sh > "$state/files"
+  echo "$dir" > "$state/dir"
+}
 # reset: a fresh review with no reports and no spec brief.
 reset() {
   rm -rf "$dir" "$state"
-  mkdir -p "$dir" "$state"
-  echo main > "$state/fixed-point"
-  echo a.sh > "$state/files"
-  echo "$dir" > "$state/dir"
-  cp "$state/fixed-point" "$dir/fixed-point"
+  rearm
 }
 # run [dir]: the script, with the review dir as its argument when given.
 run() {
@@ -98,17 +102,20 @@ printf '## Would break\n\n## Latent\n\n1. **Edge.** c\n\n## Not asked for\n\nhar
 printf '## Act on\n\n1. [S1] **One.** yes\n\n## Ask\n\n## Consider\n\n## Noted\n\n## Dismissed\n' > "$dir/judgment.md"
 refuse "$dir/judgment.md has 1 items; the reports have 3 (Standards 2, Spec 1). Every report item appears exactly once in the judgment" "judgment short of the reports"
 
-printf '## Act on\n\n1. [S1] **One.** yes\n\n## Ask\n\n## Consider\n\n## Noted\n\n1. [S4] **Two.** later\n\n## Dismissed\n\n1. [P1] **Edge.** no\n' > "$dir/judgment.md"
+printf '## Act on\n\n1. [S1] **One.** yes\n\n## Ask\n\n## Consider\n\n## Noted\n\n2. [S4] **Two.** later\n\n## Dismissed\n\n3. [P1] **Edge.** no\n' > "$dir/judgment.md"
 refuse "$dir/judgment.md does not name every report item exactly once: missing [S2], unknown or repeated [S4]; the reports have 2 Standards items and 1 Spec items" "reference to an item that does not exist"
 
-printf '## Act on\n\n1. [S1] **One.** yes\n\n## Ask\n\n## Consider\n\n## Noted\n\n1. [S1] **One again.** twice\n\n## Dismissed\n\n1. [P1] **Edge.** no\n' > "$dir/judgment.md"
+printf '## Act on\n\n1. [S1] **One.** yes\n\n## Ask\n\n## Consider\n\n## Noted\n\n2. [S1] **One again.** twice\n\n## Dismissed\n\n3. [P1] **Edge.** no\n' > "$dir/judgment.md"
 refuse "$dir/judgment.md does not name every report item exactly once: missing [S2], unknown or repeated [S1]; the reports have 2 Standards items and 1 Spec items" "repeated reference"
 
-printf '## Act on\n\n1. [S1] **One.** yes\n\n## Ask\n\n## Consider\n\n## Noted\n\n1. **Two.** no reference\n\n## Dismissed\n\n1. [P1] **Edge.** no\n' > "$dir/judgment.md"
-refuse "$dir/judgment.md item '1. **Two.** no reference' does not open with [S<n>] or [P<n>], the report item it judges" "item without a reference"
+printf '## Act on\n\n1. [S1] **One.** yes\n\n## Ask\n\n## Consider\n\n## Noted\n\n2. **Two.** no reference\n\n## Dismissed\n\n3. [P1] **Edge.** no\n' > "$dir/judgment.md"
+refuse "$dir/judgment.md item '2. **Two.** no reference' does not open with [S<n>] or [P<n>], the report item it judges" "item without a reference"
+
+printf '## Act on\n\n1. [S1] **One.** yes\n\n## Ask\n\n## Consider\n\n1. [S2] **Two.** maybe\n\n## Noted\n\n## Dismissed\n\n3. [P1] **Edge.** no\n' > "$dir/judgment.md"
+refuse "$dir/judgment.md item '1. [S2] **Two.** maybe' is numbered 1 where 2 was expected; number the items 1..N continuously across the headings, in document order" "judgment numbering restarts under Consider"
 
 rm "$dir/spec-brief.md" "$dir/spec-report.md"
-printf '## Act on\n\n1. [S1] **One.** yes\n\n## Ask\n\n## Consider\n\n## Noted\n\n1. [P1] **Edge.** no\n\n## Dismissed\n' > "$dir/judgment.md"
+printf '## Act on\n\n1. [S1] **One.** yes\n\n## Ask\n\n## Consider\n\n## Noted\n\n2. [P1] **Edge.** no\n\n## Dismissed\n' > "$dir/judgment.md"
 refuse "$dir/judgment.md does not name every report item exactly once: missing [S2], unknown or repeated [P1]; the reports have 2 Standards items and 0 Spec items" "Spec reference without a Spec axis"
 
 reset
@@ -140,8 +147,9 @@ no spec: Standards axis only
 
 ## Dismissed
 
-Standards: 0 would break of 0; Spec: no spec; judged: act on 0, ask 0, consider 0, noted 0, dismissed 0; fixed point main.
-act-on items: 0" "nothing found, no spec"
+Standards: 0 would break of 0; Spec: no spec; judged: act on 0 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 0, dismissed 0; fixed point main.
+round: 1 of 3
+act-on items: 0" "nothing found, no spec, no round file"
 
 reset
 cat > "$dir/standards-report.md" <<'EOF'
@@ -186,17 +194,56 @@ cat > "$dir/judgment.md" <<'EOF'
 
 ## Ask
 
-1. [P2] **Token in the log.** Data retention is the human's call.
+3. [P2] **Token in the log.** Data retention is the human's call.
 
 ## Consider
 
 ## Noted
 
-1. [S3] **Duplicated Code.** Fixed alongside S1 if the loops are touched.
+4. [S3] **Duplicated Code.** Fixed alongside S1 if the loops are touched.
 
 ## Dismissed
 
-1. [S2] **Bare number.** The constant is named two lines up.
+5. [S2] **Bare number.** The constant is named two lines up.
+EOF
+echo 2 > "$dir/round"
+accept "## Standards
+
+$(cat "$dir/standards-report.md")
+
+## Spec
+
+$(cat "$dir/spec-report.md")
+
+## Judgment
+
+$(cat "$dir/judgment.md")
+
+Standards: 1 would break of 3; Spec: 1 would break of 2; judged: act on 2 (0 fixed, 0 with a ticket), ask 1, consider 0, noted 1, dismissed 1; fixed point main.
+round: 2 of 3
+act-on items: 3" "two Act on and one Ask, round 2"
+
+rearm
+echo 3 > "$dir/round"
+cat > "$dir/judgment.md" <<'EOF'
+## Act on
+
+1. [S1] **Hook exits 0 on a miss.** The test proves it.
+2. [P1] **Sweep form ignores --ticket.** The commit list is empty there. ticket: #12
+
+## Ask
+
+3. [P2] **Token in the log.** Data retention is the human's call.
+
+## Consider
+
+## Noted
+
+4. [S3] **Duplicated Code.** Fixed alongside S1 if the loops are touched.
+
+## Dismissed
+
+5. [S2] **Bare number.** The constant is named two lines up.
 EOF
 accept "## Standards
 
@@ -210,8 +257,86 @@ $(cat "$dir/spec-report.md")
 
 $(cat "$dir/judgment.md")
 
-Standards: 1 would break of 3; Spec: 1 would break of 2; judged: act on 2, ask 1, consider 0, noted 1, dismissed 1; fixed point main.
-act-on items: 3" "two Act on and one Ask"
+Standards: 1 would break of 3; Spec: 1 would break of 2; judged: act on 2 (0 fixed, 1 with a ticket), ask 1, consider 0, noted 1, dismissed 1; fixed point main.
+round: 3 of 3
+act-on items: 2" "an Act on item filed as a ticket is not counted, round 3"
+
+# The state is cleared; naming the directory rebuilds the same comment, which is how a re-sorted Ask item gets its comment.
+accept "## Standards
+
+$(cat "$dir/standards-report.md")
+
+## Spec
+
+$(cat "$dir/spec-report.md")
+
+## Judgment
+
+$(cat "$dir/judgment.md")
+
+Standards: 1 would break of 3; Spec: 1 would break of 2; judged: act on 2 (0 fixed, 1 with a ticket), ask 1, consider 0, noted 1, dismissed 1; fixed point main.
+round: 3 of 3
+act-on items: 2" "rebuilt from the directory after the state was cleared" "$dir"
+refuse "nowhere is not a directory; pass the .scratch/review/<id> review-brief.sh wrote" "a directory that does not exist" nowhere
+touch nowhere
+refuse "nowhere is not a directory; pass the .scratch/review/<id> review-brief.sh wrote" "a file where the review dir should be" nowhere
+rm nowhere
+
+# At round three the Act on items are fixed on this PR and marked with the commit; a marked item
+# is not counted either. The state is gone, so the rerun names the dir.
+cat > "$dir/judgment.md" <<'EOF'
+## Act on
+
+1. [S1] **Hook exits 0 on a miss.** The test proves it. fixed: abc1234
+2. [P1] **Sweep form ignores --ticket.** The commit list is empty there. ticket: #12
+
+## Ask
+
+3. [P2] **Token in the log.** Data retention is the human's call.
+
+## Consider
+
+## Noted
+
+4. [S3] **Duplicated Code.** Fixed alongside S1 if the loops are touched.
+
+## Dismissed
+
+5. [S2] **Bare number.** The constant is named two lines up.
+EOF
+accept "## Standards
+
+$(cat "$dir/standards-report.md")
+
+## Spec
+
+$(cat "$dir/spec-report.md")
+
+## Judgment
+
+$(cat "$dir/judgment.md")
+
+Standards: 1 would break of 3; Spec: 1 would break of 2; judged: act on 2 (1 fixed, 1 with a ticket), ask 1, consider 0, noted 1, dismissed 1; fixed point main.
+round: 3 of 3
+act-on items: 1" "an Act on item fixed on this PR is not counted, round 3" "$dir"
+
+# A newer review's state is live and names another dir: rerunning the old dir prints its comment
+# and leaves that state alone, so the delegation hook keeps blocking the newer review's files.
+rearm
+echo .scratch/review/y > "$state/dir"
+echo other > "$state/fixed-point"
+run "$dir"
+if [ "$code" != 0 ] || [ "$(cat "$state/dir")" != .scratch/review/y ] || [ "${out%%; fixed point main.*}" = "$out" ]; then
+  echo "FAIL rerun of an old dir under a newer review's state: exit $code, wanted 0, the state kept and the old dir's fixed point"
+  echo "  got:"; printf '%s\n' "$out"
+  exit 1
+fi
+n=$((n + 1))
+rm -rf "$state"
+
+rearm
+echo three > "$dir/round"
+refuse "$dir/round holds 'three', not a round number; rerun scripts/review-brief.sh" "round file off its shape"
 
 reset
 printf '## Would break\n\n## Standards breaches\n\n## Fix alongside\n\n1. **Mysterious Name.** x\n2. **Middle Man.** y\n\nhard findings: 0\n' > "$dir/standards-report.md"
@@ -228,12 +353,13 @@ no spec: Standards axis only
 
 $(cat "$dir/judgment.md")
 
-Standards: 0 would break of 2; Spec: no spec; judged: act on 0, ask 0, consider 0, noted 0, dismissed 2; fixed point main.
+Standards: 0 would break of 2; Spec: no spec; judged: act on 0 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 0, dismissed 2; fixed point main.
+round: 1 of 3
 act-on items: 0" "Dismissed only"
 
 # The state is gone now. The judgment is re-sorted (an Ask item answered, say) and the script
 # reruns on the same reports with the dir as its argument, reading the fixed point from the dir.
-printf '## Act on\n\n1. [S1] **Mysterious Name.** the human wants it renamed\n\n## Ask\n\n## Consider\n\n## Noted\n\n## Dismissed\n\n1. [S2] **Middle Man.** one caller, kept inline\n' > "$dir/judgment.md"
+printf '## Act on\n\n1. [S1] **Mysterious Name.** the human wants it renamed\n\n## Ask\n\n## Consider\n\n## Noted\n\n## Dismissed\n\n2. [S2] **Middle Man.** one caller, kept inline\n' > "$dir/judgment.md"
 accept "## Standards
 
 $(cat "$dir/standards-report.md")
@@ -246,15 +372,55 @@ no spec: Standards axis only
 
 $(cat "$dir/judgment.md")
 
-Standards: 0 would break of 2; Spec: no spec; judged: act on 1, ask 0, consider 0, noted 0, dismissed 1; fixed point main.
+Standards: 0 would break of 2; Spec: no spec; judged: act on 1 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 0, dismissed 1; fixed point main.
+round: 1 of 3
 act-on items: 1" "rerun with the dir argument after the state was cleared" "$dir"
+accept "$out" "the same with a trailing slash on the dir" "$dir/"
+
+# An Ask item the human answered moves to the bucket the answer settles. Moved as it stands, the
+# numbers no longer run 1..N in document order and the rerun is refused; renumbered, the rerun
+# prints the new count.
+printf '## Act on\n\n## Ask\n\n1. [S1] **Mysterious Name.** whether the name is a data term is the human'"'"'s call\n\n## Consider\n\n## Noted\n\n## Dismissed\n\n2. [S2] **Middle Man.** one caller, kept inline\n' > "$dir/judgment.md"
+accept "## Standards
+
+$(cat "$dir/standards-report.md")
+
+## Spec
+
+no spec: Standards axis only
+
+## Judgment
+
+$(cat "$dir/judgment.md")
+
+Standards: 0 would break of 2; Spec: no spec; judged: act on 0 (0 fixed, 0 with a ticket), ask 1, consider 0, noted 0, dismissed 1; fixed point main.
+round: 1 of 3
+act-on items: 1" "an Ask item, counted" "$dir"
+printf '## Act on\n\n## Ask\n\n## Consider\n\n## Noted\n\n## Dismissed\n\n2. [S2] **Middle Man.** one caller, kept inline\n1. [S1] **Mysterious Name.** the human says the name is the domain term. cites: #7 comment 2026-09-18\n' > "$dir/judgment.md"
+refuse "$dir/judgment.md item '2. [S2] **Middle Man.** one caller, kept inline' is numbered 2 where 1 was expected; number the items 1..N continuously across the headings, in document order" "an Ask item moved without renumbering" "$dir"
+printf '## Act on\n\n## Ask\n\n## Consider\n\n## Noted\n\n## Dismissed\n\n1. [S2] **Middle Man.** one caller, kept inline\n2. [S1] **Mysterious Name.** the human says the name is the domain term. cites: #7 comment 2026-09-18\n' > "$dir/judgment.md"
+accept "## Standards
+
+$(cat "$dir/standards-report.md")
+
+## Spec
+
+no spec: Standards axis only
+
+## Judgment
+
+$(cat "$dir/judgment.md")
+
+Standards: 0 would break of 2; Spec: no spec; judged: act on 0 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 0, dismissed 2; fixed point main.
+round: 1 of 3
+act-on items: 0" "an Ask item moved and renumbered, the same round" "$dir"
 
 # The same rerun with the dir spelled ./<dir>/ and as its absolute path, the state present and
 # naming the dir: each spelling is the dir the state names, so the state is cleared.
 for spelling in "./$dir/" "$(git rev-parse --show-toplevel)/$dir"; do
   reset
   printf '## Would break\n\n## Standards breaches\n\n## Fix alongside\n\n1. **Mysterious Name.** x\n2. **Middle Man.** y\n\nhard findings: 0\n' > "$dir/standards-report.md"
-  printf '## Act on\n\n1. [S1] **Mysterious Name.** the human wants it renamed\n\n## Ask\n\n## Consider\n\n## Noted\n\n## Dismissed\n\n1. [S2] **Middle Man.** one caller, kept inline\n' > "$dir/judgment.md"
+  printf '## Act on\n\n1. [S1] **Mysterious Name.** the human wants it renamed\n\n## Ask\n\n## Consider\n\n## Noted\n\n## Dismissed\n\n2. [S2] **Middle Man.** one caller, kept inline\n' > "$dir/judgment.md"
   accept "## Standards
 
 $(cat "$dir/standards-report.md")
@@ -267,19 +433,21 @@ no spec: Standards axis only
 
 $(cat "$dir/judgment.md")
 
-Standards: 0 would break of 2; Spec: no spec; judged: act on 1, ask 0, consider 0, noted 0, dismissed 1; fixed point main.
+Standards: 0 would break of 2; Spec: no spec; judged: act on 1 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 0, dismissed 1; fixed point main.
+round: 1 of 3
 act-on items: 1" "rerun with the dir spelled $spelling" "$spelling"
 done
 
-# Fenced text is exempt from the shape. Three reports, each the unfenced twin below with a quoted
+# Fenced text is exempt from the shape. Four reports, each the unfenced twin below with a quoted
 # hunk under its first item, parse to the twin's headings and items: a hunk quoting a ``` line
-# inside a ```` block, a hunk in ~~~ fences that quotes a ``` line, and a fenced hunk carrying
-# `## ` and `1. ` lines. A heading with trailing whitespace is the same heading.
+# inside a ```` block, a hunk in ~~~ fences that quotes a ``` line, a hunk quoting a ```sh line
+# inside a ``` block (an info string never closes a fence), and a fenced hunk carrying `## ` and
+# `1. ` lines. A heading with trailing whitespace is the same heading.
 # fenced_twin <label> <hunk>: the twin with the hunk under item 1 is accepted with the twin's summary.
 fenced_twin() {
   reset
   printf '## Would break\n\n1. **One.** a\n\n%s\n\n## Standards breaches\n\n2. **Two.** b\n\n## Fix alongside\n\n3. **Three.** c\n\nhard findings: 1\n' "$2" > "$dir/standards-report.md"
-  printf '## Act on\n\n1. [S1] **One.** yes\n\n## Ask\n\n## Consider\n\n## Noted\n\n1. [S3] **Three.** later\n\n## Dismissed\n\n1. [S2] **Two.** no\n' > "$dir/judgment.md"
+  printf '## Act on\n\n1. [S1] **One.** yes\n\n## Ask\n\n## Consider\n\n## Noted\n\n2. [S3] **Three.** later\n\n## Dismissed\n\n3. [S2] **Two.** no\n' > "$dir/judgment.md"
   accept "## Standards
 
 $(cat "$dir/standards-report.md")
@@ -292,7 +460,8 @@ no spec: Standards axis only
 
 $(cat "$dir/judgment.md")
 
-Standards: 1 would break of 3; Spec: no spec; judged: act on 1, ask 0, consider 0, noted 1, dismissed 1; fixed point main.
+Standards: 1 would break of 3; Spec: no spec; judged: act on 1 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 1, dismissed 1; fixed point main.
+round: 1 of 3
 act-on items: 1" "$1"
 }
 fenced_twin "the unfenced twin" ""
@@ -309,6 +478,12 @@ fenced_twin 'a ~~~ fence quoting a ``` line' '~~~sh
 ```
 1. still the hunk
 ~~~'
+fenced_twin 'a ```sh fence quoted inside a ``` block' '```
+## Would break
+```sh
+1. still the hunk
+## Latent
+```'
 fenced_twin "a fenced hunk carrying heading and item lines" '```
 ## Fix alongside
 1. not an item
@@ -330,7 +505,8 @@ no spec: Standards axis only
 
 $(cat "$dir/judgment.md")
 
-Standards: 0 would break of 0; Spec: no spec; judged: act on 0, ask 0, consider 0, noted 0, dismissed 0; fixed point main.
+Standards: 0 would break of 0; Spec: no spec; judged: act on 0 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 0, dismissed 0; fixed point main.
+round: 1 of 3
 act-on items: 0" "headings with trailing whitespace"
 
 echo "ok $n assertions"
