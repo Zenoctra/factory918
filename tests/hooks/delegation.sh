@@ -124,6 +124,10 @@ expect 0 "" orchestrator Write "$(path big.sh)" "planning: Write to big.sh"
 expect 0 "" orchestrator Read "$(path small.md)" "planning: Read small.md"
 expect 2 "$(review_msg big.sh)" orchestrator Read "$(ranged big.sh 5)" "planning: Read of big.sh under review"
 
+rm .claude/state/review/dir
+expect 2 "$(review_msg big.sh)" orchestrator Read "$(ranged big.sh 5)" "review state without dir: Read of big.sh"
+expect 0 "" orchestrator Read "$(path small.md)" "review state without dir: Read of small.md, no cat error"
+
 set +e
 err="$(printf 'not json' | bash "$hook" 2>&1 >/dev/null)"
 code=$?

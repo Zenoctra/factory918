@@ -60,9 +60,12 @@ guard_write() {
 # Under review: the changed files and their diff and stat. The briefs and reports beside them are
 # the orchestrator's to read.
 in_review() {
+  local dir
   [ -f "$review/files" ] || return 1
   grep -Fxq -- "$1" "$review/files" && return 0
-  case "$1" in "$(cat "$review/dir")"/diff|"$(cat "$review/dir")"/stat) return 0 ;; esac
+  dir="$(cat "$review/dir" 2>/dev/null)"
+  [ -n "$dir" ] || return 1
+  case "$1" in "$dir"/diff|"$dir"/stat) return 0 ;; esac
   return 1
 }
 
