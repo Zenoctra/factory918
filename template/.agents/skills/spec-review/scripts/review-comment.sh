@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # spec-review step 6. Prints the review comment: the two reports and the orchestrator's judgment,
 # verbatim under their headings, the round, then act-on items counted from the judgment's Act on
-# items not filed as a ticket (`ticket: #N`) plus its Ask items, and clears the review state so
-# the delegation hook stops blocking the reviewed files.
+# items neither fixed on this PR (`fixed: <sha>`) nor filed as a ticket (`ticket: #N`) plus its
+# Ask items, and clears the review state so the delegation hook stops blocking the reviewed files.
 # No arguments: it reads .claude/state/review/dir. One argument, the review dir
 # (.scratch/review/<id>): it reads that dir instead, so a judgment re-sorted after the human
 # answers an Ask item, or a report sent back for its shape, reruns on the same reports once the
@@ -124,14 +124,16 @@ echo
 cat "$dir/judgment.md"
 echo
 act="$(count "$dir/judgment.md" "Act on")"
-# An Act on item filed as its own ticket (a trailing `ticket: #N`) is not counted.
+# An Act on item fixed on this PR (a trailing `fixed: <sha>`, the round-three path) or filed as
+# its own ticket (a trailing `ticket: #N`) is not counted.
+fixed_here="$(items "$dir/judgment.md" "Act on" | grep -cE 'fixed: [0-9a-f]{7,40}$' || true)"
 ticketed="$(items "$dir/judgment.md" "Act on" | grep -cE 'ticket: #[0-9]+$' || true)"
 ask="$(count "$dir/judgment.md" "Ask")"
 if [ -n "$has_spec" ]; then spec="$p_wb would break of $p_total"; else spec="no spec"; fi
 if [ -f "$dir/fixed-point" ]; then fixed="fixed point $(cat "$dir/fixed-point")"
 elif [ -f "$state/fixed-point" ]; then fixed="fixed point $(cat "$state/fixed-point")"
 else fixed="fixed point unknown"; fi
-echo "Standards: $s_wb would break of $s_total; Spec: $spec; judged: act on $act ($ticketed with a ticket), ask $ask, consider $(count "$dir/judgment.md" Consider), noted $(count "$dir/judgment.md" Noted), dismissed $(count "$dir/judgment.md" Dismissed); $fixed."
+echo "Standards: $s_wb would break of $s_total; Spec: $spec; judged: act on $act ($fixed_here fixed, $ticketed with a ticket), ask $ask, consider $(count "$dir/judgment.md" Consider), noted $(count "$dir/judgment.md" Noted), dismissed $(count "$dir/judgment.md" Dismissed); $fixed."
 echo "round: $round of 3"
-echo "act-on items: $((act - ticketed + ask))"
+echo "act-on items: $((act - fixed_here - ticketed + ask))"
 if [ -f "$state/dir" ] && [ "$(cat "$state/dir")" = "$dir" ]; then rm -rf "$state"; fi

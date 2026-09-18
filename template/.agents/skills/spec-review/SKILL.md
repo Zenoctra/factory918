@@ -22,7 +22,7 @@ Run `scripts/review-brief.sh <fixed-point>` (the script beside this skill; add `
 
 The script confirms the fixed point resolves and the diff is non-empty, and exits 1 with a message otherwise. A bad ref or empty diff fails here, not inside two parallel sub-agents.
 
-One PR gets at most three rounds, and a round is over when its comment is posted. The script reads the branch's PR comments that carry a line `act-on items:` (`gh pr view --json comments`); the round is one more than the highest `round: N of 3` line among them (a comment without one is round 1), so a comment rebuilt in the same round does not advance it. It writes the round to `<dir>/round`, prints `round: N of 3`, and exits 1 before writing any state when three rounds were run: what remains under Act on then becomes tickets (step 5), not a fourth round. No PR is round 1 with nothing carried; any other `gh` failure is printed and treated the same way, so the run goes on and you see why. `--round N` sets the round directly and `--previous FILE` supplies the earlier review comments from a file instead of `gh`, for a branch whose PR is elsewhere.
+One PR gets at most three rounds, and a round is over when its comment is posted. The script reads the branch's PR comments that carry a line `act-on items:` (`gh pr view --json comments`); the round is one more than the highest `round: N of 3` line among them (a comment without one is round 1), so a comment rebuilt in the same round does not advance it. It writes the round to `<dir>/round`, prints `round: N of 3`, and exits 1 before writing any state when three rounds were run: what remains under Act on is then fixed on this PR and marked `fixed: <sha>` (step 5), not reviewed in a fourth round. Only comments by the PR's author, the account the orchestrator posts under, are read; a comment by anyone else neither counts a round nor reaches the briefs. No PR is round 1 with nothing carried; any other `gh` failure is printed and treated the same way, so the run goes on and you see why. `--round N` sets the round directly and `--previous FILE` supplies the earlier review comments from a file instead of `gh`, for a branch whose PR is elsewhere.
 
 A sweep over units already on `main`, named by paths and commits, is the same skill with the same state, not a second mode: `scripts/review-brief.sh --paths P... --commits SHA...` writes the word `paths` as the fixed point and `git show <commits> -- <paths>` as the diff.
 
@@ -114,14 +114,15 @@ A `## Fix alongside` item from the Standards report goes under Act on when an Ac
 
 An Ask item waits for the human. When the human answers, move it to the bucket the answer settles, with the answer as the one-line reason, renumber the items so the written numbers run 1..N in document order again, and rerun `scripts/review-comment.sh <dir>` on the same reports; that is the same round, not a new one.
 
-Two trailing fields, each with one grammar:
+Three trailing fields, each with one grammar:
 
 - `cites: <decision>` on a Noted or Dismissed item names the decision it rests on, one of `user: "<quoted words>" on #N` (a `user:` blockquote in the ticket body), `DECISIONS.md <row id>` (`P17`, `19`) or `#N comment <YYYY-MM-DD>` (a ticket comment by the ticket's author). Nothing else counts. Only a cited item carries into every later round's briefs as settled; an uncited Noted or Dismissed item is a normal one and the next round's reviewer may raise it again. An item you cannot cite is not settled, however sure you are.
-- `ticket: #N` on an Act on item means the finding was filed as its own ticket, and step 6 does not count it. At round three, what remains under Act on is filed as tickets, one each, and marked so; an Ask item is never filed away, it waits for the human.
+- `ticket: #N` on an Act on item means the finding was filed as its own ticket because it is outside this PR's scope, in any round, and step 6 does not count it.
+- `fixed: <sha>` on an Act on item names the commit on this PR that fixed it, and step 6 does not count it either. At round three the Act on items are fixed on this PR by a fix lane; then you mark each `fixed: <sha>`, renumber, and rerun `scripts/review-comment.sh <dir>`. Those fixes are not reviewed again: Manuel's rule is that after three passes the rest is found the hard way. An Ask item is never fixed or filed away; it waits for the human.
 
 ### 6. Aggregate
 
-Run `scripts/review-comment.sh`. It prints the two reports under `## Standards` and `## Spec` (or `no spec: Standards axis only`), the judgment under `## Judgment`, all verbatim, a one-line summary, the line `round: N of 3` from `<dir>/round` (1 when the file is missing), and the final line `act-on items: N`, where N is the number of items under `## Act on` without a `ticket:` field plus the number under `## Ask`; then it clears `.claude/state/review/`. Zero is written as `act-on items: 0`. Babysit reads this line, so it is always present and always last.
+Run `scripts/review-comment.sh`. It prints the two reports under `## Standards` and `## Spec` (or `no spec: Standards axis only`), the judgment under `## Judgment`, all verbatim, a one-line summary, the line `round: N of 3` from `<dir>/round` (1 when the file is missing), and the final line `act-on items: N`, where N is the number of items under `## Act on` without a `fixed:` or `ticket:` field plus the number under `## Ask`; then it clears `.claude/state/review/`. Zero is written as `act-on items: 0`. Babysit reads this line, so it is always present and always last.
 
 It exits 1, printing why and clearing nothing, when a report is missing or has no `hard findings:` line (wait for the reviewer; do not write the report yourself); when a report's `hard findings: N` is larger than its `## Would break` item count (ask the reviewer to re-sort); when a report's or the judgment's `## ` headings are not the shape above; when a report's or the judgment's items are not numbered 1..N continuously across its headings, in document order; when `judgment.md` is missing; when the judgment's item count differs from the reports'; when a `[S<n>]` or `[P<n>]` reference is missing, repeated or points at no item; or when `<dir>/round` holds no number (rerun `review-brief.sh`). An off-shape report goes back to its reviewer with the refusal text; a new round is not started for it.
 
@@ -129,7 +130,7 @@ With the review dir as its argument, `scripts/review-comment.sh .scratch/review/
 
 Do **not** merge or rerank findings across the two reports, because the two axes are deliberately separate (see _Why two axes_), and do not pick a single winner across axes: that's the reranking the separation exists to prevent. The judgment is a third section, not a rewrite of either report.
 
-You write only what goes above the script's output: the two plain sentences for a person. Nothing else in the comment is yours.
+You write only what goes above the script's output: the two plain sentences for a person. Nothing else in the comment is yours. They end with a signature, the model and harness: `Claude Fable 5.1 on Claude Code` when the comment is posted without the human's approval, and `Claude Fable 5.1 on Claude Code, approved by <name>` when the human approved it before posting; only an approved comment posted from the author's account counts as the author's words.
 
 ## Why two axes
 

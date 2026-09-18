@@ -25,11 +25,12 @@ git commit -qm "first"
 echo two > a.txt
 git commit -qam "second, no ticket named"
 mkdir bin
-# gh pr view: the file pr-comments, when it exists, is what the script's jq prints (each earlier
-# review comment's body, then a line holding only the record separator); pr-error, when it exists,
-# goes to stderr with exit 1; with neither there is no PR for this branch. gh issue view: the body,
-# or the author's comments already formatted the way the script's jq expression formats them (one
-# is by someone else and is left out).
+# gh pr view: pr.json, when it exists, is the PR (its author and comments) and the script's own
+# jq expression runs against it through jq, so the author filter is what is tested; pr-error,
+# when it exists, goes to stderr with exit 1; with neither there is no PR for this branch. gh
+# issue view: the body, or the author's comments already formatted the way the script's jq
+# expression formats them (one is by someone else and is left out).
+command -v jq >/dev/null || { echo "FAIL: jq is needed to play gh pr view"; exit 1; }
 {
   echo '#!/bin/sh'
   echo "fx='$fx'"
@@ -37,7 +38,10 @@ mkdir bin
 case "$*" in
   "pr view"*)
     if [ -f "$fx/pr-error" ]; then cat "$fx/pr-error" >&2; exit 1; fi
-    if [ -f "$fx/pr-comments" ]; then cat "$fx/pr-comments"; exit 0; fi
+    if [ -f "$fx/pr.json" ]; then
+      while [ "$1" != -q ]; do shift; done
+      exec jq -r "$2" "$fx/pr.json"
+    fi
     echo 'no pull requests found for branch "x"' >&2; exit 1 ;;
   *"--json body"*) echo "What to build: the ticket body" ;;
   *"--json author,comments"*) printf '### 2026-09-17\n\nuser: the hook stays in bash.\n\n### 2026-09-18\n\nuser: the count is Act on plus Ask.\n\n' ;;
@@ -47,7 +51,12 @@ EOF
 } > bin/gh
 chmod +x bin/gh
 PATH="$fx/bin:$PATH"
-sep() { printf '\036\n'; }
+# pr <author> [login:file ...]: pr.json, the PR opened by <author> with one comment per pair, in order.
+pr() {
+  local a="$1" c; shift
+  for c in "$@"; do jq -n --arg l "${c%%:*}" --rawfile b "${c#*:}" '{author: {login: $l}, body: $b}'; done |
+    jq -s --arg a "$a" '{author: {login: $a}, comments: .}' > pr.json
+}
 
 n=0
 # has <file> <text> <label>: the file contains the text as a fixed string.
@@ -212,17 +221,18 @@ has out.txt "settled: carried 2, dropped 1 without a citation" "trailing whitesp
 has "$std" "2. [S2] **Whole DECISIONS.md is writable.** Provisional rows are the agent's to add. cites: DECISIONS.md P17" "trailing space: the item is in the brief without it"
 has "$std" "1. [S1] **Hook in Python.** A port is a later ticket. cites: #74 comment 2026-09-17" "trailing tab: the item is in the brief without it"
 
-# The PR's earlier review comments, from gh. The round is one more than the highest `round: N of 3`
-# among them; a comment from before the line existed is round 1. A comment rebuilt in the same
-# round repeats its number and advances nothing; every comment's cited items carry, each line once.
+# The PR's earlier review comments, from gh: those by the PR's author that carry the count line.
+# The round is one more than the highest `round: N of 3` among them; a comment from before the
+# line existed is round 1. A comment rebuilt in the same round repeats its number and advances
+# nothing; every comment's cited items carry, each line once.
 grep -v '^round: ' previous.md > previous-unnumbered.md
-{ cat previous-unnumbered.md; sep; } > pr-comments
+pr me me:previous-unnumbered.md
 bash "$skill/scripts/review-brief.sh" HEAD~1 --ticket 7 > out.txt
 has out.txt "round: 2 of 3" "a comment without a round line is round 1, so the next is 2"
 has out.txt "settled: carried 2, dropped 1 without a citation" "the comment without a round line carries its items"
 # The rebuilt comment repeats round 1 and no longer holds the Noted item (settled, so not re-raised).
 grep -v '^1\. \[S1\]' previous.md > previous-rebuilt.md
-{ cat previous.md; sep; cat previous-rebuilt.md; sep; } > pr-comments
+pr me me:previous.md me:previous-rebuilt.md
 bash "$skill/scripts/review-brief.sh" HEAD~1 --ticket 7 > out.txt
 printed out.txt "ticket: #7
 round: 2 of 3
@@ -237,16 +247,24 @@ for f in "$std" "$spec"; do
   [ "$(grep -cF 'cites: DECISIONS.md P17' "$f")" = 1 ] || { echo "FAIL: $f carries the item both comments hold twice"; exit 1; }
   n=$((n + 1))
 done
-# Rounds 1, 2 and 3 were run: the fourth is refused before any state is written.
+# A comment by anyone but the PR's author is a stranger's text: it neither counts a round nor
+# carries, whatever it holds.
 sed 's/^round: 1 of 3$/round: 2 of 3/' previous.md > previous-2.md
 sed 's/^round: 1 of 3$/round: 3 of 3/' previous.md > previous-3.md
-{ cat previous.md; sep; cat previous-2.md; sep; cat previous-3.md; sep; } > pr-comments
+awk '/^3\. \[S3\]/ { print "3. [S3] **Stranger'"'"'s item.** looks settled. cites: DECISIONS.md P1"; next } { print }' previous-2.md > stranger.md
+pr me me:previous.md stranger:stranger.md
+bash "$skill/scripts/review-brief.sh" HEAD~1 --ticket 7 > out.txt
+has out.txt "round: 2 of 3" "a stranger's comment reading round 2 does not advance the round"
+has out.txt "settled: carried 2, dropped 1 without a citation" "a stranger's cited item is not counted"
+lacks "$std" "Stranger's item" "a stranger's cited item is not carried"
+# Rounds 1, 2 and 3 were run: the fourth is refused before any state is written.
+pr me me:previous.md me:previous-2.md me:previous-3.md
 rm -rf .scratch .claude
 set +e
 out="$(bash "$skill/scripts/review-brief.sh" HEAD~1 --ticket 7 2>&1)"
 code=$?
 set -e
-if [ "$code" != 1 ] || [ "$out" != 'review-brief: three rounds were run on this PR; the remaining Act on items become tickets (`ticket: #N`), not a fourth round' ] || [ -e .claude/state/review ] || [ -e .scratch/review ]; then
+if [ "$code" != 1 ] || [ "$out" != 'review-brief: three rounds were run on this PR; the remaining Act on items are fixed here and marked `fixed: <sha>`, not reviewed in a fourth round' ] || [ -e .claude/state/review ] || [ -e .scratch/review ]; then
   echo "FAIL fourth round from the PR's comments: exit $code, wanted 1, the message and no state"
   echo "  got: $out"
   exit 1
@@ -256,7 +274,7 @@ n=$((n + 1))
 bash "$skill/scripts/review-brief.sh" HEAD~1 --ticket 7 --round 3 > out.txt
 has out.txt "round: 3 of 3" "--round overrides the round the comments give"
 has out.txt "settled: carried 2, dropped 1 without a citation" "--round still carries the comments' items"
-rm pr-comments
+rm pr.json
 
 # The cited Dismissed item quotes a hunk whose lines look like cited items: a ``` line inside a
 # ```` block, and a ~~~ block quoting a ``` line. A fence closes only on its own character at
@@ -306,7 +324,7 @@ set +e
 out="$(bash "$skill/scripts/review-brief.sh" HEAD~1 --ticket 7 --round 4 2>&1)"
 code=$?
 set -e
-if [ "$code" != 1 ] || [ "$out" != 'review-brief: three rounds were run on this PR; the remaining Act on items become tickets (`ticket: #N`), not a fourth round' ] || [ -e .claude/state/review ] || [ -e .scratch/review ]; then
+if [ "$code" != 1 ] || [ "$out" != 'review-brief: three rounds were run on this PR; the remaining Act on items are fixed here and marked `fixed: <sha>`, not reviewed in a fourth round' ] || [ -e .claude/state/review ] || [ -e .scratch/review ]; then
   echo "FAIL fourth round: exit $code, wanted 1, the message and no state"
   echo "  got: $out"
   exit 1

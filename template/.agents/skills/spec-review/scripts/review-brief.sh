@@ -74,20 +74,22 @@ if [ -z "$ticket" ]; then
     *) ticket="${numbers%% *}"; ticket="${ticket#\#}" ;;
   esac
 fi
-# The earlier review comments come from the branch's PR: the comments that end a review carry a
-# line `act-on items:`. gh prints each such body followed by a line holding only the record
-# separator (US-ASCII 30), which is how the parse below tells one comment from the next. gh's
-# "no pull requests found" is round 1 with nothing carried and says nothing; any other failure is
-# printed, since the round gate and the carry rest on it, and the run goes on the same way.
+# The earlier review comments come from the branch's PR: the comments by the PR's author (the
+# account the orchestrator posts under) that carry a line `act-on items:`. A comment by anyone
+# else is a stranger's text and neither counts a round nor reaches the briefs, whatever it holds.
+# gh prints each body followed by a line holding only the record separator (US-ASCII 30), which
+# is how the parse below tells one comment from the next. gh's "no pull requests found" is round 1
+# with nothing carried and says nothing; any other failure is printed, since the round gate and
+# the carry rest on it, and the run goes on the same way.
 rs="$(printf '\036')"
 bodies=""
 if [ -n "$previous" ]; then
   bodies="$(cat "$previous")"
 else
-  ended='[.comments[] | select(.body | test("(^|\n)act-on items:"))] | .[] | .body, "\u001e"'
+  ended='.author.login as $a | [.comments[] | select(.author.login == $a and (.body | test("(^|\n)act-on items:")))] | .[] | .body, "\u001e"'
   out="$(mktemp)"
   status=0
-  err="$(gh pr view --json comments -q "$ended" 2>&1 >"$out")" || status=$?
+  err="$(gh pr view --json author,comments -q "$ended" 2>&1 >"$out")" || status=$?
   if [ "$status" -eq 0 ]; then
     bodies="$(cat "$out")"
   else
@@ -131,7 +133,7 @@ if [ -n "$bodies" ]; then
 fi
 [ -n "$round" ] || round=$((top + 1))
 if [ "$round" -gt 3 ]; then
-  echo "review-brief: three rounds were run on this PR; the remaining Act on items become tickets (\`ticket: #N\`), not a fourth round" >&2
+  echo "review-brief: three rounds were run on this PR; the remaining Act on items are fixed here and marked \`fixed: <sha>\`, not reviewed in a fourth round" >&2
   exit 1
 fi
 [ -z "$ticket" ] || echo "ticket: #$ticket"

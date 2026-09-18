@@ -147,7 +147,7 @@ no spec: Standards axis only
 
 ## Dismissed
 
-Standards: 0 would break of 0; Spec: no spec; judged: act on 0 (0 with a ticket), ask 0, consider 0, noted 0, dismissed 0; fixed point main.
+Standards: 0 would break of 0; Spec: no spec; judged: act on 0 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 0, dismissed 0; fixed point main.
 round: 1 of 3
 act-on items: 0" "nothing found, no spec, no round file"
 
@@ -219,7 +219,7 @@ $(cat "$dir/spec-report.md")
 
 $(cat "$dir/judgment.md")
 
-Standards: 1 would break of 3; Spec: 1 would break of 2; judged: act on 2 (0 with a ticket), ask 1, consider 0, noted 1, dismissed 1; fixed point main.
+Standards: 1 would break of 3; Spec: 1 would break of 2; judged: act on 2 (0 fixed, 0 with a ticket), ask 1, consider 0, noted 1, dismissed 1; fixed point main.
 round: 2 of 3
 act-on items: 3" "two Act on and one Ask, round 2"
 
@@ -257,7 +257,7 @@ $(cat "$dir/spec-report.md")
 
 $(cat "$dir/judgment.md")
 
-Standards: 1 would break of 3; Spec: 1 would break of 2; judged: act on 2 (1 with a ticket), ask 1, consider 0, noted 1, dismissed 1; fixed point main.
+Standards: 1 would break of 3; Spec: 1 would break of 2; judged: act on 2 (0 fixed, 1 with a ticket), ask 1, consider 0, noted 1, dismissed 1; fixed point main.
 round: 3 of 3
 act-on items: 2" "an Act on item filed as a ticket is not counted, round 3"
 
@@ -274,13 +274,51 @@ $(cat "$dir/spec-report.md")
 
 $(cat "$dir/judgment.md")
 
-Standards: 1 would break of 3; Spec: 1 would break of 2; judged: act on 2 (1 with a ticket), ask 1, consider 0, noted 1, dismissed 1; fixed point main.
+Standards: 1 would break of 3; Spec: 1 would break of 2; judged: act on 2 (0 fixed, 1 with a ticket), ask 1, consider 0, noted 1, dismissed 1; fixed point main.
 round: 3 of 3
 act-on items: 2" "rebuilt from the directory after the state was cleared" "$dir"
 refuse "nowhere is not a directory; pass the .scratch/review/<id> review-brief.sh wrote" "a directory that does not exist" nowhere
 touch nowhere
 refuse "nowhere is not a directory; pass the .scratch/review/<id> review-brief.sh wrote" "a file where the review dir should be" nowhere
 rm nowhere
+
+# At round three the Act on items are fixed on this PR and marked with the commit; a marked item
+# is not counted either. The state is gone, so the rerun names the dir.
+cat > "$dir/judgment.md" <<'EOF'
+## Act on
+
+1. [S1] **Hook exits 0 on a miss.** The test proves it. fixed: abc1234
+2. [P1] **Sweep form ignores --ticket.** The commit list is empty there. ticket: #12
+
+## Ask
+
+3. [P2] **Token in the log.** Data retention is the human's call.
+
+## Consider
+
+## Noted
+
+4. [S3] **Duplicated Code.** Fixed alongside S1 if the loops are touched.
+
+## Dismissed
+
+5. [S2] **Bare number.** The constant is named two lines up.
+EOF
+accept "## Standards
+
+$(cat "$dir/standards-report.md")
+
+## Spec
+
+$(cat "$dir/spec-report.md")
+
+## Judgment
+
+$(cat "$dir/judgment.md")
+
+Standards: 1 would break of 3; Spec: 1 would break of 2; judged: act on 2 (1 fixed, 1 with a ticket), ask 1, consider 0, noted 1, dismissed 1; fixed point main.
+round: 3 of 3
+act-on items: 1" "an Act on item fixed on this PR is not counted, round 3" "$dir"
 
 # A newer review's state is live and names another dir: rerunning the old dir prints its comment
 # and leaves that state alone, so the delegation hook keeps blocking the newer review's files.
@@ -315,7 +353,7 @@ no spec: Standards axis only
 
 $(cat "$dir/judgment.md")
 
-Standards: 0 would break of 2; Spec: no spec; judged: act on 0 (0 with a ticket), ask 0, consider 0, noted 0, dismissed 2; fixed point main.
+Standards: 0 would break of 2; Spec: no spec; judged: act on 0 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 0, dismissed 2; fixed point main.
 round: 1 of 3
 act-on items: 0" "Dismissed only"
 
@@ -334,7 +372,7 @@ no spec: Standards axis only
 
 $(cat "$dir/judgment.md")
 
-Standards: 0 would break of 2; Spec: no spec; judged: act on 1 (0 with a ticket), ask 0, consider 0, noted 0, dismissed 1; fixed point main.
+Standards: 0 would break of 2; Spec: no spec; judged: act on 1 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 0, dismissed 1; fixed point main.
 round: 1 of 3
 act-on items: 1" "rerun with the dir argument after the state was cleared" "$dir"
 accept "$out" "the same with a trailing slash on the dir" "$dir/"
@@ -355,7 +393,7 @@ no spec: Standards axis only
 
 $(cat "$dir/judgment.md")
 
-Standards: 0 would break of 2; Spec: no spec; judged: act on 0 (0 with a ticket), ask 1, consider 0, noted 0, dismissed 1; fixed point main.
+Standards: 0 would break of 2; Spec: no spec; judged: act on 0 (0 fixed, 0 with a ticket), ask 1, consider 0, noted 0, dismissed 1; fixed point main.
 round: 1 of 3
 act-on items: 1" "an Ask item, counted" "$dir"
 printf '## Act on\n\n## Ask\n\n## Consider\n\n## Noted\n\n## Dismissed\n\n2. [S2] **Middle Man.** one caller, kept inline\n1. [S1] **Mysterious Name.** the human says the name is the domain term. cites: #7 comment 2026-09-18\n' > "$dir/judgment.md"
@@ -373,7 +411,7 @@ no spec: Standards axis only
 
 $(cat "$dir/judgment.md")
 
-Standards: 0 would break of 2; Spec: no spec; judged: act on 0 (0 with a ticket), ask 0, consider 0, noted 0, dismissed 2; fixed point main.
+Standards: 0 would break of 2; Spec: no spec; judged: act on 0 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 0, dismissed 2; fixed point main.
 round: 1 of 3
 act-on items: 0" "an Ask item moved and renumbered, the same round" "$dir"
 
@@ -395,7 +433,7 @@ no spec: Standards axis only
 
 $(cat "$dir/judgment.md")
 
-Standards: 0 would break of 2; Spec: no spec; judged: act on 1 (0 with a ticket), ask 0, consider 0, noted 0, dismissed 1; fixed point main.
+Standards: 0 would break of 2; Spec: no spec; judged: act on 1 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 0, dismissed 1; fixed point main.
 round: 1 of 3
 act-on items: 1" "rerun with the dir spelled $spelling" "$spelling"
 done
@@ -422,7 +460,7 @@ no spec: Standards axis only
 
 $(cat "$dir/judgment.md")
 
-Standards: 1 would break of 3; Spec: no spec; judged: act on 1 (0 with a ticket), ask 0, consider 0, noted 1, dismissed 1; fixed point main.
+Standards: 1 would break of 3; Spec: no spec; judged: act on 1 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 1, dismissed 1; fixed point main.
 round: 1 of 3
 act-on items: 1" "$1"
 }
@@ -467,7 +505,7 @@ no spec: Standards axis only
 
 $(cat "$dir/judgment.md")
 
-Standards: 0 would break of 0; Spec: no spec; judged: act on 0 (0 with a ticket), ask 0, consider 0, noted 0, dismissed 0; fixed point main.
+Standards: 0 would break of 0; Spec: no spec; judged: act on 0 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 0, dismissed 0; fixed point main.
 round: 1 of 3
 act-on items: 0" "headings with trailing whitespace"
 
