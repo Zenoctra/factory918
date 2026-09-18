@@ -30,7 +30,7 @@
  ### 4. Spawn both sub-agents in parallel
  
 -**Standards sub-agent prompt** should include:
-+A reviewer that gets a diff command and two file names runs the diff and reads both files whole, and that discovery is most of what it costs. So the briefs carry content, not commands: the material from step 1 is computed once and the same text goes into both.
++The briefs carry content, not commands: the material from step 1 is computed once and the same text goes into both.
  
 -- The full diff command and commit list.
 -- The list of standards-source files you found in step 3, **plus the smell baseline from step 3** pasted in full (the sub-agent has no other access to it).

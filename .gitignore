@@ -5,3 +5,4 @@ __pycache__/
 tools/bootstrap/_out/
 .claude/settings.local.json
 .claude/state/
+.scratch/

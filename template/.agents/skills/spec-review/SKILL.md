@@ -57,7 +57,7 @@ Each smell reads *what it is* → *how to fix*; match it against the diff:
 
 ### 4. Spawn both sub-agents in parallel
 
-A reviewer that gets a diff command and two file names runs the diff and reads both files whole, and that discovery is most of what it costs. So the briefs carry content, not commands: the material from step 1 is computed once and the same text goes into both.
+The briefs carry content, not commands: the material from step 1 is computed once and the same text goes into both.
 
 **Both prompts** include, pasted in:
 

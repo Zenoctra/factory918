@@ -16,6 +16,6 @@ pstack's matrix has four families: `claude:fable`, `claude:opus`, `codex:gpt-5.6
 | how explainer | `claude:opus@high` | |
 | why and reflect roles | `inherit-parent` | they need the parent session's MCP surface |
 
-The `opus` preset puts the writers on `claude:opus@high` and the judgment on `claude:opus@xhigh`, for when Fable's quota is spent; it carries the same `standards reviewer` row. That role is the factory's own, not one of pstack's. `/setup-pstack` step 2 treats an unknown role row as inconsistent state, one more reason it is not used here (decision P5).
+The `opus` preset puts the writers on `claude:opus@high` and the judgment on `claude:opus@xhigh`, for when Fable's quota is spent; it carries the same `standards reviewer` row. That role is the factory's own, not one of pstack's. `/setup-pstack` step 2 treats an unknown role row as inconsistent state, one more reason `/setup-pstack` is not used here (decision P5).
 
 Interactive session: Fable 5.1 whenever tickets or PR bodies are being written, since that prose is the handoff and no delegate writes it; Opus 5 for casual turns and long grilling, switching to Fable for `/to-spec` and `/to-tickets`. Check the usage page weekly; if Fable is over a third of spend, move a role down.
