@@ -15,6 +15,7 @@ seq 1 250 | sed 's/^/echo /' > big.sh
 seq 1 10 > small.md
 mkdir -p docs/agents docs/knowledge/core template/docs/factory918 .scratch .claude/state
 echo ledger > docs/agents/ledger.md
+echo tracker > docs/agents/issue-tracker.md
 echo findings > docs/M0-findings.md
 echo decisions > docs/knowledge/core/DECISIONS.md
 echo generated > template/docs/factory918/DECISIONS.md
@@ -24,7 +25,7 @@ echo scratch > .scratch/x.txt
 echo execute > .claude/state/mode
 export CLAUDE_PROJECT_DIR="$fx"
 
-write_msg() { echo "BLOCKED: writing $1 is a lane's job (P11). Brief a writer lane with the paths, the data shape and the success criteria, then review its diff. Your own files are docs/agents/*, docs/knowledge/core/DECISIONS.md, docs/M0-findings.md and the untracked directories."; }
+write_msg() { echo "BLOCKED: writing $1 is a lane's job (P11). Brief a writer lane with the paths, the data shape and the success criteria, then review its diff. Your own files are docs/agents/ledger.md, docs/knowledge/core/DECISIONS.md, docs/M0-findings.md and the untracked directories."; }
 diff_msg="BLOCKED: git diff shows the code under review (fixed point main); the orchestrator does not read it. The reviewers have the diff in their briefs; wait for their reports, or rm -rf .claude/state/review to abandon the review."
 cap_msg="BLOCKED: big.sh is 250 lines; reading it whole is the explorer lane's job. Read it in ranges with offset and limit (200 lines at most), ask /knowledge, or brief an explorer and read its report."
 review_msg() { echo "BLOCKED: $1 is under review (fixed point main); the orchestrator does not read the code under review. The reviewers have the diff in their briefs; wait for their reports, or rm -rf .claude/state/review to abandon the review."; }
@@ -82,6 +83,7 @@ expect 0 "" orchestrator Bash "$(bash_cmd "sed -n '1,50p' big.sh")" "sed -n rang
 expect 0 "" orchestrator Bash "$(bash_cmd 'grep -n echo big.sh | wc -l')" "grep on big.sh"
 expect 0 "" orchestrator Write "$(path .claude/state/todo.md)" "Write to .claude/state"
 expect 0 "" orchestrator Write "$(path docs/agents/ledger.md)" "Write to the ledger"
+expect 2 "$(write_msg docs/agents/issue-tracker.md)" orchestrator Write "$(path docs/agents/issue-tracker.md)" "Write to a docs/agents copy of the template"
 expect 0 "" orchestrator Write "$(path docs/M0-findings.md)" "Write to the findings"
 expect 0 "" orchestrator Write "$(path docs/knowledge/core/DECISIONS.md)" "Write to the core DECISIONS.md"
 expect 0 "" orchestrator Bash "$(bash_cmd 'git diff main...HEAD')" "git diff with no review in progress"

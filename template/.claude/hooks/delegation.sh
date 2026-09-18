@@ -45,7 +45,7 @@ classify() {
   case "$1" in .claude/state/*|.artifacts/*|.scratch/*|.plans/*) echo untracked; return ;; esac
   git -C "$root" ls-files --error-unmatch -- "$1" >/dev/null 2>&1 || { echo untracked; return; }
   case "$1" in
-    docs/agents/*|docs/knowledge/core/DECISIONS.md|docs/M0-findings.md) echo owned ;;
+    docs/agents/ledger.md|docs/knowledge/core/DECISIONS.md|docs/M0-findings.md) echo owned ;;
     *) echo lane ;;
   esac
 }
@@ -53,7 +53,7 @@ classify() {
 guard_write() {
   [ "$phase" = execute ] || return 0
   [ "$(classify "$1")" = lane ] || return 0
-  block "BLOCKED: writing $1 is a lane's job (P11). Brief a writer lane with the paths, the data shape and the success criteria, then review its diff. Your own files are docs/agents/*, docs/knowledge/core/DECISIONS.md, docs/M0-findings.md and the untracked directories."
+  block "BLOCKED: writing $1 is a lane's job (P11). Brief a writer lane with the paths, the data shape and the success criteria, then review its diff. Your own files are docs/agents/ledger.md, docs/knowledge/core/DECISIONS.md, docs/M0-findings.md and the untracked directories."
 }
 
 # Under review: the changed files, and the directory holding their diff, briefs and reports.
