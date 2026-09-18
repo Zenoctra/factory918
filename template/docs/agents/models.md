@@ -13,7 +13,7 @@ pstack's matrix has four families: `claude:fable`, `claude:opus`, `codex:gpt-5.6
 | arena cross-judge pool | `claude:opus@xhigh, claude:fable@high` | a judge from a different lane than the base candidate |
 | how explorer, swarm workers | `claude:opus@medium` | read-only bulk and mechanical fan-out: the junior |
 | standards reviewer | `claude:opus@medium` | the Standards axis of `spec-review` matches a pasted diff against pasted rule sections, junior work |
-| spec reviewer | `claude:opus@high` | the Spec axis of `spec-review` is a finder: its context matters more than its model, a well-built brief carries everything it reads, and the orchestrator judges what it finds (step 5); so it runs cheaper than the writer's lane |
+| spec reviewer | `claude:opus@high` | the Spec axis of `spec-review` is a finder: its context matters more than its model, a well-built brief carries everything it reads, and the orchestrator judges what it finds (step 5); so it runs no dearer than the writer's lane |
 | how explainer | `claude:opus@high` | |
 | why and reflect roles | `inherit-parent` | they need the parent session's MCP surface |
 

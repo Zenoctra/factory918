@@ -265,7 +265,7 @@ cmd_doctor() {
   chk "hooks executable"              "[ -x .claude/hooks/mode.sh ] && [ -x .claude/hooks/block-dangerous-git.sh ] && [ -x .claude/hooks/delegation.sh ]" "chmod +x .claude/hooks/*.sh"
   chk "state dir ignored"             "git check-ignore -q .claude/state/mode" "append the lines from the factory clone's template/.gitignore.factory to .gitignore"
   if [ -f .claude/state/review/files ]; then
-    note "a review state is left behind: .claude/state/review ($(cat .claude/state/review/fixed-point 2>/dev/null || echo unknown), $(wc -l < .claude/state/review/files | tr -d ' ') files); reads of those files are blocked" "finish the review (spec-review step 5 runs review-comment.sh, which clears it) or rm -rf .claude/state/review"
+    note "a review state is left behind: .claude/state/review ($(cat .claude/state/review/fixed-point 2>/dev/null || echo unknown), $(wc -l < .claude/state/review/files | tr -d ' ') files); reads of those files are blocked" "finish the review (spec-review step 6 runs review-comment.sh, which clears it) or rm -rf .claude/state/review"
   fi
   chk "vp check (format, lint, types)" "vp check" "vp fmt, then vp check, and fix what it reports; it stops at the first failing stage"
   chk "tests"                         "vp test run" "vp test run and read the failing test"
