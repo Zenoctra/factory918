@@ -95,17 +95,25 @@ fi
 echo "round: $round of 3"
 # What carries: the judgment's Noted and Dismissed items whose trailing field names a decision in
 # one of the three shapes; an item without one is dropped, since a reason alone can steer a reviewer.
+# The quoted hunks are fenced text and never items. The fence rule is the one review-comment.sh
+# parses the reports with, copied from there word for word (tests/spec-review/review-brief.sh
+# holds the two copies together): a fence opens on a line of three or more backticks or tildes
+# and closes only on a line of the same character at least as long (CommonMark), so a hunk that
+# quotes a fence stays inside its block; a heading's name is the text after `## ` less trailing
+# whitespace.
+fenced='
+  /^(```|~~~)/ { match($0, /^(`+|~+)/); m = substr($0, 1, RLENGTH)
+    if (fence == "") { fence = m; next }
+    if (substr(m, 1, 1) == substr(fence, 1, 1) && length(m) >= length(fence)) { fence = ""; next } }
+  fence != "" { next }
+  /^## / { h = substr($0, 4); sub(/[ \t\r]+$/, "", h) }
+'
 cites='cites: (user: "[^"]+" on #[0-9]+|DECISIONS\.md [A-Z]?[0-9]+|#[0-9]+ comment [0-9]{4}-[0-9]{2}-[0-9]{2})$'
 settled=""
 if [ -n "$prev" ]; then
-  judged="$(printf '%s\n' "$prev" | awk '
-    { sub(/\r$/, "") }
-    /^```/ { fence = !fence; next }
-    fence { next }
-    /^## Judgment$/ { j = 1; next }
-    !j { next }
-    /^## / { h = substr($0, 4); next }
-    (h == "Noted" || h == "Dismissed") && /^[0-9]+\. /
+  judged="$(printf '%s\n' "$prev" | awk '{ sub(/\r$/, "") }'"$fenced"'
+    /^## / { if (h == "Judgment") j = 1; next }
+    j && (h == "Noted" || h == "Dismissed") && /^[0-9]+\. /
   ')"
   settled="$(printf '%s\n' "$judged" | grep -E -- "$cites" || true)"
   carried="$(printf '%s' "$settled" | grep -c . || true)"

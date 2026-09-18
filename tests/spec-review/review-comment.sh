@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Runs template/.agents/skills/spec-review/scripts/review-comment.sh against fixture reports and
 # judgments in a temp repo and asserts the exact stdout of each accepted shape and the exact
-# refusal line of each rejected one. A refusal leaves the review state in place; an accepted
+# refusal line of each rejected one. Report and judgment items are numbered 1..N across the headings. A refusal leaves the review state in place; an accepted
 # run clears it. Exits 1 on the first miss.
 set -euo pipefail
 here="$(cd "$(dirname "$0")/../.." && pwd -P)"
@@ -102,17 +102,20 @@ printf '## Would break\n\n## Latent\n\n1. **Edge.** c\n\n## Not asked for\n\nhar
 printf '## Act on\n\n1. [S1] **One.** yes\n\n## Ask\n\n## Consider\n\n## Noted\n\n## Dismissed\n' > "$dir/judgment.md"
 refuse "$dir/judgment.md has 1 items; the reports have 3 (Standards 2, Spec 1). Every report item appears exactly once in the judgment" "judgment short of the reports"
 
-printf '## Act on\n\n1. [S1] **One.** yes\n\n## Ask\n\n## Consider\n\n## Noted\n\n1. [S4] **Two.** later\n\n## Dismissed\n\n1. [P1] **Edge.** no\n' > "$dir/judgment.md"
+printf '## Act on\n\n1. [S1] **One.** yes\n\n## Ask\n\n## Consider\n\n## Noted\n\n2. [S4] **Two.** later\n\n## Dismissed\n\n3. [P1] **Edge.** no\n' > "$dir/judgment.md"
 refuse "$dir/judgment.md does not name every report item exactly once: missing [S2], unknown or repeated [S4]; the reports have 2 Standards items and 1 Spec items" "reference to an item that does not exist"
 
-printf '## Act on\n\n1. [S1] **One.** yes\n\n## Ask\n\n## Consider\n\n## Noted\n\n1. [S1] **One again.** twice\n\n## Dismissed\n\n1. [P1] **Edge.** no\n' > "$dir/judgment.md"
+printf '## Act on\n\n1. [S1] **One.** yes\n\n## Ask\n\n## Consider\n\n## Noted\n\n2. [S1] **One again.** twice\n\n## Dismissed\n\n3. [P1] **Edge.** no\n' > "$dir/judgment.md"
 refuse "$dir/judgment.md does not name every report item exactly once: missing [S2], unknown or repeated [S1]; the reports have 2 Standards items and 1 Spec items" "repeated reference"
 
-printf '## Act on\n\n1. [S1] **One.** yes\n\n## Ask\n\n## Consider\n\n## Noted\n\n1. **Two.** no reference\n\n## Dismissed\n\n1. [P1] **Edge.** no\n' > "$dir/judgment.md"
-refuse "$dir/judgment.md item '1. **Two.** no reference' does not open with [S<n>] or [P<n>], the report item it judges" "item without a reference"
+printf '## Act on\n\n1. [S1] **One.** yes\n\n## Ask\n\n## Consider\n\n## Noted\n\n2. **Two.** no reference\n\n## Dismissed\n\n3. [P1] **Edge.** no\n' > "$dir/judgment.md"
+refuse "$dir/judgment.md item '2. **Two.** no reference' does not open with [S<n>] or [P<n>], the report item it judges" "item without a reference"
+
+printf '## Act on\n\n1. [S1] **One.** yes\n\n## Ask\n\n## Consider\n\n1. [S2] **Two.** maybe\n\n## Noted\n\n## Dismissed\n\n3. [P1] **Edge.** no\n' > "$dir/judgment.md"
+refuse "$dir/judgment.md item '1. [S2] **Two.** maybe' is numbered 1 where 2 was expected; number the items 1..N continuously across the headings, in document order" "judgment numbering restarts under Consider"
 
 rm "$dir/spec-brief.md" "$dir/spec-report.md"
-printf '## Act on\n\n1. [S1] **One.** yes\n\n## Ask\n\n## Consider\n\n## Noted\n\n1. [P1] **Edge.** no\n\n## Dismissed\n' > "$dir/judgment.md"
+printf '## Act on\n\n1. [S1] **One.** yes\n\n## Ask\n\n## Consider\n\n## Noted\n\n2. [P1] **Edge.** no\n\n## Dismissed\n' > "$dir/judgment.md"
 refuse "$dir/judgment.md does not name every report item exactly once: missing [S2], unknown or repeated [P1]; the reports have 2 Standards items and 0 Spec items" "Spec reference without a Spec axis"
 
 reset
@@ -191,17 +194,17 @@ cat > "$dir/judgment.md" <<'EOF'
 
 ## Ask
 
-1. [P2] **Token in the log.** Data retention is the human's call.
+3. [P2] **Token in the log.** Data retention is the human's call.
 
 ## Consider
 
 ## Noted
 
-1. [S3] **Duplicated Code.** Fixed alongside S1 if the loops are touched.
+4. [S3] **Duplicated Code.** Fixed alongside S1 if the loops are touched.
 
 ## Dismissed
 
-1. [S2] **Bare number.** The constant is named two lines up.
+5. [S2] **Bare number.** The constant is named two lines up.
 EOF
 echo 2 > "$dir/round"
 accept "## Standards
@@ -230,17 +233,17 @@ cat > "$dir/judgment.md" <<'EOF'
 
 ## Ask
 
-1. [P2] **Token in the log.** Data retention is the human's call.
+3. [P2] **Token in the log.** Data retention is the human's call.
 
 ## Consider
 
 ## Noted
 
-1. [S3] **Duplicated Code.** Fixed alongside S1 if the loops are touched.
+4. [S3] **Duplicated Code.** Fixed alongside S1 if the loops are touched.
 
 ## Dismissed
 
-1. [S2] **Bare number.** The constant is named two lines up.
+5. [S2] **Bare number.** The constant is named two lines up.
 EOF
 accept "## Standards
 
@@ -318,7 +321,7 @@ act-on items: 0" "Dismissed only"
 
 # The state is gone now. The judgment is re-sorted (an Ask item answered, say) and the script
 # reruns on the same reports with the dir as its argument, reading the fixed point from the dir.
-printf '## Act on\n\n1. [S1] **Mysterious Name.** the human wants it renamed\n\n## Ask\n\n## Consider\n\n## Noted\n\n## Dismissed\n\n1. [S2] **Middle Man.** one caller, kept inline\n' > "$dir/judgment.md"
+printf '## Act on\n\n1. [S1] **Mysterious Name.** the human wants it renamed\n\n## Ask\n\n## Consider\n\n## Noted\n\n## Dismissed\n\n2. [S2] **Middle Man.** one caller, kept inline\n' > "$dir/judgment.md"
 accept "## Standards
 
 $(cat "$dir/standards-report.md")
@@ -341,7 +344,7 @@ accept "$out" "the same with a trailing slash on the dir" "$dir/"
 for spelling in "./$dir/" "$(git rev-parse --show-toplevel)/$dir"; do
   reset
   printf '## Would break\n\n## Standards breaches\n\n## Fix alongside\n\n1. **Mysterious Name.** x\n2. **Middle Man.** y\n\nhard findings: 0\n' > "$dir/standards-report.md"
-  printf '## Act on\n\n1. [S1] **Mysterious Name.** the human wants it renamed\n\n## Ask\n\n## Consider\n\n## Noted\n\n## Dismissed\n\n1. [S2] **Middle Man.** one caller, kept inline\n' > "$dir/judgment.md"
+  printf '## Act on\n\n1. [S1] **Mysterious Name.** the human wants it renamed\n\n## Ask\n\n## Consider\n\n## Noted\n\n## Dismissed\n\n2. [S2] **Middle Man.** one caller, kept inline\n' > "$dir/judgment.md"
   accept "## Standards
 
 $(cat "$dir/standards-report.md")
@@ -367,7 +370,7 @@ done
 fenced_twin() {
   reset
   printf '## Would break\n\n1. **One.** a\n\n%s\n\n## Standards breaches\n\n2. **Two.** b\n\n## Fix alongside\n\n3. **Three.** c\n\nhard findings: 1\n' "$2" > "$dir/standards-report.md"
-  printf '## Act on\n\n1. [S1] **One.** yes\n\n## Ask\n\n## Consider\n\n## Noted\n\n1. [S3] **Three.** later\n\n## Dismissed\n\n1. [S2] **Two.** no\n' > "$dir/judgment.md"
+  printf '## Act on\n\n1. [S1] **One.** yes\n\n## Ask\n\n## Consider\n\n## Noted\n\n2. [S3] **Three.** later\n\n## Dismissed\n\n3. [S2] **Two.** no\n' > "$dir/judgment.md"
   accept "## Standards
 
 $(cat "$dir/standards-report.md")

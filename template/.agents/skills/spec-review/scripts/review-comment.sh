@@ -8,9 +8,9 @@
 # answers an Ask item, or a report sent back for its shape, reruns on the same reports once the
 # state is gone, in the same round; the state is cleared only when it exists and names this dir,
 # however the dir is spelled. Exits 1, clearing nothing, when a file is missing or off its shape:
-# a count line above the Would-break items, a heading outside the shape, report items not
-# numbered 1..N in document order, a round file that holds no number, or a judgment that does not
-# name every report item exactly once.
+# a count line above the Would-break items, a heading outside the shape, report or judgment items
+# not numbered 1..N in document order, a round file that holds no number, or a judgment that does
+# not name every report item exactly once.
 set -euo pipefail
 root="$(git rev-parse --show-toplevel)"
 cd "$root"
@@ -31,7 +31,8 @@ fi
 # The shape is `## ` headings holding numbered items. Fenced text (the quoted hunks) is skipped:
 # a fence opens on a line of three or more backticks or tildes and closes only on a line of the
 # same character at least as long (CommonMark), so a hunk that quotes a fence stays inside its
-# block. A heading's name is the text after `## ` less trailing whitespace.
+# block. A heading's name is the text after `## ` less trailing whitespace. review-brief.sh
+# carries this fragment word for word (tests/spec-review/review-brief.sh holds the copies together).
 fenced='
   /^(```|~~~)/ { match($0, /^(`+|~+)/); m = substr($0, 1, RLENGTH)
     if (fence == "") { fence = m; next }
@@ -85,6 +86,7 @@ fi
 
 [ -f "$dir/judgment.md" ] || fail "$dir/judgment.md is missing; sort every report item into Act on, Ask, Consider, Noted or Dismissed with a one-line reason (SKILL.md step 5), then rerun"
 shape "$dir/judgment.md" "Act on" "Ask" "Consider" "Noted" "Dismissed"
+numbered "$dir/judgment.md"
 j_total="$(count "$dir/judgment.md")"
 [ "$j_total" -eq $((s_total + p_total)) ] || fail "$dir/judgment.md has $j_total items; the reports have $((s_total + p_total)) (Standards $s_total, Spec $p_total). Every report item appears exactly once in the judgment"
 # Each judgment item opens with [S<n>] or [P<n>]; the set of references is exactly the set of report items.

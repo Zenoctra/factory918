@@ -139,8 +139,8 @@ no spec: Standards axis only
 
 ## Dismissed
 
-1. [S2] **Whole DECISIONS.md is writable.** Provisional rows are the agent's to add. cites: DECISIONS.md P17
-2. [S3] **Bare number.** The constant is named two lines up.
+2. [S2] **Whole DECISIONS.md is writable.** Provisional rows are the agent's to add. cites: DECISIONS.md P17
+3. [S3] **Bare number.** The constant is named two lines up.
 
 Standards: 1 would break of 3; Spec: no spec; judged: act on 0 (0 with a ticket), ask 0, consider 0, noted 1, dismissed 2; fixed point main.
 round: 1 of 3
@@ -158,7 +158,7 @@ for f in "$std" "$spec"; do
   has "$f" "## Settled in earlier rounds" "$f has the settled section"
   has "$f" "$settled_rule" "$f carries the settled paragraph"
   has "$f" "1. [S1] **Hook in Python.** A port is a later ticket. cites: #74 comment 2026-09-17" "$f carries the cited Noted item"
-  has "$f" "1. [S2] **Whole DECISIONS.md is writable.** Provisional rows are the agent's to add. cites: DECISIONS.md P17" "$f carries the cited Dismissed item"
+  has "$f" "2. [S2] **Whole DECISIONS.md is writable.** Provisional rows are the agent's to add. cites: DECISIONS.md P17" "$f carries the cited Dismissed item"
   lacks "$f" "Bare number" "$f drops the uncited item"
   lacks "$f" "Not an item" "$f skips the fenced hunk"
 done
@@ -168,6 +168,43 @@ sed 's/$/\r/' previous.md > previous-crlf.md
 bash "$skill/scripts/review-brief.sh" HEAD~1 --ticket 7 --previous previous-crlf.md --round 3 > out.txt
 has out.txt "settled: carried 2, dropped 1 without a citation" "CRLF previous comment carries the same items"
 has "$std" "cites: DECISIONS.md P17" "CRLF previous comment: the cited item is in the brief"
+
+# The cited Dismissed item quotes a hunk whose lines look like cited items: a ``` line inside a
+# ```` block, and a ~~~ block quoting a ``` line. A fence closes only on its own character at
+# least as long (CommonMark), so the hunk stays fenced and the same items carry.
+# quoting <label> <hunk>: previous.md with the hunk under the cited Dismissed item, round 2.
+quoting() {
+  { echo; printf '%s\n' "$2"; } > hunk.md
+  sed '/cites: DECISIONS.md P17$/r hunk.md' previous.md > previous-quoting.md
+  bash "$skill/scripts/review-brief.sh" HEAD~1 --ticket 7 --previous previous-quoting.md --round 2 > out.txt
+  has out.txt "settled: carried 2, dropped 1 without a citation" "$1: the same items carry"
+  for f in "$std" "$spec"; do
+    has "$f" "1. [S1] **Hook in Python.** A port is a later ticket. cites: #74 comment 2026-09-17" "$1: $f carries the cited Noted item"
+    has "$f" "2. [S2] **Whole DECISIONS.md is writable.** Provisional rows are the agent's to add. cites: DECISIONS.md P17" "$1: $f carries the cited Dismissed item"
+    lacks "$f" "Still the hunk" "$1: $f skips the hunk's cited line"
+    lacks "$f" "Bare number" "$1: $f drops the uncited item"
+  done
+}
+quoting 'a ``` line inside a ```` block' '````md
+## Noted
+1. **Not an item.** the hunk is a judgment. cites: DECISIONS.md P1
+```
+2. **Still the hunk.** cites: DECISIONS.md P2
+```
+````'
+quoting 'a ~~~ block quoting a ``` line' '~~~sh
+## Noted
+```
+1. **Still the hunk.** cites: DECISIONS.md P2
+~~~'
+
+# The fence rule is one awk fragment, copied between the two scripts; the copies stay identical.
+fragment() { sed -n "/^fenced='\$/,/^'\$/p" "$1"; }
+[ -n "$(fragment "$skill/scripts/review-brief.sh")" ] || { echo "FAIL: review-brief.sh has no fenced='...' fragment"; exit 1; }
+if [ "$(fragment "$skill/scripts/review-brief.sh")" != "$(fragment "$skill/scripts/review-comment.sh")" ]; then
+  echo "FAIL: the fenced awk fragment differs between review-brief.sh and review-comment.sh"; exit 1
+fi
+n=$((n + 1))
 
 # A fourth round is refused before any state is written.
 rm -rf .scratch .claude
