@@ -164,6 +164,8 @@ cmd_init() {
   cmd_apply "$dir" --scaffold
   if [ -n "$github" ]; then
     (cd "$dir" && gh repo create --source=. --private --push) || echo "skipped gh repo create"
+    # Owner-mode repository setting: merged branches are deleted so stacked PRs retarget to main.
+    (cd "$dir" && gh repo edit --delete-branch-on-merge >/dev/null 2>&1) || echo "note: could not set delete-branch-on-merge; tick \"delete branch\" when merging"
     cmd_labels "$dir"
   fi
   echo "Next: open Claude Code in $dir and run /factory-start. Human-only steps such as secrets: /wizard writes the script."
