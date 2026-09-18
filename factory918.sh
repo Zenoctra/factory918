@@ -189,6 +189,43 @@ cmd_init() {
   echo "Next: open Claude Code in $dir and run /factory-start. Human-only steps such as secrets: /wizard writes the script."
 }
 
+# A session inherits whatever branch the last one left, so the doctor says where the checkout is
+# before anything else. Offline, the line says it compared against the last fetch; it never
+# reports "up to date" as if the fetch had happened.
+doctor_branch() {
+  git rev-parse --is-inside-work-tree >/dev/null 2>&1 || return 0
+  local ref="" branch behind plural merged stale=""
+  if git remote get-url origin >/dev/null 2>&1; then
+    git fetch -q origin main 2>/dev/null || stale=" (fetch failed, compared against the last fetch)"
+  fi
+  if git rev-parse -q --verify origin/main >/dev/null 2>&1; then ref=origin/main
+  elif git rev-parse -q --verify main >/dev/null 2>&1; then ref=main; fi
+  branch="$(git branch --show-current)"
+  if ! git rev-parse -q --verify HEAD >/dev/null 2>&1; then
+    note "branch ${branch:-detached HEAD} has no commits yet" "git add -A && git commit -m 'chore: initial commit'"
+  elif [ -z "$ref" ]; then
+    note "branch ${branch:-detached HEAD}: no main to compare against" "git remote add origin <url> && git fetch origin"
+  elif [ -z "$branch" ]; then
+    note "detached HEAD" "git checkout main && git pull"
+  else
+    behind="$(git rev-list --count "HEAD..$ref" 2>/dev/null || echo 0)"; plural=s; [ "$behind" = 1 ] && plural=""
+    if [ "$branch" = main ]; then
+      if [ "$behind" -gt 0 ]; then note "branch main is $behind commit$plural behind $ref$stale" "git pull"; else echo "PASS  branch main, up to date$stale"; fi
+    elif [ "$behind" -eq 0 ]; then
+      echo "PASS  branch $branch, up to date with main$stale"
+    elif git merge-base --is-ancestor HEAD "$ref"; then
+      note "branch $branch is already in main$stale" "git checkout main && git pull"
+    else
+      merged="$(gh pr list --head "$branch" --state merged --json number --jq length 2>/dev/null || echo 0)"
+      if [ "${merged:-0}" -gt 0 ]; then
+        note "branch $branch was merged (squash or rebase, so main does not contain its commits)" "git checkout main && git pull"
+      else
+        note "branch $branch is $behind commit$plural behind main$stale" "git checkout main && git pull to start a ticket, or git rebase $ref to continue this branch"
+      fi
+    fi
+  fi
+}
+
 # Each FAIL line carries its fix, so an agent reading the table can guide a person who has
 # never seen this system. PASS needs nothing; NOTE is optional.
 STALE_DAYS=14
@@ -203,35 +240,7 @@ cmd_doctor() {
     echo "      fix: factory918 init <new-dir> to create one, or factory918 apply here to add Factory918 to an existing repo"
     return 1
   fi
-  # A session inherits whatever branch the last one left, so say where the checkout is before
-  # anything else. The fetch may fail offline or without a remote; the doctor goes on.
-  if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-    git fetch -q origin main 2>/dev/null || true
-    local ref="" branch behind plural
-    if git rev-parse -q --verify origin/main >/dev/null 2>&1; then ref=origin/main
-    elif git rev-parse -q --verify main >/dev/null 2>&1; then ref=main; fi
-    branch="$(git branch --show-current)"
-    if ! git rev-parse -q --verify HEAD >/dev/null 2>&1; then
-      note "branch ${branch:-detached HEAD} has no commits yet" "git add -A && git commit -m 'chore: initial commit'"
-    elif [ -z "$ref" ]; then
-      note "branch ${branch:-detached HEAD}: no main to compare against" "git remote add origin <url> && git fetch origin"
-    elif [ -z "$branch" ]; then
-      note "detached HEAD" "git checkout main && git pull"
-    else
-      behind="$(git rev-list --count "HEAD..$ref")"; plural=s; [ "$behind" = 1 ] && plural=""
-      if [ "$branch" = main ]; then
-        if [ "$behind" -gt 0 ]; then note "branch main is $behind commit$plural behind $ref" "git pull"; else echo "PASS  branch main, up to date"; fi
-      elif [ "$behind" -eq 0 ]; then
-        echo "PASS  branch $branch, up to date with main"
-      elif git merge-base --is-ancestor HEAD "$ref"; then
-        note "branch $branch is already in main" "git checkout main && git pull"
-      elif [ "$(gh pr list --head "$branch" --state merged --json number --jq length 2>/dev/null)" -gt 0 ] 2>/dev/null; then
-        note "branch $branch was merged (squash or rebase, so main does not contain its commits)" "git checkout main && git pull"
-      else
-        note "branch $branch is $behind commit$plural behind main" "git checkout main && git pull to start a ticket, or git rebase $ref to continue this branch"
-      fi
-    fi
-  fi
+  doctor_branch
   chk "factory files reachable"       "[ -d \"$TEMPLATE\" ] && [ -d \"$F918_DIR/profiles\" ]" "the factory918 command does not resolve to a clone (template/ missing beside it); run ./factory918.sh install from the clone"
   chk "factory918 installed"          "command -v factory918 && [ -d \"\${FACTORY918_HOME:-\$HOME/.factory918}/docs/knowledge\" ]" "in the factory918 clone run ./factory918.sh install, add ~/.local/bin to PATH, open a new terminal"
   chk "one factory on this machine"   "[ ! -e \"\$HOME/.factory918\" ] || [ \"\$(cd \"\$HOME/.factory918\" && pwd -P)\" = \"\$(cd \"\$(dirname \"\$(readlink \"\$(command -v factory918)\")\")\" && pwd -P)\" ]" "~/.factory918 and ~/.local/bin/factory918 point at different clones; run ./factory918.sh install from the one you want"
