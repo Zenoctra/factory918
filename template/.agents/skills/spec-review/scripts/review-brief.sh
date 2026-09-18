@@ -97,14 +97,14 @@ echo "round: $round of 3"
 # one of the three shapes; an item without one is dropped, since a reason alone can steer a reviewer.
 # The quoted hunks are fenced text and never items. The fence rule is the one review-comment.sh
 # parses the reports with, copied from there word for word (tests/spec-review/review-brief.sh
-# holds the two copies together): a fence opens on a line of three or more backticks or tildes
-# and closes only on a line of the same character at least as long (CommonMark), so a hunk that
-# quotes a fence stays inside its block; a heading's name is the text after `## ` less trailing
-# whitespace.
+# holds the two copies together): a fence opens on a line starting with three or more backticks
+# or tildes and closes only on a line of the same character, at least as long, followed by nothing
+# but spaces or tabs (no info string), so a hunk that quotes a fence stays inside its block; a
+# heading's name is the text after `## ` less trailing whitespace.
 fenced='
-  /^(```|~~~)/ { match($0, /^(`+|~+)/); m = substr($0, 1, RLENGTH)
+  /^(```|~~~)/ { match($0, /^(`+|~+)/); m = substr($0, 1, RLENGTH); rest = substr($0, RLENGTH + 1)
     if (fence == "") { fence = m; next }
-    if (substr(m, 1, 1) == substr(fence, 1, 1) && length(m) >= length(fence)) { fence = ""; next } }
+    if (substr(m, 1, 1) == substr(fence, 1, 1) && length(m) >= length(fence) && rest ~ /^[ \t\r]*$/) { fence = ""; next } }
   fence != "" { next }
   /^## / { h = substr($0, 4); sub(/[ \t\r]+$/, "", h) }
 '

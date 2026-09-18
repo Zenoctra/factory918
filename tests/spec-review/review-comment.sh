@@ -362,10 +362,11 @@ round: 1 of 3
 act-on items: 1" "rerun with the dir spelled $spelling" "$spelling"
 done
 
-# Fenced text is exempt from the shape. Three reports, each the unfenced twin below with a quoted
+# Fenced text is exempt from the shape. Four reports, each the unfenced twin below with a quoted
 # hunk under its first item, parse to the twin's headings and items: a hunk quoting a ``` line
-# inside a ```` block, a hunk in ~~~ fences that quotes a ``` line, and a fenced hunk carrying
-# `## ` and `1. ` lines. A heading with trailing whitespace is the same heading.
+# inside a ```` block, a hunk in ~~~ fences that quotes a ``` line, a hunk quoting a ```sh line
+# inside a ``` block (an info string never closes a fence), and a fenced hunk carrying `## ` and
+# `1. ` lines. A heading with trailing whitespace is the same heading.
 # fenced_twin <label> <hunk>: the twin with the hunk under item 1 is accepted with the twin's summary.
 fenced_twin() {
   reset
@@ -401,6 +402,12 @@ fenced_twin 'a ~~~ fence quoting a ``` line' '~~~sh
 ```
 1. still the hunk
 ~~~'
+fenced_twin 'a ```sh fence quoted inside a ``` block' '```
+## Would break
+```sh
+1. still the hunk
+## Latent
+```'
 fenced_twin "a fenced hunk carrying heading and item lines" '```
 ## Fix alongside
 1. not an item

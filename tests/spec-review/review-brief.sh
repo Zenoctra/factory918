@@ -84,13 +84,26 @@ for f in "$std" "$spec"; do
   has "$f" "$count_rule" "$f carries the count rule"
   lacks "$f" "## Settled in earlier rounds" "$f has no settled section without a previous comment"
 done
-has "$std" '- `## Would break`: a breach of a documented standard that produces wrong behavior in normal use.' "Standards: Would break"
-has "$std" '- `## Standards breaches`: documented-standard breaches that do not change behavior.' "Standards: Standards breaches"
-has "$std" '- `## Fix alongside`: baseline smells and other judgement calls. Name the smell and quote the hunk. They are fixed only when a would-break fix already touches that code; they never count.' "Standards: Fix alongside and the smell rule"
+# The three heading bullets of each Report paragraph, word for word in SKILL.md step 4 and in the brief.
+standards_bullets=(
+  '- `## Would break`: a breach of a documented standard that produces wrong behavior in normal use. Cite the standard (file + the rule) and quote the hunk.'
+  '- `## Standards breaches`: documented-standard breaches that do not change behavior. Cite the standard and quote the hunk.'
+  '- `## Fix alongside`: baseline smells and other judgement calls. Name the smell and quote the hunk. They are fixed only when a would-break fix already touches that code; they never count.'
+)
+spec_bullets=(
+  '- `## Would break`: a requirement missing, partial, or implemented so that normal use does something other than the ticket says.'
+  '- `## Latent`: edge cases, visibility, policy, wording; anything a user would not hit in normal use.'
+  '- `## Not asked for`: behaviour in the diff the ticket did not ask for.'
+)
+for b in "${standards_bullets[@]}"; do
+  has "$skill/SKILL.md" "$b" "SKILL.md step 4 carries the Standards bullet"
+  has "$std" "$b" "Standards: the heading bullet"
+done
+for b in "${spec_bullets[@]}"; do
+  has "$skill/SKILL.md" "$b" "SKILL.md step 4 carries the Spec bullet"
+  has "$spec" "$b" "Spec: the heading bullet"
+done
 has "$std" "Write your report to \`$(dirname "$std")/standards-report.md\` and reply with only that path." "Standards: the report path"
-has "$spec" '- `## Would break`: a requirement missing, partial, or implemented so that normal use does something other than the ticket says.' "Spec: Would break"
-has "$spec" '- `## Latent`: edge cases, visibility, policy, wording; anything a user would not hit in normal use.' "Spec: Latent"
-has "$spec" '- `## Not asked for`: behaviour in the diff the ticket did not ask for.' "Spec: Not asked for"
 has "$spec" 'quotes the spec line it rests on in a fenced block (a criterion can carry `## ` or `1. ` lines, and only fenced text is exempt from the report shape)' "Spec: the quote is fenced"
 has "$spec" "What to build: the ticket body" "Spec: the ticket body from gh"
 has "$spec" "## Comments by the ticket's author (#7)" "Spec: the author's comments heading"
@@ -197,6 +210,11 @@ quoting 'a ~~~ block quoting a ``` line' '~~~sh
 ```
 1. **Still the hunk.** cites: DECISIONS.md P2
 ~~~'
+quoting 'a ```sh line inside a ``` block' '```
+## Noted
+```sh
+1. **Still the hunk.** cites: DECISIONS.md P2
+```'
 
 # The fence rule is one awk fragment, copied between the two scripts; the copies stay identical.
 fragment() { sed -n "/^fenced='\$/,/^'\$/p" "$1"; }

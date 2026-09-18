@@ -28,15 +28,17 @@ else
   dir="$(cat "$state/dir")"
 fi
 
-# The shape is `## ` headings holding numbered items. Fenced text (the quoted hunks) is skipped:
-# a fence opens on a line of three or more backticks or tildes and closes only on a line of the
-# same character at least as long (CommonMark), so a hunk that quotes a fence stays inside its
-# block. A heading's name is the text after `## ` less trailing whitespace. review-brief.sh
-# carries this fragment word for word (tests/spec-review/review-brief.sh holds the copies together).
+# The shape is `## ` headings holding numbered items. Fenced text (the quoted hunks) is skipped.
+# A fence opens on a line starting with three or more backticks or tildes, whatever follows them;
+# it closes only on a line of the same character, at least as long as the opening run, followed
+# by nothing but spaces or tabs (no info string). So ```sh inside a ``` block does not close it,
+# nor does ``` inside a ```` block or a ~~~ block, and the quoted hunk stays fenced. A heading's
+# name is the text after `## ` less trailing whitespace. review-brief.sh carries this fragment
+# word for word (tests/spec-review/review-brief.sh holds the copies together).
 fenced='
-  /^(```|~~~)/ { match($0, /^(`+|~+)/); m = substr($0, 1, RLENGTH)
+  /^(```|~~~)/ { match($0, /^(`+|~+)/); m = substr($0, 1, RLENGTH); rest = substr($0, RLENGTH + 1)
     if (fence == "") { fence = m; next }
-    if (substr(m, 1, 1) == substr(fence, 1, 1) && length(m) >= length(fence)) { fence = ""; next } }
+    if (substr(m, 1, 1) == substr(fence, 1, 1) && length(m) >= length(fence) && rest ~ /^[ \t\r]*$/) { fence = ""; next } }
   fence != "" { next }
   /^## / { h = substr($0, 4); sub(/[ \t\r]+$/, "", h) }
 '
