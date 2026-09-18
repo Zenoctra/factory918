@@ -18,7 +18,7 @@
 
 **Work that started in conversation and will end in a PR gets a ticket first, in the words that decided it.** Then it is Ticket work. A change that ends in a commit on a branch needs none.
 
-1. File it before starting: `gh issue create --label ready-for-agent --title "<the ask in six words>" --body "<body>"`. The body shape is `docs/agents/issue-tracker.md`, "Ticket body"; its **What to build** is the exchange that carried the decision, quoted and attributed. Quote; never paraphrase or summarize, and put nothing in the ticket that neither said: the reviewers read this to check the work against what was decided, and the writer inherits the reasoning, not a flattened ask. No **Parent**, no **Blocked by**.
+1. File it before starting: `gh issue create --label ready-for-agent --title "<the ask in six words>" --body "<body>"`. The body shape and the quoting rule are `docs/agents/issue-tracker.md`, "Ticket body": its **What to build** is the exchange that carried the decision, quoted and attributed, never paraphrased. No **Parent**, no **Blocked by**.
 2. Its **Acceptance criteria** come from the falsifiability pass (step 4 above): one checkbox per observation that would fail today, in the user's terms.
 3. Reply with the number and the criteria in one line, then proceed; do not wait. The human edits the issue if the words are wrong.
 4. From here it is the Ticket playbook: the PR says `Closes #N`, `spec-review` reads the issue, the merge closes it.
