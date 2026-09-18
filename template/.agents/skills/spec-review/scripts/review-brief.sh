@@ -51,6 +51,22 @@ if [ -z "$smells" ]; then
   echo "review-brief: no smell baseline found in $skill/SKILL.md (no line matching '^- **...→' between '### 3.' and '### 4.'); nothing written" >&2
   exit 1
 fi
+# The spec is the ticket body: --ticket, or the one #N the commit messages name, oldest first.
+# Never the author's own words (SKILL.md step 2). Two numbers is a question for the caller.
+if [ "$fixed" = paths ]; then
+  messages="$(git log --format=%B --no-walk --reverse "${commits[@]}")"
+else
+  messages="$(git log --reverse "$fixed..HEAD" --format=%B)"
+fi
+numbers="$(printf '%s\n' "$messages" | grep -oE '#[0-9]+' | awk '!seen[$0]++' | tr '\n' ' ' || true)"
+if [ -z "$ticket" ]; then
+  case "$numbers" in
+    "") ;;
+    *" "*" "*) echo "review-brief: the commits name more than one ticket (${numbers% }); pass --ticket N to choose; nothing written" >&2; exit 1 ;;
+    *) ticket="${numbers%% *}"; ticket="${ticket#\#}" ;;
+  esac
+fi
+[ -z "$ticket" ] || echo "ticket: #$ticket"
 dir=".scratch/review/$id"
 rm -rf "$dir"
 mkdir -p "$dir"
@@ -59,13 +75,11 @@ if [ "$fixed" = paths ]; then
   git show --stat --format='%h %s' "${commits[@]}" -- "${paths[@]}" > "$dir/stat"
   git log --oneline --no-walk "${commits[@]}" > "$dir/log"
   git show --name-only --format= "${commits[@]}" -- "${paths[@]}" | sed '/^$/d' | sort -u > "$dir/files"
-  messages="$(git log --format=%B --no-walk "${commits[@]}")"
 else
   git diff "$fixed...HEAD" > "$dir/diff"
   git diff "$fixed...HEAD" --stat > "$dir/stat"
   git log "$fixed..HEAD" --oneline > "$dir/log"
   git diff "$fixed...HEAD" --name-only > "$dir/files"
-  messages="$(git log "$fixed..HEAD" --format=%B)"
 fi
 if [ ! -s "$dir/diff" ]; then
   rm -rf "$dir"
@@ -79,9 +93,6 @@ echo "$fixed" > "$state/fixed-point"
 cp "$dir/files" "$state/files"
 echo "$dir" > "$state/dir"
 
-# The spec is the ticket body, from --ticket or from the first #N in the commit messages. Never the
-# author's own words (SKILL.md step 2).
-[ -n "$ticket" ] || ticket="$(printf '%s\n' "$messages" | grep -oE '#[0-9]+' | head -1 | tr -d '#' || true)"
 spec=""
 if [ -n "$ticket" ]; then
   spec="$(gh issue view "$ticket" --json body -q .body 2>/dev/null || true)"
