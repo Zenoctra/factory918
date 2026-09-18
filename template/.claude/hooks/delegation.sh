@@ -57,15 +57,15 @@ guard_write() {
   block "BLOCKED: writing $1 is a lane's job (P11). Brief a writer lane with the paths, the data shape and the success criteria, then review its diff. Your own files are docs/agents/ledger.md, docs/adr/*, docs/knowledge/core/DECISIONS.md, docs/M0-findings.md and the untracked directories."
 }
 
-# Under review: the changed files and their diff and stat. The briefs and reports beside them are
-# the orchestrator's to read.
+# Under review: the changed files, their diff and stat, and the two briefs, which carry the diff
+# inline. The reports beside them are the orchestrator's to read.
 in_review() {
   local dir
   [ -f "$review/files" ] || return 1
   grep -Fxq -- "$1" "$review/files" && return 0
   dir="$(cat "$review/dir" 2>/dev/null)"
   [ -n "$dir" ] || return 1
-  case "$1" in "$dir"/diff|"$dir"/stat) return 0 ;; esac
+  case "$1" in "$dir"/diff|"$dir"/stat|"$dir"/standards-brief.md|"$dir"/spec-brief.md) return 0 ;; esac
   return 1
 }
 
