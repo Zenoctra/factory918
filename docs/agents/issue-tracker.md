@@ -13,6 +13,17 @@ Issues and specs for this repo live as GitHub issues. Use the `gh` CLI for all o
 
 Infer the repo from `git remote -v`; `gh` does this automatically when run inside a clone.
 
+## Ticket body
+
+Every ticket has this shape, in this order. The Ticket playbook, `spec-review`, `interrogate` and the quick-ticket path all read it.
+
+- **Title**: the ask in about six words, a plain sentence.
+- **`## What to build`**: for a ticket from `/to-tickets`, the end-to-end behaviour from the user's perspective, not a layer-by-layer implementation list. For a quick ticket (work that started in conversation), the exchange that carried the decision, quoted and attributed. The user's ask is a `> user:` blockquote; where the agent proposed something and the user approved it, the proposal and the approval are their own `> agent:` and `> user:` blockquotes. Quotes, never paraphrase, and nothing neither said. Reviewers check the work against what was decided, and the writer inherits the reasoning.
+- **`## Acceptance criteria`**: one checkbox per observation that would fail today, in the user's terms. Each one is something a command or a look can falsify.
+- **`## Parent`**: the spec issue, for planned tickets. A quick ticket has none.
+- **`## Blocked by`**: issue numbers that must be closed first, or `None`. GitHub's native issue dependencies are the canonical form where available (Wayfinding operations below says how); the line is the fallback.
+- The label `ready-for-agent` on anything an agent may pick up.
+
 ## Pull requests as a triage surface
 
 **PRs as a request surface: no.** _(Set to `yes` if this repo treats external PRs as feature requests; `/triage` reads this flag.)_
