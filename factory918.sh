@@ -208,16 +208,19 @@ doctor_branch() {
   elif [ -z "$branch" ]; then
     note "detached HEAD" "git checkout main && git pull"
   else
-    behind="$(git rev-list --count "HEAD..$ref" 2>/dev/null || echo 0)"; plural=s; [ "$behind" = 1 ] && plural=""
-    if [ "$branch" = main ]; then
+    behind="$(git rev-list --count "HEAD..$ref" 2>/dev/null || echo unknown)"; plural=s; [ "$behind" = 1 ] && plural=""
+    if [ "$behind" = unknown ]; then
+      note "branch $branch: could not compare with $ref" "git fetch origin, then git status"
+    elif [ "$branch" = main ]; then
       if [ "$behind" -gt 0 ]; then note "branch main is $behind commit$plural behind $ref$stale" "git pull"; else echo "PASS  branch main, up to date$stale"; fi
     elif [ "$behind" -eq 0 ]; then
       echo "PASS  branch $branch, up to date with main$stale"
     elif git merge-base --is-ancestor HEAD "$ref"; then
       note "branch $branch is already in main$stale" "git checkout main && git pull"
     else
-      merged="$(gh pr list --head "$branch" --state merged --json number --jq length 2>/dev/null || echo 0)"
-      if [ "${merged:-0}" -gt 0 ]; then
+      merged="$(gh pr list --head "$branch" --state merged --json number --jq length 2>/dev/null || echo unknown)"
+      if [ "$merged" = unknown ] || [ -z "$merged" ]; then stale="$stale (merged state unknown, gh did not answer)"; merged=0; fi
+      if [ "$merged" -gt 0 ]; then
         note "branch $branch was merged (squash or rebase, so main does not contain its commits)" "git checkout main && git pull"
       else
         note "branch $branch is $behind commit$plural behind main$stale" "git checkout main && git pull to start a ticket, or git rebase $ref to continue this branch"
