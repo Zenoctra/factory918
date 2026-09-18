@@ -1,4 +1,4 @@
-<!-- lines: 171 | source: core/MANUAL.md | part 1/1 | title: Factory918: the manual -->
+<!-- lines: 172 | source: core/MANUAL.md | part 1/1 | title: Factory918: the manual -->
 
 ## Contents (line numbers are for the Read tool's offset)
 - L24: The loop in one screen
@@ -13,9 +13,9 @@
 - L112: Maintenance
 - L124: Multi-surface products
 - L128: Models and cost
-- L144: Updating the factory
-- L148: Troubleshooting
-- L160: Where to read more
+- L145: Updating the factory
+- L149: Troubleshooting
+- L161: Where to read more
 
 # Factory918: the manual
 
@@ -137,6 +137,7 @@ You are on the $200 Claude plan; the limit is shared across models and Fable 5.1
 | Panels: `how` critics, `architect`, `arena` runners | Fable + Opus | Opus high + Opus medium |
 | `interrogate` reviewers, `arena` cross-judge | Fable + Opus xhigh, Astra when wired | Opus xhigh + Opus high |
 | Juniors: `how` explorers, swarm workers, `standards reviewer` (the `spec-review` Standards axis) | Opus 5 medium | Opus 5 medium |
+| `spec reviewer` (the `spec-review` Spec axis; the orchestrator judges its findings) | Opus 5 high | Opus 5 high |
 | `arena` | off by default | off by default |
 
 Rough cost order of the skills, highest first: `arena`, autopilot-stack (one owner per ticket plus a swarm per PR), `swarm`, `interrogate`, `how` in critique mode, `/wayfinder` with parallel research, `/to-tickets` on a large spec (one user reported 1.5M tokens for 14 tickets), then everything else. Check the usage page weekly; if Fable is over a third of spend, move a role down.

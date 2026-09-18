@@ -17,5 +17,6 @@ arena runners: claude:fable@high, claude:opus@high
 arena cross-judge pool: claude:opus@xhigh, claude:fable@high
 swarm workers: claude:opus@medium
 standards reviewer: claude:opus@medium
+spec reviewer: claude:opus@high
 architect runners: claude:fable@high, claude:opus@high
 interrogate reviewers: claude:fable@high, claude:opus@xhigh
