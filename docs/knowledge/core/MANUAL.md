@@ -136,7 +136,7 @@ You are on the $200 Claude plan; the limit is shared across models and Fable 5.1
 | Judgment and prose, hardest tasks | Fable 5.1 high | Opus 5 xhigh |
 | Panels: `how` critics, `architect`, `arena` runners | Fable + Opus | Opus high + Opus medium |
 | `interrogate` reviewers, `arena` cross-judge | Fable + Opus xhigh, Astra when wired | Opus xhigh + Opus high |
-| Juniors: `how` explorers, swarm workers | Opus 5 medium | Opus 5 medium |
+| Juniors: `how` explorers, swarm workers, the `spec-review` Standards axis | Opus 5 medium | Opus 5 medium |
 | `arena` | off by default | off by default |
 
 Rough cost order of the skills, highest first: `arena`, autopilot-stack (one owner per ticket plus a swarm per PR), `swarm`, `interrogate`, `how` in critique mode, `/wayfinder` with parallel research, `/to-tickets` on a large spec (one user reported 1.5M tokens for 14 tickets), then everything else. Check the usage page weekly; if Fable is over a third of spend, move a role down.

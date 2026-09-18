@@ -18,7 +18,7 @@ The issue tracker should have been provided to you. If `docs/agents/issue-tracke
 
 Whatever the user said is the fixed point (a commit SHA, branch name, tag, `main`, `HEAD~5`, etc.). If they didn't specify one, ask for it.
 
-Capture the diff command once: `git diff <fixed-point>...HEAD` (three-dot, so the comparison is against the merge-base). Also note the list of commits via `git log <fixed-point>..HEAD --oneline`.
+Run the diff once: `git diff <fixed-point>...HEAD` (three-dot, so the comparison is against the merge-base), plus `git diff <fixed-point>...HEAD --stat` for the changed-file list with per-file line counts, and the list of commits via `git log <fixed-point>..HEAD --oneline`. Keep all three outputs; step 4 pastes them into both briefs.
 
 Before going further, confirm the fixed point resolves (`git rev-parse <fixed-point>`) and the diff is non-empty. A bad ref or empty diff should fail here, not inside two parallel sub-agents.
 
@@ -57,19 +57,27 @@ Each smell reads *what it is* → *how to fix*; match it against the diff:
 
 ### 4. Spawn both sub-agents in parallel
 
-**Standards sub-agent prompt** should include:
+A reviewer that gets a diff command and two file names runs the diff and reads both files whole, and that discovery is most of what it costs. So the briefs carry content, not commands: the material from step 1 is computed once and the same text goes into both.
 
-- The full diff command and commit list.
-- The list of standards-source files you found in step 3, **plus the smell baseline from step 3** pasted in full (the sub-agent has no other access to it).
-- The brief: "Report, per file/hunk where relevant, (a) every place the diff violates a documented standard: cite the standard (file + the rule); and (b) any baseline smell you spot: name it and quote the hunk. Distinguish hard violations from judgement calls: documented-standard breaches can be hard, but baseline smells are always judgement calls, and a documented repo standard overrides the baseline. Skip anything tooling enforces. Under 400 words."
+**Both prompts** include, pasted in:
 
-**Spec sub-agent prompt** should include:
+- The commit list (the `git log <fixed-point>..HEAD --oneline` output).
+- The changed-file list with per-file line counts (the `--stat` output).
+- The diff itself, when it's under about 500 lines. Over that, paste the diff of each file under 150 lines and, for the rest, the exact per-file command (`git diff <fixed-point>...HEAD -- <path>`), so a reviewer runs at most the commands for the large files.
 
-- The diff command and commit list.
-- The path or fetched contents of the spec.
-- The brief: "Report: (a) requirements the spec asked for that are missing or partial; (b) behaviour in the diff that wasn't asked for (scope creep); (c) requirements that look implemented but where the implementation looks wrong. Quote the spec line for each finding. Under 400 words."
+**Standards sub-agent prompt** adds:
+
+- The sections of the standards sources from step 3 that apply to the changed files, pasted in (the shell section for `.sh` changes, the "Pull requests" section for a PR-body rule), not the file names; a whole file only when it's under about 80 lines. **Plus the smell baseline from step 3** pasted in full (the sub-agent has no other access to it).
+- The brief: "Report, per file/hunk where relevant, (a) every place the diff violates a documented standard: cite the standard (file + the rule); and (b) any baseline smell you spot: name it and quote the hunk. Distinguish hard violations from judgement calls: documented-standard breaches can be hard, but baseline smells are always judgement calls, and a documented repo standard overrides the baseline. Skip anything tooling enforces. Read nothing beyond this brief unless a finding needs the code around a hunk, and then read that one function or section, not the file. Under 400 words."
+
+**Spec sub-agent prompt** adds:
+
+- The ticket body pasted in (What to build and Acceptance criteria, verbatim), and the relevant section of the parent spec when there is one. Not a `gh` command or an issue number: the sub-agent fetches nothing.
+- The brief: "Report: (a) requirements the spec asked for that are missing or partial; (b) behaviour in the diff that wasn't asked for (scope creep); (c) requirements that look implemented but where the implementation looks wrong. Quote the spec line for each finding. Read nothing beyond this brief unless a finding needs the code around a hunk, and then read that one function or section, not the file. Under 400 words."
 
 If the spec is missing, skip the Spec sub-agent and note this in the final report.
+
+The Standards sub-agent runs through the configured `standards reviewer` descriptor (`~/.claude/pstack-models.md`, default `claude:opus@medium`), resolved per [`provider-dispatch.md`](../poteto-mode/references/provider-dispatch.md), in `read-only` mode; a native lane is the matching `pstack-<family>-<effort>` subagent. The Spec sub-agent runs on the writer's lane, the `feature, refactoring` descriptor, because judging whether the work matches the ask is the senior's call. Without a models sheet, both run on the parent's subagent primitive at the parent's model.
 
 ### 5. Aggregate
 

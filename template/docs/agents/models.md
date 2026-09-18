@@ -12,9 +12,10 @@ pstack's matrix has four families: `claude:fable`, `claude:opus`, `codex:gpt-5.6
 | interrogate reviewers | `claude:fable@high, claude:opus@xhigh` | the contested path; model diversity is the point; Astra joins here (#29) |
 | arena cross-judge pool | `claude:opus@xhigh, claude:fable@high` | a judge from a different lane than the base candidate |
 | how explorer, swarm workers | `claude:opus@medium` | read-only bulk and mechanical fan-out: the junior |
+| standards reviewer | `claude:opus@medium` | the Standards axis of `spec-review` matches a pasted diff against pasted rule sections, junior work; the Spec axis stays on the writer's lane because judging the work against the ask is the senior's call |
 | how explainer | `claude:opus@high` | |
 | why and reflect roles | `inherit-parent` | they need the parent session's MCP surface |
 
-The `opus` preset puts the writers on `claude:opus@high` and the judgment on `claude:opus@xhigh`, for when Fable's quota is spent.
+The `opus` preset puts the writers on `claude:opus@high` and the judgment on `claude:opus@xhigh`, for when Fable's quota is spent; it carries the same `standards reviewer` row. That role is the factory's own, not one of pstack's, so the vendored `/setup-pstack` would report it as an unknown row, one more reason it is not used here (decision P5).
 
 Interactive session: Fable 5.1 whenever tickets or PR bodies are being written, since that prose is the handoff and no delegate writes it; Opus 5 for casual turns and long grilling, switching to Fable for `/to-spec` and `/to-tickets`. Check the usage page weekly; if Fable is over a third of spend, move a role down.
