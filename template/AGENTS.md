@@ -75,7 +75,7 @@ The most common defect in agent-built projects is a change that works on the pat
 - UI changes need before/after images. Motion or timing needs a short video. Upload them; never commit them.
 - One concern per PR. If the description says "also", split it.
 - Any comment or report you write that runs longer than about forty lines opens with two plain sentences for a person, under the label `For a person:`. PR bodies are exempt: their problem-then-fix opening is that summary. Reviewers ignore body prose by design, so the label is for people, not a signal to models.
-- After CI is green, run `spec-review` in a fresh context; then babysit: poll checks and comments newer than the last push, verify each bot finding against the source, fix real ones, dismiss false positives with a written reason. Stop when the bots are green on the latest commit. Fixes land on the PR that was reviewed; a finding outside its scope becomes a ticket. The review ladder is `docs/agents/review-ladder.md`.
+- After CI is green, run `spec-review` in a fresh context; then babysit: poll checks and comments newer than the last push, verify each bot finding against the source, fix real ones, dismiss false positives with a written reason. Stop when the bots are green on the latest commit. Fixes land on the PR that was reviewed, the chain above it is rebased and re-verified, and a finding outside its scope becomes a ticket. The review ladder is `docs/agents/review-ladder.md`.
 - You never merge. Merging is the human's act.
 
 ## Plans and work artifacts
