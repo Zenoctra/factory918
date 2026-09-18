@@ -18,9 +18,11 @@ The issue tracker should have been provided to you. If `docs/agents/issue-tracke
 
 Whatever the user said is the fixed point (a commit SHA, branch name, tag, `main`, `HEAD~5`, etc.). If they didn't specify one, ask for it.
 
-Run the diff once: `git diff <fixed-point>...HEAD` (three-dot, so the comparison is against the merge-base), plus `git diff <fixed-point>...HEAD --stat` for the changed-file list with per-file line counts, and the list of commits via `git log <fixed-point>..HEAD --oneline`. Keep all three outputs; step 4 pastes them into both briefs.
+Run `scripts/review-brief.sh <fixed-point>` (the script beside this skill; add `--ticket N` when the commits do not name the ticket, `--standards FILE ...` to review against files other than `CODING_STANDARDS.md`). It runs the diff once, `git diff <fixed-point>...HEAD` (three-dot, so the comparison is against the merge-base), plus `--stat` for the changed-file list with per-file line counts, and the list of commits via `git log <fixed-point>..HEAD --oneline`, and writes the three to `.scratch/review/<id>/` as `diff`, `stat` and `log`. It also writes the review state under `.claude/state/review/`: `fixed-point`, `files` (the changed paths, one per line) and `dir`. While that state exists the delegation hook blocks your reads of the changed files, and step 5 clears it. Do not read the diff yourself: the reviewers get it in their briefs, and you get their reports.
 
-Before going further, confirm the fixed point resolves (`git rev-parse <fixed-point>`) and the diff is non-empty. A bad ref or empty diff should fail here, not inside two parallel sub-agents.
+The script confirms the fixed point resolves and the diff is non-empty, and exits 1 with a message otherwise. A bad ref or empty diff fails here, not inside two parallel sub-agents.
+
+A sweep over units already on `main`, named by paths and commits, is the same skill with the same state, not a second mode: `scripts/review-brief.sh --paths P... --commits SHA...` writes the word `paths` as the fixed point and `git show <commits> -- <paths>` as the diff.
 
 ### 2. Identify the spec source
 
@@ -57,35 +59,35 @@ Each smell reads *what it is* → *how to fix*; match it against the diff:
 
 ### 4. Spawn both sub-agents in parallel
 
-The briefs carry content, not commands: the material from step 1 is computed once and the same text goes into both.
+The briefs are the two files step 1 wrote, `<dir>/standards-brief.md` and `<dir>/spec-brief.md` (the script printed both paths). They carry content, not commands: the material from step 1 is computed once and the same text goes into both. Each sub-agent's prompt is its brief's path and the instruction to read it whole and follow it. Each reviewer writes its report to `<dir>/standards-report.md` or `<dir>/spec-report.md`, ending with the line `hard findings: N`, and replies with only that path; step 5 reads the files, not the replies.
 
-**Both prompts** include, pasted in:
+**Both briefs** carry:
 
 - The commit list (the `git log <fixed-point>..HEAD --oneline` output).
 - The changed-file list with per-file line counts (the `--stat` output).
-- The diff itself, when it's under about 500 lines. Over that, write it to `.scratch/review/<fixed-point>.diff` and hand the path, so a reviewer reads one file and runs nothing.
+- The diff itself, when it's under about 500 lines. Over that, the brief hands the path `<dir>/diff`, so a reviewer reads one file and runs nothing.
 
-**Standards sub-agent prompt** adds:
+**The Standards brief** adds:
 
-- The sections of the standards sources from step 3 that apply to the changed files, pasted in (the shell section for `.sh` changes, the "Pull requests" section for a PR-body rule), not the file names; a whole file only when it's under about 80 lines. **Plus the smell baseline from step 3** pasted in full (the sub-agent has no other access to it).
+- The standards files named by `--standards` (default `CODING_STANDARDS.md`), pasted whole, so pass only the files that apply to the changed files. **Plus the smell baseline from step 3** pasted in full (the sub-agent has no other access to it).
 - The brief: "Report, per file/hunk where relevant, (a) every place the diff violates a documented standard: cite the standard (file + the rule); and (b) any baseline smell you spot: name it and quote the hunk. Distinguish hard violations from judgement calls: documented-standard breaches can be hard, but baseline smells are always judgement calls, and a documented repo standard overrides the baseline. Skip anything tooling enforces. Read nothing beyond this brief unless a finding needs the code around a hunk, and then read that one function or section, not the file. Under 400 words."
 
-**Spec sub-agent prompt** adds:
+**The Spec brief** adds:
 
 - The ticket body pasted in (What to build and Acceptance criteria, verbatim), and the relevant section of the parent spec when there is one. Not a `gh` command or an issue number: the sub-agent fetches nothing.
 - The brief: "Report: (a) requirements the spec asked for that are missing or partial; (b) behaviour in the diff that wasn't asked for (scope creep); (c) requirements that look implemented but where the implementation looks wrong. Quote the spec line for each finding. Read nothing beyond this brief unless a finding needs the code around a hunk, and then read that one function or section, not the file. Under 400 words."
 
-If the spec is missing, skip the Spec sub-agent and note this in the final report.
+If the spec is missing, the script writes no Spec brief; skip the Spec sub-agent, and step 5 says so in the final report.
 
 The Standards sub-agent runs through the configured `standards reviewer` descriptor (`~/.claude/pstack-models.md`, default `claude:opus@medium`), resolved per [`provider-dispatch.md`](../poteto-mode/references/provider-dispatch.md), in `read-only` mode; a native lane is the matching `pstack-<family>-<effort>` subagent. The Spec sub-agent runs on the writer's lane, the `feature, refactoring` descriptor, because judging whether the work matches the ask is the senior's call. A sheet without the `standards reviewer` row uses that default. Without a models sheet, both run on the parent's subagent primitive at the parent's model.
 
 ### 5. Aggregate
 
-Present the two reports under `## Standards` and `## Spec` headings, verbatim or lightly cleaned. Do **not** merge or rerank findings, because the two axes are deliberately separate (see _Why two axes_).
+Run `scripts/review-comment.sh`. It prints the two reports under `## Standards` and `## Spec` headings, verbatim (or `no spec: Standards axis only` under Spec), a one-line summary with the count per axis, and the final line `act-on items: N`, then clears `.claude/state/review/`. It exits 1 when a report is missing or has no count line; wait for the reviewer, do not write the report yourself. Do **not** merge or rerank findings, because the two axes are deliberately separate (see _Why two axes_), and do not pick a single winner across axes: that's the reranking the separation exists to prevent.
 
-End with a one-line summary: total findings per axis, and the worst issue _within each axis_ (if any). Don't pick a single winner across axes: that's the reranking the separation exists to prevent.
+You write only what goes above the script's output: the two plain sentences for a person and the Disposition. Nothing else in the comment is yours.
 
-The report's final line is exactly `act-on items: N`. N counts the hard findings on both axes: on Standards, documented-standard breaches (baseline smells and judgement calls don't count); on Spec, requirements missing or partial, implementations that look wrong, and behaviour that wasn't asked for. Zero is written as `act-on items: 0`. Babysit reads this line, so it is always present and always last.
+N counts the hard findings on both axes, summed from the reports' own `hard findings:` lines: on Standards, documented-standard breaches (baseline smells and judgement calls don't count); on Spec, requirements missing or partial, implementations that look wrong, and behaviour that wasn't asked for. Zero is written as `act-on items: 0`. Babysit reads this line, so it is always present and always last.
 
 ## Why two axes
 
