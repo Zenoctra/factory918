@@ -53,7 +53,7 @@ Read the phase: `cat .claude/state/mode` (missing means `execute`). Match the si
 | An idea and no repo yet | planning | `/grill-me`, then `factory918 init`, then `/factory-start`. |
 | A repo that was never grilled (no `CONTEXT.md` terms) | planning | `/grill-with-docs help me document this repo`. Long; the human answers. |
 | A ticket reference (`#N`, URL) | execute | `/poteto-mode "#N"`. The Ticket playbook takes it from there. |
-| A task with no ticket | execute | If it will end in a PR, file a quick ticket first from the user's words (`playbooks/ticket.md`, "Quick ticket"), then `/poteto-mode "#N"`. If it ends in a commit on a branch, `/poteto-mode <task>` with no ticket. |
+| A task with no ticket | execute | If it will end in a PR, file a quick ticket first quoting the exchange that decided it (`playbooks/ticket.md`, "Quick ticket"), then `/poteto-mode "#N"`. If it ends in a commit on a branch, `/poteto-mode <task>` with no ticket. |
 | A bug with a reproduction | execute | `/poteto-mode` routes to Bug fix; `tdd` when a cheap failing test exists. |
 | "How does X work / why is it like this" | either | `/how`, `/why`, or `/teach`. Read-only. |
 | A PR that needs to get green | execute | Babysit via `/poteto-mode "babysit PR N"`. Never merges. |

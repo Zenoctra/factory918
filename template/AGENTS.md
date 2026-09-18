@@ -69,7 +69,7 @@ The most common defect in agent-built projects is a change that works on the pat
 
 ## Pull requests
 
-- Work that started from a ticket ends in a PR that says `Closes #N`. Work that started from a conversation ends in a commit on a branch unless you are asked to file; if it is going to end in a PR, file a quick ticket first, in the user's own words (Ticket playbook), so the PR closes it and the reviewers can read the ask.
+- Work that started from a ticket ends in a PR that says `Closes #N`. Work that started from a conversation ends in a commit on a branch unless you are asked to file; if it is going to end in a PR, file a quick ticket first, quoting the decision exchange with attribution (Ticket playbook), so the PR closes it and the reviewers can read the ask.
 - Conventional commit titles in plain language: `fix(web): new sessions no longer spike CPU`.
 - Body: the problem in a sentence or two, then how you fixed it, then a **Verification** section quoting each acceptance criterion with the evidence path. End with the model and harness that did the work.
 - UI changes need before/after images. Motion or timing needs a short video. Upload them; never commit them.
