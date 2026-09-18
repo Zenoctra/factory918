@@ -58,6 +58,7 @@ has "$std" "Write your report to \`$(dirname "$std")/standards-report.md\` and r
 has "$spec" '- `## Would break`: a requirement missing, partial, or implemented so that normal use does something other than the ticket says.' "Spec: Would break"
 has "$spec" '- `## Latent`: edge cases, visibility, policy, wording; anything a user would not hit in normal use.' "Spec: Latent"
 has "$spec" '- `## Not asked for`: behaviour in the diff the ticket did not ask for.' "Spec: Not asked for"
+has "$spec" 'quotes the spec line it rests on in a fenced block (a criterion can carry `## ` or `1. ` lines, and only fenced text is exempt from the report shape)' "Spec: the quote is fenced"
 has "$spec" "What to build: the ticket body" "Spec: the ticket body from gh"
 has "$spec" "Write your report to \`$(dirname "$spec")/spec-report.md\` and reply with only that path." "Spec: the report path"
 

@@ -5,34 +5,51 @@
 # No arguments: it reads .claude/state/review/dir. One argument, the review dir
 # (.scratch/review/<id>): it reads that dir instead, so a judgment re-sorted after the human
 # answers an Ask item, or a report sent back for its shape, reruns on the same reports once the
-# state is gone; the state is cleared only when it exists and names this dir. Exits 1, clearing
-# nothing, when a file is missing or off its shape: a count line above the Would-break items, a
-# heading outside the shape, or a judgment that does not name every report item exactly once.
+# state is gone; the state is cleared only when it exists and names this dir, however the dir is
+# spelled. Exits 1, clearing nothing, when a file is missing or off its shape: a count line above
+# the Would-break items, a heading outside the shape, report items not numbered 1..N in document
+# order, or a judgment that does not name every report item exactly once.
 set -euo pipefail
 root="$(git rev-parse --show-toplevel)"
 cd "$root"
 state=.claude/state/review
 fail() { echo "review-comment: $*" >&2; exit 1; }
 if [ $# -gt 0 ]; then
-  dir="${1%/}"
+  # Root-relative, so ./.scratch/review/x, .scratch/review/x/ and the absolute path name one dir.
+  dir="$1"
+  while [ "${dir%/}" != "$dir" ]; do dir="${dir%/}"; done
+  case "$dir" in "$root"/*) dir="${dir#"$root"/}" ;; esac
+  dir="${dir#./}"
   [ -d "$dir" ] || fail "$dir is not a directory; pass the .scratch/review/<id> review-brief.sh wrote"
 else
   [ -f "$state/dir" ] || fail "no review in progress ($state/dir is missing); run scripts/review-brief.sh first, or pass the review dir to rerun a finished review"
   dir="$(cat "$state/dir")"
 fi
 
-# The shape is `## ` headings holding numbered items; fenced code (the quoted hunks) is skipped.
-headings() { awk '/^```/ { fence = !fence; next } fence { next } /^## / { print substr($0, 4) }' "$1"; }
+# The shape is `## ` headings holding numbered items. Fenced text (the quoted hunks) is skipped:
+# a fence opens on a line of three or more backticks or tildes and closes only on a line of the
+# same character at least as long (CommonMark), so a hunk that quotes a fence stays inside its
+# block. A heading's name is the text after `## ` less trailing whitespace.
+fenced='
+  /^(```|~~~)/ { match($0, /^(`+|~+)/); m = substr($0, 1, RLENGTH)
+    if (fence == "") { fence = m; next }
+    if (substr(m, 1, 1) == substr(fence, 1, 1) && length(m) >= length(fence)) { fence = ""; next } }
+  fence != "" { next }
+  /^## / { h = substr($0, 4); sub(/[ \t\r]+$/, "", h) }
+'
+headings() { awk "$fenced"'/^## / { print h }' "$1"; }
 # items <file> [heading]: the numbered items under one heading, or under every heading in document order.
-items() {
-  awk -v want="${2:-}" '
-    /^```/ { fence = !fence; next }
-    fence { next }
-    /^## / { h = substr($0, 4); next }
-    h != "" && /^[0-9]+\. / && (want == "" || h == want)
-  ' "$1"
-}
+items() { awk -v want="${2:-}" "$fenced"'/^## / { next } h != "" && /^[0-9]+\. / && (want == "" || h == want)' "$1"; }
 count() { items "$@" | wc -l | tr -d ' '; }
+# numbered <file>: the written item numbers run 1..N in document order across the headings, so a
+# [S<n>] reference names the item its reviewer wrote as n.
+numbered() {
+  local f="$1" i=0 line
+  while IFS= read -r line; do
+    i=$((i + 1))
+    [ "${line%%.*}" = "$i" ] || fail "$f item '$line' is numbered ${line%%.*} where $i was expected; number the items 1..N continuously across the headings, in document order"
+  done < <(items "$f")
+}
 # shape <file> <heading>...: the file's headings are exactly these, in this order.
 shape() {
   local f="$1" want got; shift
@@ -40,10 +57,11 @@ shape() {
   got="$(headings "$f")"
   [ "$got" = "$want" ] || fail "$f has the headings [$(printf '%s' "$got" | paste -sd '|' -)]; the shape is [$(printf '%s' "$want" | paste -sd '|' -)], in that order, each holding numbered items or nothing"
 }
-# report <file> <heading>...: the shape, then the count line, which may not exceed the Would-break items.
+# report <file> <heading>...: the shape, the numbering, then the count line, which may not exceed the Would-break items.
 report() {
   local f="$1" line n wb
   shape "$@"
+  numbered "$f"
   line="$(grep -E '^hard findings: [0-9]+$' "$f" | tail -1)" || fail "$f has no 'hard findings: N' line; ask the reviewer for it"
   n="${line#hard findings: }"
   wb="$(count "$f" "Would break")"

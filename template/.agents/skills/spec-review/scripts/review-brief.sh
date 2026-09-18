@@ -183,7 +183,7 @@ if [ -n "$spec" ]; then
     echo '- `## Latent`: edge cases, visibility, policy, wording; anything a user would not hit in normal use.'
     echo '- `## Not asked for`: behaviour in the diff the ticket did not ask for.'
     echo
-    echo 'Each item opens with a line of the form `1. **Title.** body` and quotes the spec line it rests on; number the items continuously across the headings, so the judgment can name your third item as [P3]. Read nothing beyond this brief unless a finding needs the code around a hunk, and then read that one function or section, not the file. Under 400 words.'
+    echo 'Each item opens with a line of the form `1. **Title.** body` and quotes the spec line it rests on in a fenced block (a criterion can carry `## ` or `1. ` lines, and only fenced text is exempt from the report shape); number the items continuously across the headings, so the judgment can name your third item as [P3]. Read nothing beyond this brief unless a finding needs the code around a hunk, and then read that one function or section, not the file. Under 400 words.'
     echo
     echo "Write your report to \`$dir/spec-report.md\` and reply with only that path."
     echo "$count_rule"

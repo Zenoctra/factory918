@@ -71,8 +71,11 @@ refuse "$dir/standards-report.md is missing; wait for the Standards reviewer" "n
 printf '## Would break\n\n## Standards breaches\n\n## Fix alongside\n' > "$dir/standards-report.md"
 refuse "$dir/standards-report.md has no 'hard findings: N' line; ask the reviewer for it" "Standards report without the count line"
 
-printf '## Would break\n\n1. **One.** a\n\n## Standards breaches\n\n## Fix alongside\n\n1. **Smell.** b\n\nhard findings: 2\n' > "$dir/standards-report.md"
+printf '## Would break\n\n1. **One.** a\n\n## Standards breaches\n\n## Fix alongside\n\n2. **Smell.** b\n\nhard findings: 2\n' > "$dir/standards-report.md"
 refuse "$dir/standards-report.md says 'hard findings: 2' but has 1 items under '## Would break'; only those count. Ask the reviewer to put each finding under the heading it belongs to and recount" "count line above the Would-break items"
+
+printf '## Would break\n\n1. **One.** a\n\n## Standards breaches\n\n1. **Two.** b\n2. **Three.** c\n\n## Fix alongside\n\nhard findings: 1\n' > "$dir/standards-report.md"
+refuse "$dir/standards-report.md item '1. **Two.** b' is numbered 1 where 2 was expected; number the items 1..N continuously across the headings, in document order" "numbering restarts under the second heading"
 
 printf '## Would Break\n\n## Standards breaches\n\nhard findings: 0\n' > "$dir/standards-report.md"
 refuse "$dir/standards-report.md has the headings [Would Break|Standards breaches]; the shape is [Would break|Standards breaches|Fix alongside], in that order, each holding numbered items or nothing" "Standards report off its shape"
@@ -245,5 +248,89 @@ $(cat "$dir/judgment.md")
 
 Standards: 0 would break of 2; Spec: no spec; judged: act on 1, ask 0, consider 0, noted 0, dismissed 1; fixed point main.
 act-on items: 1" "rerun with the dir argument after the state was cleared" "$dir"
+
+# The same rerun with the dir spelled ./<dir>/ and as its absolute path, the state present and
+# naming the dir: each spelling is the dir the state names, so the state is cleared.
+for spelling in "./$dir/" "$(git rev-parse --show-toplevel)/$dir"; do
+  reset
+  printf '## Would break\n\n## Standards breaches\n\n## Fix alongside\n\n1. **Mysterious Name.** x\n2. **Middle Man.** y\n\nhard findings: 0\n' > "$dir/standards-report.md"
+  printf '## Act on\n\n1. [S1] **Mysterious Name.** the human wants it renamed\n\n## Ask\n\n## Consider\n\n## Noted\n\n## Dismissed\n\n1. [S2] **Middle Man.** one caller, kept inline\n' > "$dir/judgment.md"
+  accept "## Standards
+
+$(cat "$dir/standards-report.md")
+
+## Spec
+
+no spec: Standards axis only
+
+## Judgment
+
+$(cat "$dir/judgment.md")
+
+Standards: 0 would break of 2; Spec: no spec; judged: act on 1, ask 0, consider 0, noted 0, dismissed 1; fixed point main.
+act-on items: 1" "rerun with the dir spelled $spelling" "$spelling"
+done
+
+# Fenced text is exempt from the shape. Three reports, each the unfenced twin below with a quoted
+# hunk under its first item, parse to the twin's headings and items: a hunk quoting a ``` line
+# inside a ```` block, a hunk in ~~~ fences that quotes a ``` line, and a fenced hunk carrying
+# `## ` and `1. ` lines. A heading with trailing whitespace is the same heading.
+# fenced_twin <label> <hunk>: the twin with the hunk under item 1 is accepted with the twin's summary.
+fenced_twin() {
+  reset
+  printf '## Would break\n\n1. **One.** a\n\n%s\n\n## Standards breaches\n\n2. **Two.** b\n\n## Fix alongside\n\n3. **Three.** c\n\nhard findings: 1\n' "$2" > "$dir/standards-report.md"
+  printf '## Act on\n\n1. [S1] **One.** yes\n\n## Ask\n\n## Consider\n\n## Noted\n\n1. [S3] **Three.** later\n\n## Dismissed\n\n1. [S2] **Two.** no\n' > "$dir/judgment.md"
+  accept "## Standards
+
+$(cat "$dir/standards-report.md")
+
+## Spec
+
+no spec: Standards axis only
+
+## Judgment
+
+$(cat "$dir/judgment.md")
+
+Standards: 1 would break of 3; Spec: no spec; judged: act on 1, ask 0, consider 0, noted 1, dismissed 1; fixed point main.
+act-on items: 1" "$1"
+}
+fenced_twin "the unfenced twin" ""
+fenced_twin "a fence quoted inside a longer fence" '````md
+## Would break
+1. **Quoted.** the hunk is a report
+```
+2. still the hunk
+```
+## Latent
+````'
+fenced_twin 'a ~~~ fence quoting a ``` line' '~~~sh
+## Would break
+```
+1. still the hunk
+~~~'
+fenced_twin "a fenced hunk carrying heading and item lines" '```
+## Fix alongside
+1. not an item
+## Would break
+```'
+
+reset
+printf '## Would break \n\n## Standards breaches\t\n\n## Fix alongside \n\nhard findings: 0\n' > "$dir/standards-report.md"
+empty_judgment > "$dir/judgment.md"
+accept "## Standards
+
+$(cat "$dir/standards-report.md")
+
+## Spec
+
+no spec: Standards axis only
+
+## Judgment
+
+$(cat "$dir/judgment.md")
+
+Standards: 0 would break of 0; Spec: no spec; judged: act on 0, ask 0, consider 0, noted 0, dismissed 0; fixed point main.
+act-on items: 0" "headings with trailing whitespace"
 
 echo "ok $n assertions"
