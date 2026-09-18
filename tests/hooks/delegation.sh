@@ -124,7 +124,9 @@ set +e
 err="$(printf 'not json' | bash "$hook" 2>&1 >/dev/null)"
 code=$?
 set -e
-if [ "$code" != 0 ]; then echo "FAIL bad JSON: exit $code, wanted 0"; exit 1; fi
+if [ "$code" != 0 ] || [ "$err" != "delegation.sh: could not parse the hook input; letting the call through" ]; then
+  echo "FAIL bad JSON: exit $code, wanted 0"; echo "  got:    $err"; exit 1
+fi
 n=$((n + 1))
 
 echo "ok $n assertions"

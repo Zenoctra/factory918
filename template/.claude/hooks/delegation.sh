@@ -8,7 +8,8 @@ set -fuo pipefail
 input="$(cat)"
 parsed="$(printf '%s' "$input" | jq -r '[(.agent_id // ""), (.tool_name // ""), (.cwd // ""),
   (.tool_input.file_path // .tool_input.notebook_path // ""), (.tool_input.offset // "" | tostring),
-  (.tool_input.limit // "" | tostring), (.tool_input.command // "")] | join("\n")' 2>/dev/null)" || exit 0
+  (.tool_input.limit // "" | tostring), (.tool_input.command // "")] | join("\n")' 2>/dev/null)" \
+  || { echo "delegation.sh: could not parse the hook input; letting the call through" >&2; exit 0; }
 field() { printf '%s\n' "$parsed" | sed -n "$1"; }
 agent_id="$(field 1p)"
 [ -z "$agent_id" ] || exit 0
