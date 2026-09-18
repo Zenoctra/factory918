@@ -16,3 +16,12 @@
  
  ### 3. Identify the standards sources
  
+@@ -77,6 +77,8 @@
+ 
+ End with a one-line summary: total findings per axis, and the worst issue _within each axis_ (if any). Don't pick a single winner across axes: that's the reranking the separation exists to prevent.
+ 
++The report's final line is exactly `act-on items: N`. N counts the hard findings on both axes: on Standards, documented-standard breaches (baseline smells and judgement calls don't count); on Spec, requirements missing or partial, implementations that look wrong, and behaviour that wasn't asked for. Zero is written as `act-on items: 0`. Babysit reads this line, so it is always present and always last.
++
+ ## Why two axes
+ 
+ A change can pass one axis and fail the other:
