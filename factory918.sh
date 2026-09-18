@@ -207,26 +207,28 @@ cmd_doctor() {
   # anything else. The fetch may fail offline or without a remote; the doctor goes on.
   if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     git fetch -q origin main 2>/dev/null || true
-    local ref="" b behind s
+    local ref="" branch behind plural
     if git rev-parse -q --verify origin/main >/dev/null 2>&1; then ref=origin/main
     elif git rev-parse -q --verify main >/dev/null 2>&1; then ref=main; fi
-    b="$(git branch --show-current)"
+    branch="$(git branch --show-current)"
     if ! git rev-parse -q --verify HEAD >/dev/null 2>&1; then
-      note "branch ${b:-detached HEAD} has no commits yet" "git add -A && git commit -m 'chore: initial commit'"
+      note "branch ${branch:-detached HEAD} has no commits yet" "git add -A && git commit -m 'chore: initial commit'"
     elif [ -z "$ref" ]; then
-      note "branch ${b:-detached HEAD}: no main to compare against" "git remote add origin <url> && git fetch origin"
-    elif [ -z "$b" ]; then
+      note "branch ${branch:-detached HEAD}: no main to compare against" "git remote add origin <url> && git fetch origin"
+    elif [ -z "$branch" ]; then
       note "detached HEAD" "git checkout main && git pull"
     else
-      behind="$(git rev-list --count "HEAD..$ref")"; s=s; [ "$behind" = 1 ] && s=""
-      if [ "$b" = main ]; then
-        if [ "$behind" -gt 0 ]; then note "branch main is $behind commit$s behind origin/main" "git pull"; else echo "PASS  branch main, up to date"; fi
+      behind="$(git rev-list --count "HEAD..$ref")"; plural=s; [ "$behind" = 1 ] && plural=""
+      if [ "$branch" = main ]; then
+        if [ "$behind" -gt 0 ]; then note "branch main is $behind commit$plural behind $ref" "git pull"; else echo "PASS  branch main, up to date"; fi
       elif [ "$behind" -eq 0 ]; then
-        echo "PASS  branch $b, up to date with main"
+        echo "PASS  branch $branch, up to date with main"
       elif git merge-base --is-ancestor HEAD "$ref"; then
-        note "branch $b is already in main" "git checkout main && git pull"
+        note "branch $branch is already in main" "git checkout main && git pull"
+      elif [ "$(gh pr list --head "$branch" --state merged --json number --jq length 2>/dev/null)" -gt 0 ] 2>/dev/null; then
+        note "branch $branch was merged (squash or rebase, so main does not contain its commits)" "git checkout main && git pull"
       else
-        note "branch $b is $behind commit$s behind main" "git rebase $ref"
+        note "branch $branch is $behind commit$plural behind main" "git checkout main && git pull to start a ticket, or git rebase $ref to continue this branch"
       fi
     fi
   fi
