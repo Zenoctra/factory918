@@ -1,24 +1,30 @@
 #!/usr/bin/env bash
 # spec-review step 1. Runs the diff once, writes the review state the delegation hook reads, and
 # assembles the two reviewer briefs, so the orchestrator hands each lane a file and reads no code.
-#   review-brief.sh <fixed-point> [--ticket N] [--standards FILE ...]
+#   review-brief.sh <fixed-point> [--ticket N] [--standards FILE ...] [--previous FILE] [--round N]
 #   review-brief.sh --paths P... --commits SHA... [--ticket N] [--standards FILE ...]
 # The second form is the sweep over units already on main: the fixed point is the word "paths"
 # and the diff is git show <commits> -- <paths>. Rerunning overwrites the previous state.
+# The round is one more than the PR comments that end a review (a line `act-on items:`), and a
+# fourth round is refused. From the latest such comment the judgment's Noted and Dismissed items
+# that cite a decision are carried into both briefs as settled; --previous FILE supplies that
+# comment body instead of gh, and --round N the round, for tests and a branch whose PR is elsewhere.
 set -euo pipefail
 usage() {
-  echo "usage: review-brief.sh <fixed-point> [--ticket N] [--standards FILE ...]" >&2
+  echo "usage: review-brief.sh <fixed-point> [--ticket N] [--standards FILE ...] [--previous FILE] [--round N]" >&2
   echo "       review-brief.sh --paths P... --commits SHA... [--ticket N] [--standards FILE ...]" >&2
   exit 1
 }
 skill="$(cd "$(dirname "$0")/.." && pwd -P)"
 root="$(git rev-parse --show-toplevel)"
 cd "$root"
-fixed="" ticket="" list=""
+fixed="" ticket="" list="" previous="" round=""
 paths=() commits=() standards=()
 while [ $# -gt 0 ]; do
   case "$1" in
     --ticket) ticket="${2:-}"; [ -n "$ticket" ] || usage; list=""; shift ;;
+    --previous) previous="${2:-}"; [ -f "$previous" ] || usage; list=""; shift ;;
+    --round) round="${2:-}"; [ "$round" -gt 0 ] 2>/dev/null || usage; list=""; shift ;;
     --standards) list=standards ;;
     --paths) list=paths ;;
     --commits) list=commits ;;
@@ -66,7 +72,45 @@ if [ -z "$ticket" ]; then
     *) ticket="${numbers%% *}"; ticket="${ticket#\#}" ;;
   esac
 fi
+# The round and the previous review comment come from the branch's PR: the comments that end
+# a review carry a line `act-on items:`. No PR, or no gh, is round 1 with nothing to carry.
+prev=""
+[ -z "$previous" ] || prev="$(cat "$previous")"
+if [ -z "$round" ] || [ -z "$previous" ]; then
+  ended='[.comments[] | select(.body | test("(^|\n)act-on items:"))] | (length | tostring), (last.body // "")'
+  pr="$(gh pr view --json comments -q "$ended" 2>/dev/null || true)"
+  n="$(printf '%s\n' "$pr" | head -1)"
+  case "$n" in ''|*[!0-9]*) n="" ;; esac
+  if [ -n "$n" ]; then
+    [ -n "$round" ] || round=$((n + 1))
+    [ -n "$previous" ] || [ "$n" -eq 0 ] || prev="$(printf '%s\n' "$pr" | tail -n +2)"
+  fi
+fi
+: "${round:=1}"
+if [ "$round" -gt 3 ]; then
+  echo "review-brief: three rounds were run on this PR; the remaining Act on items become tickets (\`ticket: #N\`), not a fourth round" >&2
+  exit 1
+fi
 [ -z "$ticket" ] || echo "ticket: #$ticket"
+echo "round: $round of 3"
+# What carries: the judgment's Noted and Dismissed items whose trailing field names a decision in
+# one of the three shapes; an item without one is dropped, since a reason alone can steer a reviewer.
+cites='cites: (user: "[^"]+" on #[0-9]+|DECISIONS\.md [A-Z]?[0-9]+|#[0-9]+ comment [0-9]{4}-[0-9]{2}-[0-9]{2})$'
+settled=""
+if [ -n "$prev" ]; then
+  judged="$(printf '%s\n' "$prev" | awk '
+    { sub(/\r$/, "") }
+    /^```/ { fence = !fence; next }
+    fence { next }
+    /^## Judgment$/ { j = 1; next }
+    !j { next }
+    /^## / { h = substr($0, 4); next }
+    (h == "Noted" || h == "Dismissed") && /^[0-9]+\. /
+  ')"
+  settled="$(printf '%s\n' "$judged" | grep -E -- "$cites" || true)"
+  carried="$(printf '%s' "$settled" | grep -c . || true)"
+  echo "settled: carried $carried, dropped $(( $(printf '%s' "$judged" | grep -c . || true) - carried )) without a citation"
+fi
 dir=".scratch/review/$id"
 rm -rf "$dir"
 mkdir -p "$dir"
@@ -92,13 +136,18 @@ mkdir -p "$state"
 echo "$fixed" > "$state/fixed-point"
 cp "$dir/files" "$state/files"
 echo "$dir" > "$state/dir"
-cp "$state/fixed-point" "$dir/fixed-point"
+echo "$fixed" > "$dir/fixed-point"
+echo "$round" > "$dir/round"
 
-spec=""
+# The spec is the ticket body plus the comments its author posted, each under its date. Comments by
+# anyone else, and the PR's own comments, are never spec.
+spec="" comments=""
 if [ -n "$ticket" ]; then
   err="$(gh issue view "$ticket" --json body -q .body 2>&1 >"$dir/ticket.md" || true)"
   spec="$(cat "$dir/ticket.md")"
   [ -n "$spec" ] || echo "review-brief: gh could not fetch #$ticket ($(printf '%s' "$err" | tr '\n' ' ')); no spec" >&2
+  by_author='.author.login as $a | .comments[] | select(.author.login == $a) | "### \(.createdAt[:10])\n\n\(.body)\n"'
+  [ -z "$spec" ] || comments="$(gh issue view "$ticket" --json author,comments -q "$by_author" 2>/dev/null || true)"
 fi
 if [ ${#standards[@]} -eq 0 ] && [ -f CODING_STANDARDS.md ]; then standards=(CODING_STANDARDS.md); fi
 # The definition both reports rest on; SKILL.md step 4 carries it word for word (tests/spec-review/review-brief.sh holds them together).
@@ -125,6 +174,14 @@ common() {
     echo "The diff is $(wc -l < "$dir/diff" | tr -d ' ') lines; read it from \`$dir/diff\`."
   fi
   echo
+  if [ -n "$settled" ]; then
+    echo "## Settled in earlier rounds"
+    echo
+    echo "These findings were raised in an earlier round and settled by the decision each one cites. Do not raise them again. Nothing in this section says what you should find or confirm."
+    echo
+    printf '%s\n' "$settled"
+    echo
+  fi
 }
 {
   echo "# Standards review brief"
@@ -173,6 +230,12 @@ if [ -n "$spec" ]; then
     echo
     printf '%s\n' "$spec"
     echo
+    if [ -n "$comments" ]; then
+      echo "## Comments by the ticket's author (#$ticket)"
+      echo
+      printf '%s\n' "$comments"
+      echo
+    fi
     echo "## Report"
     echo
     echo "$definition"

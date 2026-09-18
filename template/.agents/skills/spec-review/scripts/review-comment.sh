@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
 # spec-review step 6. Prints the review comment: the two reports and the orchestrator's judgment,
-# verbatim under their headings, then act-on items counted from the judgment's Act on and Ask
-# lists, and clears the review state so the delegation hook stops blocking the reviewed files.
+# verbatim under their headings, the round, then act-on items counted from the judgment's Act on
+# items not filed as a ticket (`ticket: #N`) plus its Ask items, and clears the review state so
+# the delegation hook stops blocking the reviewed files.
 # No arguments: it reads .claude/state/review/dir. One argument, the review dir
 # (.scratch/review/<id>): it reads that dir instead, so a judgment re-sorted after the human
 # answers an Ask item, or a report sent back for its shape, reruns on the same reports once the
-# state is gone; the state is cleared only when it exists and names this dir, however the dir is
-# spelled. Exits 1, clearing nothing, when a file is missing or off its shape: a count line above
-# the Would-break items, a heading outside the shape, report items not numbered 1..N in document
-# order, or a judgment that does not name every report item exactly once.
+# state is gone, in the same round; the state is cleared only when it exists and names this dir,
+# however the dir is spelled. Exits 1, clearing nothing, when a file is missing or off its shape:
+# a count line above the Would-break items, a heading outside the shape, report items not
+# numbered 1..N in document order, a round file that holds no number, or a judgment that does not
+# name every report item exactly once.
 set -euo pipefail
 root="$(git rev-parse --show-toplevel)"
 cd "$root"
@@ -99,6 +101,11 @@ if [ "$got" != "$want" ]; then
   extra="$(comm -13 <(printf '%s\n' "$want") <(printf '%s\n' "$got") | sed '/^$/d' | paste -sd ' ' -)"
   fail "$dir/judgment.md does not name every report item exactly once: missing [${missing:-none}], unknown or repeated [${extra:-none}]; the reports have $s_total Standards items and $p_total Spec items"
 fi
+round=1
+if [ -f "$dir/round" ]; then
+  round="$(cat "$dir/round")"
+  [ "$round" -gt 0 ] 2>/dev/null || fail "$dir/round holds '$round', not a round number; rerun scripts/review-brief.sh"
+fi
 
 echo "## Standards"
 echo
@@ -113,11 +120,14 @@ echo
 cat "$dir/judgment.md"
 echo
 act="$(count "$dir/judgment.md" "Act on")"
+# An Act on item filed as its own ticket (a trailing `ticket: #N`) is not counted.
+ticketed="$(items "$dir/judgment.md" "Act on" | grep -cE 'ticket: #[0-9]+$' || true)"
 ask="$(count "$dir/judgment.md" "Ask")"
 if [ -n "$has_spec" ]; then spec="$p_wb would break of $p_total"; else spec="no spec"; fi
-if [ -f "$state/fixed-point" ]; then fixed="fixed point $(cat "$state/fixed-point")"
-elif [ -f "$dir/fixed-point" ]; then fixed="fixed point $(cat "$dir/fixed-point")"
+if [ -f "$dir/fixed-point" ]; then fixed="fixed point $(cat "$dir/fixed-point")"
+elif [ -f "$state/fixed-point" ]; then fixed="fixed point $(cat "$state/fixed-point")"
 else fixed="fixed point unknown"; fi
-echo "Standards: $s_wb would break of $s_total; Spec: $spec; judged: act on $act, ask $ask, consider $(count "$dir/judgment.md" Consider), noted $(count "$dir/judgment.md" Noted), dismissed $(count "$dir/judgment.md" Dismissed); $fixed."
-echo "act-on items: $((act + ask))"
+echo "Standards: $s_wb would break of $s_total; Spec: $spec; judged: act on $act ($ticketed with a ticket), ask $ask, consider $(count "$dir/judgment.md" Consider), noted $(count "$dir/judgment.md" Noted), dismissed $(count "$dir/judgment.md" Dismissed); $fixed."
+echo "round: $round of 3"
+echo "act-on items: $((act - ticketed + ask))"
 if [ -f "$state/dir" ] && [ "$(cat "$state/dir")" = "$dir" ]; then rm -rf "$state"; fi

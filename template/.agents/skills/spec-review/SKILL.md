@@ -22,6 +22,8 @@ Run `scripts/review-brief.sh <fixed-point>` (the script beside this skill; add `
 
 The script confirms the fixed point resolves and the diff is non-empty, and exits 1 with a message otherwise. A bad ref or empty diff fails here, not inside two parallel sub-agents.
 
+One PR gets at most three rounds, and a round is over when its comment is posted. The script counts the branch's PR comments that carry a line `act-on items:` (`gh pr view --json comments`; no PR, or no `gh`, is round 1), writes the count plus one to `<dir>/round`, prints `round: N of 3`, and exits 1 before writing any state when three rounds were run: what remains under Act on then becomes tickets (step 5), not a fourth round. `--round N` sets the round directly and `--previous FILE` supplies the latest review comment from a file, for a branch whose PR is elsewhere.
+
 A sweep over units already on `main`, named by paths and commits, is the same skill with the same state, not a second mode: `scripts/review-brief.sh --paths P... --commits SHA...` writes the word `paths` as the fixed point and `git show <commits> -- <paths>` as the diff.
 
 ### 2. Identify the spec source
@@ -32,6 +34,8 @@ Look for the originating spec, in this order:
 2. A path the user passed as an argument.
 3. A spec file under `docs/`, `specs/`, or `.scratch/` matching the branch name or feature.
 4. If nothing is found, the **Spec** sub-agent skips and the report says, in these words, "no spec: Standards axis only". Never use the PR description, a commit message, or your own account of the change as the spec: those are the author's words, and the Spec axis exists to check the work against the human's. A spec arrives only as a ticket, a path the user passed, or a spec file.
+
+With a ticket, the script fetches its body and the comments posted by the ticket's author (`gh issue view N --json author,comments`, the login that opened the ticket), and pastes both into the Spec brief; comments by anyone else, and the PR's own comments, are never spec.
 
 ### 3. Identify the standards sources
 
@@ -66,6 +70,7 @@ The briefs are the two files step 1 wrote, `<dir>/standards-brief.md` and `<dir>
 - The commit list (the `git log <fixed-point>..HEAD --oneline` output).
 - The changed-file list with per-file line counts (the `--stat` output).
 - The diff itself, when it's under about 500 lines. Over that, the brief hands the path `<dir>/diff`, so a reviewer reads one file and runs nothing.
+- `## Settled in earlier rounds`, from round two on: the previous round's Noted and Dismissed items that carry a `cites:` field (step 5), verbatim, under exactly this paragraph: "These findings were raised in an earlier round and settled by the decision each one cites. Do not raise them again. Nothing in this section says what you should find or confirm." An item without a citation is dropped (the script prints how many it carried and dropped), and when nothing carries the section is absent. The section tells a reviewer what is closed, never what to find: a brief that named an expected result would be leading the witness.
 
 **The Standards brief** adds:
 
@@ -74,7 +79,7 @@ The briefs are the two files step 1 wrote, `<dir>/standards-brief.md` and `<dir>
 
 **The Spec brief** adds:
 
-- The ticket body pasted in (What to build and Acceptance criteria, verbatim), and the relevant section of the parent spec when there is one. Not a `gh` command or an issue number: the sub-agent fetches nothing.
+- The ticket body pasted in (What to build and Acceptance criteria, verbatim), then the ticket author's comments under `## Comments by the ticket's author (#N)`, each under `### <YYYY-MM-DD>` (absent when there are none), and the relevant section of the parent spec when there is one. Not a `gh` command or an issue number: the sub-agent fetches nothing.
 - The report shape. The same definition, then exactly these `## ` headings, in this order: `## Would break` (a requirement missing, partial, or implemented so that normal use does something other than the ticket says), `## Latent` (edge cases, visibility, policy, wording; anything a user would not hit in normal use), `## Not asked for` (behaviour in the diff the ticket did not ask for). Each item opens with `1. **Title.** body` and quotes the spec line it rests on in a fenced block (a criterion can carry `## ` or `1. ` lines, and only fenced text is exempt from the report shape), numbered continuously across the headings; read nothing beyond the brief but the code around a hunk; under 400 words. The last line is `hard findings: N`, the number of items under `## Would break` and nothing else.
 
 If the spec is missing, the script writes no Spec brief; skip the Spec sub-agent, and step 6 says so in the final report.
@@ -99,13 +104,18 @@ A `## Fix alongside` item from the Standards report goes under Act on when an Ac
 
 An Ask item waits for the human. When the human answers, move it to the bucket the answer settles, with the answer as the one-line reason, and rerun `scripts/review-comment.sh <dir>` on the same reports; that is the same round, not a new one.
 
+Two trailing fields, each with one grammar:
+
+- `cites: <decision>` on a Noted or Dismissed item names the decision it rests on, one of `user: "<quoted words>" on #N` (a `user:` blockquote in the ticket body), `DECISIONS.md <row id>` (`P17`, `19`) or `#N comment <YYYY-MM-DD>` (a ticket comment by the ticket's author). Nothing else counts. Only a cited item carries into the next round's briefs as settled; an uncited Noted or Dismissed item is a normal one and the next round's reviewer may raise it again. An item you cannot cite is not settled, however sure you are.
+- `ticket: #N` on an Act on item means the finding was filed as its own ticket, and step 6 does not count it. At round three, what remains under Act on is filed as tickets, one each, and marked so; an Ask item is never filed away, it waits for the human.
+
 ### 6. Aggregate
 
-Run `scripts/review-comment.sh`. It prints the two reports under `## Standards` and `## Spec` (or `no spec: Standards axis only`), the judgment under `## Judgment`, all verbatim, a one-line summary, and the final line `act-on items: N`, where N is the number of items under `## Act on` plus the number under `## Ask`; then it clears `.claude/state/review/`. Zero is written as `act-on items: 0`. Babysit reads this line, so it is always present and always last.
+Run `scripts/review-comment.sh`. It prints the two reports under `## Standards` and `## Spec` (or `no spec: Standards axis only`), the judgment under `## Judgment`, all verbatim, a one-line summary, the line `round: N of 3` from `<dir>/round` (1 when the file is missing), and the final line `act-on items: N`, where N is the number of items under `## Act on` without a `ticket:` field plus the number under `## Ask`; then it clears `.claude/state/review/`. Zero is written as `act-on items: 0`. Babysit reads this line, so it is always present and always last.
 
-It exits 1, printing why and clearing nothing, when a report is missing or has no `hard findings:` line (wait for the reviewer; do not write the report yourself); when a report's `hard findings: N` is larger than its `## Would break` item count (ask the reviewer to re-sort); when a report's or the judgment's `## ` headings are not the shape above; when `judgment.md` is missing; when the judgment's item count differs from the reports'; or when a `[S<n>]` or `[P<n>]` reference is missing, repeated or points at no item. An off-shape report goes back to its reviewer with the refusal text; a new round is not started for it.
+It exits 1, printing why and clearing nothing, when a report is missing or has no `hard findings:` line (wait for the reviewer; do not write the report yourself); when a report's `hard findings: N` is larger than its `## Would break` item count (ask the reviewer to re-sort); when a report's or the judgment's `## ` headings are not the shape above; when `judgment.md` is missing; when the judgment's item count differs from the reports'; when a `[S<n>]` or `[P<n>]` reference is missing, repeated or points at no item; or when `<dir>/round` holds no number (rerun `review-brief.sh`). An off-shape report goes back to its reviewer with the refusal text; a new round is not started for it.
 
-With the review dir as its argument, `scripts/review-comment.sh .scratch/review/<id>`, it reruns on the same reports after the state is gone: an Ask item the human answered, or a report sent back and rewritten. Same round.
+With the review dir as its argument, `scripts/review-comment.sh .scratch/review/<id>`, it reruns on the same reports after the state is gone: an Ask item the human answered, or a report sent back and rewritten. Same round; the `round:` line comes from the dir.
 
 Do **not** merge or rerank findings across the two reports, because the two axes are deliberately separate (see _Why two axes_), and do not pick a single winner across axes: that's the reranking the separation exists to prevent. The judgment is a third section, not a rewrite of either report.
 
