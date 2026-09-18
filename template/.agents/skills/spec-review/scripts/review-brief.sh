@@ -100,6 +100,9 @@ if [ -n "$ticket" ]; then
   [ -n "$spec" ] || echo "review-brief: gh could not fetch #$ticket ($(printf '%s' "$err" | tr '\n' ' ')); no spec" >&2
 fi
 if [ ${#standards[@]} -eq 0 ] && [ -f CODING_STANDARDS.md ]; then standards=(CODING_STANDARDS.md); fi
+# The definition both reports rest on; SKILL.md step 4 carries it word for word (tests/spec-review/review-brief.sh holds them together).
+definition="A hard finding is wrong behavior in normal use: a command, hook, script or documented flow does something other than what the ticket or its own documentation says it does, on the path a user takes."
+count_rule='End the report with exactly one line `hard findings: N`, where N is the number of items under `## Would break` and nothing else.'
 common() {
   echo "Read nothing beyond this brief unless a finding needs the code around a hunk, and then read that one function or section, not the file. Run nothing."
   echo
@@ -147,10 +150,18 @@ common() {
   echo
   echo "## Report"
   echo
-  echo "Report, per file/hunk where relevant, (a) every place the diff violates a documented standard: cite the standard (file + the rule); and (b) any baseline smell you spot: name it and quote the hunk. Distinguish hard violations from judgement calls: documented-standard breaches can be hard, but baseline smells are always judgement calls, and a documented repo standard overrides the baseline. Skip anything tooling enforces. Read nothing beyond this brief unless a finding needs the code around a hunk, and then read that one function or section, not the file. Under 400 words."
+  echo "$definition"
+  echo
+  echo "Write the report as Markdown with exactly these \`## \` headings, in this order, each holding numbered items or nothing:"
+  echo
+  echo '- `## Would break`: a breach of a documented standard that produces wrong behavior in normal use. Cite the standard (file + the rule) and quote the hunk.'
+  echo '- `## Standards breaches`: documented-standard breaches that do not change behavior. Cite the standard and quote the hunk.'
+  echo '- `## Fix alongside`: baseline smells and other judgement calls. Name the smell and quote the hunk. They are fixed only when a would-break fix already touches that code; they never count.'
+  echo
+  echo 'Each item opens with a line of the form `1. **Title.** body`, with the quoted hunk in a fenced block under it; number the items continuously across the headings, so the judgment can name your third item as [S3]. A documented repo standard overrides the baseline. Skip anything tooling enforces. Read nothing beyond this brief unless a finding needs the code around a hunk, and then read that one function or section, not the file. Under 400 words.'
   echo
   echo "Write your report to \`$dir/standards-report.md\` and reply with only that path."
-  echo "End the report with exactly one line \`hard findings: N\` counting your hard findings (documented-standard breaches; baseline smells and judgement calls do not count)."
+  echo "$count_rule"
 } > "$dir/standards-brief.md"
 if [ -n "$spec" ]; then
   {
@@ -163,10 +174,18 @@ if [ -n "$spec" ]; then
     echo
     echo "## Report"
     echo
-    echo "Report: (a) requirements the spec asked for that are missing or partial; (b) behaviour in the diff that wasn't asked for (scope creep); (c) requirements that look implemented but where the implementation looks wrong. Quote the spec line for each finding. Read nothing beyond this brief unless a finding needs the code around a hunk, and then read that one function or section, not the file. Under 400 words."
+    echo "$definition"
+    echo
+    echo "Write the report as Markdown with exactly these \`## \` headings, in this order, each holding numbered items or nothing:"
+    echo
+    echo '- `## Would break`: a requirement missing, partial, or implemented so that normal use does something other than the ticket says.'
+    echo '- `## Latent`: edge cases, visibility, policy, wording; anything a user would not hit in normal use.'
+    echo '- `## Not asked for`: behaviour in the diff the ticket did not ask for.'
+    echo
+    echo 'Each item opens with a line of the form `1. **Title.** body` and quotes the spec line it rests on; number the items continuously across the headings, so the judgment can name your third item as [P3]. Read nothing beyond this brief unless a finding needs the code around a hunk, and then read that one function or section, not the file. Under 400 words.'
     echo
     echo "Write your report to \`$dir/spec-report.md\` and reply with only that path."
-    echo "End the report with exactly one line \`hard findings: N\` counting your hard findings (requirements missing or partial, implementations that look wrong, and behaviour that was not asked for)."
+    echo "$count_rule"
   } > "$dir/spec-brief.md"
   echo "$dir/standards-brief.md"
   echo "$dir/spec-brief.md"
