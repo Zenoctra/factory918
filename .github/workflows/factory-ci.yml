@@ -23,6 +23,8 @@ jobs:
         run: bash tests/spec-review/review-comment.sh
       - name: review-brief.sh writes the report shape into both briefs
         run: bash tests/spec-review/review-brief.sh
+      - name: No retired review wording under template/ or the core knowledge
+        run: bash tests/spec-review/no-stale-wording.sh
       - name: Knowledge base is consistent and built from its sources
         run: python3 tools/check_knowledge.py && python3 tools/build_knowledge.py && git diff --exit-code
       - name: Vendored skills equal the pins plus the patches
@@ -43,7 +45,25 @@ jobs:
         run: |
           git config --global user.name ci && git config --global user.email ci@factory918.invalid
           (cd /tmp && vp create vite:monorepo --directory fx --no-interactive --git --hooks --no-agent)
+          git -C /tmp/fx add -A && git -C /tmp/fx commit -qm "chore: initial commit"
           ./factory918.sh apply /tmp/fx --scaffold --profile python --name demo | tail -30
+      - name: review-brief.sh briefs the apply diff inside the project
+        working-directory: /tmp/fx
+        run: |
+          git add -A && git commit -qm "factory918 apply"
+          mkdir -p /tmp/fake-gh && cp "$GITHUB_WORKSPACE/tests/spec-review/fake-gh.sh" /tmp/fake-gh/gh && chmod +x /tmp/fake-gh/gh
+          printf -- '- **What it does.** Applies the factory.\n- **Risks.** Every hook under `.claude/hooks/` is new here.\n' > /tmp/blast.md
+          PATH="/tmp/fake-gh:$PATH" .agents/skills/spec-review/scripts/review-brief.sh HEAD~1 --ticket 1 --blast-radius /tmp/blast.md
+          d=.scratch/review/HEAD_1
+          test -s "$d/standards-brief.md" && test -s "$d/spec-brief.md"
+          for f in "$d/standards-brief.md" "$d/spec-brief.md"; do
+            grep -qF 'A hard finding is one of two things: the documented path gives a wrong or silent result, or an input outside it proceeds silently (fails open). An input outside the documented path that is refused with a message saying how to correct it is not a finding; it is the design. Zero items is the expected result for a clean change.' "$f"
+            grep -qF '`## Fails open`' "$f"
+            if grep -qF '## Latent' "$f"; then echo "$f carries ## Latent" && exit 1; fi
+          done
+          grep -qF '`## Walk`' "$d/spec-brief.md"
+          if grep -qF '`## Walk`' "$d/standards-brief.md"; then echo "the Standards brief carries a walk" && exit 1; fi
+          rm -rf .claude/state/review
       - name: The gates a project runs
         working-directory: /tmp/fx
         run: vp check && vp test run && pnpm sg:test && pnpm sg
