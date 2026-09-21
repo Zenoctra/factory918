@@ -6,8 +6,8 @@
 # Nothing shared: prints nothing, exit 0. Shared and the program names #N: exit 2, stack on
 # that PR. Shared and no program naming #N: exit 1, stop. The ticket's paths are the backticked
 # tokens of its body outside a `## Diff` section, resolved against origin/main's tree, so a file,
-# a directory or a glob token becomes the tracked files it covers; a ticket that names none says
-# so on stderr and exits 0. With --diff the paths are this branch's own diff against
+# a directory or a glob token becomes the tracked files it covers, and a token git rejects prints
+# git's message and counts as no path; a ticket that names none says so on stderr and exits 0. With --diff the paths are this branch's own diff against
 # origin/main instead, and the PR whose head is this branch is skipped. Every PR head is fetched
 # fresh, since refs/remotes is shared across worktrees and Ticket step 1 refreshes only main.
 set -euo pipefail
@@ -25,7 +25,7 @@ else
   named=""
   while IFS= read -r tok; do
     [ -n "$tok" ] || continue
-    hits="$(git diff --name-only "$empty" origin/main -- "$tok" 2>/dev/null || true)"
+    hits="$(git diff --name-only "$empty" origin/main -- "$tok" || true)"
     [ -z "$hits" ] || named="$named$hits"$'\n'
   done <<< "$(printf '%s\n' "$body" | awk '/^## /{skip = ($0 ~ /^## Diff/)} !skip' | grep -oE '`[^`[:space:]]+`' | tr -d '`' | sort -u)"
   [ -n "$named" ] || { echo "overlap.sh: #$n names no tracked path; the --diff run at Opening a PR is the check" >&2; exit 0; }

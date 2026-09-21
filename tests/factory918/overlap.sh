@@ -6,7 +6,7 @@
 # line on overlap, 2 when .claude/state/program names the ticket, a directory token, a token under
 # `## Diff` ignored, --diff skipping the checked-out branch's own PR, a stale and a missing remote
 # ref both fetched, a glob token and both directory forms expanded against main's tree, a ticket
-# naming no tracked path, and a failing gh or git diff aborting the run. The fixture root has a
+# naming no tracked path, a token outside the repository, and a failing gh or git diff aborting the run. The fixture root has a
 # space, and from the README case on the script runs by the relative path the playbooks name. Exits 1 on the first miss.
 set -euo pipefail
 here="$(cd "$(dirname "$0")/../.." && pwd -P)"
@@ -78,6 +78,14 @@ Edit `README.md` and `gh issue view` and `#9`.'
 check "README.md only" 0 "" 9
 export FAKE_BODY='Edits `nothing/here.md` only.'
 check "no tracked path" 0 "overlap.sh: #9 names no tracked path; the --diff run at Opening a PR is the check" 9
+# A token git rejects prints git's message (its wording carries the repository path, so a grep) and
+# counts as no path.
+export FAKE_BODY='Reads `../x`.'
+set +e; err="$("$script" 9 2>&1 >/dev/null)"; code=$?; set -e
+if [ "$code" != 0 ] || ! grep -q 'outside repository' <<< "$err" || ! grep -qF 'overlap.sh: #9 names no tracked path' <<< "$err"; then
+  echo "FAIL a token outside the repository: exit $code, wanted 0 with git's message and the no-path line"; echo "  got:    $err"; exit 1
+fi
+n=$((n + 1))
 export FAKE_BODY='Touches `docs/a.md`.'
 check "docs/a.md, no program" 1 "$(printf 'program: none\n#1 feat-a: docs/a.md')" 9
 export FAKE_BODY='Touches `src/z.txt`, on feat-b after the stale remote ref.'
