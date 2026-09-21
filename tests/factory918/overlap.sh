@@ -5,12 +5,15 @@
 # call: 0 and nothing when the ticket names no in-flight path, 1 with `program: none` and the PR
 # line on overlap, 2 when .claude/state/program names the ticket, a directory token, a token under
 # `## Diff` ignored, --diff skipping the checked-out branch's own PR, a stale and a missing remote
-# ref both fetched, a glob token naming nothing, and a failing gh or git diff aborting the run. Exits 1 on the first miss.
+# ref both fetched, a glob token and both directory forms expanded against main's tree, a ticket
+# naming no tracked path, and a failing gh or git diff aborting the run. The fixture root has a
+# space, and from the README case on the script runs by the relative path the playbooks name. Exits 1 on the first miss.
 set -euo pipefail
 here="$(cd "$(dirname "$0")/../.." && pwd -P)"
 script="$here/template/.agents/skills/factory918/scripts/overlap.sh"
-fx="$(mktemp -d)"
-trap 'rm -rf "$fx"' EXIT
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+fx="$tmp/with space"
 mkdir -p "$fx/bin"
 cat > "$fx/bin/gh" <<'GH'
 #!/bin/sh
@@ -26,6 +29,8 @@ chmod +x "$fx/bin/gh"
 export PATH="$fx/bin:$PATH"
 git init -q -b main "$fx/clone"
 cd "$fx/clone"
+# The path the playbooks name, through the symlink every project and the factory carry.
+mkdir .claude && ln -s "$here/template/.agents/skills" .claude/skills
 git config user.email test@factory918.invalid
 git config user.name test
 mkdir -p docs src/x
@@ -63,27 +68,32 @@ export FAKE_GH_FAIL="pr list"
 check "pr list fails" 1 "gh: pr list failed" 9 --diff
 export FAKE_GH_FAIL=none
 export FAKE_PRS='[{"number":3,"headRefName":"feat-x"}]'
-export FAKE_BODY='Touches `orphan.txt`.'
+export FAKE_BODY='Touches `docs/a.md`.'
 check "a PR head with no merge base" 128 "fatal: origin/main...origin/feat-x: no merge base" 9
 unset FAKE_PRS
+script=.claude/skills/factory918/scripts/overlap.sh
 export FAKE_BODY='## What to build
 
 Edit `README.md` and `gh issue view` and `#9`.'
 check "README.md only" 0 "" 9
+export FAKE_BODY='Edits `nothing/here.md` only.'
+check "no tracked path" 0 "overlap.sh: #9 names no tracked path; the --diff run at Opening a PR is the check" 9
 export FAKE_BODY='Touches `docs/a.md`.'
 check "docs/a.md, no program" 1 "$(printf 'program: none\n#1 feat-a: docs/a.md')" 9
 export FAKE_BODY='Touches `src/z.txt`, on feat-b after the stale remote ref.'
 check "a path past the stale origin/feat-b" 1 "$(printf 'program: none\n#2 feat-b: src/z.txt')" 9
 export FAKE_BODY='Everything under `src/*`.'
-check "a glob token names nothing" 0 "" 9
+check "a glob token" 1 "$(printf 'program: none\n#2 feat-b: src/x/y.txt src/z.txt')" 9
+export FAKE_BODY='Everything under `src`.'
+check "a directory token without a slash" 1 "$(printf 'program: none\n#2 feat-b: src/x/y.txt src/z.txt')" 9
 export FAKE_BODY='Touches `docs/a.md`.'
 mkdir -p .claude/state && echo 'sweep: #7 #9' > .claude/state/program
 check "program names #9" 2 "$(printf 'program: sweep: #7 #9\n#1 feat-a: docs/a.md')" 9
 check "program names #9, ticket is #42" 1 "$(printf 'program: sweep: #7 #9\n#1 feat-a: docs/a.md')" 42
 check "a leading # on N" 2 "$(printf 'program: sweep: #7 #9\n#1 feat-a: docs/a.md')" '#9'
-rm -rf .claude
+rm -rf .claude/state
 export FAKE_BODY='Everything under `src/`, plus `docs/a.md`.'
-check "directory token and a file" 1 "$(printf 'program: none\n#1 feat-a: docs/a.md\n#2 feat-b: src/x/y.txt src/z.txt')" 9
+check "a directory token with a slash and a file" 1 "$(printf 'program: none\n#1 feat-a: docs/a.md\n#2 feat-b: src/x/y.txt src/z.txt')" 9
 export FAKE_BODY='## Diff
 
 `docs/a.md`
