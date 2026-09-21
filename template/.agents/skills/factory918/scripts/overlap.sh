@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Ticket playbook step 4 and Opening a PR. Prints every open PR whose diff against origin/main
-# shares a path with the paths ticket N names, one line each, `#<pr> <head>: <path> <path>`,
-# under a first line `program: <line>` holding .claude/state/program (read through the git
+# shares a path with the paths ticket N names, one line each, `#<pr> <head>: <path> <path>`, in
+# ascending PR number, under a first line `program: <line>` holding .claude/state/program (read through the git
 # common dir, so a linked worktree sees the main checkout's file) or `program: none`.
 # Nothing shared: prints nothing, exit 0. Shared and the program names #N: exit 2, stack on
 # that PR. Shared and no program naming #N: exit 1, stop. The ticket's paths are the backticked
@@ -32,7 +32,7 @@ else
 fi
 prog="$(git rev-parse --git-common-dir)/../.claude/state/program"
 line=none; [ ! -f "$prog" ] || line="$(cat "$prog")"
-prs="$(gh pr list --state open --json number,headRefName --limit 100 -q '.[] | "\(.number) \(.headRefName)"')"
+prs="$(gh pr list --state open --json number,headRefName --limit 100 -q '.[] | "\(.number) \(.headRefName)"' | sort -n)"
 out=""
 while read -r pr head; do
   [ -n "$pr" ] || continue

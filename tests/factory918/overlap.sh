@@ -6,7 +6,8 @@
 # line on overlap, 2 when .claude/state/program names the ticket, a directory token, a token under
 # `## Diff` ignored, --diff skipping the checked-out branch's own PR, a stale and a missing remote
 # ref both fetched, a glob token and both directory forms expanded against main's tree, a ticket
-# naming no tracked path, a token outside the repository, and a failing gh or git diff aborting the run. The fixture root has a
+# naming no tracked path, a token outside the repository, two PRs printed in ascending number, and a
+# failing gh or git diff aborting the run. The fixture root has a
 # space, and from the README case on the script runs by the relative path the playbooks name. Exits 1 on the first miss.
 set -euo pipefail
 here="$(cd "$(dirname "$0")/../.." && pwd -P)"
@@ -17,7 +18,7 @@ fx="$tmp/with space"
 mkdir -p "$fx/bin"
 cat > "$fx/bin/gh" <<'GH'
 #!/bin/sh
-two_prs='[{"number":1,"headRefName":"feat-a"},{"number":2,"headRefName":"feat-b"}]'
+two_prs='[{"number":2,"headRefName":"feat-b"},{"number":1,"headRefName":"feat-a"}]'
 case "$*" in
   "$FAKE_GH_FAIL"*) echo "gh: $FAKE_GH_FAIL failed" >&2; exit 1 ;;
   "pr list"*) while [ "$1" != -q ]; do shift; done; printf '%s' "${FAKE_PRS:-$two_prs}" | exec jq -r "$2" ;;
@@ -101,6 +102,7 @@ check "program names #9, ticket is #42" 1 "$(printf 'program: sweep: #7 #9\n#1 f
 check "a leading # on N" 2 "$(printf 'program: sweep: #7 #9\n#1 feat-a: docs/a.md')" '#9'
 rm -rf .claude/state
 export FAKE_BODY='Everything under `src/`, plus `docs/a.md`.'
+# The fake lists PR 2 first; the output is sorted by PR number.
 check "a directory token with a slash and a file" 1 "$(printf 'program: none\n#1 feat-a: docs/a.md\n#2 feat-b: src/x/y.txt src/z.txt')" 9
 export FAKE_BODY='## Diff
 
