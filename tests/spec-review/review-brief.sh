@@ -1,60 +1,29 @@
 #!/usr/bin/env bash
-# Runs template/.agents/skills/spec-review/scripts/review-brief.sh in a temp repo and asserts that
-# each brief carries the report shape review-comment.sh enforces: the definition sentence, every
-# heading name, the item format and the count rule. A fake gh on PATH supplies the ticket body and
-# the ticket's comments, and the PR's earlier review comments when a fixture file names them (no
-# PR otherwise), so the Spec brief is written and the round is 1 unless the comments or --round say
+# Runs review-brief.sh twice, in a temp repo laid out as a project and in one laid out as the
+# factory (tests/spec-review/layout.sh), each time the copy of the skill that repo holds, and
+# asserts that each brief carries the report shape review-comment.sh enforces: the definition
+# sentence, Manuel's five sentences, every heading name, the item format, the step rule and the
+# count rule. The fake gh (tests/spec-review/fake-gh.sh) on PATH supplies the ticket body and the
+# ticket's comments, and the PR's earlier review comments when a fixture file names them (no PR
+# otherwise), so the Spec brief is written and the round is 1 unless the comments or --round say
 # otherwise. Only the judgment items that cite a decision carry into both briefs, from every earlier
 # comment, each line once; the round is one more than the highest `round: N of 3` among the comments,
 # so a rebuilt comment does not advance it; a fourth round is refused before any state is written;
 # a gh failure other than "no pull requests found" is printed and the run goes on. A diff touching
 # a cross-cutting path is briefed with its blast-radius grounding (--blast-radius FILE, else the PR
-# body's section) before the diff, and refused without one. SKILL.md step 4 must carry the
-# definition, the settled paragraph and the blast-radius paragraph word for word, so the skill and
-# the script cannot drift apart. Exits 1 on the first miss.
+# body's section) before the diff, and refused without one. The source SKILL.md, step 4, must carry
+# the definition, the five sentences, the heading bullets, the step rule, the count rule, the
+# settled paragraph and the blast-radius paragraph word for word, so the skill and the script
+# cannot drift apart. Exits 1 on the first miss.
 set -euo pipefail
 here="$(cd "$(dirname "$0")/../.." && pwd -P)"
-skill="$here/template/.agents/skills/spec-review"
-fx="$(mktemp -d)"
-trap 'rm -rf "$fx"' EXIT
-cd "$fx"
-git init -q
-git config user.email test@factory918.invalid
-git config user.name test
-echo one > a.txt
-git add a.txt
-git commit -qm "first"
-echo two > a.txt
-git commit -qam "second, no ticket named"
-mkdir bin
-# gh pr view --json body: the PR body is the file FAKE_PR_BODY names when set, else there is no PR.
-# gh pr view for the comments: pr.json, when it exists, is the PR (its author and comments) and
-# the script's own jq expression runs against it through jq, so the author filter is what is
-# tested; pr-error, when it exists, goes to stderr with exit 1; with neither there is no PR for
-# this branch. gh issue view: the body, or the author's comments already formatted the way the
-# script's jq expression formats them (one is by someone else and is left out).
+. "$here/tests/spec-review/layout.sh"
 command -v jq >/dev/null || { echo "FAIL: jq is needed to play gh pr view"; exit 1; }
-{
-  echo '#!/bin/sh'
-  echo "fx='$fx'"
-  cat <<'EOF'
-case "$*" in
-  "pr view --json body"*) [ -f "${FAKE_PR_BODY:-}" ] && cat "$FAKE_PR_BODY" || { echo 'no pull requests found for branch "x"' >&2; exit 1; } ;;
-  "pr view"*)
-    if [ -f "$fx/pr-error" ]; then cat "$fx/pr-error" >&2; exit 1; fi
-    if [ -f "$fx/pr.json" ]; then
-      while [ "$1" != -q ]; do shift; done
-      exec jq -r "$2" "$fx/pr.json"
-    fi
-    echo 'no pull requests found for branch "x"' >&2; exit 1 ;;
-  *"--json body"*) echo "What to build: the ticket body" ;;
-  *"--json author,comments"*) printf '### 2026-09-17\n\nuser: the hook stays in bash.\n\n### 2026-09-18\n\nuser: the count is Act on plus Ask.\n\n' ;;
-  *) echo "fake gh: unexpected args: $*" >&2; exit 2 ;;
-esac
-EOF
-} > bin/gh
-chmod +x bin/gh
-PATH="$fx/bin:$PATH"
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+mkdir "$tmp/bin"
+cp "$here/tests/spec-review/fake-gh.sh" "$tmp/bin/gh"
+PATH="$tmp/bin:$PATH"
 # pr <author> [login:file ...]: pr.json, the PR opened by <author> with one comment per pair, in order.
 pr() {
   local a="$1" c; shift
@@ -87,7 +56,21 @@ printed() {
   n=$((n + 1))
 }
 
+# suite <project|factory>: every assertion, against the copy of the skill a repo of that layout holds.
+suite() {
+fx="$tmp/$1"
+layout "$1" "$fx"
+cd "$fx"
+echo one > a.txt
+git add a.txt
+git commit -qm "first"
+echo two > a.txt
+git commit -qam "second, no ticket named"
+
+# No PR: gh's "no pull requests found" is swallowed and the round is 1.
+echo 'no pull requests found for branch "x"' > pr-error
 bash "$skill/scripts/review-brief.sh" HEAD~1 --ticket 7 > out.txt 2> err.txt
+rm pr-error
 printed out.txt "ticket: #7
 round: 1 of 3
 .scratch/review/HEAD_1/standards-brief.md
@@ -98,6 +81,11 @@ spec=.scratch/review/HEAD_1/spec-brief.md
 n=$((n + 1))
 [ ! -s err.txt ] || { echo "FAIL no PR: gh's 'no pull requests found' is printed:"; cat err.txt; exit 1; }
 n=$((n + 1))
+# A PR with no comments is round 1 too.
+bash "$skill/scripts/review-brief.sh" HEAD~1 --ticket 7 > out.txt 2> err.txt
+has out.txt "round: 1 of 3" "a PR without comments is round 1"
+[ ! -s err.txt ] || { echo "FAIL PR without comments: stderr is not empty:"; cat err.txt; exit 1; }
+n=$((n + 1))
 
 # Any other gh failure is printed, and the run goes on as round 1 with nothing carried.
 echo "HTTP 401: Bad credentials (https://api.github.com/graphql)" > pr-error
@@ -107,41 +95,72 @@ has err.txt "review-brief: gh could not read the PR's review comments (HTTP 401:
 has out.txt "round: 1 of 3" "a gh failure other than no PR still runs round 1"
 lacks "$std" "## Settled in earlier rounds" "a gh failure other than no PR carries nothing"
 
-definition="A hard finding is wrong behavior in normal use: a command, hook, script or documented flow does something other than what the ticket or its own documentation says it does, on the path a user takes."
-count_rule='End the report with exactly one line `hard findings: N`, where N is the number of items under `## Would break` and nothing else.'
+definition="A hard finding is one of two things: the documented path gives a wrong or silent result, or an input outside it proceeds silently (fails open). An input outside the documented path that is refused with a message saying how to correct it is not a finding; it is the design. Zero items is the expected result for a clean change."
+quotes=(
+  '- Manuel: "there are an infinite amount of unhappy paths and only 1 happy one"'
+  '- Manuel: "AT MOST hardening to fail fast and loud if we move outside of that"'
+  '- Manuel: "we notice the variable is unexpected and flag that without having to diagnose every reason the variable might be wrong for the user"'
+  '- Manuel: "An edge case outside the intended path being unsupported is not a flag."'
+  '- Manuel: "Primary focus must be the happy path, then unhappy paths that error in a way the user can correct."'
+)
+step_rule='Every item under `## Would break` or `## Fails open` carries a line `Documented step:` quoting the ticket line or the `file:line` of the documentation the user follows, and a line `Result:` saying what happens instead; an item without its `Documented step:` line is sent back.'
+count_rule='End the report with exactly one line `hard findings: N`, where N is the number of items under `## Would break` and `## Fails open` and nothing else.'
 settled_rule="These findings were raised in an earlier round and settled by the decision each one cites. Do not raise them again. Nothing in this section says what you should find or confirm."
 blast_rule="The sessions and skills this change reaches, as the author grounded them before the review. Check the diff against each one; the grounding is the author's claim, not evidence."
-has "$skill/SKILL.md" "$definition" "SKILL.md step 4 carries the definition"
-has "$skill/SKILL.md" "$settled_rule" "SKILL.md step 4 carries the settled paragraph"
-has "$skill/SKILL.md" "$blast_rule" "SKILL.md step 4 carries the blast-radius paragraph"
+has "$source_skill/SKILL.md" "$definition" "SKILL.md step 4 carries the definition"
+has "$source_skill/SKILL.md" "$step_rule" "SKILL.md step 4 carries the step rule"
+has "$source_skill/SKILL.md" "$count_rule" "SKILL.md step 4 carries the count rule"
+has "$source_skill/SKILL.md" "$settled_rule" "SKILL.md step 4 carries the settled paragraph"
+has "$source_skill/SKILL.md" "$blast_rule" "SKILL.md step 4 carries the blast-radius paragraph"
+lacks "$source_skill/SKILL.md" "## Latent" "SKILL.md has no Latent heading"
+for q in "${quotes[@]}"; do
+  has "$source_skill/SKILL.md" "$q" "SKILL.md step 4 carries the quote"
+done
 for f in "$std" "$spec"; do
   has "$f" "$definition" "$f carries the definition"
+  for q in "${quotes[@]}"; do
+    has "$f" "$q" "$f carries the quote"
+  done
+  if [ "$(grep -nF -- "$definition" "$f" | cut -d: -f1)" -ne "$(($(grep -nF -- "${quotes[0]}" "$f" | cut -d: -f1) - 2))" ]; then
+    echo "FAIL $f: the quotes do not follow the definition"; exit 1
+  fi
+  n=$((n + 1))
   has "$f" 'Write the report as Markdown with exactly these `## ` headings, in this order, each holding numbered items or nothing:' "$f names the shape"
   has "$f" '`1. **Title.** body`' "$f carries the item format"
   has "$f" "number the items continuously across the headings" "$f says how to number"
+  has "$f" "$step_rule" "$f carries the step rule"
   has "$f" "$count_rule" "$f carries the count rule"
+  has "$f" '- `## Fails open`' "$f has the Fails open heading"
+  lacks "$f" "## Latent" "$f has no Latent heading"
   lacks "$f" "## Settled in earlier rounds" "$f has no settled section without a previous comment"
   lacks "$f" "## Blast radius" "$f has no blast-radius section for a diff that is not cross-cutting"
 done
-# The three heading bullets of each Report paragraph, word for word in SKILL.md step 4 and in the brief.
+# The heading bullets of each Report paragraph, word for word in SKILL.md step 4 and in the brief.
 standards_bullets=(
-  '- `## Would break`: a breach of a documented standard that produces wrong behavior in normal use. Cite the standard (file + the rule) and quote the hunk.'
+  '- `## Would break`: a breach of a documented standard that makes the documented path give a wrong or silent result. Cite the standard (file + the rule) and quote the hunk.'
+  '- `## Fails open`: a breach of a documented standard that lets an input outside the documented path proceed silently. Cite the standard (file + the rule) and quote the hunk.'
   '- `## Standards breaches`: documented-standard breaches that do not change behavior. Cite the standard and quote the hunk.'
   '- `## Fix alongside`: baseline smells and other judgement calls. Name the smell and quote the hunk. They are fixed only when a would-break fix already touches that code; they never count.'
 )
 spec_bullets=(
-  '- `## Would break`: a requirement missing, partial, or implemented so that normal use does something other than the ticket says.'
-  '- `## Latent`: edge cases, visibility, policy, wording; anything a user would not hit in normal use.'
+  "- \`## Walk\`: one numbered line per documented step of the path the change touches (the ticket's criteria and the documentation the diff changes), each saying what the code does at that step. A walk, not findings: its lines are numbered 1..K on their own and count nothing."
+  '- `## Would break`: a requirement missing, partial, or implemented so that the documented path gives a wrong or silent result.'
+  '- `## Fails open`: an input outside the documented path that proceeds silently instead of being refused with a message saying how to correct it.'
   '- `## Not asked for`: behaviour in the diff the ticket did not ask for.'
 )
 for b in "${standards_bullets[@]}"; do
-  has "$skill/SKILL.md" "$b" "SKILL.md step 4 carries the Standards bullet"
+  has "$source_skill/SKILL.md" "$b" "SKILL.md step 4 carries the Standards bullet"
   has "$std" "$b" "Standards: the heading bullet"
 done
 for b in "${spec_bullets[@]}"; do
-  has "$skill/SKILL.md" "$b" "SKILL.md step 4 carries the Spec bullet"
+  has "$source_skill/SKILL.md" "$b" "SKILL.md step 4 carries the Spec bullet"
   has "$spec" "$b" "Spec: the heading bullet"
 done
+lacks "$std" '`## Walk`' "Standards: no walk"
+[ "$(grep -o '^- `## [A-Za-z ]*`' "$spec" | head -1)" = '- `## Walk`' ] || { echo "FAIL Spec: the first heading bullet is not the walk"; exit 1; }
+n=$((n + 1))
+[ "$(grep -o '^- `## [A-Za-z ]*`' "$std" | head -2 | tail -1)" = '- `## Fails open`' ] || { echo "FAIL Standards: Fails open is not after Would break"; exit 1; }
+n=$((n + 1))
 has "$std" "Write your report to \`$(dirname "$std")/standards-report.md\` and reply with only that path." "Standards: the report path"
 has "$spec" 'quotes the spec line it rests on in a fenced block (a criterion can carry `## ` or `1. ` lines, and only fenced text is exempt from the report shape)' "Spec: the quote is fenced"
 has "$spec" "What to build: the ticket body" "Spec: the ticket body from gh"
@@ -266,7 +285,7 @@ has out.txt "settled: carried 2, dropped 1 without a citation" "a stranger's cit
 lacks "$std" "Stranger's item" "a stranger's cited item is not carried"
 # Rounds 1, 2 and 3 were run: the fourth is refused before any state is written.
 pr me me:previous.md me:previous-2.md me:previous-3.md
-rm -rf .scratch .claude
+rm -rf .scratch .claude/state
 set +e
 out="$(bash "$skill/scripts/review-brief.sh" HEAD~1 --ticket 7 2>&1)"
 code=$?
@@ -326,7 +345,7 @@ fi
 n=$((n + 1))
 
 # A fourth round is refused before any state is written.
-rm -rf .scratch .claude
+rm -rf .scratch .claude/state
 set +e
 out="$(bash "$skill/scripts/review-brief.sh" HEAD~1 --ticket 7 --round 4 2>&1)"
 code=$?
@@ -338,11 +357,10 @@ if [ "$code" != 1 ] || [ "$out" != 'review-brief: three rounds were run on this 
 fi
 n=$((n + 1))
 
-# A cross-cutting diff: a commit touching .claude/hooks/x.sh. With --blast-radius FILE the file's text
-# goes into both briefs under `## Blast radius`, before `## Diff`.
-mkdir -p .claude/hooks
-echo 'exit 0' > .claude/hooks/x.sh
-git add .claude/hooks/x.sh
+# A cross-cutting diff: a commit touching the hooks directory of this layout. With --blast-radius
+# FILE the file's text goes into both briefs under `## Blast radius`, before `## Diff`.
+echo 'exit 0' > "$hooks/x.sh"
+git add "$hooks/x.sh"
 git commit -qm "a hook, #7"
 cat > blast.md <<'EOF'
 
@@ -374,7 +392,7 @@ code=$?
 set -e
 if [ "$code" != 1 ] || [ "$out" != "ticket: #7
 round: 1 of 3
-review-brief: cross-cutting diff (.claude/hooks/x.sh) without a blast-radius grounding; run the blast-radius skill, put the result in the PR body's Blast Radius section or pass --blast-radius FILE" ] || [ -e .claude/state/review ] || [ -e .scratch/review/HEAD_1 ]; then
+review-brief: cross-cutting diff ($hooks/x.sh) without a blast-radius grounding; run the blast-radius skill, put the result in the PR body's Blast Radius section or pass --blast-radius FILE" ] || [ -e .claude/state/review ] || [ -e .scratch/review/HEAD_1 ]; then
   echo "FAIL cross-cutting diff without a grounding: exit $code, wanted 1, the message, no state and no briefs"
   echo "  got: $out"
   exit 1
@@ -397,7 +415,7 @@ set +e
 out="$(FAKE_PR_BODY="$fx/pr-body-empty.md" bash "$skill/scripts/review-brief.sh" HEAD~1 2>&1)"
 code=$?
 set -e
-if [ "$code" != 1 ] || ! printf '%s' "$out" | grep -qF "cross-cutting diff (.claude/hooks/x.sh) without a blast-radius grounding" || [ -e .claude/state/review ]; then
+if [ "$code" != 1 ] || ! printf '%s' "$out" | grep -qF "cross-cutting diff ($hooks/x.sh) without a blast-radius grounding" || [ -e .claude/state/review ]; then
   echo "FAIL empty Blast Radius section: exit $code, wanted 1 with the refusal and no state"
   echo "  got: $out"
   exit 1
@@ -414,5 +432,8 @@ for f in "$std" "$spec"; do
   lacks "$f" "## Blast radius" "$f has no blast-radius section for a README-only diff"
   lacks "$f" "Adds a hook that exits 0" "$f does not carry the ignored file"
 done
+}
 
+suite project
+suite factory
 echo "ok $n assertions"

@@ -74,26 +74,36 @@ The briefs are the two files step 1 wrote, `<dir>/standards-brief.md` and `<dir>
 - `## Blast radius`, for a cross-cutting diff (step 1), placed before the diff: the author's grounding verbatim, under exactly this paragraph: "The sessions and skills this change reaches, as the author grounded them before the review. Check the diff against each one; the grounding is the author's claim, not evidence." Absent for any other diff.
 - The diff itself, when it's under about 500 lines. Over that, the brief hands the path `<dir>/diff`, so a reviewer reads one file and runs nothing.
 - `## Settled in earlier rounds`, from round two on: the Noted and Dismissed items that carry a `cites:` field (step 5) from every earlier round's comment, verbatim, in comment order and each line once, under exactly this paragraph: "These findings were raised in an earlier round and settled by the decision each one cites. Do not raise them again. Nothing in this section says what you should find or confirm." An item without a citation is dropped (the script prints how many it carried and dropped), and when nothing carries the section is absent. The section tells a reviewer what is closed, never what to find: a brief that named an expected result would be leading the witness.
+- `## Report`, last. The definition, word for word as the script writes it: "A hard finding is one of two things: the documented path gives a wrong or silent result, or an input outside it proceeds silently (fails open). An input outside the documented path that is refused with a message saying how to correct it is not a finding; it is the design. Zero items is the expected result for a clean change." Then the five sentences of Manuel's the definition follows, attributed, as the script writes them:
+  - Manuel: "there are an infinite amount of unhappy paths and only 1 happy one"
+  - Manuel: "AT MOST hardening to fail fast and loud if we move outside of that"
+  - Manuel: "we notice the variable is unexpected and flag that without having to diagnose every reason the variable might be wrong for the user"
+  - Manuel: "An edge case outside the intended path being unsupported is not a flag."
+  - Manuel: "Primary focus must be the happy path, then unhappy paths that error in a way the user can correct."
+
+  Then the axis's headings and item form (below), then the step rule, word for word: "Every item under `## Would break` or `## Fails open` carries a line `Documented step:` quoting the ticket line or the `file:line` of the documentation the user follows, and a line `Result:` saying what happens instead; an item without its `Documented step:` line is sent back." Then the report path and the count rule, word for word: "End the report with exactly one line `hard findings: N`, where N is the number of items under `## Would break` and `## Fails open` and nothing else."
 
 **The Standards brief** adds:
 
 - The standards files named by `--standards` (default `CODING_STANDARDS.md`), pasted whole, so pass only the files that apply to the changed files. **Plus the smell baseline from step 3** pasted in full (the sub-agent has no other access to it).
-- The report shape. The definition first, word for word as the script writes it: "A hard finding is wrong behavior in normal use: a command, hook, script or documented flow does something other than what the ticket or its own documentation says it does, on the path a user takes." Then exactly these `## ` headings, in this order, each holding numbered items or nothing, word for word as the script writes them:
-  - `## Would break`: a breach of a documented standard that produces wrong behavior in normal use. Cite the standard (file + the rule) and quote the hunk.
+- The report's headings, exactly these `## ` headings, in this order, each holding numbered items or nothing, word for word as the script writes them:
+  - `## Would break`: a breach of a documented standard that makes the documented path give a wrong or silent result. Cite the standard (file + the rule) and quote the hunk.
+  - `## Fails open`: a breach of a documented standard that lets an input outside the documented path proceed silently. Cite the standard (file + the rule) and quote the hunk.
   - `## Standards breaches`: documented-standard breaches that do not change behavior. Cite the standard and quote the hunk.
   - `## Fix alongside`: baseline smells and other judgement calls. Name the smell and quote the hunk. They are fixed only when a would-break fix already touches that code; they never count.
 
-  Each item opens with `1. **Title.** body`, with the quoted hunk in a fenced block under it, numbered continuously across the headings. A documented repo standard overrides the baseline; skip anything tooling enforces; read nothing beyond the brief but the code around a hunk; under 400 words. The last line is `hard findings: N`, where N is the number of items under `## Would break` and nothing else.
+  Each item opens with `1. **Title.** body`, with the quoted hunk in a fenced block under it, numbered continuously across the headings. A documented repo standard overrides the baseline; skip anything tooling enforces; read nothing beyond the brief but the code around a hunk; under 400 words.
 
 **The Spec brief** adds:
 
 - The ticket body pasted in (What to build and Acceptance criteria, verbatim), then the ticket author's comments under `## Comments by the ticket's author (#N)`, each under `### <YYYY-MM-DD>` (absent when there are none), and the relevant section of the parent spec when there is one. Not a `gh` command or an issue number: the sub-agent fetches nothing.
-- The report shape. The same definition, then exactly these `## ` headings, in this order, each holding numbered items or nothing, word for word as the script writes them:
-  - `## Would break`: a requirement missing, partial, or implemented so that normal use does something other than the ticket says.
-  - `## Latent`: edge cases, visibility, policy, wording; anything a user would not hit in normal use.
+- The report's headings, exactly these `## ` headings, in this order, each holding numbered items or nothing, word for word as the script writes them:
+  - `## Walk`: one numbered line per documented step of the path the change touches (the ticket's criteria and the documentation the diff changes), each saying what the code does at that step. A walk, not findings: its lines are numbered 1..K on their own and count nothing.
+  - `## Would break`: a requirement missing, partial, or implemented so that the documented path gives a wrong or silent result.
+  - `## Fails open`: an input outside the documented path that proceeds silently instead of being refused with a message saying how to correct it.
   - `## Not asked for`: behaviour in the diff the ticket did not ask for.
 
-  Each item opens with `1. **Title.** body` and quotes the spec line it rests on in a fenced block (a criterion can carry `## ` or `1. ` lines, and only fenced text is exempt from the report shape), numbered continuously across the headings; read nothing beyond the brief but the code around a hunk; under 400 words. The last line is `hard findings: N`, the number of items under `## Would break` and nothing else.
+  Each item opens with `1. **Title.** body` and quotes the spec line it rests on in a fenced block (a criterion can carry `## ` or `1. ` lines, and only fenced text is exempt from the report shape), numbered continuously across the headings from `## Would break` on; the walk's lines are numbered 1..K on their own and are not items; read nothing beyond the brief but the code around a hunk; under 400 words.
 
 If the spec is missing, the script writes no Spec brief; skip the Spec sub-agent, and step 6 says so in the final report.
 

@@ -226,11 +226,20 @@ if [ -n "$ticket" ]; then
   [ -z "$spec" ] || comments="$(gh issue view "$ticket" --json author,comments -q "$by_author" 2>/dev/null || true)"
 fi
 if [ ${#standards[@]} -eq 0 ] && [ -f CODING_STANDARDS.md ]; then standards=(CODING_STANDARDS.md); fi
-# The definition both reports rest on; SKILL.md step 4 carries it word for word (tests/spec-review/review-brief.sh holds them together).
-definition="A hard finding is wrong behavior in normal use: a command, hook, script or documented flow does something other than what the ticket or its own documentation says it does, on the path a user takes."
+# The definition both reports rest on, Manuel's words it follows, the step rule and the count rule;
+# SKILL.md step 4 carries each word for word (tests/spec-review/review-brief.sh holds them together).
+definition="A hard finding is one of two things: the documented path gives a wrong or silent result, or an input outside it proceeds silently (fails open). An input outside the documented path that is refused with a message saying how to correct it is not a finding; it is the design. Zero items is the expected result for a clean change."
+quotes=(
+  '- Manuel: "there are an infinite amount of unhappy paths and only 1 happy one"'
+  '- Manuel: "AT MOST hardening to fail fast and loud if we move outside of that"'
+  '- Manuel: "we notice the variable is unexpected and flag that without having to diagnose every reason the variable might be wrong for the user"'
+  '- Manuel: "An edge case outside the intended path being unsupported is not a flag."'
+  '- Manuel: "Primary focus must be the happy path, then unhappy paths that error in a way the user can correct."'
+)
+step_rule='Every item under `## Would break` or `## Fails open` carries a line `Documented step:` quoting the ticket line or the `file:line` of the documentation the user follows, and a line `Result:` saying what happens instead; an item without its `Documented step:` line is sent back.'
 # The blast-radius paragraph; SKILL.md step 4 carries it word for word (the same test holds them together).
 blast_rule="The sessions and skills this change reaches, as the author grounded them before the review. Check the diff against each one; the grounding is the author's claim, not evidence."
-count_rule='End the report with exactly one line `hard findings: N`, where N is the number of items under `## Would break` and nothing else.'
+count_rule='End the report with exactly one line `hard findings: N`, where N is the number of items under `## Would break` and `## Fails open` and nothing else.'
 common() {
   echo "Read nothing beyond this brief unless a finding needs the code around a hunk, and then read that one function or section, not the file. Run nothing."
   echo
@@ -269,6 +278,17 @@ common() {
     echo
   fi
 }
+# The opening of each brief's Report section: the definition, Manuel's words, the shape sentence.
+report_rules() {
+  echo "## Report"
+  echo
+  echo "$definition"
+  echo
+  printf '%s\n' "${quotes[@]}"
+  echo
+  echo "Write the report as Markdown with exactly these \`## \` headings, in this order, each holding numbered items or nothing:"
+  echo
+}
 {
   echo "# Standards review brief"
   echo
@@ -292,17 +312,15 @@ common() {
   echo
   printf '%s\n' "$smells"
   echo
-  echo "## Report"
-  echo
-  echo "$definition"
-  echo
-  echo "Write the report as Markdown with exactly these \`## \` headings, in this order, each holding numbered items or nothing:"
-  echo
-  echo '- `## Would break`: a breach of a documented standard that produces wrong behavior in normal use. Cite the standard (file + the rule) and quote the hunk.'
+  report_rules
+  echo '- `## Would break`: a breach of a documented standard that makes the documented path give a wrong or silent result. Cite the standard (file + the rule) and quote the hunk.'
+  echo '- `## Fails open`: a breach of a documented standard that lets an input outside the documented path proceed silently. Cite the standard (file + the rule) and quote the hunk.'
   echo '- `## Standards breaches`: documented-standard breaches that do not change behavior. Cite the standard and quote the hunk.'
   echo '- `## Fix alongside`: baseline smells and other judgement calls. Name the smell and quote the hunk. They are fixed only when a would-break fix already touches that code; they never count.'
   echo
   echo 'Each item opens with a line of the form `1. **Title.** body`, with the quoted hunk in a fenced block under it; number the items continuously across the headings, so the judgment can name your third item as [S3]. A documented repo standard overrides the baseline. Skip anything tooling enforces. Read nothing beyond this brief unless a finding needs the code around a hunk, and then read that one function or section, not the file. Under 400 words.'
+  echo
+  echo "$step_rule"
   echo
   echo "Write your report to \`$dir/standards-report.md\` and reply with only that path."
   echo "$count_rule"
@@ -322,17 +340,15 @@ if [ -n "$spec" ]; then
       printf '%s\n' "$comments"
       echo
     fi
-    echo "## Report"
-    echo
-    echo "$definition"
-    echo
-    echo "Write the report as Markdown with exactly these \`## \` headings, in this order, each holding numbered items or nothing:"
-    echo
-    echo '- `## Would break`: a requirement missing, partial, or implemented so that normal use does something other than the ticket says.'
-    echo '- `## Latent`: edge cases, visibility, policy, wording; anything a user would not hit in normal use.'
+    report_rules
+    echo '- `## Walk`: one numbered line per documented step of the path the change touches (the ticket'"'"'s criteria and the documentation the diff changes), each saying what the code does at that step. A walk, not findings: its lines are numbered 1..K on their own and count nothing.'
+    echo '- `## Would break`: a requirement missing, partial, or implemented so that the documented path gives a wrong or silent result.'
+    echo '- `## Fails open`: an input outside the documented path that proceeds silently instead of being refused with a message saying how to correct it.'
     echo '- `## Not asked for`: behaviour in the diff the ticket did not ask for.'
     echo
-    echo 'Each item opens with a line of the form `1. **Title.** body` and quotes the spec line it rests on in a fenced block (a criterion can carry `## ` or `1. ` lines, and only fenced text is exempt from the report shape); number the items continuously across the headings, so the judgment can name your third item as [P3]. Read nothing beyond this brief unless a finding needs the code around a hunk, and then read that one function or section, not the file. Under 400 words.'
+    echo 'Each item opens with a line of the form `1. **Title.** body` and quotes the spec line it rests on in a fenced block (a criterion can carry `## ` or `1. ` lines, and only fenced text is exempt from the report shape); number the items continuously across the headings from `## Would break` on, so the judgment can name your third item as [P3]. Read nothing beyond this brief unless a finding needs the code around a hunk, and then read that one function or section, not the file. Under 400 words.'
+    echo
+    echo "$step_rule"
     echo
     echo "Write your report to \`$dir/spec-report.md\` and reply with only that path."
     echo "$count_rule"
