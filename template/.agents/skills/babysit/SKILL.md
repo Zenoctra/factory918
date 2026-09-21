@@ -37,7 +37,7 @@ Inside poteto-mode, the **Babysit** playbook ([`../poteto-mode/playbooks/babysit
    - Idle but want to catch new comments: hourly.
 
 4. **When to stop.**
-   - Build is green, every comment resolved, the `spec-review` comment on the latest commit reads `act-on items: 0`, branch merges cleanly → call it ready.
+   - Build is green, every comment resolved, the `spec-review` comment on the latest commit reads `act-on items: 0`, branch merges cleanly → call it ready. The review runs at most three rounds on one PR; a comment reading `round: 3 of 3` and `act-on items: 0` makes the PR review-ready even when the fix commits it names come after the reviewed commit. An item under `## Ask` in that comment waits for the human and is not fixed on the PR; once the human answers, the orchestrator re-sorts it in the judgment with the answer as its reason and reruns `scripts/review-comment.sh <dir>` on the same reports, which is the same round.
    - You've run three rounds of fix → push → recheck and it still isn't fully green → stop, summarise what's still broken, and hand control back.
    - The next fix would force a design choice → pause and put it to the user with `AskUserQuestion`.
 

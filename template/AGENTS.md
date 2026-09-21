@@ -71,7 +71,7 @@ The most common defect in agent-built projects is a change that works on the pat
 
 - Work that started from a ticket ends in a PR that says `Closes #N`. Work that started from a conversation ends in a commit on a branch unless you are asked to file; if it is going to end in a PR, file a quick ticket first (Ticket playbook, "Quick ticket"), so the PR closes it and the reviewers can read the ask.
 - Conventional commit titles in plain language: `fix(web): new sessions no longer spike CPU`.
-- Body: the problem in a sentence or two, then how you fixed it, then a **Verification** section quoting each acceptance criterion with the evidence path. End with the model and harness that did the work.
+- Body: the problem in a sentence or two, then how you fixed it, then a **Verification** section quoting each acceptance criterion with the evidence path. End with the model and harness that did the work. A comment the agent posts on a PR or a ticket ends the same way, with "approved by <name>" added when the human approved it before posting; only an approved comment posted from the author's account is the author's words.
 - UI changes need before/after images. Motion or timing needs a short video. Upload them; never commit them.
 - One concern per PR. If the description says "also", split it.
 - Any comment or report you write that runs longer than about forty lines opens with two plain sentences for a person, under the label `For a person:`. PR bodies are exempt: their problem-then-fix opening is that summary. Reviewers ignore body prose by design, so the label is for people, not a signal to models.
