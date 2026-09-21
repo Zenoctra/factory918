@@ -7,24 +7,26 @@
  description: "Review the changes since a fixed point (commit, branch, tag, or merge-base) along two axes: Standards (does the code follow this repo's documented coding standards?) and Spec (does the code match what the originating issue/spec asked for?). Runs both reviews in parallel sub-agents and reports them side by side. Use when the user wants to review a branch, a PR, work-in-progress changes, or asks to \"review since X\"."
  ---
  
-@@ -18,10 +18,14 @@
+@@ -18,10 +18,16 @@
  
  Whatever the user said is the fixed point (a commit SHA, branch name, tag, `main`, `HEAD~5`, etc.). If they didn't specify one, ask for it.
  
 -Capture the diff command once: `git diff <fixed-point>...HEAD` (three-dot, so the comparison is against the merge-base). Also note the list of commits via `git log <fixed-point>..HEAD --oneline`.
-+Run `scripts/review-brief.sh <fixed-point>` (the script beside this skill; add `--ticket N` when the commits do not name the ticket, `--standards FILE ...` to review against files other than `CODING_STANDARDS.md`). It runs the diff once, `git diff <fixed-point>...HEAD` (three-dot, so the comparison is against the merge-base), plus `--stat` for the changed-file list with per-file line counts, and the list of commits via `git log <fixed-point>..HEAD --oneline`, and writes the three to `.scratch/review/<id>/` as `diff`, `stat` and `log`. It also writes the review state under `.claude/state/review/`: `fixed-point`, `files` (the changed paths, one per line) and `dir`. While that state exists the delegation hook blocks your reads of the changed files, and step 6 clears it. Do not read the diff yourself: the reviewers get it in their briefs, and you get their reports.
++Run `scripts/review-brief.sh <fixed-point>` (the script beside this skill; add `--ticket N` when the commits do not name the ticket, `--standards FILE ...` to review against files other than `CODING_STANDARDS.md`, `--blast-radius FILE` for a cross-cutting diff whose grounding is not yet in a PR body). It runs the diff once, `git diff <fixed-point>...HEAD` (three-dot, so the comparison is against the merge-base), plus `--stat` for the changed-file list with per-file line counts, and the list of commits via `git log <fixed-point>..HEAD --oneline`, and writes the three to `.scratch/review/<id>/` as `diff`, `stat` and `log`. It also writes the review state under `.claude/state/review/`: `fixed-point`, `files` (the changed paths, one per line) and `dir`. While that state exists the delegation hook blocks your reads of the changed files, and step 6 clears it. Do not read the diff yourself: the reviewers get it in their briefs, and you get their reports.
  
 -Before going further, confirm the fixed point resolves (`git rev-parse <fixed-point>`) and the diff is non-empty. A bad ref or empty diff should fail here, not inside two parallel sub-agents.
 +The script confirms the fixed point resolves and the diff is non-empty, and exits 1 with a message otherwise. A bad ref or empty diff fails here, not inside two parallel sub-agents.
  
 +One PR gets at most three rounds, and a round is over when its comment is posted. The script reads the branch's PR comments that carry a line `act-on items:` (`gh pr view --json comments`); the round is one more than the highest `round: N of 3` line among them (a comment without one is round 1), so a comment rebuilt in the same round does not advance it. It writes the round to `<dir>/round`, prints `round: N of 3`, and exits 1 before writing any state when three rounds were run: what remains under Act on is then fixed on this PR and marked `fixed: <sha>` (step 5), not reviewed in a fourth round. Only comments by the PR's author, the account the orchestrator posts under, are read; a comment by anyone else neither counts a round nor reaches the briefs. No PR is round 1 with nothing carried; any other `gh` failure is printed and treated the same way, so the run goes on and you see why. `--round N` sets the round directly and `--previous FILE` supplies the earlier review comments from a file instead of `gh`, for a branch whose PR is elsewhere.
 +
++A cross-cutting diff, one whose changed paths include a `.claude/hooks/` file, a `.claude/settings.json` or a file of the `factory918` skill (`.agents/skills/factory918/`), at any depth, is briefed only with its blast-radius grounding (the Ticket playbook, step 5): the script takes it from `--blast-radius FILE` when given, else from the `## Blast Radius` section of the branch's PR body (`gh pr view --json body`), and exits 1 before writing any state when neither holds one: "cross-cutting diff (<the matching paths>) without a blast-radius grounding; run the blast-radius skill, put the result in the PR body's Blast Radius section or pass --blast-radius FILE". For a diff that is not cross-cutting, `--blast-radius` is ignored, and the script says so on stderr.
++
 +A sweep over units already on `main`, named by paths and commits, is the same skill with the same state, not a second mode: `scripts/review-brief.sh --paths P... --commits SHA...` writes the word `paths` as the fixed point and `git show <commits> -- <paths>` as the diff.
 +
  ### 2. Identify the spec source
  
  Look for the originating spec, in this order:
-@@ -29,8 +33,10 @@
+@@ -29,8 +35,10 @@
  1. Issue references in the commit messages (`#123`, `Closes #45`, GitLab `!67`, etc.), fetched via the workflow in `docs/agents/issue-tracker.md`.
  2. A path the user passed as an argument.
  3. A spec file under `docs/`, `specs/`, or `.scratch/` matching the branch name or feature.
@@ -36,7 +38,7 @@
  ### 3. Identify the standards sources
  
  Anything in the repo that documents how code should be written, such as `CODING_STANDARDS.md` or `CONTRIBUTING.md`.
-@@ -57,26 +63,75 @@
+@@ -57,26 +65,76 @@
  
  ### 4. Spawn both sub-agents in parallel
  
@@ -51,6 +53,7 @@
 -**Spec sub-agent prompt** should include:
 +- The commit list (the `git log <fixed-point>..HEAD --oneline` output).
 +- The changed-file list with per-file line counts (the `--stat` output).
++- `## Blast radius`, for a cross-cutting diff (step 1), placed before the diff: the author's grounding verbatim, under exactly this paragraph: "The sessions and skills this change reaches, as the author grounded them before the review. Check the diff against each one; the grounding is the author's claim, not evidence." Absent for any other diff.
 +- The diff itself, when it's under about 500 lines. Over that, the brief hands the path `<dir>/diff`, so a reviewer reads one file and runs nothing.
 +- `## Settled in earlier rounds`, from round two on: the Noted and Dismissed items that carry a `cites:` field (step 5) from every earlier round's comment, verbatim, in comment order and each line once, under exactly this paragraph: "These findings were raised in an earlier round and settled by the decision each one cites. Do not raise them again. Nothing in this section says what you should find or confirm." An item without a citation is dropped (the script prints how many it carried and dropped), and when nothing carries the section is absent. The section tells a reviewer what is closed, never what to find: a brief that named an expected result would be leading the witness.
  
