@@ -5,8 +5,8 @@
 # call: 0 and nothing when the ticket names no in-flight path, 1 with `program: none` and the PR
 # line on overlap, 2 when .claude/state/program names the ticket, a directory token, a token under
 # `## Diff` ignored, --diff skipping the checked-out branch's own PR, a stale and a missing remote
-# ref both fetched, a glob token and both directory forms expanded against main's tree, a ticket
-# naming no tracked path, a token outside the repository, two PRs printed in ascending number, and a
+# ref both fetched, a glob token and both directory forms expanded against main's tree, a file a PR
+# creates matched as a pattern, a body with no token, a token outside the repository, two PRs printed in ascending number, and a
 # failing gh or git diff aborting the run. The fixture root has a
 # space, and from the README case on the script runs by the relative path the playbooks name. Exits 1 on the first miss.
 set -euo pipefail
@@ -43,7 +43,7 @@ git fetch -q origin
 git switch -qc feat-a && echo a2 >> docs/a.md && git commit -qam "feat-a" && git push -q -u origin feat-a
 git switch -q main && git switch -qc feat-b && echo y2 >> src/x/y.txt && git commit -qam "feat-b" && git push -q -u origin feat-b
 feat_b1="$(git rev-parse HEAD)"
-echo z2 >> src/z.txt && git commit -qam "feat-b 2" && git push -q origin feat-b
+echo z2 >> src/z.txt && echo new > src/new.txt && git add src/new.txt && git commit -qam "feat-b 2" && git push -q origin feat-b
 git switch -q --orphan feat-x && echo orphan > orphan.txt && git add orphan.txt && git commit -qm "feat-x" && git push -q -u origin feat-x
 git switch -q main
 # feat-a's remote ref goes away and feat-b's is stale at its first commit, as another worktree's
@@ -77,14 +77,18 @@ export FAKE_BODY='## What to build
 
 Edit `README.md` and `gh issue view` and `#9`.'
 check "README.md only" 0 "" 9
+export FAKE_BODY='Edits nothing in particular.'
+check "no path token" 0 "overlap.sh: #9 names no path token; the --diff run at Opening a PR is the check" 9
 export FAKE_BODY='Edits `nothing/here.md` only.'
-check "no tracked path" 0 "overlap.sh: #9 names no tracked path; the --diff run at Opening a PR is the check" 9
+check "a token that is no path and no pattern" 0 "" 9
+export FAKE_BODY='Adds `src/new.txt`, which feat-b creates.'
+check "a file a PR creates" 1 "$(printf 'program: none\n#2 feat-b: src/new.txt')" 9
 # A token git rejects prints git's message (its wording carries the repository path, so a grep) and
-# counts as no path.
+# the run goes on.
 export FAKE_BODY='Reads `../x`.'
 set +e; err="$("$script" 9 2>&1 >/dev/null)"; code=$?; set -e
-if [ "$code" != 0 ] || ! grep -q 'outside repository' <<< "$err" || ! grep -qF 'overlap.sh: #9 names no tracked path' <<< "$err"; then
-  echo "FAIL a token outside the repository: exit $code, wanted 0 with git's message and the no-path line"; echo "  got:    $err"; exit 1
+if [ "$code" != 0 ] || ! grep -q 'outside repository' <<< "$err"; then
+  echo "FAIL a token outside the repository: exit $code, wanted 0 with git's message"; echo "  got:    $err"; exit 1
 fi
 n=$((n + 1))
 export FAKE_BODY='Touches `docs/a.md`.'
@@ -92,9 +96,9 @@ check "docs/a.md, no program" 1 "$(printf 'program: none\n#1 feat-a: docs/a.md')
 export FAKE_BODY='Touches `src/z.txt`, on feat-b after the stale remote ref.'
 check "a path past the stale origin/feat-b" 1 "$(printf 'program: none\n#2 feat-b: src/z.txt')" 9
 export FAKE_BODY='Everything under `src/*`.'
-check "a glob token" 1 "$(printf 'program: none\n#2 feat-b: src/x/y.txt src/z.txt')" 9
+check "a glob token" 1 "$(printf 'program: none\n#2 feat-b: src/new.txt src/x/y.txt src/z.txt')" 9
 export FAKE_BODY='Everything under `src`.'
-check "a directory token without a slash" 1 "$(printf 'program: none\n#2 feat-b: src/x/y.txt src/z.txt')" 9
+check "a directory token without a slash" 1 "$(printf 'program: none\n#2 feat-b: src/new.txt src/x/y.txt src/z.txt')" 9
 export FAKE_BODY='Touches `docs/a.md`.'
 mkdir -p .claude/state && echo 'sweep: #7 #9' > .claude/state/program
 check "program names #9" 2 "$(printf 'program: sweep: #7 #9\n#1 feat-a: docs/a.md')" 9
@@ -103,7 +107,7 @@ check "a leading # on N" 2 "$(printf 'program: sweep: #7 #9\n#1 feat-a: docs/a.m
 rm -rf .claude/state
 export FAKE_BODY='Everything under `src/`, plus `docs/a.md`.'
 # The fake lists PR 2 first; the output is sorted by PR number.
-check "a directory token with a slash and a file" 1 "$(printf 'program: none\n#1 feat-a: docs/a.md\n#2 feat-b: src/x/y.txt src/z.txt')" 9
+check "a directory token with a slash and a file" 1 "$(printf 'program: none\n#1 feat-a: docs/a.md\n#2 feat-b: src/new.txt src/x/y.txt src/z.txt')" 9
 export FAKE_BODY='## Diff
 
 `docs/a.md`
