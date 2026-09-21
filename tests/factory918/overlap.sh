@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Runs template/.agents/skills/factory918/scripts/overlap.sh against a temp clone with a bare
 # origin, two feature branches with open PRs (a fake gh on PATH answers `pr list` from a fixed
-# JSON array and `issue view` from FAKE_BODY), and asserts the exit code and the output of each
+# JSON array and `issue view` from FAKE_BODY, and fails the call FAKE_GH_FAIL names), and asserts the exit code and the output of each
 # call: 0 and nothing when the ticket names no in-flight path, 1 with `program: none` and the PR
 # line on overlap, 2 when .claude/state/program names the ticket, a directory token, a token under
-# `## Diff` ignored, and --diff skipping the checked-out branch's own PR. Exits 1 on the first miss.
+# `## Diff` ignored, --diff skipping the checked-out branch's own PR, and a failing gh aborting the run. Exits 1 on the first miss.
 set -euo pipefail
 here="$(cd "$(dirname "$0")/../.." && pwd -P)"
 script="$here/template/.agents/skills/factory918/scripts/overlap.sh"
@@ -14,6 +14,7 @@ mkdir -p "$fx/bin"
 cat > "$fx/bin/gh" <<'GH'
 #!/bin/sh
 case "$*" in
+  "$FAKE_GH_FAIL"*) echo "gh: $FAKE_GH_FAIL failed" >&2; exit 1 ;;
   "pr list"*) while [ "$1" != -q ]; do shift; done; echo '[{"number":1,"headRefName":"feat-a"},{"number":2,"headRefName":"feat-b"}]' | exec jq -r "$2" ;;
   "issue view"*) printf '%s\n' "$FAKE_BODY" ;;
   *) echo "fake gh: unexpected args: $*" >&2; exit 2 ;;
@@ -49,6 +50,11 @@ check() {
 }
 
 check "no argument" 64 "usage: overlap.sh N [--diff]"
+export FAKE_GH_FAIL="issue view"
+check "issue view fails" 1 "gh: issue view failed" 9
+export FAKE_GH_FAIL="pr list"
+check "pr list fails" 1 "gh: pr list failed" 9 --diff
+export FAKE_GH_FAIL=none
 export FAKE_BODY='## What to build
 
 Edit `README.md` and `gh issue view` and `#9`.'

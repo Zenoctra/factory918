@@ -18,14 +18,16 @@ branch="$(git branch --show-current)"
 if [ "$diff" = 1 ]; then
   named="$(git diff --name-only origin/main...HEAD)"
 else
+  body="$(gh issue view "$n" --json body -q .body)"
   named=""
-  for tok in $(gh issue view "$n" --json body -q .body | awk '/^## /{skip = ($0 ~ /^## Diff/)} !skip' | grep -oE '`[^`[:space:]]+`' | tr -d '`' | sort -u); do
+  for tok in $(printf '%s\n' "$body" | awk '/^## /{skip = ($0 ~ /^## Diff/)} !skip' | grep -oE '`[^`[:space:]]+`' | tr -d '`' | sort -u); do
     tok="${tok%/}"
     [ -n "$(git ls-files -- "$tok" 2>/dev/null)" ] && named="$named$tok"$'\n'
   done
 fi
 prog="$(git rev-parse --git-common-dir)/../.claude/state/program"
 line=none; [ ! -f "$prog" ] || line="$(cat "$prog")"
+prs="$(gh pr list --state open --json number,headRefName --limit 100 -q '.[] | "\(.number) \(.headRefName)"')"
 out=""
 while read -r pr head; do
   [ -n "$pr" ] || continue
@@ -38,7 +40,7 @@ while read -r pr head; do
     done <<< "$named"
   done < <(git diff --name-only "origin/main...origin/$head")
   [ -n "$paths" ] && out="$out#$pr $head:$paths"$'\n'
-done < <(gh pr list --state open --json number,headRefName --limit 100 -q '.[] | "\(.number) \(.headRefName)"')
+done <<< "$prs"
 [ -n "$out" ] || exit 0
 printf 'program: %s\n%s' "$line" "$out"
 grep -qw -- "#$n" <<< "$line" && exit 2
