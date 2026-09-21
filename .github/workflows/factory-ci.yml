@@ -16,13 +16,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Shell syntax
-        run: bash -n factory918.sh && for f in template/.claude/hooks/*.sh template/.agents/skills/spec-review/scripts/*.sh tests/*/*.sh; do bash -n "$f"; done
+        run: bash -n factory918.sh && for f in template/.claude/hooks/*.sh template/.agents/skills/spec-review/scripts/*.sh template/.agents/skills/factory918/scripts/*.sh tests/*/*.sh; do bash -n "$f"; done
       - name: The delegation hook blocks and passes what the test says
         run: bash tests/hooks/delegation.sh
       - name: review-comment.sh prints and refuses what the test says
         run: bash tests/spec-review/review-comment.sh
       - name: review-brief.sh writes the report shape into both briefs
         run: bash tests/spec-review/review-brief.sh
+      - name: overlap.sh prints and exits what the test says
+        run: bash tests/factory918/overlap.sh
       - name: No retired review wording under template/ or the core knowledge
         run: bash tests/spec-review/no-stale-wording.sh
       - name: Knowledge base is consistent and built from its sources
