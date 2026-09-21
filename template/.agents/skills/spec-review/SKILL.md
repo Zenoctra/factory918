@@ -115,13 +115,13 @@ Read the two reports and the ticket, never the code under review (the delegation
 
 Five `## ` headings, in this order, each holding numbered items or nothing:
 
-- `## Act on`: wrong behavior in normal use, or a breach worth fixing on this PR. Counted.
+- `## Act on`: the documented path gives a wrong or silent result, or an input outside it proceeds silently (fails open), or a breach worth fixing on this PR. Counted.
 - `## Ask`: a finding in the ask-by-default categories of [`bugbot-triage.md`](../poteto-mode/references/bugbot-triage.md): security, privacy, auth, billing, data, migrations, concurrency, cross-system. You never dismiss one of these; it waits for the human. Counted.
 - `## Consider`: a legitimate point you are not sure outweighs the cost of addressing it now.
 - `## Noted`: valid but not actionable here.
 - `## Dismissed`: wrong, nitpicky or missing context, and why.
 
-Each item is `1. [S2] **Title.** reason`: `[S2]` is the Standards report's second item and `[P1]` the Spec report's first, counted across every heading of that report in document order; the reason is one line. Number the judgment's items the same way, 1..N continuously across the five headings; step 6 refuses a numbering that restarts under a heading. Every numbered item in both reports appears exactly once in the judgment; step 6 refuses a judgment that misses, repeats or invents a reference.
+Each item is `1. [S2] **Title.** reason`: `[S2]` is the Standards report's second item and `[P1]` the Spec report's first, counted across every heading of that report in document order, the Spec report's `## Walk` lines being steps and not items; the reason is one line. Number the judgment's items the same way, 1..N continuously across the five headings; step 6 refuses a numbering that restarts under a heading. Every numbered item in both reports appears exactly once in the judgment; step 6 refuses a judgment that misses, repeats or invents a reference.
 
 A `## Fix alongside` item from the Standards report goes under Act on when an Act on item's fix touches the same code, otherwise under Noted.
 
@@ -137,7 +137,7 @@ Three trailing fields, each with one grammar:
 
 Run `scripts/review-comment.sh`. It prints the two reports under `## Standards` and `## Spec` (or `no spec: Standards axis only`), the judgment under `## Judgment`, all verbatim, a one-line summary, the line `round: N of 3` from `<dir>/round` (1 when the file is missing), and the final line `act-on items: N`, where N is the number of items under `## Act on` without a `fixed:` or `ticket:` field plus the number under `## Ask`; then it clears `.claude/state/review/`. Zero is written as `act-on items: 0`. Babysit reads this line, so it is always present and always last.
 
-It exits 1, printing why and clearing nothing, when a report is missing or has no `hard findings:` line (wait for the reviewer; do not write the report yourself); when a report's `hard findings: N` is larger than its `## Would break` item count (ask the reviewer to re-sort); when a report's or the judgment's `## ` headings are not the shape above; when a report's or the judgment's items are not numbered 1..N continuously across its headings, in document order; when `judgment.md` is missing; when the judgment's item count differs from the reports'; when a `[S<n>]` or `[P<n>]` reference is missing, repeated or points at no item; or when `<dir>/round` holds no number (rerun `review-brief.sh`). An off-shape report goes back to its reviewer with the refusal text; a new round is not started for it.
+It exits 1, printing why and clearing nothing, when a report is missing or has no `hard findings:` line (wait for the reviewer; do not write the report yourself); when a report's `hard findings: N` is larger than its `## Would break` and `## Fails open` item count (ask the reviewer to re-sort); when a `## Would break` or `## Fails open` item has no `Documented step:` line (ask the reviewer for the step and the result); when a report's or the judgment's `## ` headings are not the shape above; when a report's or the judgment's items are not numbered 1..N continuously across its headings, in document order; when `judgment.md` is missing; when the judgment's item count differs from the reports'; when a `[S<n>]` or `[P<n>]` reference is missing, repeated or points at no item; or when `<dir>/round` holds no number (rerun `review-brief.sh`). An off-shape report goes back to its reviewer with the refusal text; a new round is not started for it.
 
 With the review dir as its argument, `scripts/review-comment.sh .scratch/review/<id>`, it reruns on the same reports after the state is gone: an Ask item the human answered, or a report sent back and rewritten. Same round; the `round:` line comes from the dir.
 
