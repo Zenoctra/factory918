@@ -8,9 +8,11 @@
 # answers an Ask item, or a report sent back for its shape, reruns on the same reports once the
 # state is gone, in the same round; the state is cleared only when it exists and names this dir,
 # however the dir is spelled. Exits 1, clearing nothing, when a file is missing or off its shape:
-# a count line above the Would-break items, a heading outside the shape, report or judgment items
-# not numbered 1..N in document order, a round file that holds no number, or a judgment that does
-# not name every report item exactly once.
+# a count line above the Would-break and Fails-open items, a Would-break or Fails-open item with no
+# `Documented step:` line, a heading outside the shape, report or judgment items not numbered 1..N
+# in document order, a round file that holds no number, or a judgment that does not name every
+# report item exactly once. The Spec report's `## Walk` lines are steps, not items: they are not
+# counted, not numbered with the findings and not judged.
 set -euo pipefail
 root="$(git rev-parse --show-toplevel)"
 cd "$root"
@@ -43,9 +45,20 @@ fenced='
   /^## / { h = substr($0, 4); sub(/[ \t\r]+$/, "", h) }
 '
 headings() { awk "$fenced"'/^## / { print h }' "$1"; }
-# items <file> [heading]: the numbered items under one heading, or under every heading in document order.
-items() { awk -v want="${2:-}" "$fenced"'/^## / { next } h != "" && /^[0-9]+\. / && (want == "" || h == want)' "$1"; }
+# items <file> [heading]: the numbered items under one heading, or under every heading but Walk in document order.
+items() { awk -v want="${2:-}" "$fenced"'/^## / { next } h != "" && h != "Walk" && /^[0-9]+\. / && (want == "" || h == want)' "$1"; }
 count() { items "$@" | wc -l | tr -d ' '; }
+# stepless <file>: the heading and opening line of the first Would-break or Fails-open item with no
+# `Documented step:` line before the next item or heading; fenced text does not count.
+stepless() {
+  awk "$fenced"'
+    function flush() { if (item != "" && !ok) { print at ": " item; item = ""; exit } item = ""; ok = 0 }
+    /^## / { flush(); next }
+    /^[0-9]+\. / { flush(); if (h == "Would break" || h == "Fails open") { at = h; item = $0 } next }
+    /^Documented step:/ { ok = 1 }
+    END { flush() }
+  ' "$1"
+}
 # numbered <file>: the written item numbers run 1..N in document order across the headings, so a
 # [S<n>] reference names the item its reviewer wrote as n.
 numbered() {
@@ -62,27 +75,33 @@ shape() {
   got="$(headings "$f")"
   [ "$got" = "$want" ] || fail "$f has the headings [$(printf '%s' "$got" | paste -sd '|' -)]; the shape is [$(printf '%s' "$want" | paste -sd '|' -)], in that order, each holding numbered items or nothing"
 }
-# report <file> <heading>...: the shape, the numbering, then the count line, which may not exceed the Would-break items.
+# report <file> <heading>...: the shape, the numbering, the count line, which may not exceed the
+# Would-break and Fails-open items, then the step line every one of those items carries.
 report() {
-  local f="$1" line n wb
+  local f="$1" line n wb fo
   shape "$@"
   numbered "$f"
   line="$(grep -E '^hard findings: [0-9]+$' "$f" | tail -1)" || fail "$f has no 'hard findings: N' line; ask the reviewer for it"
   n="${line#hard findings: }"
   wb="$(count "$f" "Would break")"
-  [ "$n" -le "$wb" ] || fail "$f says 'hard findings: $n' but has $wb items under '## Would break'; only those count. Ask the reviewer to put each finding under the heading it belongs to and recount"
+  fo="$(count "$f" "Fails open")"
+  [ "$n" -le $((wb + fo)) ] || fail "$f says 'hard findings: $n' but has $wb items under '## Would break' and $fo under '## Fails open'; only those count. Ask the reviewer to put each finding under the heading it belongs to and recount"
+  line="$(stepless "$f")"
+  [ -z "$line" ] || fail "$f item '$(printf '%s' "${line#*: }" | sed -E 's/^([0-9]+\. \*\*[^*]+\*\*).*/\1/')' under '## ${line%%: *}' has no 'Documented step:' line; a counted item quotes the ticket line or the file:line of the documentation the user follows, then 'Result:' what happens instead. Ask the reviewer for both"
 }
 
 [ -f "$dir/standards-report.md" ] || fail "$dir/standards-report.md is missing; wait for the Standards reviewer"
-report "$dir/standards-report.md" "Would break" "Standards breaches" "Fix alongside"
+report "$dir/standards-report.md" "Would break" "Fails open" "Standards breaches" "Fix alongside"
 s_total="$(count "$dir/standards-report.md")"
 s_wb="$(count "$dir/standards-report.md" "Would break")"
-has_spec="" p_total=0 p_wb=0
+s_fo="$(count "$dir/standards-report.md" "Fails open")"
+has_spec="" p_total=0 p_wb=0 p_fo=0
 if [ -f "$dir/spec-brief.md" ]; then
   [ -f "$dir/spec-report.md" ] || fail "$dir/spec-report.md is missing; wait for the Spec reviewer"
-  report "$dir/spec-report.md" "Would break" "Latent" "Not asked for"
+  report "$dir/spec-report.md" "Walk" "Would break" "Fails open" "Not asked for"
   p_total="$(count "$dir/spec-report.md")"
   p_wb="$(count "$dir/spec-report.md" "Would break")"
+  p_fo="$(count "$dir/spec-report.md" "Fails open")"
   has_spec=yes
 fi
 
@@ -129,11 +148,11 @@ act="$(count "$dir/judgment.md" "Act on")"
 fixed_here="$(items "$dir/judgment.md" "Act on" | grep -cE 'fixed: [0-9a-f]{7,40}$' || true)"
 ticketed="$(items "$dir/judgment.md" "Act on" | grep -cE 'ticket: #[0-9]+$' || true)"
 ask="$(count "$dir/judgment.md" "Ask")"
-if [ -n "$has_spec" ]; then spec="$p_wb would break of $p_total"; else spec="no spec"; fi
+if [ -n "$has_spec" ]; then spec="$p_wb would break, $p_fo fail open, of $p_total"; else spec="no spec"; fi
 if [ -f "$dir/fixed-point" ]; then fixed="fixed point $(cat "$dir/fixed-point")"
 elif [ -f "$state/fixed-point" ]; then fixed="fixed point $(cat "$state/fixed-point")"
 else fixed="fixed point unknown"; fi
-echo "Standards: $s_wb would break of $s_total; Spec: $spec; judged: act on $act ($fixed_here fixed, $ticketed with a ticket), ask $ask, consider $(count "$dir/judgment.md" Consider), noted $(count "$dir/judgment.md" Noted), dismissed $(count "$dir/judgment.md" Dismissed); $fixed."
+echo "Standards: $s_wb would break, $s_fo fail open, of $s_total; Spec: $spec; judged: act on $act ($fixed_here fixed, $ticketed with a ticket), ask $ask, consider $(count "$dir/judgment.md" Consider), noted $(count "$dir/judgment.md" Noted), dismissed $(count "$dir/judgment.md" Dismissed); $fixed."
 echo "round: $round of 3"
 echo "act-on items: $((act - fixed_here - ticketed + ask))"
 if [ -f "$state/dir" ] && [ "$(cat "$state/dir")" = "$dir" ]; then rm -rf "$state"; fi

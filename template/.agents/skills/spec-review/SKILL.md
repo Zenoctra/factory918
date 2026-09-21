@@ -74,26 +74,36 @@ The briefs are the two files step 1 wrote, `<dir>/standards-brief.md` and `<dir>
 - `## Blast radius`, for a cross-cutting diff (step 1), placed before the diff: the author's grounding verbatim, under exactly this paragraph: "The sessions and skills this change reaches, as the author grounded them before the review. Check the diff against each one; the grounding is the author's claim, not evidence." Absent for any other diff.
 - The diff itself, when it's under about 500 lines. Over that, the brief hands the path `<dir>/diff`, so a reviewer reads one file and runs nothing.
 - `## Settled in earlier rounds`, from round two on: the Noted and Dismissed items that carry a `cites:` field (step 5) from every earlier round's comment, verbatim, in comment order and each line once, under exactly this paragraph: "These findings were raised in an earlier round and settled by the decision each one cites. Do not raise them again. Nothing in this section says what you should find or confirm." An item without a citation is dropped (the script prints how many it carried and dropped), and when nothing carries the section is absent. The section tells a reviewer what is closed, never what to find: a brief that named an expected result would be leading the witness.
+- `## Report`, last. The definition, word for word as the script writes it: "A hard finding is one of two things: the documented path gives a wrong or silent result, or an input outside it proceeds silently (fails open). An input outside the documented path that is refused with a message saying how to correct it is not a finding; it is the design. Zero items is the expected result for a clean change." Then the five sentences of Manuel's that the definition follows, attributed, as the script writes them:
+  - Manuel: "there are an infinite amount of unhappy paths and only 1 happy one"
+  - Manuel: "AT MOST hardening to fail fast and loud if we move outside of that"
+  - Manuel: "we notice the variable is unexpected and flag that without having to diagnose every reason the variable might be wrong for the user"
+  - Manuel: "An edge case outside the intended path being unsupported is not a flag."
+  - Manuel: "Primary focus must be the happy path, then unhappy paths that error in a way the user can correct."
+
+  Then the axis's headings and item form (below), then the step rule, word for word: "Every item under `## Would break` or `## Fails open` carries a line `Documented step:` quoting the ticket line or the `file:line` of the documentation the user follows, and a line `Result:` saying what happens instead; an item without its `Documented step:` line is sent back." Then the report path and the count rule, word for word: "End the report with exactly one line `hard findings: N`, where N is the number of items under `## Would break` and `## Fails open` and nothing else."
 
 **The Standards brief** adds:
 
 - The standards files named by `--standards` (default `CODING_STANDARDS.md`), pasted whole, so pass only the files that apply to the changed files. **Plus the smell baseline from step 3** pasted in full (the sub-agent has no other access to it).
-- The report shape. The definition first, word for word as the script writes it: "A hard finding is wrong behavior in normal use: a command, hook, script or documented flow does something other than what the ticket or its own documentation says it does, on the path a user takes." Then exactly these `## ` headings, in this order, each holding numbered items or nothing, word for word as the script writes them:
-  - `## Would break`: a breach of a documented standard that produces wrong behavior in normal use. Cite the standard (file + the rule) and quote the hunk.
+- The report's headings, exactly these `## ` headings, in this order, each holding numbered items or nothing, word for word as the script writes them:
+  - `## Would break`: a breach of a documented standard that makes the documented path give a wrong or silent result. Cite the standard (file + the rule) and quote the hunk.
+  - `## Fails open`: a breach of a documented standard that lets an input outside the documented path proceed silently. Cite the standard (file + the rule) and quote the hunk.
   - `## Standards breaches`: documented-standard breaches that do not change behavior. Cite the standard and quote the hunk.
   - `## Fix alongside`: baseline smells and other judgement calls. Name the smell and quote the hunk. They are fixed only when a would-break fix already touches that code; they never count.
 
-  Each item opens with `1. **Title.** body`, with the quoted hunk in a fenced block under it, numbered continuously across the headings. A documented repo standard overrides the baseline; skip anything tooling enforces; read nothing beyond the brief but the code around a hunk; under 400 words. The last line is `hard findings: N`, where N is the number of items under `## Would break` and nothing else.
+  Each item opens with `1. **Title.** body`, with the quoted hunk in a fenced block under it, numbered continuously across the headings. A documented repo standard overrides the baseline; skip anything tooling enforces; read nothing beyond the brief but the code around a hunk; under 400 words.
 
 **The Spec brief** adds:
 
 - The ticket body pasted in (What to build and Acceptance criteria, verbatim), then the ticket author's comments under `## Comments by the ticket's author (#N)`, each under `### <YYYY-MM-DD>` (absent when there are none), and the relevant section of the parent spec when there is one. Not a `gh` command or an issue number: the sub-agent fetches nothing.
-- The report shape. The same definition, then exactly these `## ` headings, in this order, each holding numbered items or nothing, word for word as the script writes them:
-  - `## Would break`: a requirement missing, partial, or implemented so that normal use does something other than the ticket says.
-  - `## Latent`: edge cases, visibility, policy, wording; anything a user would not hit in normal use.
+- The report's headings, exactly these `## ` headings, in this order, each holding numbered items or nothing, word for word as the script writes them:
+  - `## Walk`: one numbered line per documented step of the path the change touches (the ticket's criteria and the documentation the diff changes), each saying what the code does at that step. A walk, not findings: its lines are numbered 1..K on their own and count nothing.
+  - `## Would break`: a requirement missing, partial, or implemented so that the documented path gives a wrong or silent result.
+  - `## Fails open`: an input outside the documented path that proceeds silently instead of being refused with a message saying how to correct it.
   - `## Not asked for`: behaviour in the diff the ticket did not ask for.
 
-  Each item opens with `1. **Title.** body` and quotes the spec line it rests on in a fenced block (a criterion can carry `## ` or `1. ` lines, and only fenced text is exempt from the report shape), numbered continuously across the headings; read nothing beyond the brief but the code around a hunk; under 400 words. The last line is `hard findings: N`, the number of items under `## Would break` and nothing else.
+  Each item opens with `1. **Title.** body` and quotes the spec line it rests on in a fenced block (a criterion can carry `## ` or `1. ` lines, and only fenced text is exempt from the report shape), numbered continuously across the headings from `## Would break` on; the walk's lines are numbered 1..K on their own and are not items; read nothing beyond the brief but the code around a hunk; under 400 words.
 
 If the spec is missing, the script writes no Spec brief; skip the Spec sub-agent, and step 6 says so in the final report.
 
@@ -105,13 +115,13 @@ Read the two reports and the ticket, never the code under review (the delegation
 
 Five `## ` headings, in this order, each holding numbered items or nothing:
 
-- `## Act on`: wrong behavior in normal use, or a breach worth fixing on this PR. Counted.
+- `## Act on`: the documented path gives a wrong or silent result, or an input outside it proceeds silently (fails open), or a breach worth fixing on this PR. Counted.
 - `## Ask`: a finding in the ask-by-default categories of [`bugbot-triage.md`](../poteto-mode/references/bugbot-triage.md): security, privacy, auth, billing, data, migrations, concurrency, cross-system. You never dismiss one of these; it waits for the human. Counted.
 - `## Consider`: a legitimate point you are not sure outweighs the cost of addressing it now.
 - `## Noted`: valid but not actionable here.
 - `## Dismissed`: wrong, nitpicky or missing context, and why.
 
-Each item is `1. [S2] **Title.** reason`: `[S2]` is the Standards report's second item and `[P1]` the Spec report's first, counted across every heading of that report in document order; the reason is one line. Number the judgment's items the same way, 1..N continuously across the five headings; step 6 refuses a numbering that restarts under a heading. Every numbered item in both reports appears exactly once in the judgment; step 6 refuses a judgment that misses, repeats or invents a reference.
+Each item is `1. [S2] **Title.** reason`: `[S2]` is the Standards report's second item and `[P1]` the Spec report's first, counted across every heading of that report in document order, the Spec report's `## Walk` lines being steps and not items; the reason is one line. Number the judgment's items the same way, 1..N continuously across the five headings; step 6 refuses a numbering that restarts under a heading. Every numbered item in both reports appears exactly once in the judgment; step 6 refuses a judgment that misses, repeats or invents a reference.
 
 A `## Fix alongside` item from the Standards report goes under Act on when an Act on item's fix touches the same code, otherwise under Noted.
 
@@ -127,7 +137,7 @@ Three trailing fields, each with one grammar:
 
 Run `scripts/review-comment.sh`. It prints the two reports under `## Standards` and `## Spec` (or `no spec: Standards axis only`), the judgment under `## Judgment`, all verbatim, a one-line summary, the line `round: N of 3` from `<dir>/round` (1 when the file is missing), and the final line `act-on items: N`, where N is the number of items under `## Act on` without a `fixed:` or `ticket:` field plus the number under `## Ask`; then it clears `.claude/state/review/`. Zero is written as `act-on items: 0`. Babysit reads this line, so it is always present and always last.
 
-It exits 1, printing why and clearing nothing, when a report is missing or has no `hard findings:` line (wait for the reviewer; do not write the report yourself); when a report's `hard findings: N` is larger than its `## Would break` item count (ask the reviewer to re-sort); when a report's or the judgment's `## ` headings are not the shape above; when a report's or the judgment's items are not numbered 1..N continuously across its headings, in document order; when `judgment.md` is missing; when the judgment's item count differs from the reports'; when a `[S<n>]` or `[P<n>]` reference is missing, repeated or points at no item; or when `<dir>/round` holds no number (rerun `review-brief.sh`). An off-shape report goes back to its reviewer with the refusal text; a new round is not started for it.
+It exits 1, printing why and clearing nothing, when a report is missing or has no `hard findings:` line (wait for the reviewer; do not write the report yourself); when a report's `hard findings: N` is larger than its `## Would break` and `## Fails open` item count (ask the reviewer to re-sort); when a `## Would break` or `## Fails open` item has no `Documented step:` line (ask the reviewer for the step and the result); when a report's or the judgment's `## ` headings are not the shape above; when a report's or the judgment's items are not numbered 1..N continuously across its headings, in document order; when `judgment.md` is missing; when the judgment's item count differs from the reports'; when a `[S<n>]` or `[P<n>]` reference is missing, repeated or points at no item; or when `<dir>/round` holds no number (rerun `review-brief.sh`). An off-shape report goes back to its reviewer with the refusal text; a new round is not started for it.
 
 With the review dir as its argument, `scripts/review-comment.sh .scratch/review/<id>`, it reruns on the same reports after the state is gone: an Ask item the human answered, or a report sent back and rewritten. Same round; the `round:` line comes from the dir.
 
