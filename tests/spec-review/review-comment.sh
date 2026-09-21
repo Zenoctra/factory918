@@ -1,18 +1,16 @@
 #!/usr/bin/env bash
-# Runs template/.agents/skills/spec-review/scripts/review-comment.sh against fixture reports and
-# judgments in a temp repo and asserts the exact stdout of each accepted shape and the exact
-# refusal line of each rejected one. Report and judgment items are numbered 1..N across the headings. A refusal leaves the review state in place; an accepted
-# run clears it. Exits 1 on the first miss.
+# Runs review-comment.sh twice, in a temp repo laid out as a project and in one laid out as the
+# factory (tests/spec-review/layout.sh), each time the copy of the skill that repo holds, against
+# fixture reports and judgments, and asserts the exact stdout of each accepted shape and the exact
+# refusal line of each rejected one. Report and judgment items are numbered 1..N across the
+# headings; the Spec report's `## Walk` lines are steps, not items, and count nothing. Every item
+# under `## Would break` or `## Fails open` carries a `Documented step:` line. A refusal leaves the
+# review state in place; an accepted run clears it. Exits 1 on the first miss.
 set -euo pipefail
 here="$(cd "$(dirname "$0")/../.." && pwd -P)"
-script="$here/template/.agents/skills/spec-review/scripts/review-comment.sh"
-fx="$(mktemp -d)"
-trap 'rm -rf "$fx"' EXIT
-cd "$fx"
-git init -q
-git config user.email test@factory918.invalid
-git config user.name test
-git commit -q --allow-empty -m fixture
+. "$here/tests/spec-review/layout.sh"
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
 dir=.scratch/review/x
 state=.claude/state/review
 
@@ -63,33 +61,47 @@ accept() {
   fi
   n=$((n + 1))
 }
-empty_standards() { printf '## Would break\n\n## Standards breaches\n\n## Fix alongside\n\nhard findings: 0\n'; }
-empty_spec() { printf '## Would break\n\n## Latent\n\n## Not asked for\n\nhard findings: 0\n'; }
+empty_standards() { printf '## Would break\n\n## Fails open\n\n## Standards breaches\n\n## Fix alongside\n\nhard findings: 0\n'; }
+empty_spec() { printf '## Walk\n\n## Would break\n\n## Fails open\n\n## Not asked for\n\nhard findings: 0\n'; }
 empty_judgment() { printf '## Act on\n\n## Ask\n\n## Consider\n\n## Noted\n\n## Dismissed\n'; }
+
+# suite <project|factory>: every assertion, against the copy of the skill a repo of that layout holds.
+suite() {
+fx="$tmp/$1"
+layout "$1" "$fx"
+script="$skill/scripts/review-comment.sh"
+cd "$fx"
 
 refuse "no review in progress ($state/dir is missing); run scripts/review-brief.sh first, or pass the review dir to rerun a finished review" "no state"
 
 reset
 refuse "$dir/standards-report.md is missing; wait for the Standards reviewer" "no Standards report"
 
-printf '## Would break\n\n## Standards breaches\n\n## Fix alongside\n' > "$dir/standards-report.md"
+printf '## Would break\n\n## Fails open\n\n## Standards breaches\n\n## Fix alongside\n' > "$dir/standards-report.md"
 refuse "$dir/standards-report.md has no 'hard findings: N' line; ask the reviewer for it" "Standards report without the count line"
 
-printf '## Would break\n\n1. **One.** a\n\n## Standards breaches\n\n## Fix alongside\n\n2. **Smell.** b\n\nhard findings: 2\n' > "$dir/standards-report.md"
-refuse "$dir/standards-report.md says 'hard findings: 2' but has 1 items under '## Would break'; only those count. Ask the reviewer to put each finding under the heading it belongs to and recount" "count line above the Would-break items"
+printf '## Would break\n\n1. **One.** a\n\n## Fails open\n\n2. **Open.** o\n\n## Standards breaches\n\n## Fix alongside\n\n3. **Smell.** b\n\nhard findings: 3\n' > "$dir/standards-report.md"
+refuse "$dir/standards-report.md says 'hard findings: 3' but has 1 items under '## Would break' and 1 under '## Fails open'; only those count. Ask the reviewer to put each finding under the heading it belongs to and recount" "count line above the Would-break and Fails-open items"
 
-printf '## Would break\n\n1. **One.** a\n\n## Standards breaches\n\n1. **Two.** b\n2. **Three.** c\n\n## Fix alongside\n\nhard findings: 1\n' > "$dir/standards-report.md"
+printf '## Would break\n\n1. **One.** a\n\n## Fails open\n\n## Standards breaches\n\n1. **Two.** b\n2. **Three.** c\n\n## Fix alongside\n\nhard findings: 1\n' > "$dir/standards-report.md"
 refuse "$dir/standards-report.md item '1. **Two.** b' is numbered 1 where 2 was expected; number the items 1..N continuously across the headings, in document order" "numbering restarts under the second heading"
 
 printf '## Would Break\n\n## Standards breaches\n\nhard findings: 0\n' > "$dir/standards-report.md"
-refuse "$dir/standards-report.md has the headings [Would Break|Standards breaches]; the shape is [Would break|Standards breaches|Fix alongside], in that order, each holding numbered items or nothing" "Standards report off its shape"
+refuse "$dir/standards-report.md has the headings [Would Break|Standards breaches]; the shape is [Would break|Fails open|Standards breaches|Fix alongside], in that order, each holding numbered items or nothing" "Standards report off its shape"
+
+# A Would-break or Fails-open item without a `Documented step:` line is refused by name; a line
+# inside a quoted hunk does not count; a body sentence is not the item's title.
+printf '## Would break\n\n1. **One.** a\nDocumented step: ticket line\nResult: r\n\n## Fails open\n\n2. **Open, silently.** the guard returns. More.\n\n```sh\nDocumented step: inside the hunk\n```\n\n## Standards breaches\n\n## Fix alongside\n\nhard findings: 2\n' > "$dir/standards-report.md"
+refuse "$dir/standards-report.md item '2. **Open, silently.**' under '## Fails open' has no 'Documented step:' line; a counted item quotes the ticket line or the file:line of the documentation the user follows, then 'Result:' what happens instead. Ask the reviewer for both" "Fails-open item without a Documented step line, the fenced one not counting"
+printf '## Would break\n\n1. **One.** a\n\n## Fails open\n\n2. **Open.** o\nDocumented step: ticket line\n\n## Standards breaches\n\n3. **Breach.** b\n\n## Fix alongside\n\nhard findings: 2\n' > "$dir/standards-report.md"
+refuse "$dir/standards-report.md item '1. **One.**' under '## Would break' has no 'Documented step:' line; a counted item quotes the ticket line or the file:line of the documentation the user follows, then 'Result:' what happens instead. Ask the reviewer for both" "Would-break item without a Documented step line"
 
 empty_standards > "$dir/standards-report.md"
 echo brief > "$dir/spec-brief.md"
 refuse "$dir/spec-report.md is missing; wait for the Spec reviewer" "Spec brief without a Spec report"
 
-printf '## Would break\n\n## Not asked for\n\n## Latent\n\nhard findings: 0\n' > "$dir/spec-report.md"
-refuse "$dir/spec-report.md has the headings [Would break|Not asked for|Latent]; the shape is [Would break|Latent|Not asked for], in that order, each holding numbered items or nothing" "Spec report headings out of order"
+printf '## Would break\n\n## Fails open\n\n## Not asked for\n\n## Walk\n\nhard findings: 0\n' > "$dir/spec-report.md"
+refuse "$dir/spec-report.md has the headings [Would break|Fails open|Not asked for|Walk]; the shape is [Walk|Would break|Fails open|Not asked for], in that order, each holding numbered items or nothing" "Spec report headings out of order"
 
 empty_spec > "$dir/spec-report.md"
 refuse "$dir/judgment.md is missing; sort every report item into Act on, Ask, Consider, Noted or Dismissed with a one-line reason (SKILL.md step 5), then rerun" "no judgment"
@@ -97,8 +109,8 @@ refuse "$dir/judgment.md is missing; sort every report item into Act on, Ask, Co
 printf '## Act on\n\n## Consider\n\n## Noted\n\n## Dismissed\n' > "$dir/judgment.md"
 refuse "$dir/judgment.md has the headings [Act on|Consider|Noted|Dismissed]; the shape is [Act on|Ask|Consider|Noted|Dismissed], in that order, each holding numbered items or nothing" "judgment without Ask"
 
-printf '## Would break\n\n1. **One.** a\n\n## Standards breaches\n\n2. **Two.** b\n\n## Fix alongside\n\nhard findings: 1\n' > "$dir/standards-report.md"
-printf '## Would break\n\n## Latent\n\n1. **Edge.** c\n\n## Not asked for\n\nhard findings: 0\n' > "$dir/spec-report.md"
+printf '## Would break\n\n1. **One.** a\nDocumented step: t\n\n## Fails open\n\n## Standards breaches\n\n2. **Two.** b\n\n## Fix alongside\n\nhard findings: 1\n' > "$dir/standards-report.md"
+printf '## Walk\n\n1. step one\n2. step two\n\n## Would break\n\n## Fails open\n\n1. **Edge.** c\nDocumented step: t\n\n## Not asked for\n\nhard findings: 1\n' > "$dir/spec-report.md"
 printf '## Act on\n\n1. [S1] **One.** yes\n\n## Ask\n\n## Consider\n\n## Noted\n\n## Dismissed\n' > "$dir/judgment.md"
 refuse "$dir/judgment.md has 1 items; the reports have 3 (Standards 2, Spec 1). Every report item appears exactly once in the judgment" "judgment short of the reports"
 
@@ -125,6 +137,8 @@ accept "## Standards
 
 ## Would break
 
+## Fails open
+
 ## Standards breaches
 
 ## Fix alongside
@@ -147,7 +161,7 @@ no spec: Standards axis only
 
 ## Dismissed
 
-Standards: 0 would break of 0; Spec: no spec; judged: act on 0 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 0, dismissed 0; fixed point main.
+Standards: 0 would break, 0 fail open, of 0; Spec: no spec; judged: act on 0 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 0, dismissed 0; fixed point main.
 round: 1 of 3
 act-on items: 0" "nothing found, no spec, no round file"
 
@@ -156,11 +170,15 @@ cat > "$dir/standards-report.md" <<'EOF'
 ## Would break
 
 1. **Hook exits 0 on a miss.** The guard returns before blocking.
+Documented step: `docs/agents/review-ladder.md:6`, "the delegation hook blocks your reads of the changed files"
+Result: the read goes through.
 
 ```sh
 ## Would break
 1. a numbered line inside a quoted hunk is not an item
 ```
+
+## Fails open
 
 ## Standards breaches
 
@@ -174,17 +192,27 @@ hard findings: 1
 EOF
 echo brief > "$dir/spec-brief.md"
 cat > "$dir/spec-report.md" <<'EOF'
+## Walk
+
+1. `review-brief.sh <fixed-point>` resolves the fixed point and writes the diff.
+2. `--ticket N` names the spec; the sweep form drops it.
+3. The state file is written under `.claude/state/review/`.
+
 ## Would break
 
 1. **Sweep form ignores --ticket.** "add `--ticket N` when the commits do not name the ticket".
+Documented step: "add `--ticket N` when the commits do not name the ticket"
+Result: the sweep form writes no Spec brief.
 
-## Latent
+## Fails open
 
-2. **Token in the log.** The state file could carry a secret.
+2. **Token in the log.** A malformed state file is read as a fixed point and the run goes on.
+Documented step: "It also writes the review state under `.claude/state/review/`"
+Result: a hook reads garbage and blocks nothing.
 
 ## Not asked for
 
-hard findings: 1
+hard findings: 2
 EOF
 cat > "$dir/judgment.md" <<'EOF'
 ## Act on
@@ -219,9 +247,9 @@ $(cat "$dir/spec-report.md")
 
 $(cat "$dir/judgment.md")
 
-Standards: 1 would break of 3; Spec: 1 would break of 2; judged: act on 2 (0 fixed, 0 with a ticket), ask 1, consider 0, noted 1, dismissed 1; fixed point main.
+Standards: 1 would break, 0 fail open, of 3; Spec: 1 would break, 1 fail open, of 2; judged: act on 2 (0 fixed, 0 with a ticket), ask 1, consider 0, noted 1, dismissed 1; fixed point main.
 round: 2 of 3
-act-on items: 3" "two Act on and one Ask, round 2"
+act-on items: 3" "two Act on and one Ask, round 2; the walk's three lines are not items"
 
 rearm
 echo 3 > "$dir/round"
@@ -257,7 +285,7 @@ $(cat "$dir/spec-report.md")
 
 $(cat "$dir/judgment.md")
 
-Standards: 1 would break of 3; Spec: 1 would break of 2; judged: act on 2 (0 fixed, 1 with a ticket), ask 1, consider 0, noted 1, dismissed 1; fixed point main.
+Standards: 1 would break, 0 fail open, of 3; Spec: 1 would break, 1 fail open, of 2; judged: act on 2 (0 fixed, 1 with a ticket), ask 1, consider 0, noted 1, dismissed 1; fixed point main.
 round: 3 of 3
 act-on items: 2" "an Act on item filed as a ticket is not counted, round 3"
 
@@ -274,7 +302,7 @@ $(cat "$dir/spec-report.md")
 
 $(cat "$dir/judgment.md")
 
-Standards: 1 would break of 3; Spec: 1 would break of 2; judged: act on 2 (0 fixed, 1 with a ticket), ask 1, consider 0, noted 1, dismissed 1; fixed point main.
+Standards: 1 would break, 0 fail open, of 3; Spec: 1 would break, 1 fail open, of 2; judged: act on 2 (0 fixed, 1 with a ticket), ask 1, consider 0, noted 1, dismissed 1; fixed point main.
 round: 3 of 3
 act-on items: 2" "rebuilt from the directory after the state was cleared" "$dir"
 refuse "nowhere is not a directory; pass the .scratch/review/<id> review-brief.sh wrote" "a directory that does not exist" nowhere
@@ -316,7 +344,7 @@ $(cat "$dir/spec-report.md")
 
 $(cat "$dir/judgment.md")
 
-Standards: 1 would break of 3; Spec: 1 would break of 2; judged: act on 2 (1 fixed, 1 with a ticket), ask 1, consider 0, noted 1, dismissed 1; fixed point main.
+Standards: 1 would break, 0 fail open, of 3; Spec: 1 would break, 1 fail open, of 2; judged: act on 2 (1 fixed, 1 with a ticket), ask 1, consider 0, noted 1, dismissed 1; fixed point main.
 round: 3 of 3
 act-on items: 1" "an Act on item fixed on this PR is not counted, round 3" "$dir"
 
@@ -339,7 +367,7 @@ echo three > "$dir/round"
 refuse "$dir/round holds 'three', not a round number; rerun scripts/review-brief.sh" "round file off its shape"
 
 reset
-printf '## Would break\n\n## Standards breaches\n\n## Fix alongside\n\n1. **Mysterious Name.** x\n2. **Middle Man.** y\n\nhard findings: 0\n' > "$dir/standards-report.md"
+printf '## Would break\n\n## Fails open\n\n## Standards breaches\n\n## Fix alongside\n\n1. **Mysterious Name.** x\n2. **Middle Man.** y\n\nhard findings: 0\n' > "$dir/standards-report.md"
 printf '## Act on\n\n## Ask\n\n## Consider\n\n## Noted\n\n## Dismissed\n\n1. [S1] **Mysterious Name.** the name is the domain term\n2. [S2] **Middle Man.** one caller, kept inline\n' > "$dir/judgment.md"
 accept "## Standards
 
@@ -353,7 +381,7 @@ no spec: Standards axis only
 
 $(cat "$dir/judgment.md")
 
-Standards: 0 would break of 2; Spec: no spec; judged: act on 0 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 0, dismissed 2; fixed point main.
+Standards: 0 would break, 0 fail open, of 2; Spec: no spec; judged: act on 0 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 0, dismissed 2; fixed point main.
 round: 1 of 3
 act-on items: 0" "Dismissed only"
 
@@ -372,7 +400,7 @@ no spec: Standards axis only
 
 $(cat "$dir/judgment.md")
 
-Standards: 0 would break of 2; Spec: no spec; judged: act on 1 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 0, dismissed 1; fixed point main.
+Standards: 0 would break, 0 fail open, of 2; Spec: no spec; judged: act on 1 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 0, dismissed 1; fixed point main.
 round: 1 of 3
 act-on items: 1" "rerun with the dir argument after the state was cleared" "$dir"
 accept "$out" "the same with a trailing slash on the dir" "$dir/"
@@ -393,7 +421,7 @@ no spec: Standards axis only
 
 $(cat "$dir/judgment.md")
 
-Standards: 0 would break of 2; Spec: no spec; judged: act on 0 (0 fixed, 0 with a ticket), ask 1, consider 0, noted 0, dismissed 1; fixed point main.
+Standards: 0 would break, 0 fail open, of 2; Spec: no spec; judged: act on 0 (0 fixed, 0 with a ticket), ask 1, consider 0, noted 0, dismissed 1; fixed point main.
 round: 1 of 3
 act-on items: 1" "an Ask item, counted" "$dir"
 printf '## Act on\n\n## Ask\n\n## Consider\n\n## Noted\n\n## Dismissed\n\n2. [S2] **Middle Man.** one caller, kept inline\n1. [S1] **Mysterious Name.** the human says the name is the domain term. cites: #7 comment 2026-09-18\n' > "$dir/judgment.md"
@@ -411,7 +439,7 @@ no spec: Standards axis only
 
 $(cat "$dir/judgment.md")
 
-Standards: 0 would break of 2; Spec: no spec; judged: act on 0 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 0, dismissed 2; fixed point main.
+Standards: 0 would break, 0 fail open, of 2; Spec: no spec; judged: act on 0 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 0, dismissed 2; fixed point main.
 round: 1 of 3
 act-on items: 0" "an Ask item moved and renumbered, the same round" "$dir"
 
@@ -419,7 +447,7 @@ act-on items: 0" "an Ask item moved and renumbered, the same round" "$dir"
 # naming the dir: each spelling is the dir the state names, so the state is cleared.
 for spelling in "./$dir/" "$(git rev-parse --show-toplevel)/$dir"; do
   reset
-  printf '## Would break\n\n## Standards breaches\n\n## Fix alongside\n\n1. **Mysterious Name.** x\n2. **Middle Man.** y\n\nhard findings: 0\n' > "$dir/standards-report.md"
+  printf '## Would break\n\n## Fails open\n\n## Standards breaches\n\n## Fix alongside\n\n1. **Mysterious Name.** x\n2. **Middle Man.** y\n\nhard findings: 0\n' > "$dir/standards-report.md"
   printf '## Act on\n\n1. [S1] **Mysterious Name.** the human wants it renamed\n\n## Ask\n\n## Consider\n\n## Noted\n\n## Dismissed\n\n2. [S2] **Middle Man.** one caller, kept inline\n' > "$dir/judgment.md"
   accept "## Standards
 
@@ -433,7 +461,7 @@ no spec: Standards axis only
 
 $(cat "$dir/judgment.md")
 
-Standards: 0 would break of 2; Spec: no spec; judged: act on 1 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 0, dismissed 1; fixed point main.
+Standards: 0 would break, 0 fail open, of 2; Spec: no spec; judged: act on 1 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 0, dismissed 1; fixed point main.
 round: 1 of 3
 act-on items: 1" "rerun with the dir spelled $spelling" "$spelling"
 done
@@ -446,7 +474,7 @@ done
 # fenced_twin <label> <hunk>: the twin with the hunk under item 1 is accepted with the twin's summary.
 fenced_twin() {
   reset
-  printf '## Would break\n\n1. **One.** a\n\n%s\n\n## Standards breaches\n\n2. **Two.** b\n\n## Fix alongside\n\n3. **Three.** c\n\nhard findings: 1\n' "$2" > "$dir/standards-report.md"
+  printf '## Would break\n\n1. **One.** a\nDocumented step: t\n\n%s\n\n## Fails open\n\n## Standards breaches\n\n2. **Two.** b\n\n## Fix alongside\n\n3. **Three.** c\n\nhard findings: 1\n' "$2" > "$dir/standards-report.md"
   printf '## Act on\n\n1. [S1] **One.** yes\n\n## Ask\n\n## Consider\n\n## Noted\n\n2. [S3] **Three.** later\n\n## Dismissed\n\n3. [S2] **Two.** no\n' > "$dir/judgment.md"
   accept "## Standards
 
@@ -460,7 +488,7 @@ no spec: Standards axis only
 
 $(cat "$dir/judgment.md")
 
-Standards: 1 would break of 3; Spec: no spec; judged: act on 1 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 1, dismissed 1; fixed point main.
+Standards: 1 would break, 0 fail open, of 3; Spec: no spec; judged: act on 1 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 1, dismissed 1; fixed point main.
 round: 1 of 3
 act-on items: 1" "$1"
 }
@@ -471,7 +499,7 @@ fenced_twin "a fence quoted inside a longer fence" '````md
 ```
 2. still the hunk
 ```
-## Latent
+## Fails open
 ````'
 fenced_twin 'a ~~~ fence quoting a ``` line' '~~~sh
 ## Would break
@@ -482,7 +510,7 @@ fenced_twin 'a ```sh fence quoted inside a ``` block' '```
 ## Would break
 ```sh
 1. still the hunk
-## Latent
+## Fails open
 ```'
 fenced_twin "a fenced hunk carrying heading and item lines" '```
 ## Fix alongside
@@ -491,7 +519,7 @@ fenced_twin "a fenced hunk carrying heading and item lines" '```
 ```'
 
 reset
-printf '## Would break \n\n## Standards breaches\t\n\n## Fix alongside \n\nhard findings: 0\n' > "$dir/standards-report.md"
+printf '## Would break \n\n## Fails open\t\n\n## Standards breaches\t\n\n## Fix alongside \n\nhard findings: 0\n' > "$dir/standards-report.md"
 empty_judgment > "$dir/judgment.md"
 accept "## Standards
 
@@ -505,8 +533,11 @@ no spec: Standards axis only
 
 $(cat "$dir/judgment.md")
 
-Standards: 0 would break of 0; Spec: no spec; judged: act on 0 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 0, dismissed 0; fixed point main.
+Standards: 0 would break, 0 fail open, of 0; Spec: no spec; judged: act on 0 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 0, dismissed 0; fixed point main.
 round: 1 of 3
 act-on items: 0" "headings with trailing whitespace"
+}
 
+suite project
+suite factory
 echo "ok $n assertions"
