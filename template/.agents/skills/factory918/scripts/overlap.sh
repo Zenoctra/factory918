@@ -7,7 +7,8 @@
 # that PR. Shared and no program naming #N: exit 1, stop. The ticket's paths are the backticked
 # tokens of its body outside a `## Diff` section that `git ls-files` knows; a directory token
 # covers every file under it. With --diff the paths are this branch's own diff against
-# origin/main instead, and the PR whose head is this branch is skipped.
+# origin/main instead, and the PR whose head is this branch is skipped. Every PR head is fetched
+# fresh, since refs/remotes is shared across worktrees and Ticket step 1 refreshes only main.
 set -euo pipefail
 usage() { echo "usage: overlap.sh N [--diff]" >&2; exit 64; }
 [ $# -ge 1 ] || usage
@@ -20,10 +21,10 @@ if [ "$diff" = 1 ]; then
 else
   body="$(gh issue view "$n" --json body -q .body)"
   named=""
-  for tok in $(printf '%s\n' "$body" | awk '/^## /{skip = ($0 ~ /^## Diff/)} !skip' | grep -oE '`[^`[:space:]]+`' | tr -d '`' | sort -u); do
+  while IFS= read -r tok; do
     tok="${tok%/}"
-    [ -n "$(git ls-files -- "$tok" 2>/dev/null)" ] && named="$named$tok"$'\n'
-  done
+    [ -n "$tok" ] && [ -n "$(git ls-files -- "$tok" 2>/dev/null)" ] && named="$named$tok"$'\n'
+  done <<< "$(printf '%s\n' "$body" | awk '/^## /{skip = ($0 ~ /^## Diff/)} !skip' | grep -oE '`[^`[:space:]]+`' | tr -d '`' | sort -u)"
 fi
 prog="$(git rev-parse --git-common-dir)/../.claude/state/program"
 line=none; [ ! -f "$prog" ] || line="$(cat "$prog")"
@@ -32,13 +33,14 @@ out=""
 while read -r pr head; do
   [ -n "$pr" ] || continue
   [ "$diff" = 1 ] && [ "$head" = "$branch" ] && continue
-  git rev-parse -q --verify "refs/remotes/origin/$head" >/dev/null || git fetch -q origin "refs/heads/$head:refs/remotes/origin/$head"
+  git fetch -q origin "+refs/heads/$head:refs/remotes/origin/$head"
+  files="$(git diff --name-only "origin/main...origin/$head")"
   paths=""
   while IFS= read -r f; do
     while IFS= read -r p; do
       [ -n "$p" ] && { [ "$f" = "$p" ] || [ "${f#"$p"/}" != "$f" ]; } && paths="$paths $f" && break
     done <<< "$named"
-  done < <(git diff --name-only "origin/main...origin/$head")
+  done <<< "$files"
   [ -n "$paths" ] && out="$out#$pr $head:$paths"$'\n'
 done <<< "$prs"
 [ -n "$out" ] || exit 0
