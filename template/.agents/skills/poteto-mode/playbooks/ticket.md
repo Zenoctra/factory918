@@ -9,7 +9,7 @@
 5. Select by content and run that playbook's steps verbatim from step 1: new behavior → Feature; a defect → Bug fix; a behavior-preserving change → Refactoring; measured slowness → Perf issue. `how` and `why` over the affected subsystem come first in all of them. A change whose diff will touch a cross-cutting path, one under a `.claude/hooks/` directory, a `.claude/settings.json`, or a file of the `factory918` skill (`.agents/skills/factory918/`), at any depth (`spec-review`'s `review-brief.sh` holds the predicate), reaches every session and skill at once: after `how`, run `blast-radius` over it and write the result to `.scratch/<ticket>/blast-radius.md` in that skill's hand-back shape (what it does; the one fact it is safe because of and how far it was proven; risks; cleared; before you merge), with a risk for every session kind (the interactive session, a subagent, a hook's own invocation, `factory-start` at day zero, a review in progress) and every skill the change reaches, each with a `file:line`. Such a change never skips `architect`. The PR body's `## Blast Radius` section is that file verbatim, and `review-brief.sh` refuses to brief the diff without it.
 6. The spec's **Testing decisions** are the pre-agreed seams. `tdd` there, and nowhere the spec did not agree unless a criterion needs it.
 7. Verify on the matching surface per `docs/agents/evidence.md`; the primary agent runs the project's `verify-<app>` skill once after integrating.
-8. Run `.claude/skills/poteto-mode/scripts/overlap.sh N --diff`; its output, when there is any, is the PR body's `## Overlap` section verbatim, placed before `## Verification`; exit 1 means the reply names the printed PR as the one to merge first. Exit 2: stop and report stderr; do not open the PR until the check runs. Then run **Opening a PR**. The body's Verification section quotes each criterion with its evidence path. The last line before the attribution is `Closes #N`. Never close the issue by hand; the merge closes it.
+8. Run `.claude/skills/poteto-mode/scripts/overlap.sh N --diff`; its output, when there is any, is the PR body's `## Overlap` section verbatim, placed before `## Verification`; exit 1 means the reply names the printed PR as the one to merge first. Exit 2: stop and report stderr; do not open the PR until the check runs. Then run **Opening a PR**. A `spec-review` comment carrying the line `restart` names a design hole: go to **Design hole** below, not on to step 9. The body's Verification section quotes each criterion with its evidence path. The last line before the attribution is `Closes #N`. Never close the issue by hand; the merge closes it.
 9. Babysit to merge-ready per `playbooks/babysit.md`. Never merge.
 
 **Reply:** the ticket, the criteria and how each was proven, what the ticket did not settle and what you chose, the PR URL.
@@ -22,3 +22,14 @@
 2. Its **Acceptance criteria** come from the falsifiability pass (step 4 above): one checkbox per observation that would fail today, in the user's terms.
 3. Reply with the number and the criteria in one line, then proceed; do not wait. The human edits the issue if the words are wrong.
 4. From here it is the Ticket playbook: the PR says `Closes #N`, `spec-review` reads the issue, the merge closes it.
+
+### Design hole
+
+**A finding whose fix changes the artifact is not fixed on the PR.** When a round's review comment carries a `restart` line, before babysit:
+
+1. Read the `hole:` reference on each marked item: a cell, a signature or a criterion. That is the scope; nothing wider is redesigned.
+2. Run `architect` Phase B scoped to it, with the judgment item, its report item and the artifact (the ticket's `## Testing decisions` table, its `## Design` sketch, or the criterion with the ticket's What to build and Decision quotes) as grounding. Two runners; the judge is skipped when they converge.
+3. Amend the artifact on the ticket with a dated line, never a rewrite: `Amended <date> by #N (review round <r>, hole at <reference>): <what changed and why>; <which assertions moved>`. A criterion is re-derived from the ticket's intent and the line shows the old and the new wording.
+4. Rewrite the tests from the amended artifact before the code (step 6), then redo the work on this branch; the PR stays open.
+5. Review the redesigned work from round one: `review-brief.sh` reads the restart from the PR's comments and starts the count over; nothing from before it carries as settled, so a decision still needed is cited again in the new round one's judgment.
+6. Then step 9. A PR mid-restart is never merge-ready.
