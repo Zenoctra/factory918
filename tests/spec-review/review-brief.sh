@@ -2,19 +2,24 @@
 # Runs review-brief.sh twice, in a temp repo laid out as a project and in one laid out as the
 # factory (tests/spec-review/layout.sh), each time the copy of the skill that repo holds, and
 # asserts that each brief carries the report shape review-comment.sh enforces: the definition
-# sentence, Manuel's five sentences, every heading name, the item format, the step rule and the
-# count rule. The fake gh (tests/spec-review/fake-gh.sh) on PATH supplies the ticket body and the
+# sentence, Manuel's five sentences, every heading name, the item format, the step rule, the spec
+# rule (only in a review with a spec: a run with no ticket writes a Standards brief without it) and
+# the count rule. The fake gh (tests/spec-review/fake-gh.sh) on PATH supplies the ticket body and the
 # ticket's comments, and the PR's earlier review comments when a fixture file names them (no PR
 # otherwise), so the Spec brief is written and the round is 1 unless the comments or --round say
 # otherwise. Only the judgment items that cite a decision carry into both briefs, from every earlier
 # comment, each line once; the round is one more than the highest `round: N of 3` among the comments,
 # so a rebuilt comment does not advance it; a fourth round is refused before any state is written;
-# a gh failure other than "no pull requests found" is printed and the run goes on. A diff touching
+# a gh failure other than "no pull requests found" is printed and the run goes on. A comment holding
+# a line that is exactly `restart` outside fenced text ends the history: the round and the settled
+# items come from the comments after the last such comment, the script prints a `restart:` line,
+# and a cite of a cell, a signature or a criterion (`cites: #N table <row>/<column>`, `design
+# <signature>`, `criterion <k>`) carries like the three older forms. A diff touching
 # a cross-cutting path is briefed with its blast-radius grounding (--blast-radius FILE, else the PR
 # body's section) before the diff, and refused without one. The source SKILL.md, step 4, must carry
-# the definition, the five sentences, the heading bullets, the step rule, the count rule, the
-# settled paragraph and the blast-radius paragraph word for word, so the skill and the script
-# cannot drift apart. Exits 1 on the first miss.
+# the definition, the five sentences, the heading bullets, the step rule, the spec rule, the count
+# rule, the settled paragraph and the blast-radius paragraph word for word, so the skill and the
+# script cannot drift apart. Exits 1 on the first miss.
 # shellcheck disable=SC2016 # the expected strings below are the Markdown the script emits; the backticks and $ are literal
 set -euo pipefail
 here="$(cd "$(dirname "$0")/../.." && pwd -P)"
@@ -106,11 +111,13 @@ quotes=(
   '- Manuel: "Primary focus must be the happy path, then unhappy paths that error in a way the user can correct."'
 )
 step_rule='Every item under `## Would break` or `## Fails open` carries a line `Documented step:` quoting the ticket line or the `file:line` of the documentation the user follows, and a line `Result:` saying what happens instead; an item without its `Documented step:` line is sent back.'
+spec_rule='The same item carries a line `spec:` naming the artifact it rests on: `table <row>/<column>` for a cell of the ticket'"'"'s scenario table, `design <signature>` for a signature or usage in its `## Design` sketch, or `criterion <k>` for its k-th acceptance checkbox; an item without a `spec:` line in one of those three forms is sent back.'
 count_rule='End the report with exactly one line `hard findings: N`, where N is the number of items under `## Would break` and `## Fails open` and nothing else.'
 settled_rule="These findings were raised in an earlier round and settled by the decision each one cites. Do not raise them again. Nothing in this section says what you should find or confirm."
 blast_rule="The sessions and skills this change reaches, as the author grounded them before the review. Check the diff against each one; the grounding is the author's claim, not evidence."
 has "$source_skill/SKILL.md" "$definition" "SKILL.md step 4 carries the definition"
 has "$source_skill/SKILL.md" "$step_rule" "SKILL.md step 4 carries the step rule"
+has "$source_skill/SKILL.md" "$spec_rule" "SKILL.md step 4 carries the spec rule"
 has "$source_skill/SKILL.md" "$count_rule" "SKILL.md step 4 carries the count rule"
 has "$source_skill/SKILL.md" "$settled_rule" "SKILL.md step 4 carries the settled paragraph"
 has "$source_skill/SKILL.md" "$blast_rule" "SKILL.md step 4 carries the blast-radius paragraph"
@@ -131,7 +138,17 @@ for f in "$std" "$spec"; do
   has "$f" '`1. **Title.** body`' "$f carries the item format"
   has "$f" "number the items continuously across the headings" "$f says how to number"
   has "$f" "$step_rule" "$f carries the step rule"
+  has "$f" "$spec_rule" "$f carries the spec rule"
   has "$f" "$count_rule" "$f carries the count rule"
+  # The spec rule one blank line after the step rule; the report path and the count rule follow it.
+  if [ "$(grep -nF -- "$spec_rule" "$f" | cut -d: -f1)" -ne "$(($(grep -nF -- "$step_rule" "$f" | cut -d: -f1) + 2))" ]; then
+    echo "FAIL $f: the spec rule does not follow the step rule"; exit 1
+  fi
+  n=$((n + 1))
+  if [ "$(grep -nF -- "$count_rule" "$f" | cut -d: -f1)" -ne "$(($(grep -nF -- "$spec_rule" "$f" | cut -d: -f1) + 3))" ]; then
+    echo "FAIL $f: the report path and the count rule do not follow the spec rule"; exit 1
+  fi
+  n=$((n + 1))
   has "$f" '- `## Fails open`' "$f has the Fails open heading"
   lacks "$f" "## Latent" "$f has no Latent heading"
   lacks "$f" "## Settled in earlier rounds" "$f has no settled section without a previous comment"
@@ -171,6 +188,20 @@ has "$spec" "### 2026-09-18" "Spec: a comment under its date"
 has "$spec" "user: the count is Act on plus Ask." "Spec: the author's comment body"
 lacks "$std" "## Comments by the ticket's author" "Standards: no ticket comments"
 has "$spec" "Write your report to \`$(dirname "$spec")/spec-report.md\` and reply with only that path." "Spec: the report path"
+
+# Ticket #90, criterion 2: a review with no spec (no ticket named, none in the commits) has no
+# artifact a finding could rest on, so the Standards brief carries the step rule and not the spec
+# rule, and the report path and the count rule follow the step rule directly.
+bash "$skill/scripts/review-brief.sh" HEAD~1 > out.txt
+printed out.txt "round: 1 of 3
+.scratch/review/HEAD_1/standards-brief.md
+no spec: Standards axis only" "no ticket: no spec"
+has "$std" "$step_rule" "no spec: the Standards brief carries the step rule"
+lacks "$std" "$spec_rule" "no spec: the Standards brief carries no spec rule"
+if [ "$(grep -nF -- "$count_rule" "$std" | cut -d: -f1)" -ne "$(($(grep -nF -- "$step_rule" "$std" | cut -d: -f1) + 3))" ]; then
+  echo "FAIL $std: with no spec, the report path and the count rule do not follow the step rule"; exit 1
+fi
+n=$((n + 1))
 
 # A previous review comment: one cited Dismissed item, one uncited Dismissed item, one cited Noted item.
 # The report above the judgment carries a quoted hunk whose lines are not items.
@@ -302,7 +333,131 @@ n=$((n + 1))
 bash "$skill/scripts/review-brief.sh" HEAD~1 --ticket 7 --round 3 > out.txt
 has out.txt "round: 3 of 3" "--round overrides the round the comments give"
 has out.txt "settled: carried 2, dropped 1 without a citation" "--round still carries the comments' items"
+
+# Ticket #90, table A. A restart comment, one holding a line that is exactly `restart` outside
+# fenced text, ends the history: the round and the settled items come from the comments after the
+# last such comment, the script says so with a `restart:` line, and nothing before it carries, the
+# restart comment's own cited items included. The old series cites P16 and a Ruby hook; the new
+# series is previous.md and its rounds two and three.
+restart_line="restart: the round and the settled items count from the last restart comment"
+awk '/^round: 2 of 3$/ { print "restart" } { print }' previous-2.md > restart-2.md
+sed 's/^round: 2 of 3$/round: 3 of 3/' restart-2.md > restart-3.md
+sed 's/DECISIONS.md P17/DECISIONS.md P16/; s/Hook in Python/Hook in Ruby/' previous.md > old.md
+awk '/^round: 1 of 3$/ { print "restart" } { print }' old.md > old-restart.md
+sed 's/^round: 1 of 3$/round: 2 of 3/' old-restart.md > old-restart-2.md
+# Rows 5 and 13: (1), (2 restart) is round one of the redesign, and the cited items of both
+# comments are dropped.
+pr me me:previous.md me:restart-2.md
+bash "$skill/scripts/review-brief.sh" HEAD~1 --ticket 7 > out.txt
+printed out.txt "ticket: #7
+$restart_line
+round: 1 of 3
+.scratch/review/HEAD_1/standards-brief.md
+.scratch/review/HEAD_1/spec-brief.md" "a restart comment in round 2: round 1, nothing carried (5A)"
+[ "$(cat .scratch/review/HEAD_1/round)" = 1 ] || { echo "FAIL: the round file does not say 1 after a restart"; exit 1; }
+n=$((n + 1))
+for f in "$std" "$spec"; do
+  lacks "$f" "## Settled in earlier rounds" "$f has no settled section after a restart"
+  lacks "$f" "cites: DECISIONS.md P17" "$f drops the cited items of the restart comment and the one before it (row 13)"
+done
+bash "$skill/scripts/review-brief.sh" HEAD~1 --ticket 7 --round 2 > out.txt
+printed out.txt "ticket: #7
+$restart_line
+round: 2 of 3
+.scratch/review/HEAD_1/standards-brief.md
+.scratch/review/HEAD_1/spec-brief.md" "a restart comment with --round 2 (5B)"
+lacks "$std" "## Settled in earlier rounds" "--round after a restart carries nothing"
+{ cat previous.md; printf '\036\n'; cat restart-2.md; } > both.md
+bash "$skill/scripts/review-brief.sh" HEAD~1 --ticket 7 --previous both.md > out.txt
+printed out.txt "ticket: #7
+$restart_line
+round: 1 of 3
+.scratch/review/HEAD_1/standards-brief.md
+.scratch/review/HEAD_1/spec-brief.md" "a restart comment from a --previous file holding both comments (5C)"
+# Row 6: a restart in round three is round one, not the fourth-round refusal.
+pr me me:previous.md me:previous-2.md me:restart-3.md
+bash "$skill/scripts/review-brief.sh" HEAD~1 --ticket 7 > out.txt
+printed out.txt "ticket: #7
+$restart_line
+round: 1 of 3
+.scratch/review/HEAD_1/standards-brief.md
+.scratch/review/HEAD_1/spec-brief.md" "a restart comment in round 3 is round 1, not refused (6A)"
+lacks "$std" "## Settled in earlier rounds" "a restart in round 3 carries nothing"
+# Row 7: three comments after the restart, and the new series' fourth round is refused before
+# any state is written; --round 3 rebuilds round three from the new series alone.
+pr me me:old.md me:old-restart-2.md me:previous.md me:previous-2.md me:previous-3.md
+rm -rf .scratch .claude/state
+set +e
+out="$(bash "$skill/scripts/review-brief.sh" HEAD~1 --ticket 7 2>&1)"
+code=$?
+set -e
+if [ "$code" != 1 ] || [ "$out" != 'review-brief: three rounds were run on this PR; the remaining Act on items are fixed here and marked `fixed: <sha>`, not reviewed in a fourth round' ] || [ -e .claude/state/review ] || [ -e .scratch/review ]; then
+  echo "FAIL fourth round after a restart: exit $code, wanted 1, the message and no state (7A)"
+  echo "  got: $out"
+  exit 1
+fi
+n=$((n + 1))
+bash "$skill/scripts/review-brief.sh" HEAD~1 --ticket 7 --round 3 > out.txt
+printed out.txt "ticket: #7
+$restart_line
+round: 3 of 3
+settled: carried 2, dropped 1 without a citation
+.scratch/review/HEAD_1/standards-brief.md
+.scratch/review/HEAD_1/spec-brief.md" "--round 3 after a restart carries the new series only (7B)"
+has "$std" "cites: DECISIONS.md P17" "the new series' cited item carries after a restart"
+lacks "$std" "DECISIONS.md P16" "the old series' cited item does not carry after a restart"
+lacks "$std" "Hook in Ruby" "the old series' Noted item does not carry after a restart"
+# Row 8: two restarts; the round and the settled items come from the comment after the last.
+pr me me:old-restart.md me:old.md me:old-restart-2.md me:previous.md
+bash "$skill/scripts/review-brief.sh" HEAD~1 --ticket 7 > out.txt
+printed out.txt "ticket: #7
+$restart_line
+round: 2 of 3
+settled: carried 2, dropped 1 without a citation
+.scratch/review/HEAD_1/standards-brief.md
+.scratch/review/HEAD_1/spec-brief.md" "two restarts: round two of the third series, its one comment carried (8A)"
+lacks "$std" "DECISIONS.md P16" "two restarts: nothing before the last carries"
+# Row 11: `restart` in prose, inside a fenced hunk or with trailing text is not a restart line.
+awk '/^round: 2 of 3$/ { print "the writer asked for a restart"; print "```"; print "restart"; print "```"; print "restart: table 2/D" } { print }' previous-2.md > not-restart.md
+pr me me:previous.md me:not-restart.md
+bash "$skill/scripts/review-brief.sh" HEAD~1 --ticket 7 > out.txt
+printed out.txt "ticket: #7
+round: 3 of 3
+settled: carried 2, dropped 1 without a citation
+.scratch/review/HEAD_1/standards-brief.md
+.scratch/review/HEAD_1/spec-brief.md" "restart in prose, in a fence or with trailing text is not a restart line (11A)"
+# Row 12: a body with a `restart` line and no `act-on items:` line is not fetched, so the round
+# does not reset; from --previous the file is trusted, so it is a restart comment.
+grep -v '^act-on items:' restart-2.md > restart-uncounted.md
+pr me me:previous.md me:previous-2.md me:restart-uncounted.md
+bash "$skill/scripts/review-brief.sh" HEAD~1 --ticket 7 > out.txt
+printed out.txt "ticket: #7
+round: 3 of 3
+settled: carried 2, dropped 1 without a citation
+.scratch/review/HEAD_1/standards-brief.md
+.scratch/review/HEAD_1/spec-brief.md" "a restart line without an act-on items line is not fetched (12A)"
+bash "$skill/scripts/review-brief.sh" HEAD~1 --ticket 7 --previous restart-uncounted.md > out.txt
+printed out.txt "ticket: #7
+$restart_line
+round: 1 of 3
+.scratch/review/HEAD_1/standards-brief.md
+.scratch/review/HEAD_1/spec-brief.md" "a restart line from a --previous file is trusted (12C)"
 rm pr.json
+# Rows 14 to 16: a Noted or Dismissed item citing a cell, a signature or a criterion of the ticket
+# carries as settled, the line pasted verbatim in both briefs.
+for cite in '#42 table 12/A' '#42 design overlap.sh N --diff' '#42 criterion 3'; do
+  sed "s|^3\. \[S3\] \*\*Bare number\.\*\* The constant is named two lines up\.$|3. [S3] **Bare number.** The cell settles it. cites: $cite|" previous.md > cited.md
+  bash "$skill/scripts/review-brief.sh" HEAD~1 --ticket 7 --previous cited.md --round 2 > out.txt
+  has out.txt "settled: carried 3, dropped 0 without a citation" "cites: $cite carries"
+  for f in "$std" "$spec"; do
+    has "$f" "3. [S3] **Bare number.** The cell settles it. cites: $cite" "$f carries the item citing $cite"
+  done
+done
+# Row 17: a malformed cite is dropped and counted as uncited.
+awk '/^3\. \[S3\]/ { print "3. [S3] **Bare number.** cites: #42 cell 12A"; print "4. [S3] **Bare number.** cites: table 12/A"; print "5. [S3] **Bare number.** cites: #42 criterion 0"; print "6. [S3] **Bare number.** cites: #42 table 12/A trailing"; print "7. [S3] **Bare number.** cites: #42 table 12/A. The cell."; next } { print }' previous.md > malformed.md
+bash "$skill/scripts/review-brief.sh" HEAD~1 --ticket 7 --previous malformed.md --round 2 > out.txt
+has out.txt "settled: carried 2, dropped 5 without a citation" "five malformed cites are dropped and counted (17)"
+lacks "$std" "cell 12A" "a malformed cite does not carry"
 
 # The cited Dismissed item quotes a hunk whose lines look like cited items: a ``` line inside a
 # ```` block, and a ~~~ block quoting a ``` line. A fence closes only on its own character at
@@ -338,12 +493,15 @@ quoting 'a ```sh line inside a ``` block' '```
 1. **Still the hunk.** cites: DECISIONS.md P2
 ```'
 
-# The fence rule is one awk fragment, copied between the two scripts; the copies stay identical.
-fragment() { sed -n "/^fenced='\$/,/^'\$/p" "$1"; }
+# The fence rule is one awk fragment and the reference grammar one `ref=` line, each copied
+# between the two scripts; the copies stay identical.
+fragment() { sed -n "/^fenced='\$/,/^'\$/p; /^ref='/p" "$1"; }
 [ -n "$(fragment "$skill/scripts/review-brief.sh")" ] || { echo "FAIL: review-brief.sh has no fenced='...' fragment"; exit 1; }
 if [ "$(fragment "$skill/scripts/review-brief.sh")" != "$(fragment "$skill/scripts/review-comment.sh")" ]; then
-  echo "FAIL: the fenced awk fragment differs between review-brief.sh and review-comment.sh"; exit 1
+  echo "FAIL: the fenced awk fragment or the ref line differs between review-brief.sh and review-comment.sh"; exit 1
 fi
+n=$((n + 1))
+grep -q "^ref='" "$skill/scripts/review-brief.sh" || { echo "FAIL: review-brief.sh has no ref='...' line"; exit 1; }
 n=$((n + 1))
 
 # A fourth round is refused before any state is written.
