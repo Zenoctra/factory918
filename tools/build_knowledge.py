@@ -5,7 +5,7 @@ Sources, all inside this repository:
 
   docs/knowledge/core/*.md                 HAND-MAINTAINED. Edit these files directly. This script only
                                            refreshes the header line and the mini-TOC of each one in place,
-                                           then copies PHILOSOPHY, MANUAL, DECISIONS and GLOSSARY (headers
+                                           then copies every core document except CONVERSATION-DIGEST (headers
                                            stripped) into template/docs/factory918/ for projects.
   docs/FACTORY-SPEC-v2.md                  -> docs/knowledge/spec/FACTORY-SPEC-v2/   (chunked by H2)
   research/superseded/FACTORY-SPEC-v1.md   -> docs/knowledge/spec/FACTORY-SPEC-v1/

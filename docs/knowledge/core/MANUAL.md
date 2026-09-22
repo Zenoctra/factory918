@@ -1,4 +1,4 @@
-<!-- lines: 174 | source: core/MANUAL.md | part 1/1 | title: Factory918: the manual -->
+<!-- lines: 175 | source: core/MANUAL.md | part 1/1 | title: Factory918: the manual -->
 
 ## Contents (line numbers are for the Read tool's offset)
 - L24: The loop in one screen
@@ -162,12 +162,13 @@ Rough cost order of the skills, highest first: `arena`, autopilot-stack (one own
 
 ## Where to read more
 
-Everything below lives in the factory clone (`~/.factory918`); a project carries only the first four, under `docs/factory918/`.
+Everything below lives in the factory clone (`~/.factory918`); a project carries only the first five, under `docs/factory918/`.
 
 - `MANUAL.md` (this file): how the loop runs and what you do at each point. Read before the first project; return to "Troubleshooting".
 - `PHILOSOPHY.md`: why it is built this way, in twelve ordered beliefs, and how to decide when nothing else answers. Read once whole; read again when a rule fights you.
 - `DECISIONS.md`: every settled choice with its reason, and the provisional ones an agent made. Read before overriding a vendored skill or asking for a change; decisions beat every source.
 - `GLOSSARY.md`: the terms (ticket, spec, map, surface, rung, ledger). Open when a word in `AGENTS.md` or a playbook is unclear.
+- `SCENARIO-TABLE.md`: the design artifact for anything with state (a file, exit codes, rounds, more than one actor), its shape, and why it is a rule. Open when a ticket carries a table under `## Testing decisions` or an agent has to write one.
 - `docs/knowledge/INDEX.md`: the map of the whole corpus, every file with its size and when to read it. `/knowledge <question>` searches it for you without reading files whole; that is the fastest way to learn how any one part works.
 - `docs/knowledge/pages/`: the research behind the four sources (what Matt, Theo, pstack and Ras Mic each do), the deterministic layer explained from zero, and the evidence on planning with agents. Read for background, a section at a time.
 - `docs/FACTORY-SPEC-v2.md` and `docs/M0-findings.md`: the design and what was actually verified against real tools. Only if you are changing the factory itself.
