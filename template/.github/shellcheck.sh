@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # The shell gate, in this project and in the factory that wrote it. Runs ShellCheck at the pinned
-# version over the files the globs name, downloading that version when this machine does not have
+# version over the files the globs name. When this machine does not have that version it downloads
+# the release tarball once, verifies its sha256 on every run, and runs the binary it extracts from
 # it, so the run a lane makes before a PR and the run CI makes are one run.
 #   bash .github/shellcheck.sh                  this project's shell files
 #   bash .github/shellcheck.sh '<glob>' ...     exactly these; quote a glob, this script expands it
@@ -23,14 +24,13 @@ if ! "$bin" --version 2>/dev/null | grep -qx "version: $version"; then
     *) echo "shellcheck.sh: ShellCheck $version is not pinned for $(uname -s).$(uname -m); install it by hand" >&2; exit 1 ;;
   esac
   dir="${TMPDIR:-/tmp}/shellcheck-$version"
+  tarball="$dir/sc.tar.xz"
   bin="$dir/shellcheck-v$version/shellcheck"
-  if [ ! -x "$bin" ]; then
-    mkdir -p "$dir"
-    curl -fsSL -o "$dir/sc.tar.xz" "https://github.com/koalaman/shellcheck/releases/download/v$version/shellcheck-v$version.$plat.tar.xz"
-    if command -v sha256sum >/dev/null; then echo "$sha  $dir/sc.tar.xz" | sha256sum -c -
-    else echo "$sha  $dir/sc.tar.xz" | shasum -a 256 -c -; fi
-    tar -xJf "$dir/sc.tar.xz" -C "$dir"
-  fi
+  mkdir -p "$dir"
+  [ -f "$tarball" ] || curl -fsSL -o "$tarball" "https://github.com/koalaman/shellcheck/releases/download/v$version/shellcheck-v$version.$plat.tar.xz"
+  if command -v sha256sum >/dev/null; then echo "$sha  $tarball" | sha256sum -c - >&2
+  else echo "$sha  $tarball" | shasum -a 256 -c - >&2; fi
+  tar -xJf "$tarball" -C "$dir"
 fi
 
 if [ "$#" = 0 ]; then set -- '.claude/hooks/*.sh' '.agents/skills/*/scripts/*.sh' '.github/shellcheck.sh'; fi

@@ -5,10 +5,11 @@
 # stderr, also when it stands beside a file that matched, a #!/bin/sh file keeps its POSIX checks,
 # the zero-argument form from a project's root counts the project's hooks, skill scripts and the
 # gate itself, a platform the pin has no build for is refused when no ShellCheck is on PATH
-# (a fake uname on PATH, ShellCheck hidden), and an absolute path or a glob whose directory has
-# a space is one argument, not split on it.
-# The download is not exercised here; the fixture job in factory-ci.yml proves it. Exits 1 on the
-# first miss.
+# (a fake uname on PATH, ShellCheck hidden), an absolute path or a glob whose directory has a
+# space is one argument, not split on it, and on the two pinned platforms a cached tarball that
+# fails its checksum is refused and not downloaded again (a bogus tarball under TMPDIR, ShellCheck
+# hidden). The download is not exercised here; the fixture job in factory-ci.yml proves it. Exits 1
+# on the first miss.
 set -euo pipefail
 here="$(cd "$(dirname "$0")/../.." && pwd -P)"
 script="$here/template/.github/shellcheck.sh"
@@ -83,5 +84,15 @@ test -x "$script" || fail "7 the mode bit" "not executable" "executable"
 n=$((n + 1))
 check "8 an absolute path with a space" 0 "ShellCheck 0.11.0, files checked: 1" "$fx/clean.sh"
 check "8b a glob whose directory has a space" 0 "ShellCheck 0.11.0, files checked: 1" "$fx/clea*.sh"
+case "$(uname -s).$(uname -m)" in
+  Linux.x86_64|Darwin.arm64)
+    mkdir -p "$fx/tmp/shellcheck-0.11.0"
+    printf 'not a tarball' > "$fx/tmp/shellcheck-0.11.0/sc.tar.xz"
+    PATH=/usr/bin:/bin TMPDIR="$fx/tmp" check_err "9 a cached tarball that fails its checksum is refused" 1 "FAILED" clean.sh
+    same "9 nothing on stdout" "" "$got"
+    same "9 the tarball is not downloaded again" "not a tarball" "$(cat "$fx/tmp/shellcheck-0.11.0/sc.tar.xz")"
+    ;;
+  *) echo "skip 9 a cached tarball that fails its checksum: no pin for $(uname -s).$(uname -m), the gate would refuse the platform first" ;;
+esac
 
 echo "ok $n assertions"
