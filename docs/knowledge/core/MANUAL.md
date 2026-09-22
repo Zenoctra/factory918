@@ -1,4 +1,4 @@
-<!-- lines: 172 | source: core/MANUAL.md | part 1/1 | title: Factory918: the manual -->
+<!-- lines: 174 | source: core/MANUAL.md | part 1/1 | title: Factory918: the manual -->
 
 ## Contents (line numbers are for the Read tool's offset)
 - L24: The loop in one screen
@@ -8,14 +8,14 @@
 - L61: Planning
 - L71: Tickets
 - L75: Execution
-- L85: Pull requests, review and merge
-- L108: Retro and the ledger
-- L112: Maintenance
-- L124: Multi-surface products
-- L128: Models and cost
-- L145: Updating the factory
-- L149: Troubleshooting
-- L161: Where to read more
+- L87: Pull requests, review and merge
+- L110: Retro and the ledger
+- L114: Maintenance
+- L126: Multi-surface products
+- L130: Models and cost
+- L147: Updating the factory
+- L151: Troubleshooting
+- L163: Where to read more
 
 # Factory918: the manual
 
@@ -76,7 +76,9 @@ A ticket is a GitHub issue with `## What to build`, `## Acceptance criteria` (ch
 
 `/poteto-mode "#42"` (or paste the issue URL). The Ticket playbook reads the issue and its parent spec, refuses to start if a blocker is open, and runs a falsifiability pass over the acceptance criteria: for each one it names the command or observation that would fail it today, and sends back any criterion that already passes, that another ticket owns, or that merely restates the request. Answer those notes, then it runs the matching pstack playbook (Feature, Bug fix, Refactoring, Perf issue) from step 1: `how` and `why` over the subsystem, design, delegated build with a reviewed diff, verification on the real surface, then Opening a PR and Babysit.
 
-**Several at once.** One ticket per `/poteto-mode "#N"` is the default, and a fresh session per ticket keeps the orchestrator's context clean. To drain the frontier instead: `/poteto-mode "autopilot-stack #4 #5 #8"`. pstack's autopilot-stack runs one owner lane per ticket in its own context and worktree, swarm-verifies each PR, keeps the chain rebased as `main` moves, and hands you one bottom-to-top list of verified PRs to land one at a time; it never merges (`playbooks/autopilot-stack.md` is the full procedure). It states its plan first and starts on your go, then runs without you; each owner runs the Ticket playbook for its ticket, so every unit needs a ticket and quick tickets come first. Its sibling `autopilot-full` is not used here: its merge step is blocked by the git guard.
+**Several at once.** One ticket per `/poteto-mode "#N"` is the default, and a fresh session per ticket keeps the orchestrator's context clean. Two unblocked tickets relate three ways. A dependent ticket lists the other under `## Blocked by` and stays off the frontier until it merges. Two independent tickets disjoint in files each branch from `main`, in any order. Two independent tickets that overlap in files are sequenced. The first goes to merge-ready, you merge, the next starts. Overlap is not coupling. Coupled work is a ticket that needs code an open PR introduces, and only that stacks, only on your go. The Ticket playbook checks before it branches (`overlap.sh` compares each open PR's diff against `main` with the paths the ticket names) and on overlap stops and names the PR to merge first, unless your go opened a program that names the ticket.
+
+**Draining the frontier.** `/poteto-mode "autopilot-stack #4 #5 #8"` is for coupled work. pstack's autopilot-stack runs one owner lane per ticket in its own context and worktree, swarm-verifies each PR, keeps the chain rebased as `main` moves, and hands you one bottom-to-top list of verified PRs to land one at a time; it never merges (`playbooks/autopilot-stack.md` is the full procedure). It states its plan first and starts on your go, then runs without you; each owner runs the Ticket playbook for its ticket, so every unit needs a ticket and quick tickets come first. Your go opens a program, a line the agent appends with `overlap.sh go`, naming its tickets (this run, or a sweep run as one chain), and stands for every stack the program builds. A line covers only stacks among the tickets it names, so it needs no removal. An overlap inside it is recorded in the PR body (`## Overlap`) and the ticket stacks on the PR it overlaps. A rebase re-reviews only a PR whose `git patch-id` changed, so a fix low in the chain costs one re-review, not one per PR above it. Its sibling `autopilot-full` is not used here: its merge step is blocked by the git guard.
 
 **What you do.** Not much until the PR exists. The agent proceeds on anything reversible and asks only before irreversible actions. If it goes wrong, note what you would have said earlier; that note is a ledger entry, and the ledger is where rules come from.
 
