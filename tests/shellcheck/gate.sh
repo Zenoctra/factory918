@@ -88,7 +88,7 @@ case "$(uname -s).$(uname -m)" in
   Linux.x86_64|Darwin.arm64)
     mkdir -p "$fx/tmp/shellcheck-0.11.0"
     printf 'not a tarball' > "$fx/tmp/shellcheck-0.11.0/sc.tar.xz"
-    PATH=/usr/bin:/bin TMPDIR="$fx/tmp" check_err "9 a cached tarball that fails its checksum is refused" 1 "FAILED" clean.sh
+    PATH=/usr/bin:/bin TMPDIR="$fx/tmp" check_err "9 a cached tarball that fails its checksum is refused" 1 "did NOT match" clean.sh
     same "9 nothing on stdout" "" "$got"
     same "9 the tarball is not downloaded again" "not a tarball" "$(cat "$fx/tmp/shellcheck-0.11.0/sc.tar.xz")"
     ;;
