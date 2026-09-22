@@ -60,6 +60,7 @@ The most common defect in agent-built projects is a change that works on the pat
 ## Verifying
 
 - Commands, TypeScript surfaces: `vp check` (format, lint and types; it stops at the first failing stage, so format first), `pnpm sg` (ast-grep rules), `vp test run <files>`, `vp run -r build`. Vite+'s own docs are at `node_modules/vite-plus/docs/`. Mobile: the same, plus `expo` for running and EAS for builds (see `profiles/react-native`). Python: `uv run ruff format --check`, `uv run ruff check`, `uv run pyright`, `uv run pytest <files>` (see `profiles/python`). Exact versions are in `docs/adr/0001-toolchain.md`.
+- Shell: `bash .github/shellcheck.sh` before a PR, on the files the diff changes; with no arguments it checks the project's hooks and skill scripts, which is what CI runs.
 - Smallest proof that the change works: the tests you touched, targeted lint and typecheck for the scope you changed.
 - Run the whole suite only if it finishes in under 30 seconds. Otherwise CI owns the full suite.
 - Test meaningful logic or observable behavior at a seam. No tests that assert wiring or mirror the implementation. A test that needs a timeout to pass is wrong. Expected values come from an independent source of truth.

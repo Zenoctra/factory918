@@ -246,6 +246,7 @@ cmd_doctor() {
   doctor_branch
   chk "factory files reachable"       "[ -d \"$TEMPLATE\" ] && [ -d \"$F918_DIR/profiles\" ]" "the factory918 command does not resolve to a clone (template/ missing beside it); run ./factory918.sh install from the clone"
   chk "factory918 installed"          "command -v factory918 && [ -d \"\${FACTORY918_HOME:-\$HOME/.factory918}/docs/knowledge\" ]" "in the factory918 clone run ./factory918.sh install, add ~/.local/bin to PATH, open a new terminal"
+  # shellcheck disable=SC2088 # the tilde is inside the fix text printed to a person, never a path this script expands
   chk "one factory on this machine"   "[ ! -e \"\$HOME/.factory918\" ] || [ \"\$(cd \"\$HOME/.factory918\" && pwd -P)\" = \"\$(cd \"\$(dirname \"\$(readlink \"\$(command -v factory918)\")\")\" && pwd -P)\" ]" "~/.factory918 and ~/.local/bin/factory918 point at different clones; run ./factory918.sh install from the one you want"
   chk "vp matches the ADR pin"        "[ \"\$(vp --version | head -1 | sed 's/^vp v//')\" = \"\$(sed -n 's/.*vite-plus \\([0-9][0-9.]*\\).*/\\1/p' docs/adr/0001-toolchain.md | head -1)\" ]" "docs/adr/0001-toolchain.md pins a different vite-plus than vp --version reports; update the ADR or run the Vite+ installer with VP_VERSION=<pin>"
   chk "vp on PATH"                    "command -v vp" "curl -fsSL https://vite.plus -o /tmp/vp.sh && VP_VERSION=0.3.1 VP_NODE_MANAGER=yes bash /tmp/vp.sh, then open a new terminal"
@@ -269,7 +270,10 @@ cmd_doctor() {
   fi
   chk "vp check (format, lint, types)" "vp check" "vp fmt, then vp check, and fix what it reports; it stops at the first failing stage"
   chk "tests"                         "vp test run" "vp test run and read the failing test"
-  [ -f "$HOME/.claude/pstack-models.md" ] && echo "PASS  models sheet" || note "models sheet" "factory918 install writes ~/.claude/pstack-models.md"
+  if [ -f "$HOME/.claude/pstack-models.md" ]; then echo "PASS  models sheet"; else note "models sheet" "factory918 install writes ~/.claude/pstack-models.md"; fi
+  local scv; scv="$(shellcheck --version 2>/dev/null | sed -n 's/^version: //p' || true)"
+  if [ -n "$scv" ]; then echo "PASS  shellcheck $scv"
+  else note "shellcheck" "brew install shellcheck (apt install shellcheck, dnf install ShellCheck, winget install koalaman.shellcheck); .github/shellcheck.sh downloads the pinned build without it, so this is a NOTE"; fi
   chk "AGENTS.md is Factory918's"     "grep -q 'factory918' AGENTS.md" "factory918 apply --scaffold replaces the AGENTS.md that vp create wrote"
   chk "slots filled (/factory-start)" "! grep -q '<[A-Za-z].*slot\|<Project name>\|<One paragraph' AGENTS.md" "open Claude Code here and run /factory-start, the Day-0 interview; it fills every <slot>"
   chk "slim knowledge present"        "[ -f docs/factory918/PHILOSOPHY.md ] && [ -f docs/factory918/MANUAL.md ]" "factory918 update restores docs/factory918/"
@@ -381,9 +385,9 @@ cmd_sync() {
   local keep_files="poteto-mode/playbooks/ticket.md poteto-mode/scripts/overlap.sh spec-review/scripts/review-brief.sh spec-review/scripts/review-comment.sh"
   local tmp; tmp="$(mktemp -d)"
   for k in $keep_files; do mkdir -p "$tmp/keep/$(dirname "$k")"; cp "$skills/$k" "$tmp/keep/$k"; done
-  for d in "$pstack"/skills/*/; do n="$(basename "$d")"; [ "$n" = no-comments ] && continue; rm -rf "$skills/$n"; cp -R "$d" "$skills/$n"; done
+  for d in "$pstack"/skills/*/; do n="$(basename "$d")"; [ "$n" = no-comments ] && continue; rm -rf "${skills:?}/$n"; cp -R "$d" "$skills/$n"; done
   for n in grilling grill-me grill-with-docs domain-modeling to-spec to-tickets wayfinder research prototype setup-matt-pocock-skills writing-for-agents wizard wait-what; do
-    src="$(find "$matt" -maxdepth 2 -type d -name "$n" | head -1)"; rm -rf "$skills/$n"; cp -R "$src" "$skills/$n"; done
+    src="$(find "$matt" -maxdepth 2 -type d -name "$n" | head -1)"; rm -rf "${skills:?}/$n"; cp -R "$src" "$skills/$n"; done
   rm -rf "$skills/spec-review"; cp -R "$matt/engineering/code-review" "$skills/spec-review"
   for k in $keep_files; do mkdir -p "$skills/$(dirname "$k")"; cp "$tmp/keep/$k" "$skills/$k"; done
   rm -rf "$TEMPLATE/.claude/agents"; mkdir -p "$TEMPLATE/.claude/agents"; cp "$pstack"/agents/*.md "$TEMPLATE/.claude/agents/"; rm -f "$TEMPLATE/.claude/agents/comment-sicko.md"
@@ -395,7 +399,8 @@ cmd_sync() {
   done < "$F918_DIR/patches/series"
   rm -rf "$tmp"
   for n in $ours; do [ -f "$skills/$n/SKILL.md" ] || { echo "missing our skill: $n" >&2; failed=1; }; done
-  echo "vendored: $(ls -d "$skills"/*/ | wc -l | tr -d ' ') skills. Review with git status, bump VERSION, commit."
+  local -a dirs; dirs=("$skills"/*/)
+  echo "vendored: ${#dirs[@]} skills. Review with git status, bump VERSION, commit."
   return $failed
 }
 

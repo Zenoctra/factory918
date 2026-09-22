@@ -15,8 +15,10 @@
 # the definition, the five sentences, the heading bullets, the step rule, the count rule, the
 # settled paragraph and the blast-radius paragraph word for word, so the skill and the script
 # cannot drift apart. Exits 1 on the first miss.
+# shellcheck disable=SC2016 # the expected strings below are the Markdown the script emits; the backticks and $ are literal
 set -euo pipefail
 here="$(cd "$(dirname "$0")/../.." && pwd -P)"
+# shellcheck source-path=SCRIPTDIR source=layout.sh
 . "$here/tests/spec-review/layout.sh"
 command -v jq >/dev/null || { echo "FAIL: jq is needed to play gh pr view"; exit 1; }
 tmp="$(mktemp -d)"

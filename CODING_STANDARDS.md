@@ -12,6 +12,7 @@ Read at review time by `spec-review`'s Standards axis. Skip anything the CI gate
 - A failure a gate depends on is printed before anything continues. `|| true` may stop a failure from aborting the command (the doctor's report at the end of `apply` is one), never hide it.
 - Test a command the way a user types it: absolute paths, from another directory, through the installed symlink.
 - A `PreToolUse` hook that must let the call through on its own failure runs without `-e`, says so in its header, and exits 2 only on a decided block. `delegation.sh` and `format-on-write.sh` are the two that do.
+- A `# shellcheck disable=` directive carries its reason as a second comment on the same line: `# shellcheck disable=SC2016 # the backticks are the ticket's token delimiters`. The directive sits on the narrowest scope that covers the intent, above the one statement or at the top of a file whose whole job produces the pattern.
 
 ## Python (`tools/`, heredocs in the CLI)
 

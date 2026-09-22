@@ -15,8 +15,10 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - name: Shell syntax
-        run: bash -n factory918.sh && for f in template/.claude/hooks/*.sh template/.agents/skills/spec-review/scripts/*.sh template/.agents/skills/poteto-mode/scripts/*.sh tests/*/*.sh; do bash -n "$f"; done
+      - name: ShellCheck
+        run: bash .github/shellcheck.sh factory918.sh template/.github/shellcheck.sh 'template/.claude/hooks/*.sh' 'template/.agents/skills/*/scripts/*.sh' 'tests/*/*.sh'
+      - name: shellcheck.sh passes, refuses and counts what the test says
+        run: bash tests/shellcheck/gate.sh
       - name: The delegation hook blocks and passes what the test says
         run: bash tests/hooks/delegation.sh
       - name: review-comment.sh prints and refuses what the test says
@@ -49,6 +51,9 @@ jobs:
           (cd /tmp && vp create vite:monorepo --directory fx --no-interactive --git --hooks --no-agent)
           git -C /tmp/fx add -A && git -C /tmp/fx commit -qm "chore: initial commit"
           ./factory918.sh apply /tmp/fx --scaffold --profile python --name demo | tail -30
+      - name: The shell gate a project runs
+        working-directory: /tmp/fx
+        run: bash .github/shellcheck.sh
       - name: review-brief.sh briefs the apply diff inside the project
         working-directory: /tmp/fx
         run: |

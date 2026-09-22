@@ -37,6 +37,7 @@ fi
 # nor does ``` inside a ```` block or a ~~~ block, and the quoted hunk stays fenced. A heading's
 # name is the text after `## ` less trailing whitespace. review-brief.sh carries this fragment
 # word for word (tests/spec-review/review-brief.sh holds the copies together).
+# shellcheck disable=SC2016 # the fenced block is Markdown emitted verbatim; the backticks are literal
 fenced='
   /^(```|~~~)/ { match($0, /^(`+|~+)/); m = substr($0, 1, RLENGTH); rest = substr($0, RLENGTH + 1)
     if (fence == "") { fence = m; next }
