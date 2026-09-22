@@ -177,3 +177,5 @@ Verified on Claude Code 2.1.271 inside the desktop app 2.110.0 (Agent SDK 0.3.27
 2026-09-18. The factory checkout has no `.claude/agents/`, so the `pstack-<family>-<effort>` lanes named in `models.md` do not exist here; the Agent tool's `model` field (`fable`, `opus`) dispatched every lane of #76 and effort could not be set. A project made by `factory918 apply` gets the lanes from `template/.claude/agents/`.
 
 2026-09-22. A sixth core document costs one CORE_DOCS tuple in tools/build_knowledge.py and no other code: build_core copies every core document except CONVERSATION-DIGEST.md into template/docs/factory918/, apply copies that directory, doctor checks only PHILOSOPHY and MANUAL. factory918.sh sync (0.3.0) bumps no VERSION and touches no network, against what SOURCES.md line 3 says; the code is the truth (#89).
+
+2026-09-22. `gh issue edit N --body-file F` (gh 2.100.0) replaces the whole body with F; there is no append. To add a section, read the body first (`gh issue view N --json body -q .body`), add the section at the end and write the whole file back; done on #42 for the #89 amendment, and Ticket step 6 says so (#89).
