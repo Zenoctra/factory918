@@ -137,49 +137,49 @@ export FAKE_BODY='Touches `docs/a.md` and `src/x/y.txt`.'
 # The fake lists PR 2 first; the output is sorted by PR number.
 check "18 two PRs in ascending number" 1 $'go: none\n#1 feat-a: docs/a.md\n#2 feat-b: src/x/y.txt' 9
 check "19 go writes the line" 0 "" go sweep 7 9
-same "19 the line" 'sweep: #7 #9' "$(cat $prog)"
-rm $prog
+same "19 the line" 'sweep: #7 #9' "$(cat "$prog")"
+rm "$prog"
 # The documented form, typed at a shell: bare numbers, since `#4` would open a comment.
 bash -c '.claude/skills/poteto-mode/scripts/overlap.sh go "autopilot-stack" 4 5 8'
-same "19 the documented form typed at a shell" 'autopilot-stack: #4 #5 #8' "$(cat $prog)"
-rm $prog
+same "19 the documented form typed at a shell" 'autopilot-stack: #4 #5 #8' "$(cat "$prog")"
+rm "$prog"
 check "19 go accepts #9" 0 "" go sweep 7 '#9'
-same "19 the line from #9" 'sweep: #7 #9' "$(cat $prog)"
+same "19 the line from #9" 'sweep: #7 #9' "$(cat "$prog")"
 export FAKE_BODY='Touches `docs/a.md`.'
 check "20 a go covering one PR" 0 $'go: sweep\n#1 feat-a: docs/a.md\nbase: origin/feat-a' 9
 check "21 a go not naming the ticket" 1 $'go: none\n#1 feat-a: docs/a.md' 42
-rm $prog
+rm "$prog"
 check "22 go s2" 0 "" go s2 9
 check "22 a go naming the ticket but not the PR's" 1 $'go: s2\n#1 feat-a: docs/a.md' 9
-rm $prog
+rm "$prog"
 check "23 go sweep 7 8 9" 0 "" go sweep 7 8 9
 export FAKE_BODY='Touches `docs/a.md` and `src/x/y.txt`.'
 check "23 siblings covered, the lowest number's head" 0 $'go: sweep\n#1 feat-a: docs/a.md\n#2 feat-b: src/x/y.txt\nbase: origin/feat-a' 9
-rm $prog
+rm "$prog"
 check "24 go sweep 7 9" 0 "" go sweep 7 9
 check "24 siblings, one PR's ticket not on a line" 1 $'go: sweep\n#1 feat-a: docs/a.md\n#2 feat-b: src/x/y.txt' 9
-rm $prog
+rm "$prog"
 check "25 go sweep 8 9 10" 0 "" go sweep 8 9 10
 export FAKE_PRS='[{"number":4,"headRefName":"feat-b2","closingIssuesReferences":[{"number":10}]},{"number":2,"headRefName":"feat-b","closingIssuesReferences":[{"number":8}]}]'
 export FAKE_BODY='Touches `src/z.txt`.'
 check "25 one head contains the other" 0 $'go: sweep\n#2 feat-b: src/z.txt\n#4 feat-b2: src/z.txt\nbase: origin/feat-b2' 9
 unset FAKE_PRS
-rm $prog
+rm "$prog"
 check "26 go sweep 7 9" 0 "" go sweep 7 9
 export FAKE_BODY='Touches `README.md`.'
 check "26 a go and no overlap" 0 $'go: sweep\nbase: origin/main' 9
-rm $prog
+rm "$prog"
 check "27 go autopilot-stack 7 8" 0 "" go autopilot-stack 7 8
 check "27 a one-off go appended" 0 "" go "stack on #1" 9
 export FAKE_BODY='Touches `docs/a.md`.'
 check "27 the one-off go covers with the program's line" 0 $'go: stack on #1\n#1 feat-a: docs/a.md\nbase: origin/feat-a' 9
-same "27 the file has two lines, the first unchanged" $'autopilot-stack: #7 #8\nstack on #1: #9' "$(cat $prog)"
+same "27 the file has two lines, the first unchanged" $'autopilot-stack: #7 #8\nstack on #1: #9' "$(cat "$prog")"
 export FAKE_BODY='Touches `src/z.txt`.'
 check "28 a dead program's line, one PR's ticket on no line" 1 $'go: stack on #1\n#2 feat-b: src/z.txt\n#4 feat-b2: src/z.txt' 9
 export FAKE_PRS='[{"number":2,"headRefName":"feat-b","closingIssuesReferences":[{"number":8}]}]'
 check "28 a dead program's line covers across lines" 0 $'go: stack on #1\n#2 feat-b: src/z.txt\nbase: origin/feat-b' 9
 unset FAKE_PRS
-rm $prog
+rm "$prog"
 check "29 go wt 9 from the main checkout" 0 "" go wt 9
 git worktree add -q --detach "$fx/wt"
 export FAKE_BODY='Touches `README.md`.'
