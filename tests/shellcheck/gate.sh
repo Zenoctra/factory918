@@ -4,8 +4,9 @@
 # passes and is counted, a planted SC2086 is reported, a glob that matches no file is refused on
 # stderr, also when it stands beside a file that matched, a #!/bin/sh file keeps its POSIX checks,
 # the zero-argument form from a project's root counts the project's hooks, skill scripts and the
-# gate itself, and a platform the pin has no build for is refused when no ShellCheck is on PATH
-# (a fake uname on PATH, ShellCheck hidden).
+# gate itself, a platform the pin has no build for is refused when no ShellCheck is on PATH
+# (a fake uname on PATH, ShellCheck hidden), and an absolute path or a glob whose directory has
+# a space is one argument, not split on it.
 # The download is not exercised here; the fixture job in factory-ci.yml proves it. Exits 1 on the
 # first miss.
 set -euo pipefail
@@ -80,5 +81,7 @@ same "6 an unpinned platform without ShellCheck is refused" 1 "$code"
 same "6 the refusal names the pair" "shellcheck.sh: ShellCheck 0.11.0 is not pinned for Plan9.mips; install it by hand" "$err"
 test -x "$script" || fail "7 the mode bit" "not executable" "executable"
 n=$((n + 1))
+check "8 an absolute path with a space" 0 "ShellCheck 0.11.0, files checked: 1" "$fx/clean.sh"
+check "8b a glob whose directory has a space" 0 "ShellCheck 0.11.0, files checked: 1" "$fx/clea*.sh"
 
 echo "ok $n assertions"

@@ -35,6 +35,7 @@ fi
 
 if [ "$#" = 0 ]; then set -- '.claude/hooks/*.sh' '.agents/skills/*/scripts/*.sh' '.github/shellcheck.sh'; fi
 files=()
+IFS=  # an argument is one path or one glob, never split on the spaces in it
 for g in "$@"; do
   matched=0
   for f in $g; do if [ -f "$f" ]; then files+=("$f"); matched=1; fi; done
