@@ -9,6 +9,7 @@ pstack/poteto-mode/playbooks/bug-fix.md.patch
 pstack/poteto-mode/playbooks/feature.md.patch
 pstack/poteto-mode/playbooks/perf-issue.md.patch
 pstack/poteto-mode/playbooks/refactoring.md.patch
+pstack/architect/references/runner-prompt.md.patch
 pstack/poteto-mode/references/codex-tools.md.patch
 pstack/poteto-mode/scripts/runner/model-matrix.test.ts.patch
 pstack/interrogate/SKILL.md.patch
