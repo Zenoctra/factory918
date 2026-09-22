@@ -7,8 +7,13 @@
 # and the diff is git show <commits> -- <paths>. Rerunning overwrites the previous state.
 # The PR comments that end a review carry a line `act-on items:` under `round: N of 3`; the round
 # is the highest N plus one (a comment without the line is round 1), so a comment rebuilt in the
-# same round does not advance it, and a fourth round is refused. A comment carrying a line that is
-# exactly `restart` (a design hole returned to architect) ends the history: the round and the
+# same round does not advance it, and a fourth round is refused unless the last comment carries
+# `would-break fixed after <sha>` (a Would-break item fixed at round three or four,
+# review-comment.sh): then the round after it, four or five, reviews only that fix, from `<sha>`,
+# which must be the fixed point, both briefs carry the fixed items under `## The fix under
+# review`, and a sixth round is refused; `<dir>/reviewed` records HEAD for that line. A comment
+# carrying a line that is exactly `restart` (a design hole returned to architect) ends the
+# history: the round and the
 # settled items are read from the comments after the last such comment, and a `restart:` line says
 # so. From every such comment, in order, the judgment's Noted and Dismissed items that cite a
 # decision are carried into both briefs as settled, each line once; --previous FILE supplies the
@@ -157,27 +162,83 @@ if [ -n "$bodies" ]; then
   bodies="${bodies#$'\n'}"
   [ "$cut" -eq 0 ] || restarted=yes
 fi
-# The round is one more than the highest `round: N of 3` line any comment carries, the last such
-# line in a comment being its own (a quoted hunk may hold one earlier); a comment without the line
-# is from before the line existed and is round 1. A comment rebuilt in the same round repeats its
-# N, so it advances nothing. After a restart only the comments that follow it count, so the
-# redesign's first review is round 1 and the fourth-round refusal counts the new series alone.
+# The round is one more than the highest `round: N of 3` (`of 5` past three) line any comment
+# carries, the last such line in a comment being its own (a quoted hunk may hold one earlier); a
+# comment without the line is from before the line existed and is round 1. A comment rebuilt in
+# the same round repeats its N, so it advances nothing. After a restart only the comments that
+# follow it count, so the redesign's first review is round 1 and the fourth-round refusal counts
+# the new series alone; the gate below reads the last comment for the line.
 top=0
 if [ -n "$bodies" ]; then
   top="$(printf '%s\n' "$bodies" | awk -v sep="$rs" "$split$fenced"'
     BEGIN { r = 1 }
-    /^round: [0-9]+ of 3$/ { r = substr($0, 8) + 0 }
+    /^round: [0-9]+ of [35]$/ { r = substr($0, 8) + 0 }
     END { if (r > top) top = r; print top }
   ')"
 fi
+# The deciding comment is the last of the history, so a comment rebuilt in the same round decides
+# in place of the one it rebuilt. From it: the `would-break fixed after <sha>` line
+# review-comment.sh wrote (the last such line outside fenced text, as for `round:`), whether that
+# round had a spec, and the Act on items it marked fixed, which a fix-only round's briefs carry.
+deciding=""
+if [ -n "$bodies" ]; then
+  deciding="$(printf '%s\n' "$bodies" | awk -v sep="$rs" '
+    function keep() { if (seen) last = buf; buf = ""; seen = 0 }
+    { sub(/\r$/, ""); sub(/[ \t]+$/, "") }
+    $0 == sep { keep(); next }
+    { if ($0 != "") seen = 1; buf = buf $0 "\n" }
+    END { keep(); printf "%s", last }
+  ')"
+fi
+wb_line="$(printf '%s\n' "$deciding" | awk "$fenced"'
+  /^would-break fixed after / || $0 == "would-break fixed after" { v = $0 }
+  END { print v }
+')"
+wb="${wb_line#would-break fixed after}"; wb="${wb# }"
+had_spec=""
+if [ -n "$deciding" ] && ! printf '%s\n' "$deciding" | awk "$fenced"'h == "Spec" && $0 == "no spec: Standards axis only" { found = 1 } END { exit !found }'; then
+  had_spec=yes
+fi
+fixed_items="$(printf '%s\n' "$deciding" | awk "$fenced"'
+  /^## / { if (h == "Judgment") j = 1; next }
+  j && h == "Act on" && /^[0-9]+\. / && /fixed: [0-9a-f]{7,40}$/
+')"
 [ -n "$round" ] || round=$((top + 1))
-if [ "$round" -gt 3 ]; then
-  echo "review-brief: three rounds were run on this PR; the remaining Act on items are fixed here and marked \`fixed: <sha>\`, not reviewed in a fourth round" >&2
+# The gate on a round past three (SKILL.md step 1). The line licenses the round after the comment
+# that carries it, four or five, as a review of the fix commits alone, from the commit it names:
+# that commit must resolve here and be the fixed point, and the Spec axis keeps its spec through
+# --ticket when the fix commits name none. Without the line the fourth round is refused as before,
+# a fifth for want of it, and a sixth in every case: round five's fixes are the human's to review.
+# A hand-written line is refused first, since its sha is the next fixed point.
+if [ -n "$wb_line" ] && ! printf '%s' "$wb" | grep -qE '^[0-9a-f]{40}$'; then
+  echo "review-brief: the last review comment carries \`would-break fixed after $wb\`, which is not the line review-comment.sh writes (a 40-character commit id follows the words); post the comment the script printed" >&2
   exit 1
+fi
+if [ "$round" -gt 5 ]; then
+  echo "review-brief: five rounds were run on this PR; round five's Would-break fixes are the human's to review (spec-review step 5), not reviewed in a sixth round" >&2
+  exit 1
+fi
+if [ "$round" -gt 3 ]; then
+  if [ -z "$wb" ] || [ "$round" -ne $((top + 1)) ]; then
+    if [ "$top" -le 3 ] && [ "$round" -eq 4 ]; then
+      echo "review-brief: three rounds were run on this PR; the remaining Act on items are fixed here and marked \`fixed: <sha>\`, not reviewed in a fourth round" >&2
+    else
+      echo "review-brief: round $round does not follow a review comment carrying \`would-break fixed after <sha>\` (the last review comment is round $top); a round past three reviews only such a fix, and the remaining Act on items are fixed here and marked \`fixed: <sha>\`" >&2
+    fi
+    exit 1
+  fi
+  want="$(git rev-parse --verify -q "$wb^{commit}")" || { echo "review-brief: round $round reviews only the fix from $wb, the commit round $((round - 1)) reviewed, and that commit does not resolve here; fetch the PR's branch" >&2; exit 1; }
+  [ "$(git rev-parse --verify -q "$fixed^{commit}" 2>/dev/null || true)" = "$want" ] || { echo "review-brief: round $round reviews only the fix from $wb, the commit round $((round - 1)) reviewed (the \`would-break fixed after\` line of the last review comment); $fixed is not that commit" >&2; exit 1; }
+  if [ -z "$ticket" ] && [ -n "$had_spec" ]; then
+    echo "review-brief: round $round reviews only the fix and its commits name no ticket, while round $((round - 1)) had a spec; pass --ticket N so the Spec axis reads the same spec" >&2
+    exit 1
+  fi
 fi
 [ -z "$ticket" ] || echo "ticket: #$ticket"
 [ -z "$restarted" ] || echo "restart: the round and the settled items count from the last restart comment"
-echo "round: $round of 3"
+# review-comment.sh holds the same line (the same test holds the copies together).
+cap=3; [ "$round" -le 3 ] || cap=5
+echo "round: $round of $cap"
 # What carries: from every comment after the last restart, in order, the judgment's Noted and
 # Dismissed items whose trailing field names a decision in one of the four shapes (the fourth a
 # ticket's cell, signature or criterion), each distinct line once, so a decision from round one
@@ -264,6 +325,7 @@ cp "$dir/files" "$state/files"
 echo "$dir" > "$state/dir"
 echo "$fixed" > "$dir/fixed-point"
 echo "$round" > "$dir/round"
+git rev-parse HEAD > "$dir/reviewed"
 
 # The spec is the ticket body plus the comments its author posted, each under its date. Comments by
 # anyone else, and the PR's own comments, are never spec.
@@ -297,6 +359,9 @@ blast_rule="The sessions and skills this change reaches, as the author grounded 
 # step 4 carries it word for word (the same test holds them together).
 risk_rule='The diff is cross-cutting: after the lines per documented step, one numbered line per risk under the Risks heading of the `## Blast radius` section above, in its order and numbered on from the last step, each naming the risk and saying what the diff does at that risk; a risk line is a walk line and counts nothing.'
 count_rule='End the report with exactly one line `hard findings: N`, where N is the number of items under `## Would break` and `## Fails open` and nothing else.'
+# The paragraph over a fix-only round's fixed items; SKILL.md step 4 carries it word for word (the
+# same test holds them together). It says what the diff is, never what to find.
+fix_rule="The round before this one fixed these Act on items on this PR after the commit it reviewed; this round's diff is those fix commits and nothing else. Read each fix against its item, walk only the steps these commits touch, and report only what these commits get wrong. Nothing in this section says what you should find or confirm."
 common() {
   echo "Read nothing beyond this brief unless a finding needs the code around a hunk, and then read that one function or section, not the file. Run nothing."
   echo
@@ -308,6 +373,14 @@ common() {
   echo
   cat "$dir/stat"
   echo
+  if [ "$round" -ge 4 ]; then
+    echo "## The fix under review"
+    echo
+    echo "$fix_rule"
+    echo
+    printf '%s\n' "$fixed_items"
+    echo
+  fi
   if [ -n "$grounding" ]; then
     echo "## Blast radius"
     echo

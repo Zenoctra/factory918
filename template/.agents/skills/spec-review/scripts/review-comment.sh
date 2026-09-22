@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 # spec-review step 6. Prints the review comment: the two reports and the orchestrator's judgment,
 # verbatim under their headings, the line `restart` when an Act on item is marked a design hole
-# (`hole: <reference>`), the round, then act-on items counted from the judgment's Act on items
+# (`hole: <reference>`), else the line `would-break fixed after <sha>` when an Act on item marked
+# `fixed:` sits under `## Would break` (`<sha>` from `<dir>/reviewed`, the commit review-brief.sh
+# reviewed; the next round's fixed point), the round (`of 5` from round four), then act-on items
+# counted from the judgment's Act on items
 # neither fixed on this PR (`fixed: <sha>`), filed as a ticket (`ticket: #N`) nor marked a hole,
 # plus its Ask items, and clears the review state so the delegation hook stops blocking the
 # reviewed files. No arguments: it reads .claude/state/review/dir. One argument, the review dir
@@ -14,9 +17,10 @@
 # line naming the cell, signature or criterion it rests on, a heading outside the shape, report or
 # judgment items not numbered 1..N in document order, a judgment that does not name every report
 # item exactly once, a `hole:` field in a review with no spec (nothing exists for a hole to amend),
-# outside Act on, in no form, or not word for word the `spec:` of the item it judges, or a round
-# file that holds no number. The Spec report's `## Walk` lines are steps, not items: they are not
-# counted, not numbered with the findings and not judged.
+# outside Act on, in no form, or not word for word the `spec:` of the item it judges, a round
+# file that holds no number, or a Would-break item marked `fixed:` with no hole marked and
+# `<dir>/reviewed` missing or not a full commit id. The Spec report's `## Walk` lines are steps,
+# not items: they are not counted, not numbered with the findings and not judged.
 set -euo pipefail
 root="$(git rev-parse --show-toplevel)"
 cd "$root"
@@ -194,6 +198,34 @@ if [ -f "$dir/round" ]; then
   round="$(cat "$dir/round")"
   [ "$round" -gt 0 ] 2>/dev/null || fail "$dir/round holds '$round', not a round number; rerun scripts/review-brief.sh"
 fi
+# Three rounds, five when a Would-break fix at three or four earned another (SKILL.md step 5).
+# review-brief.sh holds the same line (the same test holds the copies together).
+cap=3; [ "$round" -le 3 ] || cap=5
+# An Act on item fixed on this PR whose report item sits under `## Would break` is a hard bug on
+# the documented path, and its fix is reviewed once more: the comment carries the line
+# `would-break fixed after <sha>`, `<sha>` the commit review-brief.sh reviewed, read from
+# `<dir>/reviewed`, so the next round's brief can take the fix commits alone as its diff. The
+# heading is read the way the hole check reads it, so a review with no spec still finds it. A hole
+# outranks the line, since the restart's round one reviews the fix inside the redesign. The file
+# is read only when the line is needed and refused then without a full commit id; it is not the
+# brief that is rerun, because rerunning it after the fixes were committed would record the
+# fixing commit as the reviewed one.
+holes="$(holed "Act on" | grep -c . || true)"
+wb_first=""
+while IFS= read -r line; do
+  [ -n "$line" ] || continue
+  ref_id="$(printf '%s' "$line" | sed -nE 's/^[0-9]+\. \[([SP][0-9]+)\].*/\1/p')"
+  case "$ref_id" in S*) f="$dir/standards-report.md" ;; *) f="$dir/spec-report.md" ;; esac
+  rests="$(specs "$f" | sed -n "${ref_id#[SP]}p")"
+  [ "${rests%%$'\t'*}" = "Would break" ] || continue
+  wb_first="$line"
+  break
+done < <(items "$dir/judgment.md" "Act on" | grep -E 'fixed: [0-9a-f]{7,40}$' || true)
+reviewed=""
+if [ -n "$wb_first" ] && [ "$holes" -eq 0 ]; then
+  [ ! -f "$dir/reviewed" ] || reviewed="$(head -n 1 "$dir/reviewed")"
+  printf '%s' "$reviewed" | grep -qE '^[0-9a-f]{40}$' || fail "$dir/reviewed is missing or holds no full commit id ('$reviewed'); '$(title "$wb_first")' under '## Would break' is marked 'fixed:', and the next round reviews that fix from the commit this round reviewed: write its 40-character id to $dir/reviewed (git rev-parse of the first commit in $dir/log) and rerun"
+fi
 
 echo "## Standards"
 echo
@@ -208,19 +240,21 @@ echo
 cat "$dir/judgment.md"
 echo
 act="$(count "$dir/judgment.md" "Act on")"
-# An Act on item fixed on this PR (a trailing `fixed: <sha>`, the round-three path), filed as its
-# own ticket (a trailing `ticket: #N`) or marked a design hole (a trailing `hole: <reference>`,
-# returned to architect) is not counted; a hole prints the line `restart` before the round.
+# An Act on item fixed on this PR (a trailing `fixed: <sha>`, the last-round path from round three
+# on), filed as its own ticket (a trailing `ticket: #N`) or marked a design hole (a trailing
+# `hole: <reference>`, returned to architect) is not counted; a hole prints the line `restart`
+# before the round, else a Would-break fix prints its line there. The summary never says how many
+# of the fixes were would-break: a count in the comment would invite comparing rounds.
 fixed_here="$(items "$dir/judgment.md" "Act on" | grep -cE 'fixed: [0-9a-f]{7,40}$' || true)"
 ticketed="$(items "$dir/judgment.md" "Act on" | grep -cE 'ticket: #[0-9]+$' || true)"
-holes="$(holed "Act on" | grep -c . || true)"
 ask="$(count "$dir/judgment.md" "Ask")"
 if [ -n "$has_spec" ]; then spec="$p_wb would break, $p_fo fail open, of $p_total"; else spec="no spec"; fi
 if [ -f "$dir/fixed-point" ]; then fixed="fixed point $(cat "$dir/fixed-point")"
 elif [ -f "$state/fixed-point" ]; then fixed="fixed point $(cat "$state/fixed-point")"
 else fixed="fixed point unknown"; fi
 echo "Standards: $s_wb would break, $s_fo fail open, of $s_total; Spec: $spec; judged: act on $act ($fixed_here fixed, $ticketed with a ticket), ask $ask, consider $(count "$dir/judgment.md" Consider), noted $(count "$dir/judgment.md" Noted), dismissed $(count "$dir/judgment.md" Dismissed); $fixed."
-[ "$holes" -eq 0 ] || echo restart
-echo "round: $round of 3"
+if [ "$holes" -gt 0 ]; then echo restart
+elif [ -n "$wb_first" ]; then echo "would-break fixed after $reviewed"; fi
+echo "round: $round of $cap"
 echo "act-on items: $((act - fixed_here - ticketed - holes + ask))"
 if [ -f "$state/dir" ] && [ "$(cat "$state/dir")" = "$dir" ]; then rm -rf "$state"; fi
