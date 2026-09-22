@@ -2,8 +2,9 @@
 # Runs review-brief.sh twice, in a temp repo laid out as a project and in one laid out as the
 # factory (tests/spec-review/layout.sh), each time the copy of the skill that repo holds, and
 # asserts that each brief carries the report shape review-comment.sh enforces: the definition
-# sentence, Manuel's five sentences, every heading name, the item format, the step rule and the
-# count rule. The fake gh (tests/spec-review/fake-gh.sh) on PATH supplies the ticket body and the
+# sentence, Manuel's five sentences, every heading name, the item format, the step rule, the spec
+# rule (only in a review with a spec: a run with no ticket writes a Standards brief without it) and
+# the count rule. The fake gh (tests/spec-review/fake-gh.sh) on PATH supplies the ticket body and the
 # ticket's comments, and the PR's earlier review comments when a fixture file names them (no PR
 # otherwise), so the Spec brief is written and the round is 1 unless the comments or --round say
 # otherwise. Only the judgment items that cite a decision carry into both briefs, from every earlier
@@ -187,6 +188,20 @@ has "$spec" "### 2026-09-18" "Spec: a comment under its date"
 has "$spec" "user: the count is Act on plus Ask." "Spec: the author's comment body"
 lacks "$std" "## Comments by the ticket's author" "Standards: no ticket comments"
 has "$spec" "Write your report to \`$(dirname "$spec")/spec-report.md\` and reply with only that path." "Spec: the report path"
+
+# Ticket #90, criterion 2: a review with no spec (no ticket named, none in the commits) has no
+# artifact a finding could rest on, so the Standards brief carries the step rule and not the spec
+# rule, and the report path and the count rule follow the step rule directly.
+bash "$skill/scripts/review-brief.sh" HEAD~1 > out.txt
+printed out.txt "round: 1 of 3
+.scratch/review/HEAD_1/standards-brief.md
+no spec: Standards axis only" "no ticket: no spec"
+has "$std" "$step_rule" "no spec: the Standards brief carries the step rule"
+lacks "$std" "$spec_rule" "no spec: the Standards brief carries no spec rule"
+if [ "$(grep -nF -- "$count_rule" "$std" | cut -d: -f1)" -ne "$(($(grep -nF -- "$step_rule" "$std" | cut -d: -f1) + 3))" ]; then
+  echo "FAIL $std: with no spec, the report path and the count rule do not follow the step rule"; exit 1
+fi
+n=$((n + 1))
 
 # A previous review comment: one cited Dismissed item, one uncited Dismissed item, one cited Noted item.
 # The report above the judgment carries a quoted hunk whose lines are not items.
