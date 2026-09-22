@@ -7,10 +7,12 @@
 # and the diff is git show <commits> -- <paths>. Rerunning overwrites the previous state.
 # The PR comments that end a review carry a line `act-on items:` under `round: N of 3`; the round
 # is the highest N plus one (a comment without the line is round 1), so a comment rebuilt in the
-# same round does not advance it, and a fourth round is refused. From every such comment, in order,
-# the judgment's Noted and Dismissed items that cite a decision are carried into both briefs as
-# settled, each line once; --previous FILE supplies the comments instead of gh, and --round N the
-# round, for tests and a branch whose PR is elsewhere.
+# same round does not advance it, and a fourth round is refused. A comment carrying a line that is
+# exactly `restart` (a design hole returned to architect) ends the history: the round and the
+# settled items are read from the comments after the last such comment, and a `restart:` line says
+# so. From every such comment, in order, the judgment's Noted and Dismissed items that cite a
+# decision are carried into both briefs as settled, each line once; --previous FILE supplies the
+# comments instead of gh, and --round N the round, for tests and a branch whose PR is elsewhere.
 # A cross-cutting diff (one that touches a hooks directory, a settings.json or the factory918
 # skill) is briefed only with its blast-radius grounding: --blast-radius FILE, else the PR body's
 # `## Blast Radius` section; without one the script refuses before writing any state.
@@ -124,10 +126,38 @@ fenced='
   fence != "" { next }
   /^## / { h = substr($0, 4); sub(/[ \t\r]+$/, "", h) }
 '
+# The reference a `cites:` field may name, one grammar: `table <row>/<column>` a cell of the
+# ticket's scenario table by its own labels, no spaces or slashes; `design <signature>` the rest of
+# the line, a signature or usage as the `## Design` sketch writes it; `criterion <k>` the k-th
+# acceptance checkbox, from 1. review-comment.sh holds the same line for its `spec:` and `hole:`
+# fields (the same test holds the copies together).
+ref='(table [^[:space:]/]+/[^[:space:]/]+|design [^[:space:]].*|criterion [1-9][0-9]*)'
+# A comment holding a line that is exactly `restart` outside fenced text (SKILL.md step 6: a design
+# hole returned to architect) ends the history: only the comments after the last such comment are
+# read below, so the redesign's first review is round 1 with nothing carried, the restart comment's
+# own items included; a restart comment with no separator after it (a --previous file) cuts at EOF.
+# The awk prints the number of comments cut, then the comments kept.
+restarted=""
+if [ -n "$bodies" ]; then
+  sliced="$(printf '%s\n' "$bodies" | awk -v sep="$rs" '{ raw[NR] = $0 }'"$split$fenced"'
+    $0 == "restart" { hit[NR] = 1 }
+    END {
+      c = 0; last = -1
+      for (i = 1; i <= NR; i++) { t = raw[i]; sub(/\r$/, "", t); sub(/[ \t]+$/, "", t); at[i] = c; if (t == sep) c++; else if (hit[i]) last = c }
+      print last + 1
+      for (i = 1; i <= NR; i++) if (at[i] > last) print raw[i]
+    }
+  ')"
+  cut="${sliced%%$'\n'*}"
+  bodies="${sliced#"$cut"}"
+  bodies="${bodies#$'\n'}"
+  [ "$cut" -eq 0 ] || restarted=yes
+fi
 # The round is one more than the highest `round: N of 3` line any comment carries, the last such
 # line in a comment being its own (a quoted hunk may hold one earlier); a comment without the line
 # is from before the line existed and is round 1. A comment rebuilt in the same round repeats its
-# N, so it advances nothing.
+# N, so it advances nothing. After a restart only the comments that follow it count, so the
+# redesign's first review is round 1 and the fourth-round refusal counts the new series alone.
 top=0
 if [ -n "$bodies" ]; then
   top="$(printf '%s\n' "$bodies" | awk -v sep="$rs" "$split$fenced"'
@@ -142,13 +172,15 @@ if [ "$round" -gt 3 ]; then
   exit 1
 fi
 [ -z "$ticket" ] || echo "ticket: #$ticket"
+[ -z "$restarted" ] || echo "restart: the round and the settled items count from the last restart comment"
 echo "round: $round of 3"
-# What carries: from every comment, in order, the judgment's Noted and Dismissed items whose
-# trailing field names a decision in one of the three shapes, each distinct line once, so a
-# decision from round one still reaches round three and a rebuilt comment repeats nothing. An
-# item without a citation is dropped, since a reason alone can steer a reviewer. The quoted hunks
-# are fenced text and never items.
-cites='cites: (user: "[^"]+" on #[0-9]+|DECISIONS\.md [A-Z]?[0-9]+|#[0-9]+ comment [0-9]{4}-[0-9]{2}-[0-9]{2})$'
+# What carries: from every comment after the last restart, in order, the judgment's Noted and
+# Dismissed items whose trailing field names a decision in one of the four shapes (the fourth a
+# ticket's cell, signature or criterion), each distinct line once, so a decision from round one
+# still reaches round three and a rebuilt comment repeats nothing. An item without a citation is
+# dropped, since a reason alone can steer a reviewer. The quoted hunks are fenced text and never
+# items.
+cites='cites: (user: "[^"]+" on #[0-9]+|DECISIONS\.md [A-Z]?[0-9]+|#[0-9]+ comment [0-9]{4}-[0-9]{2}-[0-9]{2}|#[0-9]+ '"$ref"')$'
 settled=""
 if [ -n "$bodies" ]; then
   judged="$(printf '%s\n' "$bodies" | awk -v sep="$rs" "$split$fenced"'
@@ -227,8 +259,9 @@ if [ -n "$ticket" ]; then
   [ -z "$spec" ] || comments="$(gh issue view "$ticket" --json author,comments -q "$by_author" 2>/dev/null || true)"
 fi
 if [ ${#standards[@]} -eq 0 ] && [ -f CODING_STANDARDS.md ]; then standards=(CODING_STANDARDS.md); fi
-# The definition both reports rest on, Manuel's words it follows, the step rule and the count rule;
-# SKILL.md step 4 carries each word for word (tests/spec-review/review-brief.sh holds them together).
+# The definition both reports rest on, Manuel's words it follows, the step rule, the spec rule and
+# the count rule; SKILL.md step 4 carries each word for word (tests/spec-review/review-brief.sh
+# holds them together).
 definition="A hard finding is one of two things: the documented path gives a wrong or silent result, or an input outside it proceeds silently (fails open). An input outside the documented path that is refused with a message saying how to correct it is not a finding; it is the design. Zero items is the expected result for a clean change."
 quotes=(
   '- Manuel: "there are an infinite amount of unhappy paths and only 1 happy one"'
@@ -238,6 +271,7 @@ quotes=(
   '- Manuel: "Primary focus must be the happy path, then unhappy paths that error in a way the user can correct."'
 )
 step_rule='Every item under `## Would break` or `## Fails open` carries a line `Documented step:` quoting the ticket line or the `file:line` of the documentation the user follows, and a line `Result:` saying what happens instead; an item without its `Documented step:` line is sent back.'
+spec_rule='The same item carries a line `spec:` naming the artifact it rests on: `table <row>/<column>` for a cell of the ticket'"'"'s scenario table, `design <signature>` for a signature or usage in its `## Design` sketch, or `criterion <k>` for its k-th acceptance checkbox; an item without a `spec:` line in one of those three forms is sent back.'
 # The blast-radius paragraph; SKILL.md step 4 carries it word for word (the same test holds them together).
 blast_rule="The sessions and skills this change reaches, as the author grounded them before the review. Check the diff against each one; the grounding is the author's claim, not evidence."
 count_rule='End the report with exactly one line `hard findings: N`, where N is the number of items under `## Would break` and `## Fails open` and nothing else.'
@@ -323,6 +357,8 @@ report_rules() {
   echo
   echo "$step_rule"
   echo
+  echo "$spec_rule"
+  echo
   echo "Write your report to \`$dir/standards-report.md\` and reply with only that path."
   echo "$count_rule"
 } > "$dir/standards-brief.md"
@@ -350,6 +386,8 @@ if [ -n "$spec" ]; then
     echo 'Each item opens with a line of the form `1. **Title.** body` and quotes the spec line it rests on in a fenced block (a criterion can carry `## ` or `1. ` lines, and only fenced text is exempt from the report shape); number the items continuously across the headings from `## Would break` on, so the judgment can name your third item as [P3]. Read nothing beyond this brief unless a finding needs the code around a hunk, and then read that one function or section, not the file. Under 400 words.'
     echo
     echo "$step_rule"
+    echo
+    echo "$spec_rule"
     echo
     echo "Write your report to \`$dir/spec-report.md\` and reply with only that path."
     echo "$count_rule"
