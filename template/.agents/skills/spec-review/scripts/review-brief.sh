@@ -201,7 +201,7 @@ if [ -n "$deciding" ] && ! printf '%s\n' "$deciding" | awk "$fenced"'h == "Spec"
 fi
 fixed_items="$(printf '%s\n' "$deciding" | awk "$fenced"'
   /^## / { if (h == "Judgment") j = 1; next }
-  j && h == "Act on" && /^[0-9]+\. / && /fixed: [0-9a-f]{7,40}$/
+  j && h == "Act on" && /^[0-9]+\. / && /fixed: [0-9a-f]+$/
 ')"
 [ -n "$round" ] || round=$((top + 1))
 # The gate on a round past three (SKILL.md step 1). The line licenses the round after the comment
