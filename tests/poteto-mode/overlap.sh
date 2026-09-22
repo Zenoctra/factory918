@@ -192,6 +192,9 @@ cd "$fx/clone"
 rm -rf .claude/state
 git switch -q feat-a
 check "30 --diff skips the own PR" 0 "" 9 --diff
+git switch -q --detach
+check "30 --diff on a detached HEAD" 2 "detached HEAD; run from the ticket's branch" 9 --diff
+git switch -q feat-a
 git switch -q main && git switch -qc feat-c && echo a3 >> docs/a.md && git commit -qam "feat-c"
 check "31 --diff overlaps another PR" 1 $'go: none\n#1 feat-a: docs/a.md' 9 --diff
 check "32 go sweep 7 9" 0 "" go sweep 7 9

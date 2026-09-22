@@ -11,7 +11,8 @@
 # "<label>" N...` appends `<label>: #a #b ...` to the program file, its only writer; a linked
 # worktree reads the main checkout's. Exit 0 decided, 1 a path shared with a PR no go covers (a go
 # covers when some line names #N and some line names the ticket each printed PR closes; a PR that
-# closes no ticket is never covered), 2 gh or git failed and its message is on stderr, 64 usage.
+# closes no ticket is never covered), 2 gh or git failed and its message is on stderr, or `--diff`
+# on a detached HEAD, 64 usage.
 # Every PR head is fetched fresh before any diff; no origin remote means nothing is in flight.
 set -euo pipefail
 trap 'exit 2' ERR
@@ -29,6 +30,7 @@ fi
 n="${1#\#}"; [[ $n =~ ^[0-9]+$ ]] || usage
 diff=""; [ $# -eq 1 ] || { [ "$2" = --diff ] || usage; diff=1; }
 cur="$(git branch --show-current)"
+if [ -n "$diff" ] && [ -z "$cur" ]; then echo "detached HEAD; run from the ticket's branch" >&2; exit 2; fi
 
 # The newest go naming the ticket is the one the human gave last.
 l="$(grep -w -- "#$n" "$prog" 2>/dev/null | tail -n 1 || true)"
