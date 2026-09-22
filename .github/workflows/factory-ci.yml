@@ -59,7 +59,7 @@ jobs:
         run: |
           git add -A && git commit -qm "factory918 apply"
           mkdir -p /tmp/fake-gh && cp "$GITHUB_WORKSPACE/tests/spec-review/fake-gh.sh" /tmp/fake-gh/gh && chmod +x /tmp/fake-gh/gh
-          printf -- '- **What it does.** Applies the factory.\n- **Risks.** Every hook under `.claude/hooks/` is new here.\n' > /tmp/blast.md
+          printf -- '## What it does\n\nApplies the factory.\n\n## Risks\n\n1. Every hook under `.claude/hooks/` is new here: `.claude/hooks/delegation.sh:1`.\n' > /tmp/blast.md
           PATH="/tmp/fake-gh:$PATH" .agents/skills/spec-review/scripts/review-brief.sh HEAD~1 --ticket 1 --blast-radius /tmp/blast.md
           d=.scratch/review/HEAD_1
           test -s "$d/standards-brief.md" && test -s "$d/spec-brief.md"
@@ -70,6 +70,8 @@ jobs:
           done
           grep -qF '`## Walk`' "$d/spec-brief.md"
           if grep -qF '`## Walk`' "$d/standards-brief.md"; then echo "the Standards brief carries a walk" && exit 1; fi
+          grep -qF 'The diff is cross-cutting: after the lines per documented step' "$d/spec-brief.md"
+          if grep -qF 'The diff is cross-cutting:' "$d/standards-brief.md"; then echo "the Standards brief carries the risk sentence" && exit 1; fi
           rm -rf .claude/state/review
       - name: The gates a project runs
         working-directory: /tmp/fx
