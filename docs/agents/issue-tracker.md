@@ -23,6 +23,8 @@ Every ticket has this shape, in this order. The Ticket playbook, `spec-review`, 
 - **`## Parent`**: the spec issue, for planned tickets. A quick ticket has none.
 - **`## Blocked by`**: issue numbers that must be closed first, or `None`. GitHub's native issue dependencies are the canonical form where available (Wayfinding operations below says how); the line is the fallback.
 
+The architect step may append two more sections before implementation, after these: `## Testing decisions`, the scenario table, when the design has state; `## Design`, the usage and signature sketch, when it is code with no state that crosses a function boundary. Their first line is `Posted by the agent <date>` or `Approved by <name> <date>` (the Ticket playbook, step 6). The human edits them in place; `spec-review` reads them as spec because the body is pasted whole.
+
 Anything an agent may pick up carries the label `ready-for-agent`.
 
 ## Pull requests as a triage surface
