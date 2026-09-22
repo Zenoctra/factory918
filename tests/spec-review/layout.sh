@@ -4,6 +4,7 @@
 # with an executable hook, and `.claude/skills -> ../.agents/skills`. The factory has the same
 # under `template/`, with `.claude/skills` and `.claude/hooks` linking there. Sets `skill`, the
 # copy of the skill to run, and `hooks`, the hooks directory a cross-cutting commit touches.
+# shellcheck shell=bash disable=SC2034 # sourced by the two spec-review tests, so it has no shebang; hooks and skill are read by the sourcing test
 source_skill="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)/template/.agents/skills/spec-review"
 layout() {
   local base link

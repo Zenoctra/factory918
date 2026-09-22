@@ -12,7 +12,7 @@
 # someone else is left out), so a run needs no fixture at all.
 d="${FAKE_GH_DIR:-.}"
 case "$*" in
-  "pr view --json body"*) [ -f "${FAKE_PR_BODY:-}" ] && cat "$FAKE_PR_BODY" || { echo 'no pull requests found for branch "x"' >&2; exit 1; } ;;
+  "pr view --json body"*) if [ -f "${FAKE_PR_BODY:-}" ]; then cat "$FAKE_PR_BODY"; else echo 'no pull requests found for branch "x"' >&2; exit 1; fi ;;
   "pr view"*)
     if [ -f "$d/pr-error" ]; then cat "$d/pr-error" >&2; exit 1; fi
     while [ "$1" != -q ]; do shift; done

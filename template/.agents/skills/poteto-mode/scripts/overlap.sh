@@ -46,7 +46,7 @@ fi
 if [ -z "$diff" ]; then
   body="$(gh issue view "$n" --json body -q .body)"
   outside="$(printf '%s\n' "$body" | awk '/^## /{skip=($0 ~ /^## Diff[[:space:]]*$/)} !skip')"
-  # shellcheck disable=SC2016
+  # shellcheck disable=SC2016 # the backticks are the ticket's token delimiters, not command substitution
   paths="$(printf '%s\n' "$outside" | grep -oE '`[^`[:space:]]+`' | tr -d '`' | sort -u || true)"
   if [ -z "$paths" ]; then printf '%s\npaths: none\nbase: origin/main\n' "$go"; exit 0; fi
 fi

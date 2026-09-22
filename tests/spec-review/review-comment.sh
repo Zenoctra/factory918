@@ -8,6 +8,7 @@
 # review state in place; an accepted run clears it. Exits 1 on the first miss.
 set -euo pipefail
 here="$(cd "$(dirname "$0")/../.." && pwd -P)"
+# shellcheck source-path=SCRIPTDIR source=layout.sh
 . "$here/tests/spec-review/layout.sh"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
@@ -91,6 +92,7 @@ refuse "$dir/standards-report.md has the headings [Would Break|Standards breache
 
 # A Would-break or Fails-open item without a `Documented step:` line is refused by name; a line
 # inside a quoted hunk does not count; a body sentence is not the item's title.
+# shellcheck disable=SC2016 # the expected Markdown is literal; the backticks are not command substitution
 printf '## Would break\n\n1. **One.** a\nDocumented step: ticket line\nResult: r\n\n## Fails open\n\n2. **Open, silently.** the guard returns. More.\n\n```sh\nDocumented step: inside the hunk\n```\n\n## Standards breaches\n\n## Fix alongside\n\nhard findings: 2\n' > "$dir/standards-report.md"
 refuse "$dir/standards-report.md item '2. **Open, silently.**' under '## Fails open' has no 'Documented step:' line; a counted item quotes the ticket line or the file:line of the documentation the user follows, then 'Result:' what happens instead. Ask the reviewer for both" "Fails-open item without a Documented step line, the fenced one not counting"
 printf '## Would break\n\n1. **One.** a\n\n## Fails open\n\n2. **Open.** o\nDocumented step: ticket line\n\n## Standards breaches\n\n3. **Breach.** b\n\n## Fix alongside\n\nhard findings: 2\n' > "$dir/standards-report.md"
@@ -506,6 +508,7 @@ fenced_twin 'a ~~~ fence quoting a ``` line' '~~~sh
 ```
 1. still the hunk
 ~~~'
+# shellcheck disable=SC2016 # the expected Markdown is literal; the backticks are not command substitution
 fenced_twin 'a ```sh fence quoted inside a ``` block' '```
 ## Would break
 ```sh

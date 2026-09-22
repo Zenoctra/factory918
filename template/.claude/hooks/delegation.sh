@@ -18,6 +18,7 @@ cwd="$(field 3p)"
 file="$(field 4p)"
 offset="$(field 5p)"
 limit="$(field 6p)"
+# shellcheck disable=SC2016 # $p is the sed address 7,$p, not a shell expansion
 command="$(field '7,$p')"
 root="$(cd "${CLAUDE_PROJECT_DIR:-${cwd:-.}}" 2>/dev/null && pwd -P)" || exit 0
 git -C "$root" rev-parse --is-inside-work-tree >/dev/null 2>&1 || exit 0
@@ -161,6 +162,7 @@ scan_sed() {
     esac
     [ $# -gt 0 ] && shift
   done
+  # shellcheck disable=SC2086 # set -f is on (line 7), so this splits words without globbing, which is the intent
   set -- $args
   if [ "$scripts" = 0 ]; then script="${1:-}"; [ $# -gt 0 ] && shift; fi
   if [ "$inplace" = 1 ]; then for a in "$@"; do target_write "$a"; done; return 0; fi
@@ -181,6 +183,7 @@ scan_segment() {
     if [ "$a" = ">" ]; then prev=">"; continue; fi
     words="$words $a"; prev=""
   done
+  # shellcheck disable=SC2086 # set -f is on (line 7), so this splits words without globbing, which is the intent
   set -- $words
   while [ $# -gt 0 ]; do case "$1" in [A-Za-z_]*=*) shift ;; *) break ;; esac; done
   [ $# -gt 0 ] || return 0
@@ -203,6 +206,7 @@ case "$tool" in
     rel="$(relative "$file")" || exit 0
     if [ -n "$offset$limit" ]; then guard_read "$rel" ranged; else guard_read "$rel" whole; fi ;;
   Bash)
+    # shellcheck disable=SC2086 # set -f is on (line 7), so the tokenised segment splits into words without globbing
     while IFS= read -r seg; do scan_segment $seg; done <<< "$(printf '%s\n' "$command" | tokens)" ;;
 esac
 exit 0
