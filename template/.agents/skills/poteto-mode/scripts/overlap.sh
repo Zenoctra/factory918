@@ -28,6 +28,7 @@ fi
 [ $# -ge 1 ] && [ $# -le 2 ] || usage
 n="${1#\#}"; [[ $n =~ ^[0-9]+$ ]] || usage
 diff=""; [ $# -eq 1 ] || { [ "$2" = --diff ] || usage; diff=1; }
+cur="$(git branch --show-current)"
 
 # The newest go naming the ticket is the one the human gave last.
 l="$(grep -w -- "#$n" "$prog" 2>/dev/null | tail -n 1 || true)"
@@ -58,13 +59,15 @@ while IFS=$'\t' read -r num head closes; do
 done <<< "$prs"
 git fetch -q origin "${specs[@]}"
 
+# is_ancestor <a> <b>: 0 yes, 1 no; any other git exit ends the run, its message already on stderr.
+is_ancestor() { git merge-base --is-ancestor "$1" "$2" && return 0; [ $? -eq 1 ] && return 1; exit 2; }
 # nearest <ref> <own head>: the open-PR head under the ref with the fewest commits between, the
 # ref's own head never (a head is not its own base), else origin/main.
 nearest() {
   local base=origin/main best="" num head closes d
   while IFS=$'\t' read -r num head closes; do
     [ -n "$num" ] && [ "$head" != "$2" ] || continue
-    git merge-base --is-ancestor "origin/$head" "$1" || continue
+    is_ancestor "origin/$head" "$1" || continue
     d="$(git rev-list --count "origin/$head..$1")"
     [ "$d" -gt 0 ] || continue
     if [ -z "$best" ] || [ "$d" -lt "$best" ]; then best="$d"; base="origin/$head"; fi
@@ -72,9 +75,9 @@ nearest() {
   echo "$base"
 }
 
-cur="$(git branch --show-current)"
 if [ -n "$diff" ]; then
-  paths="$(git diff --name-only "$(nearest HEAD "$cur")...HEAD")"
+  base="$(nearest HEAD "$cur")"
+  paths="$(git diff --name-only "$base...HEAD")"
   [ -n "$paths" ] || exit 0
   export GIT_LITERAL_PATHSPECS=1
 fi
@@ -84,7 +87,8 @@ lines=""; printed=()
 while IFS=$'\t' read -r num head closes; do
   [ -n "$num" ] || continue
   [ -z "$diff" ] || [ "$head" != "$cur" ] || continue
-  shared="$(git diff --name-only "$(nearest "origin/$head" "$head")...origin/$head" -- "${toks[@]}" | tr '\n' ' ')"
+  base="$(nearest "origin/$head" "$head")"
+  shared="$(git diff --name-only "$base...origin/$head" -- "${toks[@]}" | tr '\n' ' ')"
   [ -n "$shared" ] || continue
   lines+="#$num $head: ${shared% }"$'\n'
   printed+=("$head")
@@ -104,7 +108,7 @@ if [ -z "$lines" ]; then echo "base: origin/main"; exit 0; fi
 base="origin/${printed[0]}"
 for h in "${printed[@]}"; do
   holds=1
-  for o in "${printed[@]}"; do git merge-base --is-ancestor "origin/$o" "origin/$h" || holds=0; done
+  for o in "${printed[@]}"; do is_ancestor "origin/$o" "origin/$h" || holds=0; done
   if [ "$holds" = 1 ]; then base="origin/$h"; break; fi
 done
 echo "base: $base"
