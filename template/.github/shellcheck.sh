@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # The shell gate, in this project and in the factory that wrote it. Runs ShellCheck at the pinned
 # version over the files the globs name. When this machine does not have that version it downloads
-# the release tarball once, verifies its sha256 on every run, and runs the binary it extracts from
-# it, so the run a lane makes before a PR and the run CI makes are one run.
+# the release tarball once, verifies its sha256 on every run, removes a tarball that fails its
+# check so the next run fetches it again, and runs the binary it extracts from it, so the run a
+# lane makes before a PR and the run CI makes are one run.
 #   bash .github/shellcheck.sh                  this project's shell files
 #   bash .github/shellcheck.sh '<glob>' ...     exactly these; quote a glob, this script expands it
 # Run it from the repository root: --external-sources resolves a sourced file against the working
@@ -28,8 +29,8 @@ if ! "$bin" --version 2>/dev/null | grep -qx "version: $version"; then
   bin="$dir/shellcheck-v$version/shellcheck"
   mkdir -p "$dir"
   [ -f "$tarball" ] || curl -fsSL -o "$tarball" "https://github.com/koalaman/shellcheck/releases/download/v$version/shellcheck-v$version.$plat.tar.xz"
-  if command -v sha256sum >/dev/null; then echo "$sha  $tarball" | sha256sum -c - >/dev/null
-  else echo "$sha  $tarball" | shasum -a 256 -c - >/dev/null; fi
+  verify() { if command -v sha256sum >/dev/null; then sha256sum -c - >/dev/null; else shasum -a 256 -c - >/dev/null; fi; }
+  echo "$sha  $tarball" | verify || { rm -f "$tarball"; exit 1; }
   tar -xJf "$tarball" -C "$dir"
 fi
 

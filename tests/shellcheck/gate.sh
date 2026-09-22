@@ -7,9 +7,9 @@
 # gate itself, a platform the pin has no build for is refused when no ShellCheck is on PATH
 # (a fake uname on PATH, ShellCheck hidden), an absolute path or a glob whose directory has a
 # space is one argument, not split on it, and on the two pinned platforms a cached tarball that
-# fails its checksum is refused and not downloaded again (a bogus tarball under TMPDIR, ShellCheck
-# hidden). The download is not exercised here; the fixture job in factory-ci.yml proves it. Exits 1
-# on the first miss.
+# fails its checksum is refused and removed so the next run downloads it again (a bogus tarball
+# under TMPDIR, ShellCheck hidden). The download is not exercised here; the fixture job in
+# factory-ci.yml proves it. Exits 1 on the first miss.
 set -euo pipefail
 here="$(cd "$(dirname "$0")/../.." && pwd -P)"
 script="$here/template/.github/shellcheck.sh"
@@ -90,7 +90,8 @@ case "$(uname -s).$(uname -m)" in
     printf 'not a tarball' > "$fx/tmp/shellcheck-0.11.0/sc.tar.xz"
     PATH=/usr/bin:/bin TMPDIR="$fx/tmp" check_err "9 a cached tarball that fails its checksum is refused" 1 "did NOT match" clean.sh
     same "9 nothing on stdout" "" "$got"
-    same "9 the tarball is not downloaded again" "not a tarball" "$(cat "$fx/tmp/shellcheck-0.11.0/sc.tar.xz")"
+    [ ! -e "$fx/tmp/shellcheck-0.11.0/sc.tar.xz" ] || fail "9 the bad tarball is removed so the next run downloads again" "still there" "removed"
+    n=$((n + 1))
     ;;
   *) echo "skip 9 a cached tarball that fails its checksum: no pin for $(uname -s).$(uname -m), the gate would refuse the platform first" ;;
 esac
