@@ -39,6 +39,7 @@ Inside a playbook the writer is never the orchestrator: implementation is delega
 - `bash tests/hooks/delegation.sh`.
 - `bash tests/spec-review/review-comment.sh`.
 - `bash tests/spec-review/review-brief.sh`.
+- `bash tests/poteto-mode/overlap.sh`.
 - `python3 tools/build_knowledge.py` leaves `git status` clean, and `python3 tools/check_knowledge.py` passes.
 - `./factory918.sh sync` leaves `git status` clean.
 - The fixture flow, which is what CI runs: `vp create vite:monorepo --directory /tmp/fx --no-interactive --git --hooks --no-agent`, then `./factory918.sh apply /tmp/fx --scaffold --profile python --name demo`, then in `/tmp/fx`: `vp check`, `vp test run`, `pnpm sg:test`, and the steps of `.github/workflows/python.yml` inside `python/demo`.
