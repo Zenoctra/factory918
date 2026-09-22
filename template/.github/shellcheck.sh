@@ -28,8 +28,8 @@ if ! "$bin" --version 2>/dev/null | grep -qx "version: $version"; then
   bin="$dir/shellcheck-v$version/shellcheck"
   mkdir -p "$dir"
   [ -f "$tarball" ] || curl -fsSL -o "$tarball" "https://github.com/koalaman/shellcheck/releases/download/v$version/shellcheck-v$version.$plat.tar.xz"
-  if command -v sha256sum >/dev/null; then echo "$sha  $tarball" | sha256sum -c - >&2
-  else echo "$sha  $tarball" | shasum -a 256 -c - >&2; fi
+  if command -v sha256sum >/dev/null; then echo "$sha  $tarball" | sha256sum -c - >/dev/null
+  else echo "$sha  $tarball" | shasum -a 256 -c - >/dev/null; fi
   tar -xJf "$tarball" -C "$dir"
 fi
 
