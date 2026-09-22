@@ -15,7 +15,11 @@
 # comments instead of gh, and --round N the round, for tests and a branch whose PR is elsewhere.
 # A cross-cutting diff (one that touches a hooks directory, a settings.json or the factory918
 # skill) is briefed only with its blast-radius grounding: --blast-radius FILE, else the PR body's
-# `## Blast Radius` section; without one the script refuses before writing any state.
+# `## Blast Radius` section; without one the script refuses before writing any state. The grounding
+# holds its risks under a line that is exactly `## Risks` (a file) or `### Risks` (a PR body, whose
+# headings are demoted one level so the section stays intact), outside fenced text; without one the
+# script refuses the same way. With a grounding, the Spec brief's `## Walk` bullet continues with
+# one numbered line per risk, so the reviewer walks the risks after the steps.
 # shellcheck disable=SC2016 # every single-quoted string here is a jq program or a Markdown template; the backticks and $ are literal
 set -euo pipefail
 usage() {
@@ -236,6 +240,19 @@ if [ -n "$crossing" ]; then
     echo "review-brief: cross-cutting diff (${crossing# }) without a blast-radius grounding; run the blast-radius skill, put the result in the PR body's Blast Radius section or pass --blast-radius FILE" >&2
     exit 1
   fi
+  # The Spec walk covers each risk by name (the Walk bullet below), so the grounding must hold them
+  # under a heading the reviewer can find, at either level: a file keeps its own `## Risks`, a PR
+  # body carries the file with its headings demoted to `###` so the section above survives. Read
+  # outside fenced text with the same fence rule as a report; a bullet hand-back has no heading.
+  if ! printf '%s\n' "$grounding" | awk '{ sub(/\r$/, ""); sub(/[ \t]+$/, "") }'"$fenced"'
+      $0 == "## Risks" || $0 == "### Risks" { found = 1; exit }
+      END { exit !found }'; then
+    rm -rf "$dir"
+    where="the PR body's Blast Radius section"
+    [ -z "$blast" ] || where="$blast"
+    echo "review-brief: the blast-radius grounding ($where) has no Risks heading outside fenced text; put the risks under a line that is exactly \`## Risks\` in the file, \`### Risks\` in the PR body, where the grounding's headings are demoted one level so the section stays intact" >&2
+    exit 1
+  fi
 elif [ -n "$blast" ]; then
   echo "review-brief: the diff is not cross-cutting; $blast is not pasted" >&2
 fi
@@ -276,6 +293,9 @@ step_rule='Every item under `## Would break` or `## Fails open` carries a line `
 spec_rule='The same item carries a line `spec:` naming the artifact it rests on: `table <row>/<column>` for a cell of the ticket'"'"'s scenario table, `design <signature>` for a signature or usage in its `## Design` sketch, or `criterion <k>` for its k-th acceptance checkbox; an item without a `spec:` line in one of those three forms is sent back.'
 # The blast-radius paragraph; SKILL.md step 4 carries it word for word (the same test holds them together).
 blast_rule="The sessions and skills this change reaches, as the author grounded them before the review. Check the diff against each one; the grounding is the author's claim, not evidence."
+# The risk sentence, appended to the Spec brief's Walk bullet when a grounding is present; SKILL.md
+# step 4 carries it word for word (the same test holds them together).
+risk_rule='The diff is cross-cutting: after the lines per documented step, one numbered line per risk under the Risks heading of the `## Blast radius` section above, in its order and numbered on from the last step, each naming the risk and saying what the diff does at that risk; a risk line is a walk line and counts nothing.'
 count_rule='End the report with exactly one line `hard findings: N`, where N is the number of items under `## Would break` and `## Fails open` and nothing else.'
 common() {
   echo "Read nothing beyond this brief unless a finding needs the code around a hunk, and then read that one function or section, not the file. Run nothing."
@@ -382,7 +402,11 @@ if [ -n "$spec" ]; then
       echo
     fi
     report_rules
-    echo '- `## Walk`: one numbered line per documented step of the path the change touches (the ticket'"'"'s criteria and the documentation the diff changes), each saying what the code does at that step. A walk, not findings: its lines are numbered 1..K on their own and count nothing.'
+    # One bullet either way: the risk sentence joins it on the same line, so the bullet's own text
+    # is what SKILL.md step 4 carries and the risk sentence follows it only for a cross-cutting diff.
+    walk='- `## Walk`: one numbered line per documented step of the path the change touches (the ticket'"'"'s criteria and the documentation the diff changes), each saying what the code does at that step. A walk, not findings: its lines are numbered 1..K on their own and count nothing.'
+    [ -z "$grounding" ] || walk="$walk $risk_rule"
+    echo "$walk"
     echo '- `## Would break`: a requirement missing, partial, or implemented so that the documented path gives a wrong or silent result.'
     echo '- `## Fails open`: an input outside the documented path that proceeds silently instead of being refused with a message saying how to correct it.'
     echo '- `## Not asked for`: behaviour in the diff the ticket did not ask for.'
