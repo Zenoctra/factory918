@@ -34,4 +34,4 @@ Shallow module (large interface, little hidden) · Information leakage (one deci
 
 ## Suppressions
 
-Every new or broadened `oxlint-disable`, `@ts-ignore`, `@ts-expect-error` needs an adjacent comment explaining why. The directive itself is not an explanation. A stale directive fails lint.
+Every new or broadened `oxlint-disable`, `@ts-ignore`, `@ts-expect-error` needs an adjacent comment explaining why. The directive itself is not an explanation. A stale directive fails lint. A `# shellcheck disable=` in a hook or a skill script puts its reason in a second comment on the same line, because the directive is itself a comment and an adjacent one would be ambiguous.
