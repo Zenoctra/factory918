@@ -261,7 +261,9 @@ fi
 if [ ${#standards[@]} -eq 0 ] && [ -f CODING_STANDARDS.md ]; then standards=(CODING_STANDARDS.md); fi
 # The definition both reports rest on, Manuel's words it follows, the step rule, the spec rule and
 # the count rule; SKILL.md step 4 carries each word for word (tests/spec-review/review-brief.sh
-# holds them together).
+# holds them together). The spec rule is written only with a spec in hand, the same test that
+# writes the Spec brief: a review with no spec has no table, sketch or criterion for a `spec:` line
+# to name, so its Standards brief goes from the step rule to the report path and the count rule.
 definition="A hard finding is one of two things: the documented path gives a wrong or silent result, or an input outside it proceeds silently (fails open). An input outside the documented path that is refused with a message saying how to correct it is not a finding; it is the design. Zero items is the expected result for a clean change."
 quotes=(
   '- Manuel: "there are an infinite amount of unhappy paths and only 1 happy one"'
@@ -357,8 +359,10 @@ report_rules() {
   echo
   echo "$step_rule"
   echo
-  echo "$spec_rule"
-  echo
+  if [ -n "$spec" ]; then
+    echo "$spec_rule"
+    echo
+  fi
   echo "Write your report to \`$dir/standards-report.md\` and reply with only that path."
   echo "$count_rule"
 } > "$dir/standards-brief.md"
