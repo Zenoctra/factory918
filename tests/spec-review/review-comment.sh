@@ -4,12 +4,15 @@
 # fixture reports and judgments, and asserts the exact stdout of each accepted shape and the exact
 # refusal line of each rejected one. Report and judgment items are numbered 1..N across the
 # headings; the Spec report's `## Walk` lines are steps, not items, and count nothing. Every item
-# under `## Would break` or `## Fails open` carries a `Documented step:` line and a `spec:` line
-# naming the cell, signature or criterion it rests on. A judgment may mark an Act on item
+# under `## Would break` or `## Fails open` carries a `Documented step:` line and, in a review with
+# a spec (`<dir>/spec-brief.md` present), a `spec:` line naming the cell, signature or criterion it
+# rests on; with no spec the line is not asked for. A judgment may mark an Act on item
 # `hole: <reference>`, the item's `spec:` word for word: the comment then carries the line
-# `restart` before `round:` and the hole is left out of the count; a `hole:` outside Act on, in no
-# form, or differing from the item's `spec:` is refused. A refusal leaves the review state in
-# place; an accepted run clears it. Exits 1 on the first miss.
+# `restart` before `round:` and the hole is left out of the count. The text from the last `hole:`
+# on a judgment line not ending in a `fixed:` or `ticket:` field is the field: one in a review with
+# no spec, outside Act on, in no form (a reason that says `hole:` included), or differing from the
+# item's `spec:` is refused with the value shown. A refusal leaves the review state in place; an
+# accepted run clears it. Exits 1 on the first miss.
 set -euo pipefail
 here="$(cd "$(dirname "$0")/../.." && pwd -P)"
 # shellcheck source-path=SCRIPTDIR source=layout.sh
@@ -547,10 +550,13 @@ Standards: 0 would break, 0 fail open, of 0; Spec: no spec; judged: act on 0 (0 
 round: 1 of 3
 act-on items: 0" "headings with trailing whitespace"
 
-# Ticket #90, table B, rows 2 to 4: a counted item without a `spec:` line naming what it rests on
-# is refused before the judgment is read, whatever the judgment holds; a `spec:` fitting no form,
-# or inside a fenced hunk, is the same refusal; a missing `Documented step:` is refused first.
+# Ticket #90, table B, rows 2 to 4: in a review with a spec, a counted item without a `spec:` line
+# naming what it rests on is refused before the judgment is read, whatever the judgment holds; a
+# `spec:` fitting no form, or inside a fenced hunk, is the same refusal; a missing
+# `Documented step:` is refused first. The refusals fire inside the Standards report's check, so
+# the Spec brief needs no Spec report.
 reset
+echo brief > "$dir/spec-brief.md"
 printf '## Would break\n\n1. **One.** a\nDocumented step: t\nResult: r\nspec: criterion 1\n\n## Fails open\n\n2. **Open, silently.** the guard returns.\nDocumented step: t\nResult: r\n\n## Standards breaches\n\n## Fix alongside\n\nhard findings: 2\n' > "$dir/standards-report.md"
 refuse "$dir/standards-report.md item '2. **Open, silently.**' under '## Fails open' has no 'spec:' line; a counted item names what it rests on, one of 'spec: table <row>/<column>', 'spec: design <signature>' or 'spec: criterion <k>', on its own line. Ask the reviewer for it" "Fails-open item without a spec line, no judgment yet"
 for bad in 'spec: cell 12A' 'spec: table 12A' 'spec: criterion 0' 'spec: table 12/A trailing'; do
@@ -562,6 +568,33 @@ printf '## Would break\n\n1. **One.** a\nDocumented step: t\nResult: r\nspec: cr
 refuse "$dir/standards-report.md item '2. **Open, silently.**' under '## Fails open' has no 'spec:' line; a counted item names what it rests on, one of 'spec: table <row>/<column>', 'spec: design <signature>' or 'spec: criterion <k>', on its own line. Ask the reviewer for it" "Fails-open item whose spec line is inside a fenced hunk"
 printf '## Would break\n\n1. **One.** a\nspec: criterion 1\n\n## Fails open\n\n## Standards breaches\n\n## Fix alongside\n\nhard findings: 1\n' > "$dir/standards-report.md"
 refuse "$dir/standards-report.md item '1. **One.**' under '## Would break' has no 'Documented step:' line; a counted item quotes the ticket line or the file:line of the documentation the user follows, then 'Result:' what happens instead. Ask the reviewer for both" "Would-break item with a spec line and no Documented step line"
+
+# Row 7: a review with no spec (no Spec brief) has no artifact a finding could rest on. A counted
+# item with no `spec:` line is counted, not refused; a `hole:` field is refused with one message
+# whatever its value, before the form check.
+reset
+printf '## Would break\n\n1. **One.** a\nDocumented step: t\nResult: r\n\n## Fails open\n\n## Standards breaches\n\n## Fix alongside\n\nhard findings: 1\n' > "$dir/standards-report.md"
+printf '## Act on\n\n1. [S1] **One.** yes\n\n## Ask\n\n## Consider\n\n## Noted\n\n## Dismissed\n' > "$dir/judgment.md"
+accept "## Standards
+
+$(cat "$dir/standards-report.md")
+
+## Spec
+
+no spec: Standards axis only
+
+## Judgment
+
+$(cat "$dir/judgment.md")
+
+Standards: 1 would break, 0 fail open, of 1; Spec: no spec; judged: act on 1 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 0, dismissed 0; fixed point main.
+round: 1 of 3
+act-on items: 1" "a counted item with no spec line in a review with no spec, counted (7A)"
+rearm
+for mark in 'hole: table 2/D' 'hole: table 2'; do
+  printf '## Act on\n\n1. [S1] **One.** yes %s\n\n## Ask\n\n## Consider\n\n## Noted\n\n## Dismissed\n' "$mark" > "$dir/judgment.md"
+  refuse "$dir/judgment.md item '1. [S1] **One.**' carries a 'hole:' field, but this review has no spec ($dir/spec-brief.md is missing): a hole names an artifact on the ticket the work was built against, and this review has none. Fix the finding on this PR, or rerun scripts/review-brief.sh <fixed-point> --ticket N and judge again" "an Act on item marked '$mark' in a review with no spec (7D)"
+done
 
 # Rows 1, 5 and 6 and the notes under the table. Two counted items rest on a cell and a signature,
 # a Fails-open item on a criterion, a Standards-breaches item carries an inert `spec:` line, and
@@ -670,16 +703,29 @@ Standards: 1 would break, 0 fail open, of 2; Spec: 1 would break, 1 fail open, o
 round: 1 of 3
 act-on items: 1" "a hole before a trailing fixed field counts as fixed"
 rearm
+# The text from the last `hole:` to the end of the line is the field, a reason that says `hole:`
+# included; a value in no form is refused with the value shown, and the word without a colon is text.
 for bad in 'hole: table 2' 'hole: cell 12A' 'hole: criterion 0' 'hole: table 2/D trailing'; do
   judged " $bad" "" "" ""
-  refuse "$dir/judgment.md item '1. [S1] **Hook exits 0 on a miss.**' has a 'hole:' field that fits no form; it ends the line as 'hole: table <row>/<column>', 'hole: design <signature>' or 'hole: criterion <k>'" "an Act on hole reading '$bad' (1E)"
+  refuse "$dir/judgment.md item '1. [S1] **Hook exits 0 on a miss.**' has a 'hole:' field that fits no form, '$bad' (the text from 'hole:' to the end of the line is the field); a mark ends the line as 'hole: table <row>/<column>', 'hole: design <signature>' or 'hole: criterion <k>', and a reason that says 'hole:' is reworded" "an Act on hole reading '$bad' (1E)"
 done
+judged " Not a design hole: the table stands." "" "" ""
+refuse "$dir/judgment.md item '1. [S1] **Hook exits 0 on a miss.**' has a 'hole:' field that fits no form, 'hole: the table stands.' (the text from 'hole:' to the end of the line is the field); a mark ends the line as 'hole: table <row>/<column>', 'hole: design <signature>' or 'hole: criterion <k>', and a reason that says 'hole:' is reworded" "an Act on reason that says 'hole:' is refused with the value shown (1E)"
+judged " Not a design hole; the table stands." "" "" ""
+accept "$(above)
+
+Standards: 1 would break, 0 fail open, of 2; Spec: 1 would break, 1 fail open, of 2; judged: act on 2 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 2, dismissed 0; fixed point main.
+round: 1 of 3
+act-on items: 2" "an Act on reason saying the word without a colon carries no mark, counted (1A)"
+rearm
 judged " hole: criterion 4" "" "" ""
 refuse "$dir/judgment.md item '1. [S1] **Hook exits 0 on a miss.**' is marked 'hole: criterion 4' but [S1] rests on 'table 2/D'; the mark repeats the report item's 'spec:' line word for word" "an Act on hole differing from the item's spec line (1F)"
 judged "" "" "" " hole: criterion 3"
-refuse "$dir/judgment.md item '4. [P2] **Token in the log.**' carries a 'hole:' field under '## Noted'; 'hole:' marks an Act on item, as 'fixed:' and 'ticket:' do" "a hole under Noted (1G)"
+refuse "$dir/judgment.md item '4. [P2] **Token in the log.**' carries a 'hole:' field under '## Noted', 'hole: criterion 3'; 'hole:' marks an Act on item, as 'fixed:' and 'ticket:' do: move the item, or reword a reason that says 'hole:'" "a hole under Noted (1G)"
+judged "" "" "" " Not a design hole: the table stands."
+refuse "$dir/judgment.md item '4. [P2] **Token in the log.**' carries a 'hole:' field under '## Noted', 'hole: the table stands.'; 'hole:' marks an Act on item, as 'fixed:' and 'ticket:' do: move the item, or reword a reason that says 'hole:'" "a Noted reason that says 'hole:' is refused with the value shown (1G)"
 judged " hole: table 2" "" "" " hole: criterion 3"
-refuse "$dir/judgment.md item '4. [P2] **Token in the log.**' carries a 'hole:' field under '## Noted'; 'hole:' marks an Act on item, as 'fixed:' and 'ticket:' do" "a hole outside Act on is refused before one fitting no form"
+refuse "$dir/judgment.md item '4. [P2] **Token in the log.**' carries a 'hole:' field under '## Noted', 'hole: criterion 3'; 'hole:' marks an Act on item, as 'fixed:' and 'ticket:' do: move the item, or reword a reason that says 'hole:'" "a hole outside Act on is refused before one fitting no form"
 breach ""
 accept "$(above)
 
@@ -690,11 +736,11 @@ rearm
 breach " hole: table 9/Z"
 refuse "$dir/judgment.md item '3. [S2] **Bare number.**' is marked 'hole: table 9/Z' but [S2] carries no 'spec:' line: it is under '## Standards breaches' in $dir/standards-report.md, not a counted item" "a hole on a Standards-breaches item, its inert spec line not counting (5D)"
 breach " hole: cell 12A"
-refuse "$dir/judgment.md item '3. [S2] **Bare number.**' has a 'hole:' field that fits no form; it ends the line as 'hole: table <row>/<column>', 'hole: design <signature>' or 'hole: criterion <k>'" "a hole fitting no form on a Standards-breaches item (5E)"
+refuse "$dir/judgment.md item '3. [S2] **Bare number.**' has a 'hole:' field that fits no form, 'hole: cell 12A' (the text from 'hole:' to the end of the line is the field); a mark ends the line as 'hole: table <row>/<column>', 'hole: design <signature>' or 'hole: criterion <k>', and a reason that says 'hole:' is reworded" "a hole fitting no form on a Standards-breaches item (5E)"
 breach " hole: criterion 2"
 refuse "$dir/judgment.md item '3. [S2] **Bare number.**' is marked 'hole: criterion 2' but [S2] carries no 'spec:' line: it is under '## Standards breaches' in $dir/standards-report.md, not a counted item" "a well-formed hole on a Standards-breaches item (5F)"
 judged "" "" " hole: table 9/Z" ""
-refuse "$dir/judgment.md item '3. [S2] **Bare number.**' carries a 'hole:' field under '## Noted'; 'hole:' marks an Act on item, as 'fixed:' and 'ticket:' do" "a hole on a Standards-breaches item under Noted (5G)"
+refuse "$dir/judgment.md item '3. [S2] **Bare number.**' carries a 'hole:' field under '## Noted', 'hole: table 9/Z'; 'hole:' marks an Act on item, as 'fixed:' and 'ticket:' do: move the item, or reword a reason that says 'hole:'" "a hole on a Standards-breaches item under Noted (5G)"
 }
 
 suite project
