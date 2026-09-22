@@ -45,9 +45,9 @@ fi
 
 if [ -z "$diff" ]; then
   body="$(gh issue view "$n" --json body -q .body)"
+  outside="$(printf '%s\n' "$body" | awk '/^## /{skip=($0 ~ /^## Diff[[:space:]]*$/)} !skip')"
   # shellcheck disable=SC2016
-  paths="$(printf '%s\n' "$body" | awk '/^## /{skip=($0 ~ /^## Diff[[:space:]]*$/)} !skip' \
-    | grep -oE '`[^`[:space:]]+`' | tr -d '`' | sort -u || true)"
+  paths="$(printf '%s\n' "$outside" | grep -oE '`[^`[:space:]]+`' | tr -d '`' | sort -u || true)"
   if [ -z "$paths" ]; then printf '%s\npaths: none\nbase: origin/main\n' "$go"; exit 0; fi
 fi
 
