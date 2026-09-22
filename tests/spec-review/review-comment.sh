@@ -709,6 +709,9 @@ for bad in 'hole: table 2' 'hole: cell 12A' 'hole: criterion 0' 'hole: table 2/D
   judged " $bad" "" "" ""
   refuse "$dir/judgment.md item '1. [S1] **Hook exits 0 on a miss.**' has a 'hole:' field that fits no form, '$bad' (the text from 'hole:' to the end of the line is the field); a mark ends the line as 'hole: table <row>/<column>', 'hole: design <signature>' or 'hole: criterion <k>', and a reason that says 'hole:' is reworded" "an Act on hole reading '$bad' (1E)"
 done
+# The value is shown as written: a mark missing the space after `hole:` is refused with the space missing.
+judged " hole:table 2/D" "" "" ""
+refuse "$dir/judgment.md item '1. [S1] **Hook exits 0 on a miss.**' has a 'hole:' field that fits no form, 'hole:table 2/D' (the text from 'hole:' to the end of the line is the field); a mark ends the line as 'hole: table <row>/<column>', 'hole: design <signature>' or 'hole: criterion <k>', and a reason that says 'hole:' is reworded" "an Act on hole written without the space, shown as written (1E)"
 judged " Not a design hole: the table stands." "" "" ""
 refuse "$dir/judgment.md item '1. [S1] **Hook exits 0 on a miss.**' has a 'hole:' field that fits no form, 'hole: the table stands.' (the text from 'hole:' to the end of the line is the field); a mark ends the line as 'hole: table <row>/<column>', 'hole: design <signature>' or 'hole: criterion <k>', and a reason that says 'hole:' is reworded" "an Act on reason that says 'hole:' is refused with the value shown (1E)"
 judged " Not a design hole; the table stands." "" "" ""
