@@ -2,9 +2,10 @@
 # Runs template/.github/shellcheck.sh, the shell gate, from a temp directory whose path has a
 # space, and asserts one case per row of the table under ## Design on ticket #88: a clean file
 # passes and is counted, a planted SC2086 is reported, a glob that matches no file is refused on
-# stderr, a #!/bin/sh file keeps its POSIX checks, the zero-argument form from a project's root
-# counts the project's hooks, skill scripts and the gate itself, and a platform the pin has no
-# build for is refused when no ShellCheck is on PATH (a fake uname on PATH, ShellCheck hidden).
+# stderr, also when it stands beside a file that matched, a #!/bin/sh file keeps its POSIX checks,
+# the zero-argument form from a project's root counts the project's hooks, skill scripts and the
+# gate itself, and a platform the pin has no build for is refused when no ShellCheck is on PATH
+# (a fake uname on PATH, ShellCheck hidden).
 # The download is not exercised here; the fixture job in factory-ci.yml proves it. Exits 1 on the
 # first miss.
 set -euo pipefail
@@ -68,6 +69,8 @@ check_err "2 a planted SC2086" 1 "SC2086" unquoted.sh
 check_err "3 a glob that matches nothing" 1 "no file matched nope/*.sh; the gate checked nothing" 'nope/*.sh'
 same "3 the refusal is on stderr" "shellcheck.sh: no file matched nope/*.sh; the gate checked nothing" "$err"
 same "3 nothing on stdout" "" "$got"
+check_err "3b a matched file beside a glob that matches nothing" 1 "no file matched nope/*.sh; the gate checked nothing" clean.sh 'nope/*.sh'
+same "3b nothing on stdout" "" "$got"
 check_err "4 a #!/bin/sh file keeps its POSIX checks" 1 "SC3030" posix.sh
 cd project
 check "5 the zero-argument form from a project's root" 0 "ShellCheck 0.11.0, files checked: 4"

@@ -7,8 +7,9 @@
 # Run it from the repository root: --external-sources resolves a sourced file against the working
 # directory. The severity is the default, because SC2086, the unquoted expansion, is info level and
 # a --severity floor would pass the class this gate exists for. No --shell: each file is read in the
-# dialect of its own shebang, so a `#!/bin/sh` file keeps its bashism checks. Globs that match no
-# file at all leave the gate checking nothing, which is a failure, not a pass.
+# dialect of its own shebang, so a `#!/bin/sh` file keeps its bashism checks. A glob that matches
+# no file is refused before ShellCheck runs, even beside globs that match, because a gate that
+# checks fewer files than it names is a failure, not a pass.
 set -euo pipefail
 version=0.11.0
 sha_linux_x86_64=8c3be12b05d5c177a04c29e3c78ce89ac86f1595681cab149b65b97c4e227198
@@ -35,11 +36,12 @@ fi
 if [ "$#" = 0 ]; then set -- '.claude/hooks/*.sh' '.agents/skills/*/scripts/*.sh' '.github/shellcheck.sh'; fi
 files=()
 for g in "$@"; do
-  for f in $g; do if [ -f "$f" ]; then files+=("$f"); fi; done
+  matched=0
+  for f in $g; do if [ -f "$f" ]; then files+=("$f"); matched=1; fi; done
+  if [ "$matched" = 0 ]; then
+    echo "shellcheck.sh: no file matched $g; the gate checked nothing" >&2
+    exit 1
+  fi
 done
-if [ "${#files[@]}" = 0 ]; then
-  echo "shellcheck.sh: no file matched $*; the gate checked nothing" >&2
-  exit 1
-fi
 echo "ShellCheck $version, files checked: ${#files[@]}"
 exec "$bin" --external-sources "${files[@]}"
