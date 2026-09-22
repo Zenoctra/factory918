@@ -3,11 +3,12 @@
 # .claude/state/program naming #N), then `#<pr> <head>: <paths>` for every open PR whose own
 # commits (its diff from the nearest open-PR head under it, else origin/main) touch a path the
 # ticket's body names in backticks (tokens without whitespace, those under `## Diff`, `## Testing
-# decisions` and `## Design` skipped, passed together as pathspecs), ascending by PR number, then
-# on exit 0 the ref to branch from: origin/main when nothing is shared, else the printed head that
-# contains every other, else the lowest PR number's. `overlap.sh N --diff` compares the branch's
-# own paths by the same rule (the own PR skipped, literal pathspecs), prints nothing when none is
-# shared, the go and the PR lines otherwise, and no base. `overlap.sh go
+# decisions` and `## Design` skipped up to the next `## ` heading, passed together as pathspecs),
+# ascending by PR number, then on exit 0 the ref to branch from: origin/main when nothing is
+# shared, else the printed head that contains every other, else the lowest PR number's.
+# `overlap.sh N --diff` compares the branch's own paths by the same rule (the own PR skipped,
+# literal pathspecs), prints nothing when none is shared, the go and the PR lines otherwise, and
+# no base. `overlap.sh go
 # "<label>" N...` appends `<label>: #a #b ...` to the program file, its only writer; a linked
 # worktree reads the main checkout's. Exit 0 decided, 1 a path shared with a PR no go covers (a go
 # covers when some line names #N and some line names the ticket each printed PR closes; a PR that
