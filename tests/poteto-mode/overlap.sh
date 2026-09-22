@@ -13,9 +13,8 @@
 # reading the main checkout's file, --diff skipping the own PR and counting only the branch's own
 # commits, a literal token under --diff, and the mode bit. The fixture root has a space, and from
 # the third call on the script runs by the relative path the playbooks name.
-# Exits 1 on the first miss. The backticks in the bodies below are the ticket's token delimiters,
-# not command substitutions.
-# shellcheck disable=SC2016
+# Exits 1 on the first miss.
+# shellcheck disable=SC2016 # the backticks in the bodies below are the ticket's token delimiters, not command substitution
 set -euo pipefail
 here="$(cd "$(dirname "$0")/../.." && pwd -P)"
 script="$here/template/.agents/skills/poteto-mode/scripts/overlap.sh"

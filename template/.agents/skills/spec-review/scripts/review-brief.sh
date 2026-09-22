@@ -14,6 +14,7 @@
 # A cross-cutting diff (one that touches a hooks directory, a settings.json or the factory918
 # skill) is briefed only with its blast-radius grounding: --blast-radius FILE, else the PR body's
 # `## Blast Radius` section; without one the script refuses before writing any state.
+# shellcheck disable=SC2016 # every single-quoted string here is a jq program or a Markdown template; the backticks and $ are literal
 set -euo pipefail
 usage() {
   echo "usage: review-brief.sh <fixed-point> [--ticket N] [--standards FILE ...] [--previous FILE] [--round N] [--blast-radius FILE]" >&2
