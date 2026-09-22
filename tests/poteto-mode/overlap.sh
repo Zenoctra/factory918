@@ -139,6 +139,10 @@ check "18 two PRs in ascending number" 1 $'go: none\n#1 feat-a: docs/a.md\n#2 fe
 check "19 go writes the line" 0 "" go sweep 7 9
 same "19 the line" 'sweep: #7 #9' "$(cat $prog)"
 rm $prog
+# The documented form, typed at a shell: bare numbers, since `#4` would open a comment.
+bash -c '.claude/skills/poteto-mode/scripts/overlap.sh go "autopilot-stack" 4 5 8'
+same "19 the documented form typed at a shell" 'autopilot-stack: #4 #5 #8' "$(cat $prog)"
+rm $prog
 check "19 go accepts #9" 0 "" go sweep 7 '#9'
 same "19 the line from #9" 'sweep: #7 #9' "$(cat $prog)"
 export FAKE_BODY='Touches `docs/a.md`.'
