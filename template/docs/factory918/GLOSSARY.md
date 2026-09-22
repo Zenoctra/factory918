@@ -44,6 +44,8 @@ Terms as this system uses them. Where a term belongs to one of the four sources,
 
 **Router.** A skill that maps a situation to an entry point. Matt has `ask-matt`, pstack has `poteto-mode`; Factory918 has `/factory918` above both.
 
+**Scenario table.** The design artifact for anything with state: situations down the side, the input's shape across the top, every cell what is printed, the exit code and what the caller does next. Posted on the ticket under `## Testing decisions` before implementation; the test is one assertion per cell. The page is `SCENARIO-TABLE.md`. (Ticket #42, second run)
+
 **Seam.** The public boundary you test at; the interface where you observe behaviour without reaching inside. Pre-agreed seams are the spec's Testing decisions. (Matt, from Michael Feathers)
 
 **Smell.** A named pattern that usually indicates a design problem, never a hard violation; `spec-review` labels twelve of Fowler's. Comments are not one of ours.

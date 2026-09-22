@@ -1,4 +1,4 @@
-<!-- lines: 69 | source: core/GLOSSARY.md | part 1/1 | title: Factory918: glossary -->
+<!-- lines: 71 | source: core/GLOSSARY.md | part 1/1 | title: Factory918: glossary -->
 
 ## Contents (line numbers are for the Read tool's offset)
 
@@ -47,6 +47,8 @@ Terms as this system uses them. Where a term belongs to one of the four sources,
 **Review ladder.** CI, then `spec-review`, then an external bot if configured, then `interrogate` if contested, then the human. Rungs without a precondition are skipped, never failed.
 
 **Router.** A skill that maps a situation to an entry point. Matt has `ask-matt`, pstack has `poteto-mode`; Factory918 has `/factory918` above both.
+
+**Scenario table.** The design artifact for anything with state: situations down the side, the input's shape across the top, every cell what is printed, the exit code and what the caller does next. Posted on the ticket under `## Testing decisions` before implementation; the test is one assertion per cell. The page is `SCENARIO-TABLE.md`. (Ticket #42, second run)
 
 **Seam.** The public boundary you test at; the interface where you observe behaviour without reaching inside. Pre-agreed seams are the spec's Testing decisions. (Matt, from Michael Feathers)
 

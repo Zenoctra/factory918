@@ -39,6 +39,7 @@ CORE_DOCS = [
     ("core/MANUAL.md", "Factory918: the manual", "How to run the loop; what the human does at each point."),
     ("core/DECISIONS.md", "Factory918: decisions", "Before overriding any vendored skill; these win."),
     ("core/GLOSSARY.md", "Factory918: glossary", "A term in AGENTS.md, a playbook or a ticket is unclear."),
+    ("core/SCENARIO-TABLE.md", "Factory918: the scenario table", "Designing or reviewing anything with state: a file, exit codes, more than one actor."),
     ("core/CONVERSATION-DIGEST.md", "How Factory918 was arrived at", "Why something was chosen, historically; the corrections."),
 ]
 SOURCES = [

@@ -8,7 +8,8 @@ The literal transcript of the conversation that produced this system is not avai
 | `core/PHILOSOPHY.md` | Factory918: philosophy | 64 | First. Whenever the spec is silent. |
 | `core/MANUAL.md` | Factory918: the manual | 174 | How to run the loop; what the human does at each point. |
 | `core/DECISIONS.md` | Factory918: decisions | 92 | Before overriding any vendored skill; these win. |
-| `core/GLOSSARY.md` | Factory918: glossary | 69 | A term in AGENTS.md, a playbook or a ticket is unclear. |
+| `core/GLOSSARY.md` | Factory918: glossary | 71 | A term in AGENTS.md, a playbook or a ticket is unclear. |
+| `core/SCENARIO-TABLE.md` | Factory918: the scenario table | 88 | Designing or reviewing anything with state: a file, exit codes, more than one actor. |
 | `core/CONVERSATION-DIGEST.md` | How Factory918 was arrived at | 53 | Why something was chosen, historically; the corrections. |
 | `spec/FACTORY-SPEC-v2/01-preamble.md` | The Factory spec, v2 — (preamble) | 11 | Building or updating the factory itself. |
 | `spec/FACTORY-SPEC-v2/02-change-log-v1-v2.md` | The Factory spec, v2 — Change log, v1 → v2 | 20 | Building or updating the factory itself. |
@@ -124,4 +125,4 @@ The literal transcript of the conversation that produced this system is not avai
 | `notes/6-deterministic-layer/09-e-ras-mic-https-github-com-michaelshimeles-skill.md` | Research note: deterministic layer (verbatim config) — E. Ras Mic — `https://github.com/michaelshimeles/skills/blob/513f8a2/` | 63 | Exact CI YAML, lint rules, hook scripts from the four sources. |
 | `notes/6-deterministic-layer/10-cross-system-table.md` | Research note: deterministic layer (verbatim config) — Cross-system table | 26 | Exact CI YAML, lint rules, hook scripts from the four sources. |
 
-118 files. `core/` is hand-maintained; everything else here is generated. Regenerate with `python3 tools/build_knowledge.py` after editing a core document, the spec, or anything under `research/`.
+119 files. `core/` is hand-maintained; everything else here is generated. Regenerate with `python3 tools/build_knowledge.py` after editing a core document, the spec, or anything under `research/`.

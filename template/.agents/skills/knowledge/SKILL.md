@@ -10,7 +10,7 @@ The corpus is large (the four source systems, six research notes, three referenc
 
 ## Where the corpus is
 
-`$FACTORY918_HOME/docs/knowledge` if that variable is set; else `~/.factory918/docs/knowledge`; else this project's `docs/factory918` (slim: philosophy, manual, decisions and glossary only, with no header or mini-TOC, so take line numbers from grep and `wc -l`). Call it `$KB`.
+`$FACTORY918_HOME/docs/knowledge` if that variable is set; else `~/.factory918/docs/knowledge`; else this project's `docs/factory918` (slim: philosophy, manual, decisions, glossary and the scenario table only, with no header or mini-TOC, so take line numbers from grep and `wc -l`). Call it `$KB`.
 
 ## Procedure
 
