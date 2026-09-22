@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # Ticket step 1 and step 8. `overlap.sh N` prints `go: <label or none>` (the newest line of
-# .claude/state/program naming #N), then `#<pr> <head>: <paths>` for every open PR whose diff
-# against origin/main touches a path the ticket's body names in backticks (tokens without
-# whitespace, those under `## Diff` skipped, passed together as pathspecs), ascending by PR number,
-# then on exit 0 the ref to branch from: origin/main when nothing is shared, else the printed head
-# that contains every other, else the lowest PR number's. `overlap.sh N --diff` compares the
-# branch's own paths instead (its diff from the nearest open-PR head that is an ancestor of HEAD,
-# else origin/main; literal pathspecs; the PR whose head is the current branch skipped), prints
-# nothing when none is shared, the go and the PR lines otherwise, and no base. `overlap.sh go
+# .claude/state/program naming #N), then `#<pr> <head>: <paths>` for every open PR whose own
+# commits (its diff from the nearest open-PR head under it, else origin/main) touch a path the
+# ticket's body names in backticks (tokens without whitespace, those under `## Diff` skipped,
+# passed together as pathspecs), ascending by PR number, then on exit 0 the ref to branch from:
+# origin/main when nothing is shared, else the printed head that contains every other, else the
+# lowest PR number's. `overlap.sh N --diff` compares the branch's own paths by the same rule (the
+# own PR skipped, literal pathspecs), prints nothing when none is shared, the go and the PR lines
+# otherwise, and no base. `overlap.sh go
 # "<label>" N...` appends `<label>: #a #b ...` to the program file, its only writer; a linked
 # worktree reads the main checkout's. Exit 0 decided, 1 a path shared with a PR no go covers (a go
 # covers when some line names #N and some line names the ticket each printed PR closes; a PR that
@@ -58,16 +58,23 @@ while IFS=$'\t' read -r num head closes; do
 done <<< "$prs"
 git fetch -q origin "${specs[@]}"
 
+# nearest <ref> <own head>: the open-PR head under the ref with the fewest commits between, the
+# ref's own head never (a head is not its own base), else origin/main.
+nearest() {
+  local base=origin/main best="" num head closes d
+  while IFS=$'\t' read -r num head closes; do
+    [ -n "$num" ] && [ "$head" != "$2" ] || continue
+    git merge-base --is-ancestor "origin/$head" "$1" || continue
+    d="$(git rev-list --count "origin/$head..$1")"
+    [ "$d" -gt 0 ] || continue
+    if [ -z "$best" ] || [ "$d" -lt "$best" ]; then best="$d"; base="origin/$head"; fi
+  done <<< "$prs"
+  echo "$base"
+}
+
 cur="$(git branch --show-current)"
 if [ -n "$diff" ]; then
-  base=origin/main; nearest=""
-  while IFS=$'\t' read -r num head closes; do
-    [ -n "$num" ] && [ "$head" != "$cur" ] || continue
-    git merge-base --is-ancestor "origin/$head" HEAD || continue
-    d="$(git rev-list --count "origin/$head..HEAD")"
-    if [ -z "$nearest" ] || [ "$d" -lt "$nearest" ]; then nearest="$d"; base="origin/$head"; fi
-  done <<< "$prs"
-  paths="$(git diff --name-only "$base...HEAD")"
+  paths="$(git diff --name-only "$(nearest HEAD "$cur")...HEAD")"
   [ -n "$paths" ] || exit 0
   export GIT_LITERAL_PATHSPECS=1
 fi
@@ -77,7 +84,7 @@ lines=""; printed=()
 while IFS=$'\t' read -r num head closes; do
   [ -n "$num" ] || continue
   [ -z "$diff" ] || [ "$head" != "$cur" ] || continue
-  shared="$(git diff --name-only "origin/main...origin/$head" -- "${toks[@]}" | tr '\n' ' ')"
+  shared="$(git diff --name-only "$(nearest "origin/$head" "$head")...origin/$head" -- "${toks[@]}" | tr '\n' ' ')"
   [ -n "$shared" ] || continue
   lines+="#$num $head: ${shared% }"$'\n'
   printed+=("$head")
