@@ -15,10 +15,14 @@
 # and a cite of a cell, a signature or a criterion (`cites: #N table <row>/<column>`, `design
 # <signature>`, `criterion <k>`) carries like the three older forms. A diff touching
 # a cross-cutting path is briefed with its blast-radius grounding (--blast-radius FILE, else the PR
-# body's section) before the diff, and refused without one. The source SKILL.md, step 4, must carry
-# the definition, the five sentences, the heading bullets, the step rule, the spec rule, the count
-# rule, the settled paragraph and the blast-radius paragraph word for word, so the skill and the
-# script cannot drift apart. Exits 1 on the first miss.
+# body's section) before the diff, and refused without one. For such a diff the Spec brief's
+# `## Walk` bullet continues, on its line, with the risk sentence, and a grounding with no line
+# outside fenced text that is exactly `## Risks` or `### Risks` is refused before any state is
+# written; the assertions come from ticket #91's scenario table, one per cell, each named by its
+# row and column. The source SKILL.md, step 4, must carry the definition, the five sentences, the
+# heading bullets, the step rule, the spec rule, the count rule, the settled paragraph, the
+# blast-radius paragraph and the risk sentence word for word, so the skill and the script cannot
+# drift apart. Exits 1 on the first miss.
 # shellcheck disable=SC2016 # the expected strings below are the Markdown the script emits; the backticks and $ are literal
 set -euo pipefail
 here="$(cd "$(dirname "$0")/../.." && pwd -P)"
@@ -114,12 +118,14 @@ spec_rule='The same item carries a line `spec:` naming the artifact it rests on:
 count_rule='End the report with exactly one line `hard findings: N`, where N is the number of items under `## Would break` and `## Fails open` and nothing else.'
 settled_rule="These findings were raised in an earlier round and settled by the decision each one cites. Do not raise them again. Nothing in this section says what you should find or confirm."
 blast_rule="The sessions and skills this change reaches, as the author grounded them before the review. Check the diff against each one; the grounding is the author's claim, not evidence."
+risk_rule='The diff is cross-cutting: after the lines per documented step, one numbered line per risk under the Risks heading of the `## Blast radius` section above, in its order and numbered on from the last step, each naming the risk and saying what the diff does at that risk; a risk line is a walk line and counts nothing.'
 has "$source_skill/SKILL.md" "$definition" "SKILL.md step 4 carries the definition"
 has "$source_skill/SKILL.md" "$step_rule" "SKILL.md step 4 carries the step rule"
 has "$source_skill/SKILL.md" "$spec_rule" "SKILL.md step 4 carries the spec rule"
 has "$source_skill/SKILL.md" "$count_rule" "SKILL.md step 4 carries the count rule"
 has "$source_skill/SKILL.md" "$settled_rule" "SKILL.md step 4 carries the settled paragraph"
 has "$source_skill/SKILL.md" "$blast_rule" "SKILL.md step 4 carries the blast-radius paragraph"
+has "$source_skill/SKILL.md" "$risk_rule" "SKILL.md step 4 carries the risk sentence"
 lacks "$source_skill/SKILL.md" "## Latent" "SKILL.md has no Latent heading"
 for q in "${quotes[@]}"; do
   has "$source_skill/SKILL.md" "$q" "SKILL.md step 4 carries the quote"
@@ -152,6 +158,8 @@ for f in "$std" "$spec"; do
   lacks "$f" "## Latent" "$f has no Latent heading"
   lacks "$f" "## Settled in earlier rounds" "$f has no settled section without a previous comment"
   lacks "$f" "## Blast radius" "$f has no blast-radius section for a diff that is not cross-cutting"
+  # 9B: no grounding and not cross-cutting, the bullet as before.
+  lacks "$f" "$risk_rule" "$f has no risk sentence for a diff that is not cross-cutting (9B)"
 done
 # The heading bullets of each Report paragraph, word for word in SKILL.md step 4 and in the brief.
 standards_bullets=(
@@ -502,8 +510,11 @@ if [ "$code" != 1 ] || [ "$out" != 'review-brief: three rounds were run on this 
 fi
 n=$((n + 1))
 
-# A cross-cutting diff: a commit touching the hooks directory of this layout. With --blast-radius
-# FILE the file's text goes into both briefs under `## Blast radius`, before `## Diff`.
+# Ticket #91, the scenario table: a cross-cutting diff's Spec brief continues its `## Walk` bullet,
+# on the same line, with the risk sentence, and a grounding with no line outside fenced text that
+# is exactly `## Risks` or `### Risks` is refused before any state is written. Each assertion below
+# names its cell, row then column. The cross-cutting commit touches the hooks directory of this
+# layout; blast.md is the blast-radius skill's bullet hand-back, with a leading blank line.
 echo 'exit 0' > "$hooks/x.sh"
 git add "$hooks/x.sh"
 git commit -qm "a hook, #7"
@@ -512,24 +523,66 @@ cat > blast.md <<'EOF'
 - **What it does.** Adds a hook that exits 0.
 - **Risks.** `factory-start` at day zero runs it before any skill is installed: `.claude/hooks/x.sh:1`.
 EOF
-bash "$skill/scripts/review-brief.sh" HEAD~1 --blast-radius blast.md > out.txt 2> err.txt
+{ cat blast.md; printf '\n## Risks\n\n1. A subagent inherits it: `.claude/hooks/x.sh:1`.\n'; } > blast-risks.md
+sed 's/^## Risks$/### Risks/' blast-risks.md > blast-risks-demoted.md
+{ cat blast-risks.md; printf '\n### Risks\n\n2. The same risk, demoted.\n'; } > blast-both.md
+{ cat blast.md; printf '\n## Risks\n'; } > blast-empty-risks.md
+{ cat blast.md; printf '\n```md\n## Risks\n\n1. inside a fence\n```\n'; } > blast-fenced.md
+# refused_risks <label> <where> [arg ...]: HEAD~1 with the args exits 1 with the ticket and round
+# lines, then the refusal naming <where>, and writes no state and no briefs.
+refused_risks() {
+  local label="$1" where="$2"; shift 2
+  rm -rf .scratch .claude/state
+  set +e
+  out="$(bash "$skill/scripts/review-brief.sh" HEAD~1 "$@" 2>&1)"
+  code=$?
+  set -e
+  if [ "$code" != 1 ] || [ "$out" != "ticket: #7
+round: 1 of 3
+review-brief: the blast-radius grounding ($where) has no Risks heading outside fenced text; put the risks under a line that is exactly \`## Risks\` in the file, \`### Risks\` in the PR body, where the grounding's headings are demoted one level so the section stays intact" ] || [ -e .claude/state/review ] || [ -e .scratch/review/HEAD_1 ]; then
+    echo "FAIL $label: exit $code, wanted 1, the refusal naming $where, no state and no briefs"
+    echo "  got: $out"
+    exit 1
+  fi
+  n=$((n + 1))
+}
+# 1A: --blast-radius FILE with `## Risks` and a numbered risk. Both briefs carry the grounding under
+# `## Blast radius` before `## Diff`; the Spec brief's Walk bullet continues with the risk sentence
+# on its own line; the Standards brief does not carry the sentence.
+bash "$skill/scripts/review-brief.sh" HEAD~1 --blast-radius blast-risks.md > out.txt 2> err.txt
 printed out.txt "ticket: #7
 round: 1 of 3
 .scratch/review/HEAD_1/standards-brief.md
-.scratch/review/HEAD_1/spec-brief.md" "cross-cutting diff with --blast-radius"
-[ ! -s err.txt ] || { echo "FAIL cross-cutting diff with --blast-radius: stderr is not empty:"; cat err.txt; exit 1; }
+.scratch/review/HEAD_1/spec-brief.md" "cross-cutting diff with --blast-radius (1A)"
+[ ! -s err.txt ] || { echo "FAIL cross-cutting diff with --blast-radius (1A): stderr is not empty:"; cat err.txt; exit 1; }
 n=$((n + 1))
 for f in "$std" "$spec"; do
-  has "$f" "## Blast radius" "$f has the blast-radius section"
-  has "$f" "$blast_rule" "$f carries the blast-radius paragraph"
-  has "$f" '- **Risks.** `factory-start` at day zero runs it before any skill is installed: `.claude/hooks/x.sh:1`.' "$f carries the grounding text"
+  has "$f" "## Blast radius" "$f has the blast-radius section (1A)"
+  has "$f" "$blast_rule" "$f carries the blast-radius paragraph (1A)"
+  has "$f" '- **Risks.** `factory-start` at day zero runs it before any skill is installed: `.claude/hooks/x.sh:1`.' "$f carries the grounding text (1A)"
+  has "$f" '1. A subagent inherits it: `.claude/hooks/x.sh:1`.' "$f carries the numbered risk (1A)"
   if [ "$(grep -n '^## Blast radius$' "$f" | cut -d: -f1)" -ge "$(grep -n '^## Diff$' "$f" | cut -d: -f1)" ]; then
-    echo "FAIL $f: the blast-radius section is not before the diff"; exit 1
+    echo "FAIL $f: the blast-radius section is not before the diff (1A)"; exit 1
   fi
   n=$((n + 1))
 done
+has "$spec" "${spec_bullets[0]} $risk_rule" "Spec: the Walk bullet continues with the risk sentence (1A)"
+lacks "$std" "$risk_rule" "Standards: no risk sentence (1A)"
+# 2A: `### Risks` in the file gives the same bullet; the source restricts no level.
+bash "$skill/scripts/review-brief.sh" HEAD~1 --blast-radius blast-risks-demoted.md > out.txt
+has "$spec" "${spec_bullets[0]} $risk_rule" "Spec: a file with ### Risks continues the Walk bullet (2A)"
+# 7A: both levels; the first unfenced one satisfies the check.
+bash "$skill/scripts/review-brief.sh" HEAD~1 --blast-radius blast-both.md > out.txt
+has "$spec" "${spec_bullets[0]} $risk_rule" "Spec: a file with ## Risks then ### Risks continues the Walk bullet (7A)"
+# 8A: a Risks heading with no numbered line under it gives the same bullet.
+bash "$skill/scripts/review-brief.sh" HEAD~1 --blast-radius blast-empty-risks.md > out.txt
+has "$spec" "${spec_bullets[0]} $risk_rule" "Spec: a Risks heading with nothing under it continues the Walk bullet (8A)"
+# 5A: the bullet hand-back, no Risks heading: refused naming the file.
+refused_risks "no Risks heading in the file (5A)" blast.md --blast-radius blast.md
+# 6A: the only Risks heading inside a fenced block: refused the same way.
+refused_risks "the only Risks heading inside a fence (6A)" blast-fenced.md --blast-radius blast-fenced.md
 
-# The same diff with no --blast-radius and no PR is refused, naming the path, before any state is written.
+# 9A: no --blast-radius and no PR is refused as before, naming the path, before any state is written.
 rm -rf .scratch .claude/state
 set +e
 out="$(bash "$skill/scripts/review-brief.sh" HEAD~1 2>&1)"
@@ -538,22 +591,29 @@ set -e
 if [ "$code" != 1 ] || [ "$out" != "ticket: #7
 round: 1 of 3
 review-brief: cross-cutting diff ($hooks/x.sh) without a blast-radius grounding; run the blast-radius skill, put the result in the PR body's Blast Radius section or pass --blast-radius FILE" ] || [ -e .claude/state/review ] || [ -e .scratch/review/HEAD_1 ]; then
-  echo "FAIL cross-cutting diff without a grounding: exit $code, wanted 1, the message, no state and no briefs"
+  echo "FAIL cross-cutting diff without a grounding (9A): exit $code, wanted 1, the message, no state and no briefs"
   echo "  got: $out"
   exit 1
 fi
 n=$((n + 1))
 
-# With a PR, the grounding is the body's `## Blast Radius` section: CRLF line ends, a fenced `## ` line
-# kept inside it, and the next heading ending it. An empty section is refused like a missing one.
-printf '## Why\r\n\r\nA hook.\r\n\r\n## Blast Radius\r\n\r\n- **Risks.** a subagent inherits it: `.claude/hooks/x.sh:1`.\r\n\r\n```sh\r\n## not a heading, part of the proof\r\n```\r\n\r\n## Verification\r\n\r\nran it\r\n' > pr-body.md
+# 3A: with a PR, the grounding is the body's `## Blast Radius` section with its headings demoted:
+# CRLF line ends, a fenced `## ` line kept inside it, `### Risks` inside it, and the next heading
+# ending it. The Spec brief's Walk bullet continues with the risk sentence; the Standards brief's does not.
+printf '## Why\r\n\r\nA hook.\r\n\r\n## Blast Radius\r\n\r\n- **Risks.** a subagent inherits it: `.claude/hooks/x.sh:1`.\r\n\r\n### Risks\r\n\r\n1. a subagent inherits it: `.claude/hooks/x.sh:1`.\r\n\r\n```sh\r\n## not a heading, part of the proof\r\n```\r\n\r\n## Verification\r\n\r\nran it\r\n' > pr-body.md
 FAKE_PR_BODY="$fx/pr-body.md" bash "$skill/scripts/review-brief.sh" HEAD~1 > out.txt
 for f in "$std" "$spec"; do
-  has "$f" '- **Risks.** a subagent inherits it: `.claude/hooks/x.sh:1`.' "$f carries the PR body's section"
-  has "$f" "## not a heading, part of the proof" "$f keeps the fenced line of the section"
-  lacks "$f" "ran it" "$f stops the section at the next heading"
-  lacks "$f" "A hook." "$f starts the section at its heading"
+  has "$f" '- **Risks.** a subagent inherits it: `.claude/hooks/x.sh:1`.' "$f carries the PR body's section (3A)"
+  has "$f" "### Risks" "$f carries the section's demoted Risks heading (3A)"
+  has "$f" "## not a heading, part of the proof" "$f keeps the fenced line of the section (3A)"
+  lacks "$f" "ran it" "$f stops the section at the next heading (3A)"
+  lacks "$f" "A hook." "$f starts the section at its heading (3A)"
 done
+has "$spec" "${spec_bullets[0]} $risk_rule" "Spec: the PR body's ### Risks continues the Walk bullet (3A)"
+lacks "$std" "$risk_rule" "Standards: no risk sentence from a PR body (3A)"
+# 4A: a body whose headings were not demoted ends its section at the first inner `## ` line. Nothing
+# before that line is the empty section, refused like a missing grounding; prose before it is
+# refused naming the body.
 printf '## Why\n\nA hook.\n\n## Blast Radius\n\n## Verification\n\nran it\n' > pr-body-empty.md
 rm -rf .scratch .claude/state
 set +e
@@ -561,21 +621,49 @@ out="$(FAKE_PR_BODY="$fx/pr-body-empty.md" bash "$skill/scripts/review-brief.sh"
 code=$?
 set -e
 if [ "$code" != 1 ] || ! printf '%s' "$out" | grep -qF "cross-cutting diff ($hooks/x.sh) without a blast-radius grounding" || [ -e .claude/state/review ]; then
-  echo "FAIL empty Blast Radius section: exit $code, wanted 1 with the refusal and no state"
+  echo "FAIL empty Blast Radius section (4A, nothing before the inner heading): exit $code, wanted 1 with the refusal and no state"
+  echo "  got: $out"
+  exit 1
+fi
+n=$((n + 1))
+printf '## Why\n\nA hook.\n\n## Blast Radius\n\n- **What it does.** Adds a hook that exits 0.\n\n## Risks\n\n1. a subagent inherits it: `.claude/hooks/x.sh:1`.\n\n## Verification\n\nran it\n' > pr-body-undemoted.md
+export FAKE_PR_BODY="$fx/pr-body-undemoted.md"
+refused_risks "undemoted headings in the PR body (4A, prose before the inner heading)" "the PR body's Blast Radius section"
+unset FAKE_PR_BODY
+# 10: --blast-radius naming no file is the usage block, before anything runs.
+rm -rf .scratch .claude/state
+set +e
+out="$(bash "$skill/scripts/review-brief.sh" HEAD~1 --blast-radius missing.md 2>&1)"
+code=$?
+set -e
+if [ "$code" != 1 ] || [ "$out" != "usage: review-brief.sh <fixed-point> [--ticket N] [--standards FILE ...] [--previous FILE] [--round N] [--blast-radius FILE]
+       review-brief.sh --paths P... --commits SHA... [--ticket N] [--standards FILE ...] [--blast-radius FILE]" ] || [ -e .claude/state/review ] || [ -e .scratch/review ]; then
+  echo "FAIL --blast-radius naming no file (10): exit $code, wanted 1, the usage block and no state"
   echo "  got: $out"
   exit 1
 fi
 n=$((n + 1))
 
-# A diff that is not cross-cutting ignores --blast-radius and says so on stderr.
+# 1B: a diff that is not cross-cutting ignores --blast-radius, says so on stderr, and neither brief
+# carries the grounding or the risk sentence.
 echo readme > README.md
 git add README.md
 git commit -qm "a readme, #7"
-bash "$skill/scripts/review-brief.sh" HEAD~1 --blast-radius blast.md > out.txt 2> err.txt
-printed err.txt "review-brief: the diff is not cross-cutting; blast.md is not pasted" "README-only diff with --blast-radius"
+bash "$skill/scripts/review-brief.sh" HEAD~1 --blast-radius blast-risks.md > out.txt 2> err.txt
+printed err.txt "review-brief: the diff is not cross-cutting; blast-risks.md is not pasted" "README-only diff with --blast-radius (1B)"
 for f in "$std" "$spec"; do
-  lacks "$f" "## Blast radius" "$f has no blast-radius section for a README-only diff"
-  lacks "$f" "Adds a hook that exits 0" "$f does not carry the ignored file"
+  lacks "$f" "## Blast radius" "$f has no blast-radius section for a README-only diff (1B)"
+  lacks "$f" "Adds a hook that exits 0" "$f does not carry the ignored file (1B)"
+  lacks "$f" "$risk_rule" "$f has no risk sentence for a README-only diff (1B)"
+done
+# 3B: the same diff with a PR whose body holds the section: the body is never fetched.
+FAKE_PR_BODY="$fx/pr-body.md" bash "$skill/scripts/review-brief.sh" HEAD~1 > out.txt 2> err.txt
+[ ! -s err.txt ] || { echo "FAIL README-only diff with a PR body (3B): stderr is not empty:"; cat err.txt; exit 1; }
+n=$((n + 1))
+for f in "$std" "$spec"; do
+  lacks "$f" "## Blast radius" "$f has no blast-radius section for a README-only diff with a PR (3B)"
+  lacks "$f" "a subagent inherits it" "$f does not carry the PR body's section (3B)"
+  lacks "$f" "$risk_rule" "$f has no risk sentence for a README-only diff with a PR (3B)"
 done
 }
 

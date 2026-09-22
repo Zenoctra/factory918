@@ -259,6 +259,26 @@ $(cat "$dir/judgment.md")
 Standards: 1 would break, 0 fail open, of 3; Spec: 1 would break, 1 fail open, of 2; judged: act on 2 (0 fixed, 0 with a ticket), ask 1, consider 0, noted 1, dismissed 1; fixed point main.
 round: 2 of 3
 act-on items: 3" "two Act on and one Ask, round 2; the walk's three lines are not items"
+# Ticket #91, criterion 3: a walk that continues with one line per blast-radius risk, numbered on
+# from the last step, is still all steps: the same counts and the same comment.
+rearm
+awk '{ print } /^3\. The state file/ { print "4. Risk: a subagent inherits the hook; the diff exits 0 there."; print "5. Risk: `factory-start` at day zero; the diff runs before any skill is installed." }' "$dir/spec-report.md" > "$dir/spec-report.risks"
+mv "$dir/spec-report.risks" "$dir/spec-report.md"
+accept "## Standards
+
+$(cat "$dir/standards-report.md")
+
+## Spec
+
+$(cat "$dir/spec-report.md")
+
+## Judgment
+
+$(cat "$dir/judgment.md")
+
+Standards: 1 would break, 0 fail open, of 3; Spec: 1 would break, 1 fail open, of 2; judged: act on 2 (0 fixed, 0 with a ticket), ask 1, consider 0, noted 1, dismissed 1; fixed point main.
+round: 2 of 3
+act-on items: 3" "the walk continued with two risk lines: the same counts (#91, criterion 3)"
 
 rearm
 echo 3 > "$dir/round"
