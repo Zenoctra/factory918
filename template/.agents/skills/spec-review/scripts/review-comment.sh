@@ -202,14 +202,13 @@ fi
 # review-brief.sh holds the same line (the same test holds the copies together).
 cap=3; [ "$round" -le 3 ] || cap=5
 # An Act on item fixed on this PR whose report item sits under `## Would break` is a hard bug on
-# the documented path, and its fix is reviewed once more: the comment carries the line
-# `would-break fixed after <sha>`, `<sha>` the commit review-brief.sh reviewed, read from
-# `<dir>/reviewed`, so the next round's brief can take the fix commits alone as its diff. The
-# heading is read the way the hole check reads it, so a review with no spec still finds it. A hole
-# outranks the line, since the restart's round one reviews the fix inside the redesign. The file
-# is read only when the line is needed and refused then without a full commit id; it is not the
-# brief that is rerun, because rerunning it after the fixes were committed would record the
-# fixing commit as the reviewed one.
+# the documented path, and its fix is reviewed once more (SKILL.md step 5): the comment carries
+# `would-break fixed after <sha>`, `<sha>` the commit review-brief.sh reviewed, from
+# `<dir>/reviewed`, so the next brief can take the fix commits alone as its diff. The heading is
+# read as the hole check reads it, so a review with no spec finds it too. A hole outranks the
+# line: the restart's round one reviews the fix inside the redesign. The file is read only when
+# the line is needed, and the refusal says to write it, not to rerun the brief, which after the
+# fix commits would record the fixing commit as the reviewed one.
 holes="$(holed "Act on" | grep -c . || true)"
 wb_first=""
 while IFS= read -r line; do

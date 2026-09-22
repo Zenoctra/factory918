@@ -13,11 +13,11 @@
 # which must be the fixed point, both briefs carry the fixed items under `## The fix under
 # review`, and a sixth round is refused; `<dir>/reviewed` records HEAD for that line. A comment
 # carrying a line that is exactly `restart` (a design hole returned to architect) ends the
-# history: the round and the
-# settled items are read from the comments after the last such comment, and a `restart:` line says
-# so. From every such comment, in order, the judgment's Noted and Dismissed items that cite a
-# decision are carried into both briefs as settled, each line once; --previous FILE supplies the
-# comments instead of gh, and --round N the round, for tests and a branch whose PR is elsewhere.
+# history: the round and the settled items are read from the comments after the last such
+# comment, and a `restart:` line says so. From every such comment, in order, the judgment's Noted
+# and Dismissed items that cite a decision are carried into both briefs as settled, each line
+# once; --previous FILE supplies the comments instead of gh, and --round N the round, for tests
+# and a branch whose PR is elsewhere.
 # A cross-cutting diff (one that touches a hooks directory, a settings.json or the factory918
 # skill) is briefed only with its blast-radius grounding: --blast-radius FILE, else the PR body's
 # `## Blast Radius` section; without one the script refuses before writing any state. The grounding
