@@ -6,7 +6,7 @@ This repository is the factory: a template and a CLI that put Manuel's agent-dri
 
 - `template/` is what `factory918 apply` copies into a project. It is the product. Edit it directly.
 - `profiles/`, `machine/`, `patches/` with `series`, and `factory918.sh`: edit directly.
-- `docs/knowledge/core/*.md` are the five core documents. Edit directly, then run `python3 tools/build_knowledge.py`.
+- `docs/knowledge/core/*.md` are the six core documents. Edit directly, then run `python3 tools/build_knowledge.py`.
 - `docs/knowledge/spec/`, `pages/`, `notes/` and `template/docs/factory918/` are generated. Edit the source and rebuild.
 - `research/` is the read-only corpus and the pinned upstreams. `factory918 sync` re-vendors from here, never from the network.
 - `tools/bootstrap/` is frozen provenance.
