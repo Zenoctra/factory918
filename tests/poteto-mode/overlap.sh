@@ -7,11 +7,12 @@
 # merge base, more open PRs than the list holds, tokens that name no path
 # or lie outside the repository, one PR shared, a deleted and a stale remote ref both fetched, a file
 # a PR creates, a stacked PR reporting only its own commits, a glob and both directory forms,
-# `## Diff` skipped, two PRs in ascending number, gos that cover and gos that do not, the base as the
-# head that contains the others, a one-off go appended under a program's line, a dead program's
-# line, a linked worktree reading the main checkout's file, --diff skipping the own PR and counting
-# only the branch's own commits, a literal token under --diff, and the mode bit. The fixture root
-# has a space, and from the third call on the script runs by the relative path the playbooks name.
+# `## Diff`, `## Testing decisions` and `## Design` skipped, two PRs in ascending number, gos that
+# cover and gos that do not, the base as the head that contains the others, a one-off go appended
+# under a program's line, a dead program's line, a linked worktree reading the main checkout's
+# file, --diff skipping the own PR and counting only the branch's own commits, a literal token
+# under --diff, and the mode bit. The fixture root has a space, and from the third call on the
+# script runs by the relative path the playbooks name.
 # Exits 1 on the first miss. The backticks in the bodies below are the ticket's token delimiters,
 # not command substitutions.
 # shellcheck disable=SC2016
@@ -142,6 +143,18 @@ export FAKE_BODY='## Diff
 
 `README.md`'
 check "17 a token under ## Diff ignored" 0 $'go: none\nbase: origin/main' 9
+export FAKE_BODY='## Testing decisions
+
+Posted by the agent 2026-09-22
+
+| Situation | A |
+|---|---|
+| 1. writes `docs/a.md` | / 0 |
+
+## Design
+
+`src/z.txt`'
+check "17 tokens under ## Testing decisions and ## Design ignored" 0 $'go: none\npaths: none\nbase: origin/main' 9
 export FAKE_BODY='Touches `docs/a.md` and `src/x/y.txt`.'
 # The fake lists PR 2 first; the output is sorted by PR number.
 check "18 two PRs in ascending number" 1 $'go: none\n#1 feat-a: docs/a.md\n#2 feat-b: src/x/y.txt' 9
