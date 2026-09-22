@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # Runs template/.agents/skills/poteto-mode/scripts/overlap.sh against a temp clone with a bare
 # origin and three open PRs (a fake gh on PATH answers `pr list` from FAKE_PRS, each PR carrying the
-# ticket it closes, `issue view` from FAKE_BODY, and fails the call FAKE_GH_FAIL names), and asserts
-# the exit code and the output of each call in the order of the scenario table in the ticket's
-# design: usage, no origin remote, a failing gh, a head with no merge base, tokens that name no path
+# ticket it closes, or with FAKE_PRS_COUNT generated PRs, `issue view` from FAKE_BODY, and fails the
+# call FAKE_GH_FAIL names), and asserts the exit code and the output of each call in the order of
+# the scenario table in the ticket's design: usage, no origin remote, a failing gh, a head with no
+# merge base, more open PRs than the list holds, tokens that name no path
 # or lie outside the repository, one PR shared, a deleted and a stale remote ref both fetched, a file
 # a PR creates, a stacked PR reporting only its own commits, a glob and both directory forms,
 # `## Diff` skipped, two PRs in ascending number, gos that cover and gos that do not, the base as the
@@ -26,7 +27,12 @@ cat > "$fx/bin/gh" <<'GH'
 prs='[{"number":2,"headRefName":"feat-b","closingIssuesReferences":[{"number":8}]},{"number":1,"headRefName":"feat-a","closingIssuesReferences":[{"number":7}]},{"number":4,"headRefName":"feat-b2","closingIssuesReferences":[{"number":10}]}]'
 case "$*" in
   "${FAKE_GH_FAIL:-none}"*) echo "gh: $FAKE_GH_FAIL failed" >&2; exit 2 ;;
-  "pr list"*) while [ "$1" != -q ]; do shift; done; printf '%s' "${FAKE_PRS:-$prs}" | exec jq -r "$2" ;;
+  "pr list"*)
+    while [ "$1" != -q ]; do shift; done
+    if [ -n "${FAKE_PRS_COUNT:-}" ]; then
+      jq -n --argjson n "$FAKE_PRS_COUNT" '[range($n) | {number: (. + 1), headRefName: "feat-\(. + 1)", closingIssuesReferences: []}]' | exec jq -r "$2"
+    fi
+    printf '%s' "${FAKE_PRS:-$prs}" | exec jq -r "$2" ;;
   "issue view"*) printf '%s\n' "$FAKE_BODY" ;;
   *) echo "fake gh: unexpected args: $*" >&2; exit 2 ;;
 esac
@@ -104,6 +110,9 @@ unset FAKE_GH_FAIL
 export FAKE_PRS='[{"number":3,"headRefName":"feat-x","closingIssuesReferences":[]}]'
 check_err "7 a head with no merge base" 2 "no merge base" 9
 unset FAKE_PRS
+export FAKE_PRS_COUNT=101
+check "7 more open PRs than the list holds" 2 "more than 100 open PRs; the check cannot list them all" 9
+unset FAKE_PRS_COUNT
 export FAKE_BODY='## What to build
 
 Edit `README.md`, then `gh issue view` on `#9`.'

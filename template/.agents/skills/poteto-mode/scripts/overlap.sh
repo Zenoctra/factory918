@@ -11,8 +11,8 @@
 # "<label>" N...` appends `<label>: #a #b ...` to the program file, its only writer; a linked
 # worktree reads the main checkout's. Exit 0 decided, 1 a path shared with a PR no go covers (a go
 # covers when some line names #N and some line names the ticket each printed PR closes; a PR that
-# closes no ticket is never covered), 2 gh or git failed and its message is on stderr, or `--diff`
-# on a detached HEAD, 64 usage.
+# closes no ticket is never covered), 2 gh or git failed and its message is on stderr, `--diff` on
+# a detached HEAD, or more than 100 open PRs, 64 usage.
 # Every PR head is fetched fresh before any diff; no origin remote means nothing is in flight.
 set -euo pipefail
 trap 'exit 2' ERR
@@ -51,9 +51,11 @@ if [ -z "$diff" ]; then
   if [ -z "$paths" ]; then printf '%s\npaths: none\nbase: origin/main\n' "$go"; exit 0; fi
 fi
 
-# One line per open PR: number, head, the tickets it closes; heads refreshed in one fetch.
-prs="$(gh pr list --state open --limit 100 --json number,headRefName,closingIssuesReferences \
+# One line per open PR: number, head, the tickets it closes; heads refreshed in one fetch. A 101st
+# line means the list is cut, and a PR the check cannot see cannot be ruled out.
+prs="$(gh pr list --state open --limit 101 --json number,headRefName,closingIssuesReferences \
   -q 'sort_by(.number)[] | "\(.number)\t\(.headRefName)\t\(.closingIssuesReferences | map("#\(.number)") | join(" "))"')"
+if [ "$(grep -c . <<< "$prs")" -gt 100 ]; then echo "more than 100 open PRs; the check cannot list them all" >&2; exit 2; fi
 specs=(+refs/heads/main:refs/remotes/origin/main)
 while IFS=$'\t' read -r num head closes; do
   [ -n "$num" ] || continue
