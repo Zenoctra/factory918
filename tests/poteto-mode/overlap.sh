@@ -152,6 +152,9 @@ rm "$prog"
 check "22 go s2" 0 "" go s2 9
 check "22 a go naming the ticket but not the PR's" 1 $'go: s2\n#1 feat-a: docs/a.md' 9
 rm "$prog"
+check "22 the one-off go names both tickets" 0 "" go "stack on #7" 9 7
+check "22 the one-off go covers the stack" 0 $'go: stack on #7\n#1 feat-a: docs/a.md\nbase: origin/feat-a' 9
+rm "$prog"
 check "23 go sweep 7 8 9" 0 "" go sweep 7 8 9
 export FAKE_BODY='Touches `docs/a.md` and `src/x/y.txt`.'
 check "23 siblings covered, the lowest number's head" 0 $'go: sweep\n#1 feat-a: docs/a.md\n#2 feat-b: src/x/y.txt\nbase: origin/feat-a' 9
