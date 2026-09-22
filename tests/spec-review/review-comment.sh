@@ -11,8 +11,12 @@
 # `restart` before `round:` and the hole is left out of the count. The text from the last `hole:`
 # on a judgment line not ending in a `fixed:` or `ticket:` field is the field: one in a review with
 # no spec, outside Act on, in no form (a reason that says `hole:` included), or differing from the
-# item's `spec:` is refused with the value shown. A refusal leaves the review state in place; an
-# accepted run clears it. Exits 1 on the first miss.
+# item's `spec:` is refused with the value shown. An Act on item marked `fixed:` whose report item
+# sits under `## Would break` puts the line `would-break fixed after <sha>` between the summary
+# line and `round:`, `<sha>` from `<dir>/reviewed`, unless a hole is marked; from round four the
+# round line reads `of 5`; the line needed with `<dir>/reviewed` missing or not a full commit id
+# is refused (ticket #93, table B, one assertion per cell). A refusal leaves the review state in
+# place; an accepted run clears it. Exits 1 on the first miss.
 set -euo pipefail
 here="$(cd "$(dirname "$0")/../.." && pwd -P)"
 # shellcheck source-path=SCRIPTDIR source=layout.sh
@@ -32,6 +36,7 @@ rearm() {
   echo main > "$dir/fixed-point"
   echo a.sh > "$state/files"
   echo "$dir" > "$state/dir"
+  echo 0123456789abcdef0123456789abcdef01234567 > "$dir/reviewed"
 }
 # reset: a fresh review with no reports and no spec brief.
 reset() {
@@ -343,7 +348,8 @@ refuse "nowhere is not a directory; pass the .scratch/review/<id> review-brief.s
 rm nowhere
 
 # At round three the Act on items are fixed on this PR and marked with the commit; a marked item
-# is not counted either. The state is gone, so the rerun names the dir.
+# is not counted either. S1 sits under `## Would break`, so the comment carries the line that owes
+# a fourth round (#93, table B, 3B). The state is gone, so the rerun names the dir.
 cat > "$dir/judgment.md" <<'EOF'
 ## Act on
 
@@ -377,6 +383,7 @@ $(cat "$dir/spec-report.md")
 $(cat "$dir/judgment.md")
 
 Standards: 1 would break, 0 fail open, of 3; Spec: 1 would break, 1 fail open, of 2; judged: act on 2 (1 fixed, 1 with a ticket), ask 1, consider 0, noted 1, dismissed 1; fixed point main.
+would-break fixed after 0123456789abcdef0123456789abcdef01234567
 round: 3 of 3
 act-on items: 1" "an Act on item fixed on this PR is not counted, round 3" "$dir"
 
@@ -615,6 +622,24 @@ for mark in 'hole: table 2/D' 'hole: table 2'; do
   printf '## Act on\n\n1. [S1] **One.** yes %s\n\n## Ask\n\n## Consider\n\n## Noted\n\n## Dismissed\n' "$mark" > "$dir/judgment.md"
   refuse "$dir/judgment.md item '1. [S1] **One.**' carries a 'hole:' field, but this review has no spec ($dir/spec-brief.md is missing): a hole names an artifact on the ticket the work was built against, and this review has none. Fix the finding on this PR, or rerun scripts/review-brief.sh <fixed-point> --ticket N and judge again" "an Act on item marked '$mark' in a review with no spec (7D)"
 done
+# #93, table B, 3F: with no spec the heading is still read, so a fixed Would-break item puts the line in the comment.
+printf '## Act on\n\n1. [S1] **One.** yes fixed: abc1234\n\n## Ask\n\n## Consider\n\n## Noted\n\n## Dismissed\n' > "$dir/judgment.md"
+accept "## Standards
+
+$(cat "$dir/standards-report.md")
+
+## Spec
+
+no spec: Standards axis only
+
+## Judgment
+
+$(cat "$dir/judgment.md")
+
+Standards: 1 would break, 0 fail open, of 1; Spec: no spec; judged: act on 1 (1 fixed, 0 with a ticket), ask 0, consider 0, noted 0, dismissed 0; fixed point main.
+would-break fixed after 0123456789abcdef0123456789abcdef01234567
+round: 1 of 3
+act-on items: 0" "a Would-break item fixed in a review with no spec carries the line (3F)"
 
 # Rows 1, 5 and 6 and the notes under the table. Two counted items rest on a cell and a signature,
 # a Fails-open item on a criterion, a Standards-breaches item carries an inert `spec:` line, and
@@ -686,8 +711,9 @@ judged " fixed: abc1234" "" "" ""
 accept "$(above)
 
 Standards: 1 would break, 0 fail open, of 2; Spec: 1 would break, 1 fail open, of 2; judged: act on 2 (1 fixed, 0 with a ticket), ask 0, consider 0, noted 2, dismissed 0; fixed point main.
+would-break fixed after 0123456789abcdef0123456789abcdef01234567
 round: 1 of 3
-act-on items: 1" "a counted item with a spec line, fixed (1B)"
+act-on items: 1" "a counted item with a spec line, fixed (1B; #93 3A: S1 is a Would-break item)"
 rearm
 judged "" " ticket: #12" "" ""
 accept "$(above)
@@ -714,12 +740,14 @@ Standards: 1 would break, 0 fail open, of 2; Spec: 1 would break, 1 fail open, o
 restart
 round: 1 of 3
 act-on items: 0" "two holes print one restart line and both are left out"
-# Only the field that ends the line is a field: a `hole:` before a trailing `fixed:` is text.
+# Only the field that ends the line is a field: a `hole:` before a trailing `fixed:` is text, and
+# the fixed Would-break item puts the line in the comment (#93, table B, 4A).
 rearm
 judged " hole: table 2/D fixed: abc1234" "" "" ""
 accept "$(above)
 
 Standards: 1 would break, 0 fail open, of 2; Spec: 1 would break, 1 fail open, of 2; judged: act on 2 (1 fixed, 0 with a ticket), ask 0, consider 0, noted 2, dismissed 0; fixed point main.
+would-break fixed after 0123456789abcdef0123456789abcdef01234567
 round: 1 of 3
 act-on items: 1" "a hole before a trailing fixed field counts as fixed"
 rearm
@@ -764,6 +792,162 @@ breach " hole: criterion 2"
 refuse "$dir/judgment.md item '3. [S2] **Bare number.**' is marked 'hole: criterion 2' but [S2] carries no 'spec:' line: it is under '## Standards breaches' in $dir/standards-report.md, not a counted item" "a well-formed hole on a Standards-breaches item (5F)"
 judged "" "" " hole: table 9/Z" ""
 refuse "$dir/judgment.md item '3. [S2] **Bare number.**' carries a 'hole:' field under '## Noted', 'hole: table 9/Z'; 'hole:' marks an Act on item, as 'fixed:' and 'ticket:' do: move the item, or reword a reason that says 'hole:'" "a hole on a Standards-breaches item under Noted (5G)"
+
+# Ticket #93, table B, over the same fixture: S1 and P1 are the Would-break items, S2 a Standards
+# breach, P2 a Fails-open item. An Act on item marked `fixed:` whose report item sits under
+# `## Would break` puts `would-break fixed after <sha>` between the summary line and `round:`,
+# `<sha>` the content of `<dir>/reviewed`, once whatever the number of such items and never
+# beside `restart`; from round four the round line reads `of 5`; the reviewed file is read only
+# when the line is needed and refused then when missing or not a full commit id. Each assertion
+# names its cell, row then column.
+wb="would-break fixed after 0123456789abcdef0123456789abcdef01234567"
+# fails <P2 tail>: the judgment with S1, P1 and P2 under Act on, S2 under Noted.
+fails() {
+  printf '## Act on\n\n1. [S1] **Hook exits 0 on a miss.** The test proves it.\n2. [P1] **Sweep form ignores --ticket.** The commit list is empty there.\n3. [P2] **Token in the log.** Data retention is settled.%s\n\n## Ask\n\n## Consider\n\n## Noted\n\n4. [S2] **Bare number.** The constant is named two lines up.\n\n## Dismissed\n' "$1" > "$dir/judgment.md"
+}
+# Row 1: no fixed item; the cap follows the round and the reviewed file is not read.
+rearm
+echo 4 > "$dir/round"
+judged "" "" "" ""
+accept "$(above)
+
+Standards: 1 would break, 0 fail open, of 2; Spec: 1 would break, 1 fail open, of 2; judged: act on 2 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 2, dismissed 0; fixed point main.
+round: 4 of 5
+act-on items: 2" "no fixed item at round 4 (1C)"
+rearm
+echo 5 > "$dir/round"
+accept "$(above)
+
+Standards: 1 would break, 0 fail open, of 2; Spec: 1 would break, 1 fail open, of 2; judged: act on 2 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 2, dismissed 0; fixed point main.
+round: 5 of 5
+act-on items: 2" "no fixed item at round 5 (1D)"
+# Row 2: every fixed item under a heading other than Would break: no line, the round may be the last.
+rearm
+echo 3 > "$dir/round"
+fails " fixed: abc1234"
+accept "$(above)
+
+Standards: 1 would break, 0 fail open, of 2; Spec: 1 would break, 1 fail open, of 2; judged: act on 3 (1 fixed, 0 with a ticket), ask 0, consider 0, noted 1, dismissed 0; fixed point main.
+round: 3 of 3
+act-on items: 2" "a Fails-open item fixed at round 3: no line (2B)"
+rearm
+echo 4 > "$dir/round"
+accept "$(above)
+
+Standards: 1 would break, 0 fail open, of 2; Spec: 1 would break, 1 fail open, of 2; judged: act on 3 (1 fixed, 0 with a ticket), ask 0, consider 0, noted 1, dismissed 0; fixed point main.
+round: 4 of 5
+act-on items: 2" "a Fails-open item fixed at round 4: no line (2C)"
+rearm
+echo 3 > "$dir/round"
+breach " fixed: abc1234"
+accept "$(above)
+
+Standards: 1 would break, 0 fail open, of 2; Spec: 1 would break, 1 fail open, of 2; judged: act on 3 (1 fixed, 0 with a ticket), ask 0, consider 0, noted 1, dismissed 0; fixed point main.
+round: 3 of 3
+act-on items: 2" "a Standards-breaches item fixed at round 3: no line (2B)"
+# Row 3: a fixed item under Would break in either report carries the line; a rerun from the dir
+# prints it again; at rounds four and five the cap is 5.
+rearm
+judged " fixed: abc1234" "" "" ""
+accept "$(above)
+
+Standards: 1 would break, 0 fail open, of 2; Spec: 1 would break, 1 fail open, of 2; judged: act on 2 (1 fixed, 0 with a ticket), ask 0, consider 0, noted 2, dismissed 0; fixed point main.
+$wb
+round: 3 of 3
+act-on items: 1" "a Standards Would-break item fixed at round 3 (3B)"
+accept "$out" "the same comment rebuilt from the dir, the line included (3B)" "$dir"
+rearm
+judged "" " fixed: abc1234" "" ""
+accept "$(above)
+
+Standards: 1 would break, 0 fail open, of 2; Spec: 1 would break, 1 fail open, of 2; judged: act on 2 (1 fixed, 0 with a ticket), ask 0, consider 0, noted 2, dismissed 0; fixed point main.
+$wb
+round: 3 of 3
+act-on items: 1" "a Spec Would-break item fixed at round 3 (3B)"
+rearm
+echo 4 > "$dir/round"
+judged " fixed: abc1234" "" "" ""
+accept "$(above)
+
+Standards: 1 would break, 0 fail open, of 2; Spec: 1 would break, 1 fail open, of 2; judged: act on 2 (1 fixed, 0 with a ticket), ask 0, consider 0, noted 2, dismissed 0; fixed point main.
+$wb
+round: 4 of 5
+act-on items: 1" "a Would-break item fixed at round 4 (3C)"
+rearm
+echo 5 > "$dir/round"
+accept "$(above)
+
+Standards: 1 would break, 0 fail open, of 2; Spec: 1 would break, 1 fail open, of 2; judged: act on 2 (1 fixed, 0 with a ticket), ask 0, consider 0, noted 2, dismissed 0; fixed point main.
+$wb
+round: 5 of 5
+act-on items: 1" "a Would-break item fixed at round 5 (3D)"
+# 3E: the line is needed and the reviewed file is missing, short, not hex or empty: refused with
+# the content as written, the state kept.
+rearm
+rm "$dir/reviewed"
+refuse "$dir/reviewed is missing or holds no full commit id (''); '1. [S1] **Hook exits 0 on a miss.**' under '## Would break' is marked 'fixed:', and the next round reviews that fix from the commit this round reviewed: write its 40-character id to $dir/reviewed (git rev-parse of the first commit in $dir/log) and rerun" "a Would-break fix with no reviewed file (3E)"
+for content in abc1234 three; do
+  echo "$content" > "$dir/reviewed"
+  refuse "$dir/reviewed is missing or holds no full commit id ('$content'); '1. [S1] **Hook exits 0 on a miss.**' under '## Would break' is marked 'fixed:', and the next round reviews that fix from the commit this round reviewed: write its 40-character id to $dir/reviewed (git rev-parse of the first commit in $dir/log) and rerun" "a Would-break fix with the reviewed file holding '$content' (3E)"
+done
+: > "$dir/reviewed"
+refuse "$dir/reviewed is missing or holds no full commit id (''); '1. [S1] **Hook exits 0 on a miss.**' under '## Would break' is marked 'fixed:', and the next round reviews that fix from the commit this round reviewed: write its 40-character id to $dir/reviewed (git rev-parse of the first commit in $dir/log) and rerun" "a Would-break fix with an empty reviewed file (3E)"
+# Row 5: a hole beside a Would-break fix: restart wins, no line, the reviewed file not read.
+rearm
+echo 3 > "$dir/round"
+judged " hole: table 2/D" " fixed: abc1234" "" ""
+accept "$(above)
+
+Standards: 1 would break, 0 fail open, of 2; Spec: 1 would break, 1 fail open, of 2; judged: act on 2 (1 fixed, 0 with a ticket), ask 0, consider 0, noted 2, dismissed 0; fixed point main.
+restart
+round: 3 of 3
+act-on items: 0" "a hole and a Would-break fix: restart, no line (5B)"
+rearm
+rm "$dir/reviewed"
+accept "$(above)
+
+Standards: 1 would break, 0 fail open, of 2; Spec: 1 would break, 1 fail open, of 2; judged: act on 2 (1 fixed, 0 with a ticket), ask 0, consider 0, noted 2, dismissed 0; fixed point main.
+restart
+round: 3 of 3
+act-on items: 0" "a hole and a Would-break fix with no reviewed file: the file is not read (5E)"
+# Row 6: a Would-break item filed as a ticket is not a fix.
+rearm
+judged "" " ticket: #12" "" ""
+accept "$(above)
+
+Standards: 1 would break, 0 fail open, of 2; Spec: 1 would break, 1 fail open, of 2; judged: act on 2 (0 fixed, 1 with a ticket), ask 0, consider 0, noted 2, dismissed 0; fixed point main.
+round: 3 of 3
+act-on items: 1" "a Would-break item ticketed at round 3: no line (6B)"
+# Row 7: two Would-break fixes, one in each report: one line.
+rearm
+judged " fixed: abc1234" " fixed: def5678" "" ""
+accept "$(above)
+
+Standards: 1 would break, 0 fail open, of 2; Spec: 1 would break, 1 fail open, of 2; judged: act on 2 (2 fixed, 0 with a ticket), ask 0, consider 0, noted 2, dismissed 0; fixed point main.
+$wb
+round: 3 of 3
+act-on items: 0" "two Would-break fixes print one line (7B)"
+# Row 8: a `## Walk` line carrying `fixed:` is not an item: no line, the counts unchanged.
+rearm
+rm "$dir/round"
+awk '{ print } /^2\. `--ticket N`/ { print "3. The fix lane commits. fixed: abc1234" }' "$dir/spec-report.md" > "$dir/spec-report.walk"
+mv "$dir/spec-report.walk" "$dir/spec-report.md"
+judged "" "" "" ""
+accept "$(above)
+
+Standards: 1 would break, 0 fail open, of 2; Spec: 1 would break, 1 fail open, of 2; judged: act on 2 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 2, dismissed 0; fixed point main.
+round: 1 of 3
+act-on items: 2" "a walk line carrying fixed: is invisible (8)"
+# Row 9: the sweep form carries the line too, the reviewed file holding the checked-out HEAD at brief time.
+rearm
+echo paths > "$dir/fixed-point"
+judged " fixed: abc1234" "" "" ""
+accept "$(above)
+
+Standards: 1 would break, 0 fail open, of 2; Spec: 1 would break, 1 fail open, of 2; judged: act on 2 (1 fixed, 0 with a ticket), ask 0, consider 0, noted 2, dismissed 0; fixed point paths.
+$wb
+round: 1 of 3
+act-on items: 1" "a Would-break fix in the sweep form (9)"
 }
 
 suite project
