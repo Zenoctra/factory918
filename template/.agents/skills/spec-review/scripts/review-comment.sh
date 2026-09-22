@@ -166,8 +166,8 @@ fi
 ending='(fixed: [0-9a-f]{7,40}|ticket: #[0-9]+)$'
 # holed [heading]: the judgment items under the heading, or under every heading, whose line carries a `hole:` field.
 holed() { items "$dir/judgment.md" "${1:-}" | grep -vE "$ending" | grep 'hole:' || true; }
-# value <item line>: the field's text after `hole:`, the space after it stripped, for a refusal.
-value() { local v="${1##*hole:}"; printf '%s' "${v# }"; }
+# value <item line>: the text after the last `hole:`, as written, so a refusal shows a missing space.
+value() { printf '%s' "${1##*hole:}"; }
 # A review with no spec has no artifact a hole could amend, so any `hole:` field is refused first.
 if [ -z "$has_spec" ]; then
   line="$(holed | head -1)"
@@ -175,10 +175,10 @@ if [ -z "$has_spec" ]; then
 fi
 for h in Ask Consider Noted Dismissed; do
   line="$(holed "$h" | head -1)"
-  [ -z "$line" ] || fail "$dir/judgment.md item '$(title "$line")' carries a 'hole:' field under '## $h', 'hole: $(value "$line")'; 'hole:' marks an Act on item, as 'fixed:' and 'ticket:' do: move the item, or reword a reason that says 'hole:'"
+  [ -z "$line" ] || fail "$dir/judgment.md item '$(title "$line")' carries a 'hole:' field under '## $h', 'hole:$(value "$line")'; 'hole:' marks an Act on item, as 'fixed:' and 'ticket:' do: move the item, or reword a reason that says 'hole:'"
 done
 line="$(holed "Act on" | grep -vE "hole: $ref\$" | head -1 || true)"
-[ -z "$line" ] || fail "$dir/judgment.md item '$(title "$line")' has a 'hole:' field that fits no form, 'hole: $(value "$line")' (the text from 'hole:' to the end of the line is the field); a mark ends the line as 'hole: table <row>/<column>', 'hole: design <signature>' or 'hole: criterion <k>', and a reason that says 'hole:' is reworded"
+[ -z "$line" ] || fail "$dir/judgment.md item '$(title "$line")' has a 'hole:' field that fits no form, 'hole:$(value "$line")' (the text from 'hole:' to the end of the line is the field); a mark ends the line as 'hole: table <row>/<column>', 'hole: design <signature>' or 'hole: criterion <k>', and a reason that says 'hole:' is reworded"
 while IFS= read -r line; do
   [ -n "$line" ] || continue
   mark="$(printf '%s' "$line" | sed -E "s#.*hole: ($ref)\$#\1#")"
