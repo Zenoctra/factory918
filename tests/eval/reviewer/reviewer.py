@@ -603,7 +603,7 @@ def rows_for(descriptor: str, scores: Mapping[RunId, Score], receipts: Mapping[R
                 found = s.hits - gone - earlier
                 new.append(len(found))
                 cum.append(len(earlier | found))
-                dem.append(len(s.demoted - gone))
+                dem.append(len(s.demoted - gone - earlier))
                 oth.append(s.other)
                 failures += s.failure is not None
                 rc = receipts[runs[-1]]

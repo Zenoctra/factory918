@@ -562,6 +562,14 @@ assert rows[("M", 2)].new == 1 and rows[("M", 2)].demoted == 0
 assert rows[("M", 3)].new == 1 and rows[("M", 3)].cumulative == 3 and rows[("M", 3)].other == 2
 assert rows[("S", 2)].new == 0 and rows[("S", 3)].chains == 0 and rows[("S", 3)].new is None
 assert rows[("I", 1)].output == 100 and rows[("I", 1)].wall_s == 2'
+pycheck "rule: a bug an earlier pass of the chain hard-found is not demoted" '
+def S(step, hits, demoted=()):
+    return r.Score(r.RunId("d", B, step), None, frozenset(hits), frozenset(demoted), 0)
+def R(step):
+    return r.Receipt(r.RunId("d", B, step), "complete", "complete", "m", "high", None, None, None)
+scores = {s.run: s for s in [S("1", {"G1"}), S("S2", set(), {"G1", "G2"})]}
+rows = {(x.arm, x.pass_): x for x in r.rows_for("d", scores, {k: R(k.step) for k in scores}, {}, [])}
+assert rows[("S", 2)].demoted == 1, rows[("S", 2)]'
 pycheck "rule: the prompt refuses a banned word in the work path" '
 from pathlib import Path, PurePosixPath
 brief = r.Brief(B, "0" * 40, Path("."), PurePosixPath(".scratch/review/x/standards-report.md"))
