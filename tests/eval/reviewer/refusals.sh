@@ -17,7 +17,7 @@ C=claude:opus-5
 F=claude:fable-5.1
 g() { git -C "$tmp/repo" -c user.name=t -c user.email=t@example.com "$@"; }
 
-git init -q "$tmp/repo"
+git init -q -b main "$tmp/repo"
 mkdir -p "$tmp/repo/template/.agents/skills"
 cp -R "$here/template/.agents/skills/spec-review" "$tmp/repo/template/.agents/skills/"
 printf 'one\ntwo\nthree\n' > "$tmp/repo/a.txt"
