@@ -244,6 +244,7 @@ has "$source_skill/SKILL.md" "$risk_rule" "SKILL.md step 4 carries the risk sent
 lacks "$source_skill/SKILL.md" "## Latent" "SKILL.md has no Latent heading"
 has "$source_skill/SKILL.md" "$edge_rule" "SKILL.md step 4 carries the edge line"
 has "$source_skill/SKILL.md" "$read_rule" "SKILL.md step 4 carries the reading sentence"
+has "$source_skill/SKILL.md" 'A ticket body that holds a line of two or more `#` whose text holds `writer` and, after it, `flag` (in any case, fenced, quoted or after a list marker) and from which no flag is read is refused the same way, naming each such line' "SKILL.md step 1 says which heading lines #139's guard counts"
 for w in "all nits" "more than five Act on items" "under 400 words" "runs nothing"; do
   lacks "$source_skill/SKILL.md" "$w" "SKILL.md sets no count, cap or reading limit"
 done
