@@ -547,6 +547,9 @@ pycheck "bash: wget inside a command substitution is flagged" 'assert "runs wget
 pycheck "bash: git by full path is flagged" 'assert "runs git" in r.bash_reaches(f"/usr/bin/git -C {X} log", X)'
 pycheck "bash: a .. component is flagged" 'assert "has a .. path component" in r.bash_reaches(f"cat {X}/../other/a", X)'
 pycheck "bash: cd .. is flagged" 'assert "has a .. path component" in r.bash_reaches(f"cd {X} && cd .. && ls", X)'
+pycheck "bash: .. before a shell separator is flagged" '
+for tail in ["cd ..; ls", "cd ..&& ls", "cd ..|| ls", "cd ..| cat", "(cd ..)", "ls ..> f", "wc -l ..< f"]:
+    assert "has a .. path component" in r.bash_reaches(f"cd {X} && {tail}", X), tail'
 pycheck "bash: an absolute path outside is flagged" 'assert "names /etc/hosts" in r.bash_reaches(f"cat {X}/a /etc/hosts", X)'
 pycheck "bash: a ~ path is flagged" 'assert "names ~/.ssh/config" in r.bash_reaches(f"cat {X}/a ~/.ssh/config", X)'
 pycheck "bash: a sibling export is flagged" '

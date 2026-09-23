@@ -487,7 +487,7 @@ def bash_reaches(command: str, root: str) -> list[str]:
     for w in words:
         if os.path.basename(w) in COMMAND_WORDS:
             why.append(f"runs {os.path.basename(w)}")
-    if re.search(r"(^|[\s/'\"=])\.\.(/|[\s'\"]|$)", command):
+    if re.search(r"(^|[\s/'\"=])\.\.(/|[\s'\";&|)<>]|$)", command):
         why.append("has a .. path component")
     inside = re.compile(re.escape(root) + r"(?=$|[/\s'\"`;|&()<>])[^\s'\"`;|&()<>]*")
     rest = inside.sub(" ", command)
