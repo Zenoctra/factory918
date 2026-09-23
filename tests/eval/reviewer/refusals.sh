@@ -142,6 +142,9 @@ elif cmd == "finish":
         lines.append(synthetic("You've hit your session limit · resets 1:40pm (America/Chicago)"))
     elif state == "late":
         lines.append(synthetic("API Error: 500 Internal server error", isApiErrorMessage=True))
+    elif state == "plain":
+        lines.append(synthetic("x"))
+        lines[-1]["message"]["content"] = "API Error: 500 Internal server error"
     elif state == "dead":
         lines = [lines[0], synthetic("API Error: 500 Internal server error. " + "x" * 200, isApiErrorMessage=True)]
     elif state in ("finished", "textnull"):
@@ -448,6 +451,12 @@ REVIEWER_SETTLE_SECONDS=0 run collect
 check "no response: a lane that answered once and then died is a dropout" is "$(h field "$(rundir "$C" standards 1)/receipt.json" detail)" "no-response: API Error: 500 Internal server error"
 run next "$C" --limit 1
 check "no response: it is prepared again, not stopped" is "$(h get "$out" run)" "$(rundir "$C" standards 1)"
+
+fresh plain
+run next "$C" --limit 1
+finish "$out" none claude-opus-5 plain
+REVIEWER_SETTLE_SECONDS=0 run collect
+check "settle: a synthetic last line whose content is a plain string settles" is "$(h field "$(rundir "$C" standards 1)/receipt.json" detail)" "no-response: API Error: 500 Internal server error"
 
 fresh late-drift
 run next "$C" --limit 2

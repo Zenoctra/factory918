@@ -937,7 +937,8 @@ def finished(lines: list[dict], path: Path, settle_s: float) -> bool:
     # A run can end on a text-only line the harness never stamped with a stop reason, so read a
     # transcript that has stopped growing as done.
     content = message.get("content")
-    blocks = content if isinstance(content, list) else []
+    # A plain-string content is text, as assistant_text reads it.
+    blocks = content if isinstance(content, list) else [{"type": "text"}] if isinstance(content, str) else []
     if not blocks or any(not isinstance(c, dict) or c.get("type") != "text" for c in blocks):
         return False
     return time.time() - path.stat().st_mtime >= settle_s
