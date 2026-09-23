@@ -386,6 +386,18 @@ run next "$C" --limit 1
 finish "$out" "$tmp/rep/hit.md" claude-opus-5-5
 run collect
 check "model: a wrong served model refuses" has "$err" "was served claude-opus-5-5"
+fresh stopped
+run next "$C" --limit 2
+finish "$(sed -n 1p <<<"$out")" "$tmp/rep/nocount.md"
+finish "$(sed -n 2p <<<"$out")" "$tmp/rep/hit.md"
+run collect
+run next "$C"
+check "stopped: a pass 1 whose report fails to parse stops its chain" starts "$out" "stopped $(rundir "$C" standards 1): no-count-line"
+check "stopped: none of the steps that need it is prepared" lacks "$(grep '^{' <<<"$out" || true)" "/standards/"
+check "stopped: the other axis goes on" has "$out" "/spec/S2\""
+run table
+check "stopped: the table's chains count shows it" is "$(cell chains S 1):$(cell "context failures" S 1)" "2:1"
+
 fresh refused-one
 run next "$C" --limit 2
 finish "$(sed -n 1p <<<"$out")" "$tmp/rep/hit.md" claude-opus-5-5

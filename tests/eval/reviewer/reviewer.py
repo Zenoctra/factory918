@@ -20,7 +20,9 @@ patch from its commits the same way.
     python3 tests/eval/reviewer/reviewer.py next <descriptor>... [--resume <descriptor>]... [--limit N]
         Print up to N (8) launch lines and prepare what it prints: first the prepared runs no
         transcript names yet, then new runs, pass 1 across every brief before pass 2 before pass 3.
-        A step is prepared once its prerequisites are collected complete; a contaminated run, or
+        A step is prepared once its prerequisites are collected complete with a report that parses;
+        a prerequisite whose report fails to parse stops its chain (`stopped <run dir>: <failure>`).
+        A contaminated run, or
         one no model answered (a `no-response` dropout, as on an API error), is moved aside and
         prepared again, until its third such attempt gives it up: `next` prints `given up` for it
         and prepares neither it nor the steps that need it. A model with a usage-limit receipt is
@@ -1025,6 +1027,10 @@ def cmd_next(fx: Fixtures, env: Env, descriptors: list[str], limit: int, resume:
     # The account's quota ran out for a held model: nothing more launches for it until the reset.
     states = {run: st for run, st in states.items() if run.descriptor not in held}
     complete = {run for run, st in states.items() if st == "collected" and receipt_at(run.dir(out)).status == "complete"}
+    # A prerequisite also needs a report that parses: S and M passes are built from its items.
+    needed = {s for spec in STEPS.values() for s in spec.needs}
+    stopped = {run: f for run in complete if run.step in needed and (f := rescore(run, fx, out).failure)}
+    complete -= stopped.keys()
     prepared = {run: prepared_at(run.dir(out)) for run, st in states.items() if st == "prepared"}
     transcripts = locate(prepared, env.transcripts, out) if prepared else {}
     lines = [launch_line(p, fx.briefs[run.brief], out) for run, p in prepared.items() if transcripts[run] is None]
@@ -1040,6 +1046,8 @@ def cmd_next(fx: Fixtures, env: Env, descriptors: list[str], limit: int, resume:
         lines.append(launch_line(p, brief, out))
     for d, how in given_up:
         print(f"given up {d}: {how} {GIVE_UP} times")
+    for run, failure in sorted(stopped.items(), key=lambda kv: str(kv[0].dir(out))):
+        print(f"stopped {run.dir(out)}: {failure}")
     for desc, at in held.items():
         print(f"paused {desc}: usage limit at {datetime.fromtimestamp(at).isoformat(timespec='minutes')}; "
               f"after the reset run: python3 tests/eval/reviewer/reviewer.py next --resume {desc}")
