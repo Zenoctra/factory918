@@ -35,7 +35,7 @@ Use your configured architect runners (defaults `claude:fable@max`, `codex:gpt-5
 
 Design it twice. Require at least two structurally distinct candidates before synthesis, even when the first looks sufficient, unless the caller's tier asks for one runner (below). This is the **exhaust-the-design-space** principle skill made concrete. Whole-shape alternatives, not point fixes inside one shape.
 
-A caller whose tier asks for one runner (Factory918's `eco`, Ticket step 0) keeps the cross-judge and briefs it to read that one candidate adversarially against the rubric and the grounding and to return its defects, not a base; the defects stand in for the second candidate.
+A caller whose tier asks for one runner (Factory918's `eco`, Ticket step 0) keeps the cross-judge and briefs it to read that one candidate adversarially against the rubric and the grounding and to return its findings, not a base; the findings stand in for the second candidate.
 
 Screen every candidate against [`references/design-red-flags.md`](references/design-red-flags.md) before synthesis. Reject or revise shallow modules, information leakage, temporal decomposition, and pass-through methods.
 
