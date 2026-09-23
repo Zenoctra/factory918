@@ -133,6 +133,10 @@ elif cmd == "finish":
     brief = re.match(r"Read `([^`]*)`", prompt).group(1)
     if report != "none":
         shutil.copyfile(report, brief.replace("-brief.md", "-report.md"))
+    tool, sep, target = read.partition("|")
+    if not sep:
+        tool, target = "Read", read or brief
+    tool_input = {"file_path": target} if tool in ("Read", "Write", "Edit") else {"path": target} if target else {}
 
     def at(s):
         return f"2026-09-22T10:00:0{s}.000Z"
@@ -144,7 +148,7 @@ elif cmd == "finish":
         {"type": "user", "message": {"role": "user", "content": prompt}, "timestamp": at(0)},
         {"type": "assistant", "requestId": "r1", "timestamp": at(1), "message": {
             "model": model, "stop_reason": "tool_use", "usage": usage(10, 100, 5, 20),
-            "content": [{"type": "tool_use", "name": "Read", "input": {"file_path": read or brief}}]}},
+            "content": [{"type": "tool_use", "name": tool, "input": tool_input}]}},
         {"type": "user", "message": {"role": "user", "content": [{"type": "tool_result", "content": "ok"}]}, "timestamp": at(2)},
     ]
     if state == "finished":
@@ -473,6 +477,20 @@ run run "$X" r1/spec 1
 run table
 check "19 table: excluded from scores" lacks "$(scores)" "$C"
 check "19 table: counted contaminated" is "$(contaminated_cell "| $C | standards |")" 1
+i=0
+for reach in 'Grep|' 'Glob|' 'Grep|/etc' 'Glob|/etc'; do
+  i=$((i + 1))
+  tool="${reach%%|*}"
+  path="${reach#*|}"
+  fresh "r19$i"
+  run run "$C" r1/standards 1
+  finish "$out" "$tmp/rep/hit.md" claude-opus-5 finished "$reach"
+  run collect
+  check "19 collect: $tool ${path:-with no path} is contaminated" \
+    is "$(h field "$(rundir "$C" standards 1)/receipt.json" status)" contaminated
+  check "19 collect: $tool ${path:-with no path} named in detail" \
+    has "$(h field "$(rundir "$C" standards 1)/receipt.json" detail)" "$tool ${path:-with no path}"
+done
 
 # Row 20
 fresh r20
@@ -540,6 +558,28 @@ pycheck "rule: one item claims one label, the one with more anchors" '
 labels = (L("S1", "glob", "exits"), L("S2", "glob", "exits", "unmatched"))
 s = r.score(RUN, r.parse_report(report(["An unmatched glob; the gate exits 0."])), labels)
 assert s.hits == frozenset({"S2"}) and s.unlabeled == 0, s'
+pycheck "rule: a numbered line inside a fence is not an item" '
+items = r.parse_report(report(["An unmatched glob is dropped. The gate exits 0 anyway.\n\n~~~\n6. A quoted criterion.\n~~~"]))
+assert [(i.n, i.hard) for i in items] == [(1, True)], items
+assert "6. a quoted criterion." in items[0].text, items[0].text
+s = r.score(RUN, items, (L("S1", "unmatched glob", "exits? 0"),))
+assert s.hits == frozenset({"S1"}) and s.unlabeled == 0, s'
+pycheck "rule: a heading inside a fence does not change the heading" '
+items = r.parse_report(report(["An unmatched glob exits 0.\n\n~~~\n## Standards breaches\n~~~", "A missing ticket line."]))
+assert [(i.n, i.hard) for i in items] == [(1, True), (2, True)], items'
+pycheck "rule: the pr94-r1 standards report parses to the items its headings number" '
+import pathlib
+text = (pathlib.Path(sys.argv[1]).parent / "rounds/pr94-r1/review/standards-report.historical.md").read_text()
+items = r.parse_report(text)
+assert [(i.n, i.hard) for i in items] == [(1, True), (2, False), (3, False), (4, False), (5, False)], items
+s = r.score(RUN, items, (L("S1", "body-file", "drops what to build"),))
+assert s.hits == frozenset({"S1"}) and s.unlabeled == 0, s'
+pycheck "rule: ## Walk steps are not items and claim no label" '
+text = "## Walk\n\n1. An unmatched glob exits 0.\n2. A second step.\n\n## Would break\n\n1. A missing ticket line.\n\n## Fails open\n\nhard findings: 1\n"
+items = r.parse_report(text)
+assert [(i.n, i.hard) for i in items] == [(1, True)], items
+s = r.score(RUN, items, (L("S1", "unmatched glob", "exits? 0"),))
+assert s.hits == frozenset() and s.demoted == frozenset() and s.unlabeled == 1, s'
 pycheck "rule: a label matched only outside the hard headings is demoted" '
 s = r.score(RUN, r.parse_report(report(soft=["An unmatched glob; the gate exits 0."])), (L("S1", "unmatched glob", "exits? 0"),))
 assert s.hits == frozenset() and s.demoted == frozenset({"S1"}) and s.unlabeled == 0, s'
