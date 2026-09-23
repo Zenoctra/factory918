@@ -47,6 +47,7 @@ HARD_HEADINGS = ("Would break", "Fails open")
 EFFORT: Mapping[Axis, str] = {"standards": "medium", "spec": "high"}
 COUNT_LINE = re.compile(r"hard findings: ([0-9]+)")
 ITEM_LINE = re.compile(r"(\d+)\. ")
+FENCE_LINE = re.compile(r"\s*(`{3,}|~{3,})")
 
 
 @dataclass(frozen=True, order=True)
@@ -286,19 +287,28 @@ def parse_report(text: str | None) -> list[Item] | Failure:
     items: list[Item] = []
     heading = None
     current: tuple[int, bool, list[str]] | None = None
+    fence: str | None = None
 
     def close() -> None:
         if current:
             items.append(Item(current[0], current[1], normalize(" ".join(current[2]))))
 
     for line in lines:
-        if line.startswith("## "):
+        # A reviewer quotes numbered criteria and headings inside fences; they are not findings.
+        marker = FENCE_LINE.match(line)
+        fenced = fence is not None or marker is not None
+        if marker:
+            if fence is None:
+                fence = marker.group(1)[:3]
+            elif marker.group(1).startswith(fence):
+                fence = None
+        if not fenced and line.startswith("## "):
             close()
             current, heading = None, line[3:].strip()
             continue
         m = ITEM_LINE.match(line)
         # `## Walk` lines are numbered steps, not findings.
-        if m and heading != "Walk":
+        if m and not fenced and heading != "Walk":
             close()
             current = (int(m.group(1)), heading in HARD_HEADINGS, [line[m.end():]])
         elif current and not COUNT_LINE.fullmatch(line.rstrip()):
