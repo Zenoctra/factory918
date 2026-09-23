@@ -2,19 +2,21 @@
 """Run the reviewer measurement of ticket #138: three arms of three passes on six briefs, per model.
 
 A run is (model, brief, step). Pass 1 is shared; arm I repeats the brief unchanged, arm S lists the
-earlier passes' hard items as settled, arm M runs on the head with the fixes of the ground-truth
-bugs the earlier passes found folded in. STEPS holds each step's arm, pass and prerequisites.
+earlier passes' hard items as settled, arm M runs on the head with the fix patches of the
+ground-truth bugs the earlier passes found folded in. STEPS holds each step's arm, pass and
+prerequisites.
 
-On a fresh clone, first fetch the reviewed heads and fix commits; they are not on any branch:
+On a fresh clone, first fetch the reviewed heads; they are not on any branch:
 
-    git fetch origin 'refs/keep/103/*:refs/keep/103/*' 'refs/keep/138/*:refs/keep/138/*'
+    git fetch origin 'refs/keep/103/*:refs/keep/103/*'
 
 `bash tests/eval/reviewer/rebuild.sh <round>` rebuilds a round's briefs from its inputs/ and
-compares them byte for byte with review/.
+compares them byte for byte with review/; `bash tests/eval/reviewer/fixes.sh` rebuilds every fix
+patch from its commits the same way.
 
     python3 tests/eval/reviewer/reviewer.py check
-        Validate the rounds, the truth file and the agent definitions, and prove that every set of
-        fix commits a masked pass can need applies to its head and briefs.
+        Validate the rounds, the fix patches, the truth file and the agent definitions, and prove
+        that every set of patches a masked pass can need applies to its head and briefs.
     python3 tests/eval/reviewer/reviewer.py next <descriptor>... [--limit N]
         Print up to N (8) launch lines and prepare what it prints: first the prepared runs no
         transcript names yet, then new runs, pass 1 across every brief before pass 2 before pass 3.
@@ -60,7 +62,7 @@ AXES: tuple[Axis, ...] = ("standards", "spec")
 BANNED = ("eval", "test", "judge", "score", "benchmark", "candidate", "rubric", "experiment",
           "compare", "arena")
 HARD_HEADINGS = ("Would break", "Fails open")
-FETCH_KEEP_REFS = "git fetch origin 'refs/keep/103/*:refs/keep/103/*' 'refs/keep/138/*:refs/keep/138/*'"
+FETCH_KEEP_REFS = "git fetch origin 'refs/keep/103/*:refs/keep/103/*'"
 EFFORT = "high"
 COUNT_LINE = re.compile(r"hard findings: ([0-9]+)")
 ITEM_LINE = re.compile(r"(\d+)\. ")
@@ -95,7 +97,7 @@ class Brief:
 
 @dataclass(frozen=True)
 class Bug:
-    """One real bug in a round's head, from either axis; `fix` folds it away for the masked arm."""
+    """One real bug in a round's head, from either axis; its `fix` patches remove it for the masked arm."""
     round: str
     id: str
     anchors: tuple[re.Pattern[str], ...]
@@ -234,7 +236,7 @@ class Refusal(Exception):
 
 
 class Conflict(Refusal):
-    """A set of fix commits that does not apply to its round's head."""
+    """A set of patches that does not apply to its round's head."""
 
 
 def natural(name: str) -> list:
@@ -310,8 +312,11 @@ def load_fixtures(root: Path) -> Fixtures:
             except re.error as e:
                 raise bad(tfile, i, f"anchor {p!r}: {e}") from None
         fix = () if fix_s == "-" else tuple(fix_s.split(","))
-        if not all(re.fullmatch(r"[0-9a-f]{7,40}", c) for c in fix):
-            raise bad(tfile, i, f"fix {fix_s!r} is not - or comma-separated commit ids")
+        if not all(re.fullmatch(r"[A-Za-z0-9._-]+\.patch", f) for f in fix):
+            raise bad(tfile, i, f"fix {fix_s!r} is not - or comma-separated patch names")
+        for f in fix:
+            if not (rounds / round_ / "fixes" / f).is_file():
+                raise bad(tfile, i, f"fix {f} is not in rounds/{round_}/fixes/")
         for name, value in (("where", where), ("sources", sources), ("title", title)):
             if not value.strip():
                 raise bad(tfile, i, f"{name} is empty")
@@ -397,7 +402,7 @@ def score(run: RunId, parsed: list[Item] | Failure, bugs: tuple[Bug, ...]) -> Sc
 
 
 def fixes_for(found: Iterable[str], bugs: tuple[Bug, ...]) -> tuple[tuple[str, ...], tuple[str, ...]]:
-    """The fix commits of the found bugs, and every bug whose fix commits are all among them."""
+    """The found bugs' patches in truth-row order, each once, and every bug whose patches are all among them."""
     ids = set(found)
     applied = tuple(dict.fromkeys(c for b in bugs if b.id in ids for c in b.fix))
     masked = tuple(b.id for b in bugs if b.fix and set(b.fix) <= set(applied))
@@ -405,7 +410,7 @@ def fixes_for(found: Iterable[str], bugs: tuple[Bug, ...]) -> tuple[tuple[str, .
 
 
 def arising(bugs: tuple[Bug, ...]) -> list[tuple[str, ...]]:
-    """Every non-empty set of fix commits a masked pass can apply, each once."""
+    """Every non-empty set of patches a masked pass can apply, each once."""
     fixable = [b for b in bugs if b.fix]
     seen: dict[frozenset[str], tuple[str, ...]] = {}
     for n in range(1, len(fixable) + 1):
@@ -732,11 +737,11 @@ def rebuild(env: Env, round_: str, *args: str) -> subprocess.CompletedProcess:
                           env={**os.environ, "REBUILD_FIXTURES": str(env.fixtures), "REBUILD_REPO": str(env.repo)})
 
 
-def export_masked(env: Env, round_: str, dest: Path, commits: tuple[str, ...]) -> str:
-    proc = rebuild(env, round_, "--export", str(dest), *commits)
+def export_masked(env: Env, round_: str, dest: Path, patches: tuple[str, ...]) -> str:
+    proc = rebuild(env, round_, "--export", str(dest), *patches)
     if proc.returncode == 3:
-        raise Conflict(f"round {round_}: the fix commits {' '.join(commits)} do not apply to its head; "
-                      f"the truth file's fix column needs the owner")
+        raise Conflict(f"round {round_}: the patches {' '.join(patches)} do not apply to its head "
+                       f"({proc.stderr.strip()}); the truth file's fix column needs the owner")
     if proc.returncode:
         raise Refusal(f"rebuild.sh {round_} --export failed ({proc.returncode}): {proc.stderr.strip()[-400:]}")
     return proc.stdout.strip().splitlines()[-1]
@@ -892,25 +897,29 @@ def cmd_check(fx: Fixtures, env: Env) -> int:
         if mine.read_bytes() != theirs.read_bytes():
             raise Refusal(f"{theirs} differs from {mine}; copy the fixture's copy over it, byte for byte")
         print(f"ok agent {name}")
-    heads = {b.id.round: b.head for b in fx.briefs.values()}
+    for b in fx.briefs.values():
+        if subprocess.run(["git", "-C", str(env.repo), "cat-file", "-e", f"{b.head}^{{commit}}"],
+                          capture_output=True).returncode:
+            raise Refusal(f"round {b.id.round}: {b.head} is not in this repository's objects; fetch with: {FETCH_KEEP_REFS}")
+    proc = subprocess.run(["bash", str(Path(__file__).resolve().parent / "fixes.sh")], capture_output=True, text=True,
+                          env={**os.environ, "REBUILD_FIXTURES": str(env.fixtures), "REBUILD_REPO": str(env.repo)})
+    if proc.returncode:
+        raise Refusal(f"fixes.sh: {proc.stderr.strip()}; rebuild the patches with fixes.sh --write and read the diff")
+    print(f"ok patches: {len(proc.stdout.splitlines())} rebuild identical from their commits")
     conflicts: list[str] = []
     for round_, bugs in fx.truth.items():
-        for c in [heads[round_], *dict.fromkeys(c for b in bugs for c in b.fix)]:
-            if subprocess.run(["git", "-C", str(env.repo), "cat-file", "-e", f"{c}^{{commit}}"],
-                              capture_output=True).returncode:
-                raise Refusal(f"round {round_}: {c} is not in this repository's objects; fetch with: {FETCH_KEEP_REFS}")
         print(f"ok truth {round_}: {len(bugs)} bugs, {sum(1 for b in bugs if b.fix)} with a fix")
-        for commits in arising(bugs):
+        for patches in arising(bugs):
             with tempfile.TemporaryDirectory() as tmp:
                 try:
-                    export_masked(env, round_, Path(tmp) / "x", commits)
+                    export_masked(env, round_, Path(tmp) / "x", patches)
                 except Conflict as e:
                     conflicts.append(str(e))
-                    print(f"conflict {round_}: {' '.join(commits)}")
+                    print(f"conflict {round_}: {' '.join(patches)}")
                     continue
-            print(f"ok masked {round_}: {' '.join(commits)}")
+            print(f"ok masked {round_}: {' '.join(patches)}")
     if conflicts:
-        raise Refusal(f"{len(conflicts)} set(s) of fix commits do not apply: " + "; ".join(conflicts))
+        raise Refusal(f"{len(conflicts)} set(s) of patches do not apply: " + "; ".join(conflicts))
     return 0
 
 

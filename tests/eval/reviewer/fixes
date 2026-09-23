@@ -1,0 +1,13 @@
+# The fix patches the masked arm applies, one per fix, each limited to the files that hold its bug.
+# fixes.sh builds rounds/<round>/fixes/<patch> from the git command on each line.
+# round	patch	git	paths
+pr94-r1	body-file.patch	show b368116	template/.agents/skills/poteto-mode/playbooks/ticket.md docs/knowledge/core/SCENARIO-TABLE.md template/docs/factory918/SCENARIO-TABLE.md
+pr94-r1	overlap.patch	diff c83f166 715100c	template/.agents/skills/poteto-mode/scripts/overlap.sh
+pr94-r1	architect.patch	show 0c63fa6	template/.agents/skills/architect/SKILL.md
+pr94-r1	five-documents.patch	show ca2c106	docs/knowledge/core/MANUAL.md template/docs/factory918/MANUAL.md tools/build_knowledge.py
+pr96-r1	unmatched-glob.patch	show 01e5386	template/.github/shellcheck.sh
+pr96-r1	word-split.patch	show 72953c0	template/.github/shellcheck.sh
+pr96-r1	cached-binary.patch	show a64c7e6	template/.github/shellcheck.sh
+pr96-r1	bare-gate.patch	show ae1b4b5	template/.agents/skills/poteto-mode/playbooks/opening-a-pr.md patches/pstack/poteto-mode/playbooks/opening-a-pr.md.patch
+pr99-r1	hole-field.patch	diff 52ccd8e 32978fa	template/.agents/skills/spec-review/scripts/review-comment.sh template/.agents/skills/spec-review/scripts/review-brief.sh template/.agents/skills/spec-review/SKILL.md
+pr99-r1	merge-read.patch	show 384bb43	docs/knowledge/core/MANUAL.md template/docs/factory918/MANUAL.md

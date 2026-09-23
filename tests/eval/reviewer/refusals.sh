@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
-# Asserts tests/eval/reviewer/reviewer.py and rebuild.sh against ticket #138. It builds a temporary
-# repository whose base commit carries this tree's spec-review skill (the round's script_at), a
-# reviewed head and two fix commits on top, a one-round fixture set `r1` briefed by rebuild.sh, and
+# Asserts tests/eval/reviewer/reviewer.py, rebuild.sh and fixes.sh against ticket #138. It builds a
+# temporary repository whose base commit carries this tree's spec-review skill (the round's
+# script_at), a reviewed head and two fix commits on top, a one-round fixture set `r1` briefed by
+# rebuild.sh with two fix patches built by fixes.sh (the second applies only after the first), and
 # hand-written subagent transcripts, and points every REVIEWER_* knob at them. Exits 1 on the first
 # miss.
+# shellcheck disable=SC2016 # the single-quoted strings are sed programs and Python; the backticks and $ are literal
 set -euo pipefail
 here="$(cd "$(dirname "$0")/../../.." && pwd -P)"
 script="$here/tests/eval/reviewer/reviewer.py"
@@ -40,9 +42,15 @@ printf '## What to build\n\nChange the second line.\n' > "$fx/rounds/r1/inputs/t
 : > "$fx/rounds/r1/inputs/previous.txt"
 {
   printf '# round\tid\tanchors\tfix\twhere\tsources\ttitle\n'
-  printf 'r1\tG1\tunmatched glob && exits? 0\t%s\ta.txt:2\tprobe\tAn unmatched glob is dropped\n' "$fix1"
-  printf 'r1\tG2\tmissing ticket && refus\t%s,%s\ta.txt:2\tprobe\tA missing ticket is refused silently\n' "$fix1" "$fix2"
+  printf 'r1\tG1\tunmatched glob && exits? 0\tf1.patch\ta.txt:2\tprobe\tAn unmatched glob is dropped\n'
+  printf 'r1\tG2\tmissing ticket && refus\tf1.patch,f2.patch\ta.txt:2\tprobe\tA missing ticket is refused silently\n'
 } > "$fx/truth"
+{
+  printf '# round\tpatch\tgit\tpaths\n'
+  printf 'r1\tf1.patch\tshow %s\ta.txt\n' "$fix1"
+  printf 'r1\tf2.patch\tdiff %s %s\ta.txt\n' "$fix1" "$fix2"
+} > "$fx/fixes"
+REBUILD_FIXTURES="$fx" REBUILD_REPO="$tmp/repo" bash "$here/tests/eval/reviewer/fixes.sh" --write > /dev/null
 for a in review-lower-high review-upper-high review-fable-high; do
   printf -- '---\nname: %s\neffort: high\n---\n' "$a" > "$fx/agents/$a.md"
   cp "$fx/agents/$a.md" "$tmp/agents/$a.md"
@@ -200,7 +208,7 @@ cell() {
 REBUILD_FIXTURES="$fx" REBUILD_REPO="$tmp/repo" bash "$rebuild" r1 > "$tmp/rb" 2>&1 && code=0 || code=$?
 out="$(cat "$tmp/rb")"
 check "rebuild: the written briefs rebuild identical" is "$code:$out" "0:rebuild: r1: identical"
-REBUILD_FIXTURES="$fx" REBUILD_REPO="$tmp/repo" bash "$rebuild" r1 --export "$tmp/ex" "$fix2" "$fix1" > "$tmp/rb"
+REBUILD_FIXTURES="$fx" REBUILD_REPO="$tmp/repo" bash "$rebuild" r1 --export "$tmp/ex" f1.patch f2.patch > "$tmp/rb"
 folded="$(cat "$tmp/rb")"
 check "rebuild --export: the fix commits are folded into the head" is "$(cat "$tmp/ex/a.txt")" "one
 TWO fixed twice
@@ -209,11 +217,15 @@ check "rebuild --export: the commit list keeps the head's one line" is "$(sed -n
 check "rebuild --export: no fix subject reaches the brief" lacks "$(cat "$tmp/ex/$reldir/standards-brief.md")" "Fix the second line"
 check "rebuild --export: prints a new commit" test "$folded" != "$head"
 set +e
-REBUILD_FIXTURES="$fx" REBUILD_REPO="$tmp/repo" bash "$rebuild" r1 --export "$tmp/ex2" "$fix2" > /dev/null 2> "$tmp/rb"
+REBUILD_FIXTURES="$fx" REBUILD_REPO="$tmp/repo" bash "$rebuild" r1 --export "$tmp/ex2" f2.patch > /dev/null 2> "$tmp/rb"
 code=$?
 set -e
 check "rebuild --export: a fix that does not apply alone exits 3" is "$code" 3
-check "rebuild --export: and names round and commit" has "$(cat "$tmp/rb")" "r1: the fix commits $fix2 do not apply"
+check "rebuild --export: and names round and patch" has "$(cat "$tmp/rb")" "r1: the patches f2.patch do not apply"
+
+# fixes.sh
+REBUILD_FIXTURES="$fx" REBUILD_REPO="$tmp/repo" bash "$here/tests/eval/reviewer/fixes.sh" > "$tmp/rb" 2>&1 && code=0 || code=$?
+check "fixes.sh: the written patches rebuild identical" is "$code:$(grep -c identical "$tmp/rb")" 0:2
 
 # check
 fresh check
@@ -221,14 +233,19 @@ run check
 check "check: exit 0" is "$code" 0
 check "check: the three agents" lines "$(grep '^ok agent' <<<"$out")" 3
 check "check: the truth" has "$out" "ok truth r1: 2 bugs, 2 with a fix"
-check "check: fix1 alone briefs" has "$out" "ok masked r1: $fix1"
-check "check: fix1 and fix2 brief" has "$out" "ok masked r1: $fix1 $fix2"
+check "check: the patches rebuild" has "$out" "ok patches: 2 rebuild identical from their commits"
+check "check: f1 alone briefs" has "$out" "ok masked r1: f1.patch"
+check "check: f1 and f2 brief" has "$out" "ok masked r1: f1.patch f2.patch"
 cp -R "$fx" "$tmp/fx-conflict"
-awk -F'\t' -v OFS='\t' -v f="$fix2" '$2 == "G2" { $4 = f } 1' "$fx/truth" > "$tmp/fx-conflict/truth"
+awk -F'\t' -v OFS='\t' '$2 == "G2" { $4 = "f2.patch" } 1' "$fx/truth" > "$tmp/fx-conflict/truth"
 REVIEWER_FIXTURES="$tmp/fx-conflict" run check
 check "check: a subset that does not apply refuses" is "$code" 1
-check "check: naming the round and the commits" has "$err" "round r1: the fix commits $fix2 do not apply"
-check "check: and prints the conflict line" has "$out" "conflict r1: $fix2"
+check "check: naming the round and the patches" has "$err" "round r1: the patches f2.patch do not apply"
+check "check: and prints the conflict line" has "$out" "conflict r1: f2.patch"
+cp -R "$fx" "$tmp/fx-tampered"
+echo ' ' >> "$tmp/fx-tampered/rounds/r1/fixes/f1.patch"
+REVIEWER_FIXTURES="$tmp/fx-tampered" run check
+check "check: a patch that no longer matches its commits refuses" has "$err" "fixes.sh: fixes: r1 f1.patch differs from its commits"
 cp -R "$tmp/agents" "$tmp/agents-drift"
 echo drift >> "$tmp/agents-drift/review-upper-high.md"
 REVIEWER_AGENTS="$tmp/agents-drift" run check
@@ -240,9 +257,9 @@ check "check: a missing installed agent refuses" has "$err" "agents-drift/review
 cp -R "$fx" "$tmp/fx-gone"
 printf 'pr=1\nhead=%s\n' 1111111111111111111111111111111111111111 > "$tmp/fx-gone/rounds/r1/round"
 REVIEWER_FIXTURES="$tmp/fx-gone" run check
-check "check: a head not in the objects refuses with both keep refs" has "$err" "git fetch origin 'refs/keep/103/*:refs/keep/103/*' 'refs/keep/138/*:refs/keep/138/*'"
+check "check: a head not in the objects refuses with the keep refs" has "$err" "git fetch origin 'refs/keep/103/*:refs/keep/103/*'"
 REVIEWER_FIXTURES="$tmp/fx-gone" run next "$C"
-check "next: a head not in the objects refuses the same way" has "$err" "'refs/keep/138/*:refs/keep/138/*'"
+check "next: a head not in the objects refuses the same way" has "$err" "'refs/keep/103/*:refs/keep/103/*'"
 
 # The truth loader refuses a malformed row with its file and line.
 i=0
@@ -253,7 +270,8 @@ for row in $'r1\tG3\tglob && exits\t-\t?\tx' \
            $'r1\tG3\tglob\t-\t?\tx\tt' \
            $'r1\tG3\t(glob && exits\t-\t?\tx\tt' \
            $'r1\tG3\tglob && exits\tHEAD\t?\tx\tt' \
-           $'r1\tG3\tglob && exits\t-\t?\tx\t '; do
+           $'r1\tG3\tglob && exits\t-\t?\tx\t ' \
+           $'r1\tG3\tglob && exits\tnope.patch\t?\tx\tt'; do
   i=$((i + 1))
   cp -R "$fx" "$tmp/fx-bad$i"
   printf '%s\n' "$row" >> "$tmp/fx-bad$i/truth"
@@ -319,12 +337,12 @@ check "S2: the non-hard item is not settled" lacks "$settled" "missing ticket"
 check "S2: run.json records the settled line" is "$(h field "$(rundir "$C" standards S2)/run.json" settled.0)" "- **An unmatched glob is dropped.** The gate exits 0 anyway. Documented step: the gate."
 check "S2 spec: every hard item of pass 1, in order" is "$(grep -c '^- ' <<<"$(sed -n '/^## Settled in earlier rounds$/,/^## The ticket/p' "$(h checkout "$spec_s2")/$reldir/spec-brief.md")")" 2
 check "M2: G1's fix is applied" is "$(sed -n 2p "$co_m2/a.txt")" "TWO fixed"
-check "M2: run.json applied" is "$(h field "$(rundir "$C" standards M2)/run.json" applied)" "[\"$fix1\"]"
+check "M2: run.json applied" is "$(h field "$(rundir "$C" standards M2)/run.json" applied)" '["f1.patch"]'
 check "M2: G1 masked, G2 not (its fix is not all applied)" is "$(h field "$(rundir "$C" standards M2)/run.json" masked)" '["G1"]'
 check "M2: the tree is the folded commit" test "$(h field "$(rundir "$C" standards M2)/run.json" tree)" != "$head"
 check "M2: the brief briefs the folded tree" has "$(cat "$co_m2/$reldir/standards-brief.md")" "TWO fixed"
 check "M2: not the other axis's brief" absent "$co_m2/$reldir/spec-brief.md"
-check "M2 spec: G2 found, both fixes applied" is "$(h field "$(rundir "$C" spec M2)/run.json" applied)" "[\"$fix1\", \"$fix2\"]"
+check "M2 spec: G2 found, both patches applied" is "$(h field "$(rundir "$C" spec M2)/run.json" applied)" '["f1.patch", "f2.patch"]'
 check "M2 spec: G1 and G2 masked" is "$(h field "$(rundir "$C" spec M2)/run.json" masked)" '["G1", "G2"]'
 check "M2 spec: the tree holds both fixes" is "$(sed -n 2p "$co_spec_m2/a.txt")" "TWO fixed twice"
 finish "$std_m2" "$tmp/rep/both.md"
@@ -334,7 +352,7 @@ run collect
 run next "$C"
 check "next: the three standards pass-3 steps follow their pass 2" is "$(grep -c '/standards/[ISM]3"' <<<"$out")" 3
 co_m3="$(h checkout "$(line_for standards M3)")"
-check "M3: G1 from pass 1 and G2 from M2, both fixes" is "$(h field "$(rundir "$C" standards M3)/run.json" applied)" "[\"$fix1\", \"$fix2\"]"
+check "M3: G1 from pass 1 and G2 from M2, both patches" is "$(h field "$(rundir "$C" standards M3)/run.json" applied)" '["f1.patch", "f2.patch"]'
 check "M3: the tree holds both fixes" is "$(sed -n 2p "$co_m3/a.txt")" "TWO fixed twice"
 check "S3: nothing hard in S2, so pass 1's line alone" is "$(sed -n '/^## Settled in earlier rounds$/,/^## Standards$/p' "$(h checkout "$(line_for standards S3)")/$reldir/standards-brief.md" | grep -c '^- ')" 1
 run table

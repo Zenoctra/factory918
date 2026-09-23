@@ -4,24 +4,23 @@
 # serves inputs/ and never touches the network.
 #   rebuild.sh <round>                      compare diff and both briefs byte for byte with review/
 #   rebuild.sh <round> --write              write them into review/ instead
-#   rebuild.sh <round> --export DIR [SHA...] apply the fix commits SHA... to the head in topological
-#       order and fold them into the head commit (the brief's commit list keeps its shape), brief
-#       that tree, archive it into DIR and put diff and both briefs in DIR's review directory;
-#       prints the folded commit (the head itself when no SHA is given)
+#   rebuild.sh <round> --export DIR [PATCH...] apply the round's fixes/PATCH files to the head in
+#       the order given and fold them into the head commit (the brief's commit list keeps its
+#       shape), brief that tree, archive it into DIR and put diff and both briefs in DIR's review
+#       directory; prints the folded commit (the head itself when no PATCH is given)
 # REBUILD_FIXTURES (this directory) holds rounds/; REBUILD_REPO (this repository) holds the commits.
-# The heads and fix commits live under refs/keep/103/* and refs/keep/138/*; fetch them first on a
-# fresh clone. Exit 0 on success, 1 naming the first file that differs, 2 on a setup error, 3 when
-# the fix commits do not apply.
+# The heads live under refs/keep/103/*; fetch them first on a fresh clone. Exit 0 on success, 1
+# naming the first file that differs, 2 on a setup error, 3 when a patch does not apply.
 set -euo pipefail
-usage() { echo "usage: rebuild.sh <round> [--write | --export DIR [SHA...]]" >&2; exit 2; }
+usage() { echo "usage: rebuild.sh <round> [--write | --export DIR [PATCH...]]" >&2; exit 2; }
 [ $# -ge 1 ] || usage
 name="$1"
 shift
-mode=compare export="" picks=()
+mode="compare" dest="" picks=()
 case "${1:-}" in
   "") ;;
-  --write) [ $# -eq 1 ] || usage; mode=write ;;
-  --export) [ $# -ge 2 ] || usage; mode=export; export="$2"; shift 2; picks=("$@") ;;
+  --write) [ $# -eq 1 ] || usage; mode="write" ;;
+  --export) [ $# -ge 2 ] || usage; mode="export"; dest="$2"; shift 2; picks=("$@") ;;
   *) usage ;;
 esac
 here="$(cd "$(dirname "$0")" && pwd -P)"
@@ -35,9 +34,12 @@ fixed="$(value fixed_point "$inputs/recipe")"
 ticket="$(value ticket "$inputs/recipe")"
 round="$(value round "$inputs/recipe")"
 repo="${REBUILD_REPO:-$(git -C "$here" rev-parse --show-toplevel)}"
-fetch="git fetch origin 'refs/keep/103/*:refs/keep/103/*' 'refs/keep/138/*:refs/keep/138/*'"
-for c in "$head" "$script_at" ${picks[@]+"${picks[@]}"}; do
-  git -C "$repo" cat-file -e "$c^{commit}" 2>/dev/null || { echo "rebuild: $c is not in this repository; $fetch" >&2; exit 2; }
+for c in "$head" "$script_at"; do
+  git -C "$repo" cat-file -e "$c^{commit}" 2>/dev/null ||
+    { echo "rebuild: $c is not in this repository; git fetch origin 'refs/keep/103/*:refs/keep/103/*'" >&2; exit 2; }
+done
+for p in ${picks[@]+"${picks[@]}"}; do
+  [ -f "$rdir/fixes/$p" ] || { echo "rebuild: $rdir/fixes/$p missing" >&2; exit 2; }
 done
 
 tmp="$(mktemp -d "${TMPDIR:-/tmp}/rebuild.XXXXXX")"
@@ -45,15 +47,10 @@ trap 'rm -rf "$tmp"' EXIT
 git clone -q --shared --no-checkout "$repo" "$tmp/clone"
 git -C "$tmp/clone" checkout -q --detach "$head"
 if [ ${#picks[@]} -gt 0 ]; then
-  order=()
-  while read -r c; do
-    for p in "${picks[@]}"; do
-      [ "$(git -C "$tmp/clone" rev-parse "$p^{commit}")" != "$c" ] || order+=("$c")
-    done
-  done < <(git -C "$tmp/clone" rev-list --topo-order --reverse "${picks[@]}" "^$head")
-  [ ${#order[@]} -eq ${#picks[@]} ] || { echo "rebuild: $name: not every fix commit descends from $head: ${picks[*]}" >&2; exit 2; }
-  git -C "$tmp/clone" -c user.name=rebuild -c user.email=rebuild@localhost cherry-pick -n "${order[@]}" >/dev/null 2>&1 ||
-    { echo "rebuild: $name: the fix commits ${order[*]} do not apply to $head" >&2; exit 3; }
+  for p in "${picks[@]}"; do
+    git -C "$tmp/clone" apply --index "$rdir/fixes/$p" 2> "$tmp/apply" ||
+      { echo "rebuild: $name: the patches ${picks[*]} do not apply to $head: $p: $(tr '\n' ' ' < "$tmp/apply")" >&2; exit 3; }
+  done
   (
     cd "$tmp/clone"
     GIT_COMMITTER_NAME="$(git log -1 --format=%cn HEAD)" GIT_COMMITTER_EMAIL="$(git log -1 --format=%ce HEAD)" \
@@ -89,8 +86,8 @@ case "$mode" in
     for f in "${files[@]}"; do cp "$out/$f" "$rdir/review/$f"; done
     echo "rebuild: $name: written" ;;
   export)
-    mkdir -p "$export/$reldir"
-    git -C "$tmp/clone" archive HEAD | tar -x -C "$export"
-    for f in "${files[@]}"; do cp "$out/$f" "$export/$reldir/$f"; done
+    mkdir -p "$dest/$reldir"
+    git -C "$tmp/clone" archive HEAD | tar -x -C "$dest"
+    for f in "${files[@]}"; do cp "$out/$f" "$dest/$reldir/$f"; done
     git -C "$tmp/clone" rev-parse HEAD ;;
 esac
