@@ -5,6 +5,9 @@ On a fresh clone, first fetch the reviewed heads the fixtures point at; they are
 
     git fetch origin 'refs/keep/103/*:refs/keep/103/*'
 
+After that fetch, `bash tests/eval/reviewer/rebuild.sh <round>` rebuilds a round's briefs from its
+inputs/ and compares them byte for byte with review/; the runner copies only review/.
+
     python3 tests/eval/reviewer/reviewer.py check [--list]
         Validate the fixture set; calibrate every label against the historical report where one
         survives. --list prints the brief ids.
