@@ -23,7 +23,7 @@ Files under `template/` and `profiles/` are content addressed to agents in a fut
 
 The same two as a project. Planning (`/grill-with-docs`, `/to-spec`, `/to-tickets`) turns a change to the factory into tickets on this repository; execution (`/poteto-mode "#N"`) turns a ticket into a PR. A change that needs no design goes straight to a branch and a PR, with a quick ticket filed first (Ticket playbook, "Quick ticket"), so the PR closes it and the review can read what was asked.
 
-Inside a playbook the writer is never the orchestrator: implementation is delegated to its own lane and the orchestrator reviews the diff it gets back. Reading in bulk, writing inside a playbook, and reviewing are lanes' jobs; the orchestrator briefs the lane and judges its result. The delegation hook holds this in the execute phase. If a rule in this file fights the task in front of you, say so loudly and get a sign-off before breaking it.
+Inside a playbook the writer is never the orchestrator: implementation is delegated to its own lane and the orchestrator reviews the diff it gets back. In `eco` a subagent owner writes its own small fixes and records commit (Ticket step 0, "The tier"). Reading in bulk, writing inside a playbook, and reviewing are lanes' jobs; the orchestrator briefs the lane and judges its result. The delegation hook holds this in the execute phase. If a rule in this file fights the task in front of you, say so loudly and get a sign-off before breaking it.
 
 ## The ways to hurt yourself
 
