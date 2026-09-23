@@ -32,10 +32,10 @@
 # disposition, `fixed: <sha>` (a commit in HEAD's history) or `accepted: <reason>`; a line without
 # one, a heading that looks like either and is not, or a fence opened in the list and never closed
 # is refused before any state is written, each line named. A ticket body with a writer flags
-# heading line anywhere, fenced, quoted or misspelt, and no flag read is refused too, since a list
-# the check cannot read would otherwise pass as no list. With a grounding, the Spec brief's `## Walk`
-# bullet continues with one numbered line per risk, so the reviewer walks the risks after
-# the steps and says whether the diff honors each disposition.
+# heading line anywhere, fenced, quoted, decorated or misspelt, and no flag read is refused too,
+# since a list the check cannot read would otherwise pass as no list. With a grounding, the Spec
+# brief's `## Walk` bullet continues with one numbered line per risk, so the reviewer walks the
+# risks after the steps and says whether the diff honors each disposition.
 # Both briefs carry `## Reading pack` after the diff, the code around each change at HEAD, which
 # scripts/reading-pack.sh writes to `<dir>/pack.md`; if it fails the script refuses before writing any state.
 # shellcheck disable=SC2016 # every single-quoted string here is a jq program or a Markdown template; the backticks and $ are literal
@@ -441,9 +441,11 @@ if [ -n "$spec" ]; then
   fi
   # A count, not a parse: whatever hid the list from the check above, a heading line with no flag
   # read refuses. The check above has already refused every near-miss and unclosed-fence record, so
-  # any record the awk below prints is a read flag.
+  # any record the awk below prints is a read flag. A heading line is two or more `#` (one `#` is
+  # a code comment more often than a heading) whose text reads writer flag(s) with any non-letters
+  # around the words, after any spaces, `>` quote markers and list markers.
   heads="$(printf '%s\n' "$spec" | awk '{ sub(/\r$/, ""); sub(/[ \t]+$/, "") }
-    tolower($0) ~ /^([[:space:]>]|[-*+]|[0-9]+[.)])*#+[[:space:]]*writer[ -]flags?([^[:alpha:]]|$)/')"
+    tolower($0) ~ /^([ \t>]|[-*+]|[0-9]+[.)])*##+[^a-z]*writer[^a-z]*flags?([^a-z]|$)/')"
   if [ -n "$heads" ] && [ -z "$(printf '%s\n' "$spec" | awk -v mode=flags -v w="writer flags" "$disposed")" ]; then
     rm -rf "$dir"
     echo "review-brief: ticket #$ticket has a writer flags heading and no flag could be read from its body; flags are read only under an unfenced, unquoted line that is exactly \`### Writer flags <YYYY-MM-DD>\`, one flag per line with its disposition; the headings found:" >&2
