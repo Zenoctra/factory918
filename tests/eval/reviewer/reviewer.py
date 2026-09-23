@@ -31,8 +31,9 @@ patch from its commits the same way.
     python3 tests/eval/reviewer/reviewer.py collect
         Collect every finished run; list what is in flight, unlaunched or stuck. Safe to repeat.
         A run served the wrong model or effort is refused after every other run is collected. A
-        transcript ending on a line with no stop reason is finished once it has sat untouched for
-        REVIEWER_SETTLE_SECONDS.
+        transcript whose last assistant line is stamped `end_turn` is finished; one whose last
+        assistant line holds only text and is not stamped `end_turn` (a harness line included) is
+        finished once it has sat untouched for REVIEWER_SETTLE_SECONDS.
     python3 tests/eval/reviewer/reviewer.py table
         Rescore every collected report; write scores.tsv and table.md, one table per model.
 
@@ -46,8 +47,8 @@ refused), REVIEWER_WORK (${TMPDIR:-/tmp}/review-work),
 REVIEWER_TRANSCRIPTS (~/.claude/projects/<main checkout path, every character outside A-Za-z0-9
 as ->), REVIEWER_REPO (the repository holding the reviewed heads), REVIEWER_AGENTS (<main
 checkout>/.claude/agents, where the installed agent definitions must match agents/),
-REVIEWER_SETTLE_SECONDS (120; how long a transcript whose last line carries no stop reason must sit
-untouched before it counts as finished).
+REVIEWER_SETTLE_SECONDS (120; how long a transcript whose last assistant line is text only and not
+stamped `end_turn` must sit untouched before it counts as finished).
 """
 from __future__ import annotations
 
@@ -934,8 +935,8 @@ def finished(lines: list[dict], path: Path, settle_s: float) -> bool:
     message = last.get("message") or {}
     if message.get("stop_reason") == "end_turn":
         return True
-    # A run can end on a text-only line the harness never stamped with a stop reason, so read a
-    # transcript that has stopped growing as done.
+    # A run can end on a text-only line not stamped end_turn, the harness's own lines among them,
+    # so read a transcript that has stopped growing as done.
     content = message.get("content")
     # A plain-string content is text, as assistant_text reads it.
     blocks = content if isinstance(content, list) else [{"type": "text"}] if isinstance(content, str) else []
