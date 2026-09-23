@@ -26,10 +26,15 @@
 # fix under review` before the diff, and a sixth round, a hand-written line, a fixed point that is
 # not the commit, one that does not resolve, and a fix-only round with no ticket after a round
 # with a spec are each refused before any state is written; every run records HEAD in
-# `<dir>/reviewed`. The source SKILL.md, step 4, must carry the definition, the five sentences, the
-# heading bullets, the step rule, the spec rule, the count rule, the settled paragraph, the
-# blast-radius paragraph, the risk sentence and the fix paragraph word for word, and the two
-# babysit copies the same merge-ready sentence, so the skill and the script cannot drift apart.
+# `<dir>/reviewed`. Round three is fix-only the same way when round two's comment carries
+# `fix only after <sha>` (ticket #106's table A, one assertion per cell); rounds one and two print
+# byte for byte what they print with the `reviewed:`, `fix only after` and `next round owed:`
+# lines deleted, and round two after a `reviewed: <sha>` line writes the fix lines to
+# `<dir>/fix-lines`. The source SKILL.md, step 4, must carry the definition, the five sentences,
+# the heading bullets, the step rule, the spec rule, the count rule, the settled paragraph, the
+# blast-radius paragraph, the risk sentence and the fix paragraph word for word, step 1 the
+# fix-only round three, and the two babysit copies the same merge-ready and owed sentences, so the
+# skill and the script cannot drift apart.
 # Exits 1 on the first miss.
 # shellcheck disable=SC2016 # the expected strings below are the Markdown the script emits; the backticks and $ are literal
 set -euo pipefail
@@ -734,6 +739,19 @@ $restart_line
 round: 1 of 3
 .scratch/review/HEAD_1/standards-brief.md
 .scratch/review/HEAD_1/spec-brief.md" "a --previous comment carrying restart and the line is a restart (13C)"
+# 13B: --round 2 after the restart, from the PR and from the --previous file: round two of the
+# redesign, the whole diff.
+pr me me:previous.md me:previous-2.md me:previous-3w.md me:restart-4.md
+for src in pr both-3w.md; do
+  if [ "$src" = pr ]; then prev=(); else prev=(--previous "$src"); fi
+  bash "$skill/scripts/review-brief.sh" HEAD~1 --ticket 7 ${prev[@]+"${prev[@]}"} --round 2 > out.txt
+  printed out.txt "ticket: #7
+$restart_line
+round: 2 of 3
+.scratch/review/HEAD_1/standards-brief.md
+.scratch/review/HEAD_1/spec-brief.md" "--round 2 after a restart that followed (3W), from $src (13B)"
+  lacks "$std" "## The fix under review" "--round 2 after a restart, from $src: no fix section (13B)"
+done
 # Row 14: the words followed by anything but a full lowercase commit id: refused, shown as written.
 for rest in "$(git rev-parse --short "$s")" "$(printf '%s' "$s" | tr a-f A-F)" "$s trailing" ""; do
   sed "s/^would-break fixed after .*/would-break fixed after $rest/" previous-3w.md > hand-3w.md
@@ -792,10 +810,431 @@ rm pr.json
 bash "$skill/scripts/review-brief.sh" --paths a.txt --commits HEAD --ticket 7 > out.txt
 [ "$(cat ".scratch/review/sweep-$(git rev-parse --short HEAD)/reviewed")" = "$(git rev-parse HEAD)" ] || { echo "FAIL: the sweep form does not record HEAD in the reviewed file (20)"; exit 1; }
 n=$((n + 1))
+# Ticket #106, table A: round three reviews only round two's fix when round two's comment carries
+# `fix only after <sha>`; rounds one and two print what they printed before the three new lines
+# existed, and round two's brief writes the fix lines. r1 and r2 are the commits rounds one and two
+# reviewed, one fix commit after each, so HEAD~2 is r1 (the fixed point o below), r1..HEAD the two
+# fix commits and r2..HEAD the second alone. (1R) is previous.md with `reviewed: r1`, (1R+) the same
+# with S1 fixed and the owed line, (2) previous-2.md, (2F) a round-two comment with a spec, one
+# unmarked Act on item and one ticketed, and `fix only after r2`. The second fix commit adds
+# `walk fixed` a second time, so that text says nowhere which line a quote came from. Each
+# assertion names its cell.
+r1="$(git rev-parse HEAD)"
+printf 'four\n  walk fixed\nok\n' > a.txt
+git commit -qam "fix the walk, #7"
+r2="$(git rev-parse HEAD)"
+printf '  hook fixed\n  walk fixed\nok\n  walk fixed\n' > a.txt
+git commit -qam "fix the hook, #7"
+od=.scratch/review/HEAD_2
+r2d=".scratch/review/$r2"
+# The lines r1..HEAD adds, four characters or more, less markers and surrounding blanks, whose text
+# occurs once in a.txt at HEAD; and the one hunk's new side, a.txt being the single line `four` at r1.
+fix_lines='hook fixed'
+fix_ranges="$(printf '1\t4\ta.txt')"
+awk -v r="reviewed: $r1" '/^round: 1 of 3$/ { print r } { print }' previous.md > previous-1r.md
+awk -v f="$(git rev-parse --short "$r2")" '
+  /^## Act on$/ { print; print ""; print "1. [S1] **Hook in Python.** Ported. fixed: " f; next }
+  /^1\. \[S1\]/ { next }
+  /^reviewed: / { print "next round owed: round 2 reviews the fixes marked here" }
+  { print }' previous-1r.md > previous-1rp.md
+cp previous-2.md previous-2r.md
+# fo_comment <base> <sha>: the base as a round-two comment with S1 and S3 under Act on, S3 ticketed, and the FO line.
+fo_comment() {
+  sed 's/^round: 3 of 3$/round: 2 of 3/' "$1" | awk -v fo="fix only after $2" '
+    /^## Act on$/ { print; print ""; print "1. [S1] **Hook in Python.** Ported."; print "2. [S3] **Bare number.** Out of scope. ticket: #12"; next }
+    /^1\. \[S1\]/ || /^3\. \[S3\]/ { next }
+    /^2\. \[S2\]/ { sub(/^2\./, "3.") }
+    /^round: / { print fo }
+    { print }'
+}
+fo_comment previous-3-spec.md "$r2" > previous-2f.md
+fo_comment previous-2.md "$r2" > previous-2f-nospec.md
+# ff <dir> <label>, no_ff <dir> <label>: the fix lines and ranges written exactly, or neither written.
+ff() {
+  [ "$(cat "$1/fix-lines" 2>/dev/null)" = "$fix_lines" ] || { echo "FAIL $2: $1/fix-lines is not the unique lines r1..HEAD added"; cat "$1/fix-lines" 2>/dev/null; exit 1; }
+  [ "$(cat "$1/fix-ranges" 2>/dev/null)" = "$fix_ranges" ] || { echo "FAIL $2: $1/fix-ranges is not the new side of r1..HEAD"; cat "$1/fix-ranges" 2>/dev/null; exit 1; }
+  n=$((n + 1))
+}
+no_ff() {
+  [ ! -e "$1/fix-lines" ] && [ ! -e "$1/fix-ranges" ] || { echo "FAIL $2: $1/fix-lines or $1/fix-ranges was written"; exit 1; }
+  n=$((n + 1))
+}
+# fp3 <sha> <fixed>: #93's FP naming the line round three reads.
+fp3() { printf 'review-brief: round 3 reviews only the fix from %s, the commit round 2 reviewed (the `fix only after` line of the last review comment); %s is not that commit' "$1" "$2"; }
+# same <label> <fixed-point> <login:file>...: the brief over the history with every RV, owed and FO
+# line deleted, then over the history as written, prints the same stdout, diff, briefs and round
+# (criterion 1). The state left is the run over the history as written.
+same() {
+  local label="$1" fp="$2" c d k f bare=(); shift 2
+  for c in "$@"; do
+    sed '/^reviewed: /d; /^fix only after /d; /^next round owed: /d' "${c#*:}" > "bare-${c#*:}"
+    bare+=("${c%%:*}:bare-${c#*:}")
+  done
+  d=".scratch/review/$(printf '%s' "$fp" | tr -c 'A-Za-z0-9._-' '_')"
+  for k in bare with; do
+    if [ "$k" = bare ]; then pr me "${bare[@]}"; else pr me "$@"; fi
+    bash "$skill/scripts/review-brief.sh" "$fp" --ticket 7 > "same-$k.out"
+    for f in diff standards-brief.md spec-brief.md round; do cp "$d/$f" "same-$k.$f"; done
+  done
+  for f in out diff standards-brief.md spec-brief.md round; do
+    cmp -s "same-bare.$f" "same-with.$f" || { echo "FAIL $label: $f differs from the run without the new lines"; diff "same-bare.$f" "same-with.$f"; exit 1; }
+  done
+  n=$((n + 1))
+}
+r1_out="ticket: #7
+round: 1 of 3
+$od/standards-brief.md
+$od/spec-brief.md"
+r2_out="ticket: #7
+round: 2 of 3
+settled: carried 2, dropped 1 without a citation
+$od/standards-brief.md
+$od/spec-brief.md"
+r3_whole="ticket: #7
+round: 3 of 3
+settled: carried 2, dropped 1 without a citation
+$od/standards-brief.md
+$od/spec-brief.md"
+r3_fix="ticket: #7
+round: 3 of 3
+settled: carried 3, dropped 1 without a citation
+$r2d/standards-brief.md
+$r2d/spec-brief.md"
+# Row 1: no comment.
+pr me
+bash "$skill/scripts/review-brief.sh" HEAD~2 --ticket 7 > out.txt
+printed out.txt "$r1_out" "no comment: round one (1A)"
+no_ff "$od" "no comment (1A)"
+bash "$skill/scripts/review-brief.sh" HEAD~2 --ticket 7 --round 2 > out.txt
+printed out.txt "ticket: #7
+round: 2 of 3
+$od/standards-brief.md
+$od/spec-brief.md" "no comment, --round 2 (1B)"
+no_ff "$od" "no comment, --round 2 (1B)"
+bash "$skill/scripts/review-brief.sh" HEAD~2 --ticket 7 --round 3 > out.txt
+printed out.txt "ticket: #7
+round: 3 of 3
+$od/standards-brief.md
+$od/spec-brief.md" "no comment, --round 3 (1B)"
+lacks "$od/standards-brief.md" "## The fix under review" "no comment, --round 3: the whole diff (1B)"
+: > empty.md
+bash "$skill/scripts/review-brief.sh" HEAD~2 --ticket 7 --previous empty.md > out.txt
+printed out.txt "$r1_out" "an empty --previous file (1C)"
+no_ff "$od" "an empty --previous file (1C)"
+# Row 2: (1R): round two, the whole diff, byte for byte what it was, and the fix lines from r1.
+pr me me:previous-1r.md
+bash "$skill/scripts/review-brief.sh" HEAD~2 --ticket 7 > out.txt
+printed out.txt "$r2_out" "(1R): round two (2A)"
+lacks "$od/standards-brief.md" "## The fix under review" "(1R): no fix section (2A)"
+same "(1R) with and without the reviewed line (2A)" HEAD~2 me:previous-1r.md
+ff "$od" "(1R) (2A)"
+bash "$skill/scripts/review-brief.sh" HEAD~2 --ticket 7 --round 2 > out.txt
+printed out.txt "$r2_out" "(1R), --round 2 (2B)"
+ff "$od" "(1R), --round 2 (2B)"
+bash "$skill/scripts/review-brief.sh" HEAD~2 --ticket 7 --round 3 > out.txt
+printed out.txt "$r3_whole" "(1R), --round 3 (2B)"
+no_ff "$od" "(1R), --round 3 (2B)"
+bash "$skill/scripts/review-brief.sh" HEAD~2 --ticket 7 --previous previous-1r.md > out.txt
+printed out.txt "$r2_out" "(1R) from --previous (2C)"
+ff "$od" "(1R) from --previous (2C)"
+# Row 3: (1R+): the owed line changes nothing in the brief.
+r2p_out="ticket: #7
+round: 2 of 3
+settled: carried 1, dropped 1 without a citation
+$od/standards-brief.md
+$od/spec-brief.md"
+pr me me:previous-1rp.md
+bash "$skill/scripts/review-brief.sh" HEAD~2 --ticket 7 > out.txt
+printed out.txt "$r2p_out" "(1R+): round two (3A)"
+same "(1R+) with and without the owed and reviewed lines (3A)" HEAD~2 me:previous-1rp.md
+ff "$od" "(1R+) (3A)"
+bash "$skill/scripts/review-brief.sh" HEAD~2 --ticket 7 --round 2 > out.txt
+ff "$od" "(1R+), --round 2 (3B)"
+bash "$skill/scripts/review-brief.sh" HEAD~2 --ticket 7 --round 3 > out.txt
+no_ff "$od" "(1R+), --round 3 (3B)"
+bash "$skill/scripts/review-brief.sh" HEAD~2 --ticket 7 --previous previous-1rp.md > out.txt
+printed out.txt "$r2p_out" "(1R+) from --previous (3C)"
+ff "$od" "(1R+) from --previous (3C)"
+# Row 4: (1R), (2): round three reviews the whole diff from o, as before.
+pr me me:previous-1r.md me:previous-2r.md
+bash "$skill/scripts/review-brief.sh" HEAD~2 --ticket 7 > out.txt
+printed out.txt "$r3_whole" "(1R), (2): round three, the whole diff (4A)"
+same "(1R), (2) with and without the reviewed line (4A)" HEAD~2 me:previous-1r.md me:previous-2r.md
+lacks "$od/standards-brief.md" "## The fix under review" "(1R), (2): no fix section (4A)"
+has "$od/standards-brief.md" "fix the walk, #7" "(1R), (2): round one's fix commit is listed (4A)"
+has "$od/standards-brief.md" "fix the hook, #7" "(1R), (2): round two's fix commit is listed (4A)"
+no_ff "$od" "(1R), (2) (4A)"
+bash "$skill/scripts/review-brief.sh" HEAD~2 --ticket 7 --round 3 > out.txt
+printed out.txt "$r3_whole" "(1R), (2), --round 3 (4B)"
+{ cat previous-1r.md; printf '\036\n'; cat previous-2r.md; } > hist-4.md
+bash "$skill/scripts/review-brief.sh" HEAD~2 --ticket 7 --previous hist-4.md > out.txt
+printed out.txt "$r3_whole" "(1R), (2) from --previous (4C)"
+# Row 5: (1R), (2F r2): round three reviews r2..HEAD alone, the unmarked Act on item in the fix section.
+pr me me:previous-1r.md me:previous-2f.md
+bash "$skill/scripts/review-brief.sh" "$r2" --ticket 7 > out.txt
+printed out.txt "$r3_fix" "(1R), (2F): round three reviews the fix (5A)"
+[ "$(cat "$r2d/round")" = 3 ] || { echo "FAIL: the round file does not say 3 (5A)"; exit 1; }
+n=$((n + 1))
+for f in "$r2d/standards-brief.md" "$r2d/spec-brief.md"; do
+  fixed_section "$f" "1. [S1] **Hook in Python.** Ported." "$f (5A)"
+  lacks "$f" "Out of scope. ticket: #12" "$f: the ticketed item is not in the fix section (5A)"
+done
+only_commit "$r2d/standards-brief.md" "fix the hook, #7" "Standards (5A)"
+lacks "$r2d/standards-brief.md" "fix the walk" "Standards: round one's fix is not listed (5A)"
+no_ff "$r2d" "(2F) (5A)"
+bash "$skill/scripts/review-brief.sh" "$r2" --ticket 7 --round 3 > out.txt
+printed out.txt "$r3_fix" "(1R), (2F), --round 3 (5B)"
+fixed_section "$r2d/standards-brief.md" "1. [S1] **Hook in Python.** Ported." "--round 3 (5B)"
+bash "$skill/scripts/review-brief.sh" "$r2" --ticket 7 --round 2 > out.txt
+printed out.txt "ticket: #7
+round: 2 of 3
+settled: carried 3, dropped 1 without a citation
+$r2d/standards-brief.md
+$r2d/spec-brief.md" "(1R), (2F), --round 2 (5B)"
+lacks "$r2d/standards-brief.md" "## The fix under review" "(1R), (2F), --round 2: no fix section (5B)"
+no_ff "$r2d" "(1R), (2F), --round 2 (5B)"
+refused "(1R), (2F), --round 4 (5B)" "$f4" "$r2" --ticket 7 --round 4
+bash "$skill/scripts/review-brief.sh" "$r2" --ticket 7 --previous previous-2f.md > out.txt
+printed out.txt "ticket: #7
+round: 3 of 3
+settled: carried 1, dropped 0 without a citation
+$r2d/standards-brief.md
+$r2d/spec-brief.md" "(2F) from --previous (5C)"
+fixed_section "$r2d/standards-brief.md" "1. [S1] **Hook in Python.** Ported." "(2F) from --previous (5C)"
+# Row 6: round two with no hard item carries the same line, so the brief is row 5's. 6B and 6C
+# are 5B and 5C: the brief never reads a hard item, so their history is byte for byte row 5's.
+bash "$skill/scripts/review-brief.sh" "$r2" --ticket 7 > out.txt
+printed out.txt "$r3_fix" "(2F) with no hard item is row 5 to the brief (6A)"
+# Row 7: a fixed point that is not r2.
+refused "(2F), the original fixed point (7A)" "$(fp3 "$r2" HEAD~2)" HEAD~2 --ticket 7
+refused "(2F), HEAD as the fixed point (7A)" "$(fp3 "$r2" HEAD)" HEAD --ticket 7
+refused "(2F), --round 3 from the original fixed point (7B)" "$(fp3 "$r2" HEAD~2)" HEAD~2 --ticket 7 --round 3
+refused "(2F) from --previous, the original fixed point (7C)" "$(fp3 "$r2" HEAD~2)" HEAD~2 --ticket 7 --previous previous-2f.md
+# Row 8: r2 does not resolve.
+sed "s/$r2/0000000000000000000000000000000000000000/" previous-2f.md > previous-2f-gone.md
+pr me me:previous-1r.md me:previous-2f-gone.md
+fr3="review-brief: round 3 reviews only the fix from 0000000000000000000000000000000000000000, the commit round 2 reviewed, and that commit does not resolve here; fetch the PR's branch"
+refused "(2F) naming a commit this clone lacks (8A)" "$fr3" "$r2" --ticket 7
+refused "(2F) naming a commit this clone lacks, --round 3 (8B)" "$fr3" "$r2" --ticket 7 --round 3
+refused "(2F) naming a commit this clone lacks, from --previous (8C)" "$fr3" "$r2" --ticket 7 --previous previous-2f-gone.md
+# Row 9: a fix commit naming no ticket, on a branch of its own.
+git switch -q -c no-ticket "$r2"
+echo 'hook fixed, no ticket' > a.txt
+git commit -qam "fix the hook"
+pr me me:previous-1r.md me:previous-2f.md
+ft3="review-brief: round 3 reviews only the fix and its commits name no ticket, while round 2 had a spec; pass --ticket N so the Spec axis reads the same spec"
+refused "(2F) with a spec, no --ticket and a fix naming none (9A)" "$ft3" "$r2"
+refused "(2F) with a spec, no --ticket and a fix naming none, --round 3 (9B)" "$ft3" "$r2" --round 3
+refused "(2F) with a spec, no --ticket and a fix naming none, from --previous (9C)" "$ft3" "$r2" --previous previous-2f.md
+pr me me:previous-1r.md me:previous-2f-nospec.md
+bash "$skill/scripts/review-brief.sh" "$r2" > out.txt
+printed out.txt "round: 3 of 3
+settled: carried 3, dropped 1 without a citation
+$r2d/standards-brief.md
+no spec: Standards axis only" "(2F) with no spec: the Standards axis alone (9A)"
+fixed_section "$r2d/standards-brief.md" "1. [S1] **Hook in Python.** Ported." "(2F) with no spec (9A)"
+git switch -q -
+git branch -qD no-ticket
+# Row 10: no commit after r2.
+h="$(git rev-parse HEAD)"
+sed "s/$r2/$h/" previous-2f.md > previous-2f-head.md
+pr me me:previous-1r.md me:previous-2f-head.md
+for cell in "10A:" "10B:--round 3" "10C:--previous previous-2f-head.md"; do
+  rm -rf .scratch .claude/state
+  set +e
+  # shellcheck disable=SC2086 # the cell's flags are words
+  out="$(bash "$skill/scripts/review-brief.sh" "$h" --ticket 7 ${cell#*:} 2>&1)"
+  code=$?
+  set -e
+  if [ "$code" != 1 ] || [ "${out##*$'\n'}" != "review-brief: the diff is empty; nothing to review since $h" ] || [ -e .claude/state/review ] || [ -e ".scratch/review/$h" ]; then
+    echo "FAIL round three with no fix commit (${cell%%:*}): exit $code, wanted 1, the empty-diff refusal and no state"
+    echo "  got: $out"
+    exit 1
+  fi
+  n=$((n + 1))
+done
+# Row 11: the sweep form has no fix-only round.
+pr me me:previous-1r.md me:previous-2f.md
+refused "the sweep form after (2F) (11A)" "$(fp3 "$r2" paths)" --paths a.txt --commits HEAD
+refused "the sweep form after (2F), --round 3 (11B)" "$(fp3 "$r2" paths)" --paths a.txt --commits HEAD --round 3
+refused "the sweep form after (2F) from --previous (11C)" "$(fp3 "$r2" paths)" --paths a.txt --commits HEAD --previous previous-2f.md
+# Row 12: the words not as the line: in a fence, from a stranger, before a rebuilt (2), with a
+# short, uppercase or trailing-text sha, and bare.
+awk '/^fix only after / { print "```"; print; print "```"; next } { print }' previous-2f.md > previous-2f-fenced.md
+fo_comment previous-3-spec.md "$(git rev-parse --short "$r2")" > previous-2f-short.md
+fo_comment previous-3-spec.md "$(printf '%s' "$r2" | tr a-f A-F)" > previous-2f-upper.md
+fo_comment previous-3-spec.md "$r2 trailing" > previous-2f-trailing.md
+fo_comment previous-3-spec.md "" > previous-2f-bare.md
+for hist in "me:previous-2f-fenced.md" "me:previous-2r.md stranger:previous-2f.md" "me:previous-2f.md me:previous-2r.md" "me:previous-2f-short.md" "me:previous-2f-upper.md" "me:previous-2f-trailing.md" "me:previous-2f-bare.md"; do
+  # shellcheck disable=SC2086 # the history is a list of login:file words
+  pr me me:previous-1r.md $hist
+  bash "$skill/scripts/review-brief.sh" HEAD~2 --ticket 7 > out.txt
+  has out.txt "round: 3 of 3" "$hist is not the line: round three (12A)"
+  lacks "$od/standards-brief.md" "## The fix under review" "$hist is not the line: the whole diff (12A)"
+  # shellcheck disable=SC2086 # the history is a list of login:file words
+  same "$hist is not the line: as today (12A)" HEAD~2 me:previous-1r.md $hist
+  bash "$skill/scripts/review-brief.sh" HEAD~2 --ticket 7 --round 3 > out.txt
+  has out.txt "round: 3 of 3" "$hist is not the line, --round 3 (12B)"
+  lacks "$od/standards-brief.md" "## The fix under review" "$hist is not the line, --round 3: the whole diff (12B)"
+  # A stranger's comment or a rebuilt (2) has no --previous form: a file is the author's (#93).
+  case "$hist" in *" "*) continue ;; esac
+  bash "$skill/scripts/review-brief.sh" HEAD~2 --ticket 7 --previous "${hist#me:}" > out.txt
+  has out.txt "round: 3 of 3" "$hist is not the line, from --previous (12C)"
+  lacks "$od/standards-brief.md" "## The fix under review" "$hist is not the line, from --previous: the whole diff (12C)"
+done
+# Row 13: the FO line on a round-one comment, and the RV line on a round-two one, are not read there.
+awk -v fo="fix only after $r2" '/^round: 1 of 3$/ { print fo } { print }' previous.md > previous-1f.md
+bash "$skill/scripts/review-brief.sh" HEAD~2 --ticket 7 --previous previous-1f.md > out.txt
+printed out.txt "$r2_out" "(1F): round two (13A)"
+no_ff "$od" "(1F) (13A)"
+awk -v r="reviewed: $r1" '/^round: 2 of 3$/ { print r } { print }' previous-2.md > previous-2rv.md
+pr me me:previous-1r.md me:previous-2rv.md
+bash "$skill/scripts/review-brief.sh" HEAD~2 --ticket 7 > out.txt
+printed out.txt "$r3_whole" "(1R), (2 with a reviewed line): round three, the whole diff (13A)"
+lacks "$od/standards-brief.md" "## The fix under review" "(1R), (2 with a reviewed line): no fix section (13A)"
+no_ff "$od" "(1R), (2 with a reviewed line) (13A)"
+bash "$skill/scripts/review-brief.sh" HEAD~2 --ticket 7 --previous previous-1f.md --round 3 > out.txt
+has out.txt "round: 3 of 3" "(1F), --round 3 (13B)"
+lacks "$od/standards-brief.md" "## The fix under review" "(1F), --round 3: the whole diff (13B)"
+{ cat previous-1r.md; printf '\036\n'; cat previous-2rv.md; } > hist-13.md
+bash "$skill/scripts/review-brief.sh" HEAD~2 --ticket 7 --previous hist-13.md > out.txt
+printed out.txt "$r3_whole" "(1R), (2 with a reviewed line) from --previous: round three, the whole diff (13C)"
+lacks "$od/standards-brief.md" "## The fix under review" "(1R), (2 with a reviewed line) from --previous: no fix section (13C)"
+no_ff "$od" "(1R), (2 with a reviewed line) from --previous (13C)"
+# Row 14: a restart after (1R), and after (1R), (2F).
+for hist in "me:restart-2.md" "me:previous-2f.md me:restart-3.md"; do
+  # shellcheck disable=SC2086 # the history is a list of login:file words
+  pr me me:previous-1r.md $hist
+  bash "$skill/scripts/review-brief.sh" HEAD~2 --ticket 7 > out.txt
+  printed out.txt "ticket: #7
+$restart_line
+round: 1 of 3
+$od/standards-brief.md
+$od/spec-brief.md" "(1R), $hist: round one of the redesign (14A)"
+  no_ff "$od" "(1R), $hist (14A)"
+  bash "$skill/scripts/review-brief.sh" HEAD~2 --ticket 7 --round 2 > out.txt
+  printed out.txt "ticket: #7
+$restart_line
+round: 2 of 3
+$od/standards-brief.md
+$od/spec-brief.md" "(1R), $hist, --round 2 (14B)"
+  no_ff "$od" "(1R), $hist, --round 2 (14B)"
+done
+# Rows 15 to 18: past a fix-only round three, #93's rounds, on a branch of their own. s3 is the
+# commit round three reviewed and t the one round four reviewed.
+git switch -q -c past-three
+s3="$(git rev-parse HEAD)"
+echo guarded >> a.txt
+git commit -qam "guard the hook, #7"
+short3="$(git rev-parse --short HEAD)"
+wb_comment previous-3-spec.md "$s3" "Guarded." "$short3" > previous-3w-fo.md
+pr me me:previous-1r.md me:previous-2f.md me:previous-3w-fo.md
+bash "$skill/scripts/review-brief.sh" "$s3" --ticket 7 > out.txt
+has out.txt "round: 4 of 5" "(3W s) after (2F): round four (15A)"
+for f in ".scratch/review/$s3/standards-brief.md" ".scratch/review/$s3/spec-brief.md"; do
+  fixed_section "$f" "1. [S1] **Hook in Python.** Guarded. fixed: $short3" "$f (15A)"
+  lacks "$f" "1. [S1] **Hook in Python.** Ported." "$f: round two's unmarked item is not in round four's section (15A)"
+done
+only_commit ".scratch/review/$s3/standards-brief.md" "guard the hook, #7" "Standards (15A)"
+bash "$skill/scripts/review-brief.sh" "$s3" --ticket 7 --round 3 > out.txt
+has out.txt "round: 3 of 3" "(3W s) after (2F), --round 3 (15B)"
+lacks ".scratch/review/$s3/standards-brief.md" "## The fix under review" "(3W s) after (2F), --round 3: no fix section (15B)"
+{ cat previous-1r.md; printf '\036\n'; cat previous-2f.md; printf '\036\n'; cat previous-3w-fo.md; } > hist-15.md
+bash "$skill/scripts/review-brief.sh" "$s3" --ticket 7 --previous hist-15.md > out.txt
+has out.txt "round: 4 of 5" "(3W s) after (2F) from --previous: round four (15C)"
+fixed_section ".scratch/review/$s3/standards-brief.md" "1. [S1] **Hook in Python.** Guarded. fixed: $short3" "(3W s) after (2F) from --previous (15C)"
+lacks ".scratch/review/$s3/standards-brief.md" "1. [S1] **Hook in Python.** Ported." "(3W s) after (2F) from --previous: round two's item is not in the section (15C)"
+refused "(3W s) after (2F), from r2 (16A)" "$(fp 4 "$s3" "$r2")" "$r2" --ticket 7
+refused "(3W s) after (2F), from r2, --round 4 (16B)" "$(fp 4 "$s3" "$r2")" "$r2" --ticket 7 --round 4
+refused "(3W s) after (2F), from r2, from --previous (16C)" "$(fp 4 "$s3" "$r2")" "$r2" --ticket 7 --previous hist-15.md
+pr me me:previous-1r.md me:previous-2f.md me:previous-3.md
+refused "a plain round three after (2F) (17A)" "$f4" "$s3" --ticket 7
+refused "a plain round three after (2F), --round 5 (17B)" "$(f5 5 3)" "$s3" --ticket 7 --round 5
+{ cat previous-1r.md; printf '\036\n'; cat previous-2f.md; printf '\036\n'; cat previous-3.md; } > hist-17.md
+refused "a plain round three after (2F) from --previous (17C)" "$f4" "$s3" --ticket 7 --previous hist-17.md
+t="$(git rev-parse HEAD)"
+echo "guarded again" >> a.txt
+git commit -qam "guard the hook again, #7"
+shortt="$(git rev-parse --short HEAD)"
+wb_comment previous-3-spec.md "$t" "Guarded again." "$shortt" | sed 's/^round: 3 of 3$/round: 4 of 5/' > previous-4w-fo.md
+pr me me:previous-1r.md me:previous-2f.md me:previous-3w-fo.md me:previous-4w-fo.md
+bash "$skill/scripts/review-brief.sh" "$t" --ticket 7 > out.txt
+has out.txt "round: 5 of 5" "(4W t) after (2F), (3W s): round five (18A)"
+fixed_section ".scratch/review/$t/standards-brief.md" "1. [S1] **Hook in Python.** Guarded again. fixed: $shortt" "round five (18A)"
+bash "$skill/scripts/review-brief.sh" "$t" --ticket 7 --round 5 > out.txt
+has out.txt "round: 5 of 5" "(4W t) after (2F), (3W s), --round 5 (18B)"
+{ cat hist-15.md; printf '\036\n'; cat previous-4w-fo.md; } > hist-18.md
+bash "$skill/scripts/review-brief.sh" "$t" --ticket 7 --previous hist-18.md > out.txt
+has out.txt "round: 5 of 5" "(4W t) after (2F), (3W s) from --previous: round five (18C)"
+{ cat hist-18.md; printf '\036\n'; cat previous-5.md; } > hist-18-5.md
+refused "a fifth comment after (2F) from --previous: the sixth round (18C)" "$f6" "$t" --ticket 7 --previous hist-18-5.md
+pr me me:previous-1r.md me:previous-2f.md me:previous-3w-fo.md me:previous-4w-fo.md me:previous-5.md
+refused "a fifth comment after (2F): the sixth round (18A)" "$f6" "$t" --ticket 7
+git switch -q -
+git branch -qD past-three
+# Row 19: histories from before this ticket.
+pr me me:previous.md me:previous-2.md
+bash "$skill/scripts/review-brief.sh" HEAD~2 --ticket 7 > out.txt
+printed out.txt "$r3_whole" "(1), (2) from before the lines: round three, the whole diff (19A)"
+lacks "$od/standards-brief.md" "## The fix under review" "(1), (2): no fix section (19A)"
+no_ff "$od" "(1), (2) (19A)"
+bash "$skill/scripts/review-brief.sh" HEAD~2 --ticket 7 --round 3 > out.txt
+printed out.txt "$r3_whole" "(1), (2), --round 3 (19B)"
+lacks "$od/standards-brief.md" "## The fix under review" "(1), (2), --round 3: no fix section (19B)"
+no_ff "$od" "(1), (2), --round 3 (19B)"
+{ cat previous.md; printf '\036\n'; cat previous-2.md; } > hist-19.md
+bash "$skill/scripts/review-brief.sh" HEAD~2 --ticket 7 --previous hist-19.md > out.txt
+printed out.txt "$r3_whole" "(1), (2) from --previous (19C)"
+lacks "$od/standards-brief.md" "## The fix under review" "(1), (2) from --previous: no fix section (19C)"
+no_ff "$od" "(1), (2) from --previous (19C)"
+# 20B and 20C: round three after a round-two comment reads no line of the round-one comment, and
+# (1) differs from (1R) by the reviewed line alone, which 5B and 5C carry.
+# Row 20: an old round-one comment, then (2F).
+pr me me:previous.md me:previous-2f.md
+bash "$skill/scripts/review-brief.sh" "$r2" --ticket 7 > out.txt
+printed out.txt "$r3_fix" "(1), (2F): as row 5 (20A)"
+fixed_section "$r2d/standards-brief.md" "1. [S1] **Hook in Python.** Ported." "(1), (2F) (20A)"
+only_commit "$r2d/standards-brief.md" "fix the hook, #7" "(1), (2F) (20A)"
+# Row 21: a CRLF copy of (2F).
+awk '{ printf "%s\r\n", $0 }' previous-2f.md > previous-2f-crlf.md
+bash "$skill/scripts/review-brief.sh" "$r2" --ticket 7 --previous previous-2f-crlf.md > out.txt
+printed out.txt "ticket: #7
+round: 3 of 3
+settled: carried 1, dropped 0 without a citation
+$r2d/standards-brief.md
+$r2d/spec-brief.md" "a CRLF (2F) from --previous (21C)"
+fixed_section "$r2d/standards-brief.md" "1. [S1] **Hook in Python.** Ported." "a CRLF (2F) (21C)"
+pr me me:previous-1r.md me:previous-2f-crlf.md
+bash "$skill/scripts/review-brief.sh" "$r2" --ticket 7 > out.txt
+printed out.txt "$r3_fix" "a CRLF (2F) from gh: as the LF history of 5A (21A)"
+fixed_section "$r2d/standards-brief.md" "1. [S1] **Hook in Python.** Ported." "a CRLF (2F) from gh (21A)"
+# 21B: --round 3 over the CRLF history from gh is 21A's input path with the flag 5B covers.
+# Row 22: the state each run writes.
+pr me me:previous-1r.md
+bash "$skill/scripts/review-brief.sh" HEAD~2 --ticket 7 > out.txt
+ff "$od" "the fix lines after (1R) (22)"
+[ "$(cat "$od/reviewed")" = "$(git rev-parse HEAD)" ] || { echo "FAIL: the reviewed file does not hold HEAD after (1R) (22)"; exit 1; }
+n=$((n + 1))
+awk -v r="reviewed: $(git commit-tree "HEAD^{tree}" -m elsewhere)" '/^round: 1 of 3$/ { print r } { print }' previous.md > previous-1r-elsewhere.md
+pr me me:previous-1r-elsewhere.md
+bash "$skill/scripts/review-brief.sh" HEAD~2 --ticket 7 > out.txt
+no_ff "$od" "a reviewed commit that is not an ancestor of HEAD (22)"
+sed "s/$r1/0000000000000000000000000000000000000000/" previous-1r.md > previous-1r-gone.md
+pr me me:previous-1r-gone.md
+bash "$skill/scripts/review-brief.sh" HEAD~2 --ticket 7 > out.txt
+no_ff "$od" "a reviewed commit that does not resolve (22)"
+pr me me:previous-1r.md me:previous-2f.md
+refused "a refusal writes neither file (22)" "$(fp3 "$r2" HEAD~2)" HEAD~2 --ticket 7
+rm pr.json
 # The merge-ready sentence babysit reads, byte-identical in the playbook and the standalone skill.
 babysit_rule='The review runs three rounds on one PR, five when round three or four fixed a Would-break item; a comment reading `round: 3 of 3`, `round: 4 of 5` or `round: 5 of 5` with `act-on items: 0` and no `would-break fixed after <sha>` line makes the PR review-ready even when the fix commits it names come after the reviewed commit. A comment carrying the line `would-break fixed after <sha>` is not review-ready whatever its count: below round five another round is owed and the orchestrator runs it (`spec-review` step 1 says its fixed point); at `round: 5 of 5` it is the human'"'"'s line, a wait like an `## Ask` item and not a blocker to fix here, until the human answers the report the orchestrator posted on the PR.'
 has "$here/template/.agents/skills/poteto-mode/playbooks/babysit.md" "$babysit_rule" "the babysit playbook carries the merge-ready sentence"
 has "$here/template/.agents/skills/babysit/SKILL.md" "$babysit_rule" "the babysit skill carries the merge-ready sentence"
+# #106: the owed line's sentence, byte-identical in both babysit copies, and step 1's fix-only round three.
+babysit_owed='A round-one or round-two comment carrying the line `next round owed: round <N> reviews the fixes marked here` is not review-ready whatever its count: the orchestrator runs that round (`spec-review` step 1); the lines `reviewed: <sha>` and `fix only after <sha>` only record where the next round starts and change nothing here.'
+has "$here/template/.agents/skills/poteto-mode/playbooks/babysit.md" "$babysit_owed" "the babysit playbook carries the owed sentence (#106)"
+has "$here/template/.agents/skills/babysit/SKILL.md" "$babysit_owed" "the babysit skill carries the owed sentence (#106)"
+has "$source_skill/SKILL.md" 'Round three is fix-only too when round two'"'"'s comment carries `fix only after <sha>`' "SKILL.md step 1 says round three is fix-only after the line (#106)"
 
 # Ticket #91, the scenario table: a cross-cutting diff's Spec brief continues its `## Walk` bullet,
 # on the same line, with the risk sentence, and a grounding with no line outside fenced text that
