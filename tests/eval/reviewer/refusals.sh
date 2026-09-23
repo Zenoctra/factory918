@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Asserts tests/eval/reviewer/reviewer.py against the `## Design` section of ticket #103: first the
 # cells of the scenario table in its order (rows 1 to 22; within a row the columns run Claude, run
-# Codex, run withheld, collect, table, a dash skipped), then one check per scoring rule of the
+# Codex, run withheld, collect, table, a dash skipped), then the settle rule for a run whose last
+# line never carried a stop reason, then one check per scoring rule of the
 # Contract. It builds a temporary repository, a one-round fixture set `r1` whose Standards brief
 # carries one label, a fake pstack-runner and hand-written subagent transcripts, and points every
 # REVIEWER_* knob at them. Exits 1 on the first miss.
@@ -153,11 +154,16 @@ elif cmd == "finish":
             "content": [{"type": "tool_use", "name": tool, "input": tool_input}]}},
         {"type": "user", "message": {"role": "user", "content": [{"type": "tool_result", "content": "ok"}]}, "timestamp": at(2)},
     ]
-    if state == "finished":
+    if state in ("finished", "textnull"):
         done = {"type": "assistant", "requestId": "r2", "timestamp": at(5), "message": {
-            "model": model, "stop_reason": "end_turn", "usage": usage(3, 200, 0, 7),
+            "model": model, "stop_reason": "end_turn" if state == "finished" else None,
+            "usage": usage(3, 200, 0, 7),
             "content": [{"type": "text", "text": "done"}]}}
         lines += [done, done, {"type": "attachment", "timestamp": at(6)}]
+    elif state == "toolnull":
+        lines.append({"type": "assistant", "requestId": "r2", "timestamp": at(5), "message": {
+            "model": model, "stop_reason": None, "usage": usage(3, 200, 0, 7),
+            "content": [{"type": "tool_use", "name": tool, "input": tool_input}]}})
     path = os.path.join(root, "s", "subagents", f"agent-{name}.jsonl")
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w") as f:
@@ -553,6 +559,34 @@ run run "$X" r1/standards 1
 check "22 run codex: the usage-limit run is prepared again" has "$out" "recall 1/1"
 check "22 run codex: the runner is called once more" lines "$(cat "$FAKE_CALLS")" 1
 check "22 run codex: the receipt is now complete" is "$(h field "$(rundir "$X" standards 1)/receipt.json" status)" complete
+
+# The settle rule: a done run whose last assistant line carries no stop reason.
+fresh r23
+run run "$C" r1/standards 1
+finish "$out" "$tmp/rep/hit.md" claude-opus-5 textnull
+export REVIEWER_SETTLE_SECONDS=0
+run run "$C" r1/standards 1
+check "23 run claude: a settled text-only last line reads as finished" has "$out" "finished $(rundir "$C" standards 1)"
+run collect
+check "23 collect: it is collected" has "$out" "in flight 0"
+check "23 collect: its receipt is complete" is "$(h field "$(rundir "$C" standards 1)/receipt.json" status)" complete
+
+fresh r23young
+run run "$C" r1/standards 1
+finish "$out" "$tmp/rep/hit.md" claude-opus-5 textnull
+export REVIEWER_SETTLE_SECONDS=3600
+run collect
+check "23 collect: the same line before it settles stays in flight" has "$out" "in flight 1"
+check "23 collect: no receipt" absent "$(rundir "$C" standards 1)/receipt.json"
+
+fresh r23tool
+run run "$C" r1/standards 1
+finish "$out" "$tmp/rep/hit.md" claude-opus-5 toolnull
+export REVIEWER_SETTLE_SECONDS=0
+run collect
+check "23 collect: a last line holding a tool_use stays in flight" has "$out" "in flight 1"
+check "23 collect: no receipt" absent "$(rundir "$C" standards 1)/receipt.json"
+unset REVIEWER_SETTLE_SECONDS
 
 pycheck() {
   local label=$1
