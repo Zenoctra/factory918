@@ -396,8 +396,16 @@ finish "$first" none claude-fable-5-1 usage
 run collect
 check "usage limit: a dropout receipt" is "$(h field "$(rundir "$F" standards 1)/receipt.json" status)" dropout
 check "usage limit: named" starts "$(h field "$(rundir "$F" standards 1)/receipt.json" detail)" usage-limit
+run next "$C" "$F" --limit 1
+check "usage limit: the model is paused" starts "$out" "paused $F: usage limit at "
+check "usage limit: the pause says how to resume" has "$out" "after the reset run: python3 tests/eval/reviewer/reviewer.py next --resume $F"
+check "usage limit: the other model goes on" has "$out" "\"run\": \"$(rundir "$C" standards 1)\""
+check "usage limit: nothing prepared for the paused model" lacks "$out" "${F//:/-}"
+check "usage limit: the receipt stays until resumed" is "$(h field "$(rundir "$F" standards 1)/receipt.json" status)" dropout
 run next "$F" --limit 1
-check "usage limit: prepared again by next" is "$(h get "$out" run)" "$(rundir "$F" standards 1)"
+check "usage limit: still paused without --resume" is "$(grep -c '^paused' <<<"$out"):$(grep -c '^{' <<<"$out" || true)" 1:0
+run next --resume "$F" --limit 1
+check "usage limit: --resume prepares the limited run again" is "$(h get "$out" run)" "$(rundir "$F" standards 1)"
 check "usage limit: with a new checkout" test "$(h checkout "$out")" != "$(h checkout "$first")"
 check "usage limit: the receipt is kept aside" exists "$REVIEWER_OUT/dropped/${F//:/-}/r1/standards/1/1/receipt.json"
 finish "$out" "$tmp/rep/hit.md" claude-fable-5-1

@@ -17,11 +17,13 @@ patch from its commits the same way.
     python3 tests/eval/reviewer/reviewer.py check
         Validate the rounds, the fix patches, the truth file and the agent definitions, and prove
         that every set of patches a masked pass can need applies to its head and briefs.
-    python3 tests/eval/reviewer/reviewer.py next <descriptor>... [--limit N]
+    python3 tests/eval/reviewer/reviewer.py next <descriptor>... [--resume <descriptor>]... [--limit N]
         Print up to N (8) launch lines and prepare what it prints: first the prepared runs no
         transcript names yet, then new runs, pass 1 across every brief before pass 2 before pass 3.
-        A step is prepared once its prerequisites are collected complete; a contaminated or
-        usage-limit run is moved aside and prepared again. Collects nothing.
+        A step is prepared once its prerequisites are collected complete; a contaminated run is
+        moved aside and prepared again. A model with a usage-limit receipt is paused: `next`
+        prints one `paused` line for it and prepares nothing for it until `--resume` names it,
+        which prepares its limited runs again first. Collects nothing.
     python3 tests/eval/reviewer/reviewer.py collect
         Collect every finished run; list what is in flight, unlaunched or stuck. Safe to repeat.
     python3 tests/eval/reviewer/reviewer.py table
@@ -561,9 +563,13 @@ def receipt_from_transcript(run: RunId, lines: list[dict], expect: re.Pattern[st
     return Receipt(run, status, "; ".join(reaches) or "complete", models[-1], efforts[0], tokens, wall_ms, source)
 
 
+def usage_limited(receipt: Receipt) -> bool:
+    return receipt.status == "dropout" and receipt.detail.startswith(USAGE_LIMIT)
+
+
 def redo(receipt: Receipt) -> bool:
     """A run whose result says nothing about the model: moved aside and prepared again."""
-    return receipt.status == "contaminated" or (receipt.status == "dropout" and receipt.detail.startswith(USAGE_LIMIT))
+    return receipt.status == "contaminated" or usage_limited(receipt)
 
 
 @dataclass(frozen=True)
@@ -927,7 +933,7 @@ def cmd_check(fx: Fixtures, env: Env) -> int:
     return 0
 
 
-def cmd_next(fx: Fixtures, env: Env, descriptors: list[str], limit: int) -> int:
+def cmd_next(fx: Fixtures, env: Env, descriptors: list[str], limit: int, resume: list[str]) -> int:
     out = env.out
     missing = sorted({b.head for b in fx.briefs.values()
                       if subprocess.run(["git", "-C", str(env.repo), "cat-file", "-e", f"{b.head}^{{commit}}"],
@@ -936,30 +942,43 @@ def cmd_next(fx: Fixtures, env: Env, descriptors: list[str], limit: int) -> int:
         raise Refusal(f"{' '.join(missing)} not in this repository's objects; fetch with: {FETCH_KEEP_REFS}")
     runs = [RunId(desc, b, step) for desc in descriptors for b in fx.briefs for step in STEPS]
     states: dict[RunId, str] = {}
+    held: dict[str, float] = {}
+    resumed: set[RunId] = set()
     for run in runs:
         d = run.dir(out)
         st = state(d)
         if st == "broken":
             raise Refusal(f"{d} has no run.json: it was left half-prepared; remove it and run next again")
-        if st == "collected" and redo(receipt_at(d)):
+        receipt = receipt_at(d) if st == "collected" else None
+        if receipt and usage_limited(receipt) and run.descriptor not in resume:
+            held[run.descriptor] = max(held.get(run.descriptor, 0.0), (d / "receipt.json").stat().st_mtime)
+        elif receipt and redo(receipt):
             set_aside(d, out)
             st = "absent"
+            if usage_limited(receipt):
+                resumed.add(run)
         states[run] = st
+    # The account's quota ran out for a held model: nothing more launches for it until the reset.
+    states = {run: st for run, st in states.items() if run.descriptor not in held}
     complete = {run for run, st in states.items() if st == "collected" and receipt_at(run.dir(out)).status == "complete"}
     prepared = {run: prepared_at(run.dir(out)) for run, st in states.items() if st == "prepared"}
     transcripts = locate(prepared, env.transcripts, out) if prepared else {}
     lines = [launch_line(p, fx.briefs[run.brief], out) for run, p in prepared.items() if transcripts[run] is None]
     ready = sorted((run for run, st in states.items()
                     if st == "absent" and all(run.at(s) in complete for s in STEPS[run.step].needs)),
-                   key=lambda r: (STEPS[r.step].pass_, descriptors.index(r.descriptor), natural(r.brief.round),
-                                  AXES.index(r.brief.axis), list(STEPS).index(r.step)))
+                   key=lambda r: (r not in resumed, STEPS[r.step].pass_, descriptors.index(r.descriptor),
+                                  natural(r.brief.round), AXES.index(r.brief.axis), list(STEPS).index(r.step)))
     for run in ready:
         if len(lines) >= limit:
             break
         brief = fx.briefs[run.brief]
         p = materialize(plan(run, brief, env.work), brief, fx, env)
         lines.append(launch_line(p, brief, out))
-    print("\n".join(lines[:limit]))
+    for desc, at in held.items():
+        print(f"paused {desc}: usage limit at {datetime.fromtimestamp(at).isoformat(timespec='minutes')}; "
+              f"after the reset run: python3 tests/eval/reviewer/reviewer.py next --resume {desc}")
+    if lines:
+        print("\n".join(lines[:limit]))
     return 0
 
 
@@ -1042,11 +1061,14 @@ def main(argv: list[str] | None = None) -> int:
     verbs = parser.add_subparsers(dest="verb", required=True)
     verbs.add_parser("check")
     nxt = verbs.add_parser("next")
-    nxt.add_argument("descriptors", nargs="+", choices=list(MODELS), metavar="descriptor")
+    nxt.add_argument("descriptors", nargs="*", choices=list(MODELS), metavar="descriptor")
+    nxt.add_argument("--resume", action="append", choices=list(MODELS), default=[], metavar="descriptor")
     nxt.add_argument("--limit", type=at_least_one, default=8)
     verbs.add_parser("collect")
     verbs.add_parser("table")
     args = parser.parse_args(argv)
+    if args.verb == "next" and not args.descriptors and not args.resume:
+        nxt.error("name at least one descriptor or --resume descriptor")
     try:
         env = load_env()
         fx = load_fixtures(env.fixtures)
@@ -1056,7 +1078,7 @@ def main(argv: list[str] | None = None) -> int:
             return cmd_collect(fx, env)
         if args.verb == "table":
             return cmd_table(fx, env)
-        return cmd_next(fx, env, list(dict.fromkeys(args.descriptors)), args.limit)
+        return cmd_next(fx, env, list(dict.fromkeys(args.descriptors + args.resume)), args.limit, args.resume)
     except Refusal as e:
         print(f"reviewer: {e}", file=sys.stderr)
         return 1
