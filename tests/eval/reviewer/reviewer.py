@@ -536,13 +536,15 @@ def receipt_from_transcript(run: RunId, lines: list[dict], expect: re.Pattern[st
         return Receipt(run, "dropout", f"{USAGE_LIMIT}: the transcript says the account hit its usage limit",
                        None, None, None, wall_ms, source)
     served = [line for line in assistant if (line.get("message") or {}).get("model") not in (None, "<synthetic>")]
-    if not served:
-        said = " ".join(assistant_text(line) for line in assistant).strip()
+    # A lane whose last word is the harness's, not a model's, died: before its first answer or after.
+    if not served or (assistant[-1].get("message") or {}).get("model") == "<synthetic>":
+        said = " ".join(assistant_text(line) for line in assistant
+                        if (line.get("message") or {}).get("model") == "<synthetic>").strip()
         return Receipt(run, "dropout", f"{NO_RESPONSE}: {said[:120]}", None, None, None, wall_ms, source)
     models = sorted({line["message"]["model"] for line in served})
     wrong = [m for m in models if not expect.search(m)]
     if wrong:
-        raise Refusal(f"{run.descriptor} {run.brief} step {run.step} was served {', '.join(wrong) or 'no model'}; "
+        raise Refusal(f"{run.descriptor} {run.brief} step {run.step} was served {', '.join(wrong)}; "
                       f"{run.descriptor} pins {expect.pattern}; the agent definition drifted: fix it, "
                       f"remove the run directory, run next again")
     efforts = sorted({str(line.get("effort")) for line in served})

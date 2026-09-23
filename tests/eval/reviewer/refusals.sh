@@ -140,6 +140,8 @@ elif cmd == "finish":
         lines.append(synthetic("You've hit your usage limit · resets 3am", error="rate_limit", isApiErrorMessage=True))
     elif state == "session":
         lines.append(synthetic("You've hit your session limit · resets 1:40pm (America/Chicago)"))
+    elif state == "late":
+        lines.append(synthetic("API Error: 500 Internal server error", isApiErrorMessage=True))
     elif state == "dead":
         lines = [lines[0], synthetic("API Error: 500 Internal server error. " + "x" * 200, isApiErrorMessage=True)]
     elif state in ("finished", "textnull"):
@@ -427,6 +429,14 @@ run collect
 run table
 check "no response: counted in the table" is "$(cell "no response" I 1)" 3
 check "no response: not as a usage limit" is "$(cell "usage limit" I 1)" 0
+
+fresh late
+run next "$C" --limit 1
+finish "$out" none claude-opus-5 late
+run collect
+check "no response: a lane that answered once and then died is a dropout" is "$(h field "$(rundir "$C" standards 1)/receipt.json" detail)" "no-response: API Error: 500 Internal server error"
+run next "$C" --limit 1
+check "no response: it is prepared again, not stopped" is "$(h get "$out" run)" "$(rundir "$C" standards 1)"
 
 fresh fx-fable
 run next "$F" --limit 1
