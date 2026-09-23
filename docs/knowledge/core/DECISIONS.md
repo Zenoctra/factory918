@@ -65,7 +65,7 @@ Travels anywhere without change: the planning skills, the execution playbooks, `
 
 ## Provisional (added by agents; Manuel promotes or overrules)
 
-A row's id is `P<N>`, N the ticket its PR closes, and a second row from that ticket is `P<N>b` (P110). Never take the highest id plus one. `tools/check_knowledge.py` refuses a duplicate or any other form. P1 to P30 predate the rule and keep their ids.
+A row's id is `P<N>`, N the ticket its PR closes, and a second row from that ticket is `P<N>b` (P110). Never take the highest id plus one. `tools/check_knowledge.py` refuses a duplicate or any other form. P1 to P30 predate the rule and keep their ids; a ticket whose `P<N>` is already taken uses the next free letter.
 
 | # | Decision | Choice | Reason |
 |---|---|---|---|
