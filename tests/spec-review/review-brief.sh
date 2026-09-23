@@ -1651,7 +1651,7 @@ none "$fb" "$(printf %q "$nl_path")" "(21F)"
 # Rows 22 to 24: the total. K2 holds pk2/z.txt; eight files of 8192 bytes, then one of 2 bytes, then
 # z.txt as one line of 70000 bytes.
 mkdir pk2
-awk 'BEGIN { s = sprintf("%70000s", ""); gsub(/ /, "a", s); print s }' > pk2/z.txt
+awk 'BEGIN { s = "a"; while (length(s) < 70000) s = s s; print substr(s, 1, 70000) }' > pk2/z.txt
 git add pk2
 git commit -qm "the total's base, #7"
 k2="$(git rev-parse HEAD)"
@@ -1680,7 +1680,7 @@ carried23="### pk2/a.txt, whole, 1 line
 ### pk2/f7.txt, whole, 128 lines"
 [ "$(section "$w2" | grep '^### ')" = "$carried23" ] && [ "$(section "$w2" | grep -v '^$' | tail -1)" = "$over23" ] || { echo "FAIL (23W): the carried entries in path order, then the eighth on the over line:"; section "$w2" | grep -e '^### ' -e '^Not carried'; exit 1; }
 n=$((n + 1))
-awk 'BEGIN { s = sprintf("%70000s", ""); gsub(/ /, "b", s); print s }' > pk2/z.txt
+awk 'BEGIN { s = "b"; while (length(s) < 70000) s = s s; print substr(s, 1, 70000) }' > pk2/z.txt
 git commit -qam "one line of 70000 bytes, #7"
 bash "$skill/scripts/review-brief.sh" "$k2" --ticket 7 > out.txt
 [ "$(section "$w2" | grep '^### ')" = "$carried23" ] && [ "$(section "$w2" | grep -v '^$' | tail -1)" = "Not carried, over the pack's 65536 bytes: pk2/f8.txt whole; pk2/z.txt lines 1-1. Read these at HEAD from the repository." ] || { echo "FAIL (24W): row 23's entries carried, z.txt named on the over line after f8.txt:"; section "$w2" | grep -e '^### ' -e '^Not carried'; exit 1; }

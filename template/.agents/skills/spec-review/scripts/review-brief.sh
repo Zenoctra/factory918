@@ -29,6 +29,8 @@
 # headings are demoted one level so the section stays intact), outside fenced text; without one the
 # script refuses the same way. With a grounding, the Spec brief's `## Walk` bullet continues with
 # one numbered line per risk, so the reviewer walks the risks after the steps.
+# Both briefs carry `## Reading pack` after the diff, the code around each change at HEAD, which
+# scripts/reading-pack.sh writes to `<dir>/pack.md`; if it fails the script refuses before writing any state.
 # shellcheck disable=SC2016 # every single-quoted string here is a jq program or a Markdown template; the backticks and $ are literal
 set -euo pipefail
 usage() {
@@ -344,6 +346,13 @@ if [ -n "$crossing" ]; then
 elif [ -n "$blast" ]; then
   echo "review-brief: the diff is not cross-cutting; $blast is not pasted" >&2
 fi
+pack=("$fixed")
+[ "$fixed" != paths ] || pack=(--paths "${paths[@]}" --commits "${commits[@]}")
+if ! bash "$skill/scripts/reading-pack.sh" "${pack[@]}" > "$dir/pack.md"; then
+  rm -rf "$dir"
+  echo "review-brief: the reading pack failed (above); nothing written" >&2
+  exit 1
+fi
 state=.claude/state/review
 rm -rf "$state"
 mkdir -p "$state"
@@ -409,6 +418,9 @@ count_rule='End the report with exactly one line `hard findings: N`, where N is 
 # The paragraph over a fix-only round's fixed items; SKILL.md step 4 carries it word for word (the
 # same test holds them together). It says what the diff is, never what to find.
 fix_rule="The round before this one fixed these Act on items on this PR after the commit it reviewed; this round's diff is those fix commits and nothing else. Read each fix against its item, walk only the steps these commits touch, and report only what these commits get wrong. Nothing in this section says what you should find or confirm."
+# The sentence over the reading pack, after Manuel's words; SKILL.md step 4 carries it word for word
+# (the same test holds them together).
+pack_rule='The `## Reading pack` section above is the code to read, as it stands at the reviewed commit; open the repository only for what the pack does not carry, and then read that one function or section, not the file.'
 common() {
   echo "Read nothing beyond this brief unless a finding needs the code around a hunk, and then read that one function or section, not the file. Run nothing."
   echo
@@ -446,6 +458,7 @@ common() {
     echo "The diff is $(wc -l < "$dir/diff" | tr -d ' ') lines; read it from \`$dir/diff\`."
   fi
   echo
+  cat "$dir/pack.md"
   if [ -n "$settled" ]; then
     echo "## Settled in earlier rounds"
     echo
@@ -462,6 +475,8 @@ report_rules() {
   echo "$definition"
   echo
   printf '%s\n' "${quotes[@]}"
+  echo
+  echo "$pack_rule"
   echo
   echo "Write the report as Markdown with exactly these \`## \` headings, in this order, each holding numbered items or nothing:"
   echo
