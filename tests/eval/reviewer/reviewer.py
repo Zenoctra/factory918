@@ -482,7 +482,8 @@ PREFIX_WORDS = ("env", "sudo", "command", "exec", "time", "nohup", "xargs", "bui
                 "if", "then", "do", "else", "elif", "while", "until", "{", "!")
 TRUSTED_BINS = ("/usr/", "/bin/", "/opt/homebrew/")
 SEGMENT_SPLIT = re.compile(r"&&|\|\||;|\||\$\(|`|\n|\(")
-REGEX_CHARS = re.compile(r"[\^$*\[\]\\?+{}|]")
+# Characters only a regex uses; a glob's * ? [ { name real paths, so they exempt nothing.
+REGEX_CHARS = re.compile(r"[\^$\\+|]")
 
 
 def bash_reaches(command: str, root: str) -> list[str]:

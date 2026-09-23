@@ -621,8 +621,12 @@ for p in ["/srv/other-repo/x", "/Users/someone/x", "/home/someone/x", "/no-such-
     assert f"names {p}" in r.bash_reaches(f"cat {X}/a {p}", X), p
 assert "names /srv/x" in r.bash_reaches(f"cat {X}/a --file=/srv/x", X)'
 pycheck "bash: a token holding a regex character is a pattern" '
-for pat in ["\"/^## /\"", "\x27/foo.*/\x27", "\x27/a|b/\x27", "\x27/x[0-9]/\x27"]:
+for pat in ["\"/^## /\"", "\x27/end$/\x27", "\x27/a|b/\x27", "\x27/a+b/\x27", "\x27/a\\.b/\x27"]:
     assert r.bash_reaches(f"grep -E {pat} {X}/a.md", X) == [], pat'
+pycheck "bash: a glob path outside the export is flagged" '
+for cmd in ["cat /Users/manuel/Desktop/Work/*/CLAUDE.md", "ls /Users/x/.claude/agents/*.md",
+            "cat /Users/manuel/a[1].md", "cat /srv/x/?.md", "cat /srv/{a,b}/x"]:
+    assert any(w.startswith("names /") for w in r.bash_reaches(f"cd {X} && {cmd}", X)), cmd'
 pycheck "bash: a ~ path is flagged" 'assert "names ~/.ssh/config" in r.bash_reaches(f"cat {X}/a ~/.ssh/config", X)'
 pycheck "bash: a sibling export is flagged" '
 why = r.bash_reaches(f"cd {X} && cat /tmp/w/def456/factory918/a.txt", X)
