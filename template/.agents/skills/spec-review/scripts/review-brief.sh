@@ -15,12 +15,12 @@
 # is fix-only the same way when round two's comment carries `fix only after <sha>`
 # (review-comment.sh: no hard finding of round two outside the lines of the fix commits it
 # reviewed); round two writes the lines the commits after round one's reviewed commit (the
-# round-one comment's `reviewed: <sha>` line) added or removed to `<dir>/fix-lines`. A comment
-# carrying a line that is exactly `restart` (a design hole returned to architect) ends the
-# history: the round and the settled items are read from the comments after the last such
-# comment, and a `restart:` line says so. From every such comment, in order, the judgment's Noted
-# and Dismissed items that cite a decision are carried into both briefs as settled, each line
-# once; --previous FILE supplies the comments instead of gh, and --round N the round, for tests
+# round-one comment's `reviewed: <sha>` line) added, and where, to `<dir>/fix-lines` and
+# `<dir>/fix-ranges`. A comment carrying a line that is exactly `restart` (a design hole returned
+# to architect) ends the history: the round and the settled items are read from the comments
+# after the last such comment, and a `restart:` line says so. From every such comment, in order,
+# the judgment's Noted and Dismissed items that cite a decision are carried into both briefs as
+# settled, each line once; --previous FILE supplies the comments instead of gh, and --round N the round, for tests
 # and a branch whose PR is elsewhere.
 # A cross-cutting diff (one that touches a hooks directory, a settings.json or the factory918
 # skill) is briefed only with its blast-radius grounding: --blast-radius FILE, else the PR body's
@@ -354,14 +354,24 @@ echo "$fixed" > "$dir/fixed-point"
 echo "$round" > "$dir/round"
 git rev-parse HEAD > "$dir/reviewed"
 # Round two after a round-one comment carrying `reviewed: <sha>`: the lines the commits since that
-# commit (the fix commits) added or removed, less their markers and surrounding blanks, each once,
-# kept at four characters or more, since `}`, `fi` and `done` are in every diff and identify
-# nothing. review-comment.sh reads them to decide whether round three may review the fix alone;
-# the brief writes them because it runs at the reviewed commit, and the comment script stays free
-# of git.
+# commit (the fix commits) added, less their markers and surrounding blanks, kept when four
+# characters or more remain and the text occurs once across the HEAD versions of the files this
+# round reviews, so a quote of it can have come from nowhere else; and the new-side line ranges of
+# those commits per file. review-comment.sh reads both to decide whether round three may review
+# the fix alone. The brief writes them because it runs at the reviewed commit, and the comment
+# script stays free of git.
 if [ "$round" -eq 2 ] && [ "$top" -eq 1 ] && [ -n "$rv" ] && git rev-parse --verify -q "$rv^{commit}" >/dev/null && git merge-base --is-ancestor "$rv" HEAD; then
-  git diff --no-color --no-ext-diff -U0 "$rv" HEAD |
-    awk '/^(\+\+\+|---) / { next } /^[-+]/ { s = substr($0, 2); sub(/^[ \t]+/, "", s); sub(/[ \t\r]+$/, "", s); if (length(s) >= 4 && !seen[s]++) print s }' > "$dir/fix-lines"
+  awk 'FILENAME == ARGV[1] { s = $0; sub(/^[ \t]+/, "", s); sub(/[ \t\r]+$/, "", s); n[s]++; next }
+    /^\+\+\+ / { next }
+    /^\+/ { s = substr($0, 2); sub(/^[ \t]+/, "", s); sub(/[ \t\r]+$/, "", s); if (length(s) >= 4 && n[s] == 1 && !seen[s]++) print s }' \
+    <(while IFS= read -r p; do git show "HEAD:$p" 2>/dev/null || true; done < "$dir/files") \
+    <(git diff --no-color --no-ext-diff --no-renames -U0 "$rv" HEAD) > "$dir/fix-lines"
+  : > "$dir/fix-ranges"
+  while IFS= read -r -d '' p; do
+    git diff --no-color --no-ext-diff --no-renames -U0 "$rv" HEAD -- ":(literal)$p" |
+      P="$p" awk '/^@@ / { split(substr($3, 2), r, ","); c = (r[2] == "") ? 1 : r[2] + 0
+        if (c > 0) printf "%d\t%d\t%s\n", r[1], r[1] + c - 1, ENVIRON["P"] }' >> "$dir/fix-ranges"
+  done < <(git diff --no-renames -z --name-only "$rv" HEAD)
 fi
 
 # The spec is the ticket body plus the comments its author posted, each under its date. Comments by

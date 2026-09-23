@@ -7,8 +7,8 @@
 # `next round owed: round <N+1> reviews the fixes marked here` when an Act on item is marked
 # `fixed:`, and at round one `reviewed: <sha>` (`<dir>/reviewed`), at round two `fix only after
 # <sha>` when no Would-break or Fails-open item of either report is outside the fix
-# (`<dir>/fix-lines`), then the round (`of 5` from round four), then act-on items counted from the
-# judgment's Act on items
+# (`<dir>/fix-lines`, `<dir>/fix-ranges`), then the round (`of 5` from round four), then act-on
+# items counted from the judgment's Act on items
 # neither fixed on this PR (`fixed: <sha>`), filed as a ticket (`ticket: #N`) nor marked a hole,
 # plus its Ask items, and clears the review state so the delegation hook stops blocking the
 # reviewed files. No arguments: it reads .claude/state/review/dir. One argument, the review dir
@@ -231,23 +231,40 @@ if [ -n "$wb_first" ] && [ "$holes" -eq 0 ]; then
 fi
 fixed_here="$(items "$dir/judgment.md" "Act on" | grep -cE 'fixed: [0-9a-f]{7,40}$' || true)"
 # outside: the number of Would-break and Fails-open items in both reports (the Spec report only
-# with a spec) that are not inside the fix. An item is inside when a quoted line's text, less one
-# leading `+`, `-` or space and trimmed, is a fix line (`<dir>/fix-lines`, absent or empty the
-# empty set) and every `+` or `-` line it quotes is one; an unmarked line that is not one is the
-# hunk's context and neutral, and a text under four characters, a fence line and a `@@` line count
-# nothing. An item that quotes no fix line is outside, so every uncertain case reviews more. The
-# capture rule runs before `$fenced`, which skips the fenced lines it reads.
+# with a spec) that are not inside the fix. An item is inside when it quotes a `+` line of four
+# characters or more, every `+` or `-` line of four or more it quotes is a `+` line whose text,
+# less the marker and trimmed, is a fix line (<dir>/fix-lines: lines the fix commits added whose
+# text is unique in the files this round reviewed), and every path:N or path:N-M outside its
+# fences, its Documented step included, names exactly one file of <dir>/files at lines inside one
+# range of <dir>/fix-ranges. Unmarked quoted lines decide nothing, so a plain-code quote is outside;
+# every uncertain case reviews more. The capture rule runs before `$fenced`, which skips the fenced
+# lines it reads; the location scan runs after it, on unfenced lines only.
 outside() {
   local f total=0
   for f in "$dir/standards-report.md" ${has_spec:+"$dir/spec-report.md"}; do
-    total=$((total + $(awk -v fixf="$dir/fix-lines" '
-      BEGIN { while ((getline l < fixf) > 0) fix[l] = 1 }
-      function done() { if (hard && !(hit && ok)) out++; hard = 0; hit = 0; ok = 1 }
-      fence != "" && hard && !/^(```|~~~)/ && !/^@@/ { m = /^[+-]/; s = $0; sub(/^[-+ ]/, "", s); sub(/^[ \t]+/, "", s); sub(/[ \t\r]+$/, "", s)
-        if (length(s) >= 4) { if (s in fix) hit = 1; else if (m) ok = 0 } }
+    total=$((total + $(awk -v fixf="$dir/fix-lines" -v rangef="$dir/fix-ranges" -v filesf="$dir/files" '
+      BEGIN {
+        while ((getline l < fixf) > 0) fix[l] = 1
+        while ((getline l < filesf) > 0) path[++np] = l
+        while ((getline l < rangef) > 0) { t = index(l, "\t"); lo[++nr] = substr(l, 1, t - 1) + 0; l = substr(l, t + 1)
+          t = index(l, "\t"); hi[nr] = substr(l, 1, t - 1) + 0; at[nr] = substr(l, t + 1) }
+        loc = "[A-Za-z0-9_./-]*[A-Za-z][A-Za-z0-9_./-]*:[0-9]+(-[0-9]+)?"
+      }
+      function in_fix(tok,   p, n, a, b, d, i, k, want) {
+        match(tok, /:[0-9]+(-[0-9]+)?$/); p = substr(tok, 1, RSTART - 1); n = substr(tok, RSTART + 1)
+        a = n + 0; b = a; d = index(n, "-"); if (d) b = substr(n, d + 1) + 0
+        k = 0; for (i = 1; i <= np; i++) if (path[i] == p || substr(path[i], length(path[i]) - length(p)) == "/" p) { k++; want = path[i] }
+        if (k != 1) return 0
+        for (i = 1; i <= nr; i++) if (at[i] == want && lo[i] <= a && b <= hi[i]) return 1
+        return 0
+      }
+      function done() { if (hard && !(marked && ok)) out++; hard = 0; marked = 0; ok = 1 }
+      fence != "" && hard && /^[+-]/ { s = substr($0, 2); sub(/^[ \t]+/, "", s); sub(/[ \t\r]+$/, "", s)
+        if (length(s) >= 4) { marked = 1; if (!/^\+/ || !(s in fix)) ok = 0 } }
     '"$fenced"'
       /^## / { done(); next }
-      /^[0-9]+\. / { done(); hard = (h == "Would break" || h == "Fails open"); next }
+      /^[0-9]+\. / { done(); hard = (h == "Would break" || h == "Fails open") }
+      hard { t = $0; while (match(t, loc)) { tok = substr(t, RSTART, RLENGTH); t = substr(t, RSTART + RLENGTH); if (!in_fix(tok)) ok = 0 } }
       END { done(); print out + 0 }
     ' "$f")))
   done
