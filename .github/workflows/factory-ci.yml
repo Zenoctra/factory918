@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: ShellCheck
-        run: bash .github/shellcheck.sh factory918.sh template/.github/shellcheck.sh 'template/.claude/hooks/*.sh' 'template/.agents/skills/*/scripts/*.sh' 'tests/*/*.sh'
+        run: bash .github/shellcheck.sh factory918.sh template/.github/shellcheck.sh 'template/.claude/hooks/*.sh' 'template/.agents/skills/*/scripts/*.sh' 'tests/*/*.sh' 'tests/*/*/*.sh'
       - name: shellcheck.sh passes, refuses and counts what the test says
         run: bash tests/shellcheck/gate.sh
       - name: The delegation hook blocks and passes what the test says
@@ -27,6 +27,8 @@ jobs:
         run: bash tests/spec-review/review-brief.sh
       - name: overlap.sh prints, stops and refuses what the test says
         run: bash tests/poteto-mode/overlap.sh
+      - name: reviewer.py prints, collects, scores and refuses what the test says
+        run: bash tests/eval/reviewer/refusals.sh
       - name: No retired review wording under template/ or the core knowledge
         run: bash tests/spec-review/no-stale-wording.sh
       - name: The knowledge check refuses the Provisional ids the test says
