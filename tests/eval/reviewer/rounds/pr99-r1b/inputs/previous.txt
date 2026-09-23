@@ -1,0 +1,94 @@
+Round one found two hard items and, under the definition this PR adds, both are design holes rather than fixes: table B never says what text on a judgment line is a `hole:` field, so a reason that merely says "hole:" lands in column A or column E depending on that meaning, and table B has no row for a review with no ticket, which no `spec:` form can satisfy. Nothing is fixed on this PR: both return to `architect` scoped to `table 1/A` and `criterion 2`, the ticket's section is amended with dated lines, and the redesigned work is reviewed from round one, which the `restart` line below tells `review-brief.sh`.
+
+## Standards
+
+## Would break
+
+1. **A judgment reason that says "hole:" is read as a `hole:` field.** `fixed:` and `ticket:` are detected `$`-anchored, so those words are safe in prose; `holed()` instead greps `hole:` anywhere on the line, then refuses every match that does not end in a reference. An unmarked item whose one-line reason uses the term this change introduces ("Not a design hole: the table stands.") is refused as a malformed mark under Act on, and as a misplaced mark under Ask, Consider, Noted or Dismissed. The refusal names a field the item does not carry, so it does not say how to correct it.
+Documented step: ticket #90, table B, row 1 column A, "as today; counted / 0 / fix on the PR, unchanged"; the contract reads "the judgment field on an Act on item's own line, `$`-anchored like `fixed:` and `ticket:`".
+Result: `review-comment.sh` exits 1 with "has a 'hole:' field that fits no form" (or "carries a 'hole:' field under '## Noted'"), clears nothing, and the round's comment cannot be built until the reason is reworded.
+spec: table 1/A
+
+```sh
+ending='(fixed: [0-9a-f]{7,40}|ticket: #[0-9]+)$'
+# holed <heading>: the judgment items under the heading whose line carries a `hole:` field.
+holed() { items "$dir/judgment.md" "$1" | grep -vE "$ending" | grep 'hole:' || true; }
+```
+
+## Fails open
+
+## Standards breaches
+
+## Fix alongside
+
+2. **Three globals reused inside the hole loop.** `want` held the expected `[S<n>]`/`[P<n>]` set twenty lines up, and `f` and `at` are new globals in a file whose other helpers declare `local`. Names of their own would keep the reader from carrying two meanings of `want`.
+
+```sh
+  rests="$(specs "$f" | sed -n "${ref_id#[SP]}p")"
+  at="${rests%%$'\t'*}"; want="${rests#*$'\t'}"
+```
+
+3. **The human's merge checklist still reads the count alone.** `docs/knowledge/core/MANUAL.md:103` says a PR is ready when "`spec-review`'s last line on the latest commit reads `act-on items: 0`"; a comment whose only Act on items are holes prints `restart` and `act-on items: 0`. The ticket's Files touched leaves `MANUAL.md` to the owner, so this is noted, not asked for.
+
+hard findings: 1
+
+## Spec
+
+## Walk
+
+1. `review-brief.sh <fixed-point>` fetches the PR author's comments carrying a line `act-on items:`, or reads `--previous FILE`.
+2. The new awk between the fetch and the round derivation keeps only the comments after the last one holding a line that is exactly `restart` outside fenced text, prints the count cut, and sets `restarted`.
+3. The round awk, the three-round refusal and `--round N` then run on the sliced history alone; the refusal still fires before any state is written.
+4. Output order is `ticket:`, `restart: the round and the settled items count from the last restart comment`, `round: N of 3`, `settled: carried c, dropped d ...`, then the brief paths.
+5. `cites:` gains a fourth alternative `#N <reference>` in the shared `ref=` grammar; `spec_rule` is echoed one blank line after `step_rule` in both briefs and carried word for word in `SKILL.md` step 4.
+6. Each reviewer writes items under the axis headings; every `## Would break` and `## Fails open` item carries `Documented step:`, `Result:` and now `spec: <reference>`.
+7. `review-comment.sh` checks each report's shape, numbering, count line and ceiling, then `Documented step:` via `stepless`, then `spec:` via the same scanner with the reference regex.
+8. It then checks the judgment's shape, numbering, item count and `[S<n>]`/`[P<n>]` set, then a `hole:` outside Act on, a `hole:` fitting no form, and a `hole:` that is not word for word the judged item's `spec:` value.
+9. It prints the reports, the judgment, the summary, `restart` when any Act on item carries `hole:`, `round: N of 3`, and `act-on items:` with `holes` subtracted beside `fixed_here` and `ticketed`.
+10. Ticket playbook step 8 routes a `restart` comment to the new **Design hole** section; both babysit copies refuse merge-ready on such a comment; rung 1 of the review ladder and `SKILL.md` step 5 carry the definition.
+
+## Would break
+
+1. **A review with no ticket cannot finish.** `review-brief.sh`'s `report_rules()` writes `spec_rule` into the Standards brief unconditionally, and `review-comment.sh:114` refuses any Would-break or Fails-open Standards item without `spec:` in one of the three forms. All three forms are defined against a ticket ("a cell of the ticket's scenario table", "its `## Design` sketch", "its k-th acceptance checkbox"). On the documented no-spec path, and in the sweep form (`SKILL.md:29`), there is no ticket, so no form can be satisfied as written.
+
+```
+- [ ] Every Would-break and Fails-open item in both reports carries a `spec:` line naming what it rests on: `table <row>/<column>`, `design <signature>`, or `criterion <k>` (the k-th checkbox); `review-brief.sh` writes that rule into both briefs, and `review-comment.sh` refuses a counted item without it.
+```
+
+Documented step: `template/.agents/skills/spec-review/SKILL.md:38`, "If nothing is found, the **Spec** sub-agent skips and the report says, in these words, \"no spec: Standards axis only\"."
+Result: the first Standards finding on a PR with no ticket dead-ends the round. The refusal says "Ask the reviewer for it", but the reviewer has no table, no sketch and no criteria to name; the only escape is `design <signature>`, whose grammar (`design [^[:space:]].*`) accepts arbitrary text, so the reference is invented rather than checked. No cell of table B covers a report with no ticket.
+spec: criterion 2
+
+## Fails open
+
+## Not asked for
+
+hard findings: 1
+
+## Judgment
+
+## Act on
+
+1. [S1] **A reason that says "hole:" is read as a field.** Real, and the fix defines what text is a `hole:` field, a term table B's cells use without defining it (the same input is column A or column E depending on that meaning): a design hole, not a fix on this PR. hole: table 1/A
+2. [P1] **A review with no ticket cannot satisfy `spec:`.** Real: table B has no row for a report with no ticket, and all three reference forms name the ticket, so the fix adds a row or a form: a design hole. hole: criterion 2
+
+## Ask
+
+## Consider
+
+3. [S2] **Three globals reused inside the hole loop.** Valid; the redesign's writer pass touches `holed()` and names them then.
+
+## Noted
+
+4. [S3] **The MANUAL's merge checklist reads the count alone.** Valid and outside the ticket's files; the owner's records commit adds the `restart` clause to `MANUAL.md`.
+
+## Dismissed
+
+Standards: 1 would break, 0 fail open, of 3; Spec: 1 would break, 0 fail open, of 1; judged: act on 2 (0 fixed, 0 with a ticket), ask 0, consider 1, noted 1, dismissed 0; fixed point 69bd412.
+restart
+round: 1 of 3
+act-on items: 0
+
+Claude Fable 5.1 on Claude Code
+
+
