@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Build every fix patch the `fixes` file lists from its commits and compare it byte for byte with
 # rounds/<round>/fixes/<patch>, or write it there with --write. Each line runs `git show --format=
-# <sha> -- <paths>` or `git diff <a> <b> -- <paths>`. REBUILD_FIXTURES (this directory) holds
+# --no-color --no-ext-diff <sha> -- <paths>` or `git diff --no-color --no-ext-diff <a> <b> --
+# <paths>`. REBUILD_FIXTURES (this directory) holds
 # `fixes` and rounds/; REBUILD_REPO (this repository) holds the commits, which live under
 # refs/keep/103/* or on main. Exit 0 when every patch matches, 1 naming the first that differs,
 # 2 on a setup error.
