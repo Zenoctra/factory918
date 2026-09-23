@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 # Asserts tests/eval/reviewer/reviewer.py against the `## Design` section of ticket #103: first the
-# cells of the scenario table in its order (rows 1 to 22; within a row the columns run Claude, run
-# Codex, run withheld, collect, table, a dash skipped), then the settle rule for a run whose last
-# line never carried a stop reason, then one check per scoring rule of the
+# cells of the scenario table in its order (rows 1 to 24; within a row the columns run Claude, run
+# Codex, run withheld, collect, table, a dash skipped), then one check per scoring rule of the
 # Contract. It builds a temporary repository, a one-round fixture set `r1` whose Standards brief
 # carries one label, a fake pstack-runner and hand-written subagent transcripts, and points every
 # REVIEWER_* knob at them. Exits 1 on the first miss.
@@ -61,6 +60,28 @@ cat > "$tmp/rep/noheadings.md" <<'EOF'
 ## Standards breaches
 
 1. **An unmatched glob is dropped.** The gate exits 0 anyway.
+
+hard findings: 0
+EOF
+cat > "$tmp/rep/fencedcount.md" <<'EOF'
+## Would break
+
+1. **An unmatched glob is dropped.** The gate exits 0 anyway.
+
+## Fails open
+
+~~~
+hard findings: 1
+~~~
+EOF
+cat > "$tmp/rep/fencedheadings.md" <<'EOF'
+## Standards breaches
+
+1. **An unmatched glob is dropped.** The gate exits 0 anyway.
+
+~~~
+## Would break
+~~~
 
 hard findings: 0
 EOF
@@ -550,6 +571,8 @@ check "22 run codex: the detail names the usage limit" \
   starts "$(h field "$(rundir "$X" standards 1)/receipt.json" detail)" usage-limit
 check "22 run codex: later k still attempted" lines "$(cat "$FAKE_CALLS")" 3
 check "22 run codex: no report" absent "$(rundir "$X" standards 1)/report.md"
+run collect
+check "22 collect: counted collected until a later run removes it" has "$out" "collected 3 ·"
 run run "$X" r1/spec 1
 run table
 check "22 table: excluded from scores" lacks "$(scores)" "$(row "$X" r1/standards)"
@@ -560,7 +583,7 @@ check "22 run codex: the usage-limit run is prepared again" has "$out" "recall 1
 check "22 run codex: the runner is called once more" lines "$(cat "$FAKE_CALLS")" 1
 check "22 run codex: the receipt is now complete" is "$(h field "$(rundir "$X" standards 1)/receipt.json" status)" complete
 
-# The settle rule: a done run whose last assistant line carries no stop reason.
+# Row 23
 fresh r23
 run run "$C" r1/standards 1
 finish "$out" "$tmp/rep/hit.md" claude-opus-5 textnull
@@ -587,6 +610,20 @@ run collect
 check "23 collect: a last line holding a tool_use stays in flight" has "$out" "in flight 1"
 check "23 collect: no receipt" absent "$(rundir "$C" standards 1)/receipt.json"
 unset REVIEWER_SETTLE_SECONDS
+
+# Row 24
+fresh r24
+FAKE_REPORT="$tmp/rep/fencedcount.md" run run "$X" r1/standards 1
+check "24 run codex: a count line only inside a fence" has "$out" "$(rundir "$X" standards 1) context-failure no-count-line"
+FAKE_REPORT="$tmp/rep/fencedheadings.md" run run "$X" r1/standards 2
+check "24 run codex: a hard heading only inside a fence" has "$out" "$(rundir "$X" standards 2) context-failure no-hard-headings"
+fresh r24c
+run run "$C" r1/standards 2
+finish "$(sed -n 1p <<<"$out")" "$tmp/rep/fencedcount.md"
+finish "$(sed -n 2p <<<"$out")" "$tmp/rep/fencedheadings.md"
+run collect
+check "24 collect: a count line only inside a fence" has "$out" "$(rundir "$C" standards 1) context-failure no-count-line"
+check "24 collect: a hard heading only inside a fence" has "$out" "$(rundir "$C" standards 2) context-failure no-hard-headings"
 
 pycheck() {
   local label=$1
