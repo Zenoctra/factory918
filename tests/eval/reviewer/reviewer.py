@@ -170,6 +170,8 @@ class Receipt:
 Failure = Literal["no-report", "no-count-line", "count-exceeds-items", "no-hard-headings",
                   "timed-out", "child-failed", "malformed-output"]
 RUNNER_FAILURES: tuple[Failure, ...] = ("timed-out", "child-failed", "malformed-output")
+USAGE_LIMIT = "usage-limit"
+USAGE_LIMIT_LINE = re.compile(r"hit your usage limit", re.I)
 
 
 @dataclass(frozen=True)
@@ -363,7 +365,7 @@ def stamp(s: str) -> datetime:
 
 
 def receipt_from_transcript(run: RunId, lines: list[dict], expect: re.Pattern[str], checkout: Path,
-                            source: Path) -> Receipt:
+                            transcripts: Path, source: Path) -> Receipt:
     assistant = [line for line in lines if line.get("type") == "assistant"]
     models = sorted({m for line in assistant
                      if (m := (line.get("message") or {}).get("model")) and m != "<synthetic>"})
@@ -384,10 +386,19 @@ def receipt_from_transcript(run: RunId, lines: list[dict], expect: re.Pattern[st
     effort = next((line["effort"] for line in lines if line.get("effort")), None)
 
     root = os.path.normpath(str(checkout))
+    troot = os.path.normpath(str(transcripts))
 
     def inside(p: str) -> bool:
         p = os.path.normpath(p)
         return os.path.isabs(p) and (p == root or p.startswith(root + os.sep))
+
+    def overflow(p: str) -> bool:
+        p = os.path.normpath(p)
+        if not p.startswith(troot + os.sep):
+            return False
+        # The harness persists a large tool result of the reviewer's own and hands back its path.
+        parts = p[len(troot) + 1:].split(os.sep)
+        return len(parts) > 2 and parts[1] == "tool-results"
 
     reaches = []
     for line in assistant:
@@ -396,6 +407,8 @@ def receipt_from_transcript(run: RunId, lines: list[dict], expect: re.Pattern[st
             if not isinstance(c, dict) or c.get("type") != "tool_use":
                 continue
             name, args = c.get("name"), c.get("input") or {}
+            if name == "Read" and overflow(args.get("file_path", "")):
+                continue
             if name in ("Read", "Write", "Edit") and not inside(args.get("file_path", "")):
                 reaches.append(f"{name} {args.get('file_path', '')}")
             elif name in ("Grep", "Glob") and not args.get("path"):
@@ -411,6 +424,10 @@ def receipt_from_transcript(run: RunId, lines: list[dict], expect: re.Pattern[st
 def receipt_from_runner(run: RunId, pstack: dict, source: Path) -> Receipt:
     """A runner failure stays a complete receipt whose detail names it; `run_failure` reads it back."""
     status = pstack.get("status")
+    error = pstack.get("error")
+    if isinstance(error, dict) and USAGE_LIMIT_LINE.search(str(error.get("evidence") or "")):
+        return Receipt(run, "dropout", f"{USAGE_LIMIT}: {status}", pstack.get("reportedModel"),
+                       bool(pstack.get("modelVerified")), pstack.get("effort"), None, pstack.get("elapsedMs"), source)
     u = pstack.get("usage")
     tokens = None
     if u:
@@ -425,6 +442,11 @@ def receipt_from_runner(run: RunId, pstack: dict, source: Path) -> Receipt:
 
 def run_failure(receipt: Receipt) -> Failure | None:
     return receipt.detail if receipt.detail in RUNNER_FAILURES else None
+
+
+def usage_limited(receipt: Receipt) -> bool:
+    """The account's quota, not the model's failure: out of every metric, and later k still run."""
+    return receipt.status == "dropout" and receipt.detail.split(":", 1)[0] == USAGE_LIMIT
 
 
 def noise(scores: Iterable[Score], axis: Axis) -> Mapping[str, tuple[float, float, float, float]]:
@@ -456,7 +478,7 @@ def within(bands: Mapping[str, tuple[float, float, float, float]]) -> frozenset[
 
 COLUMNS = ("model", "axis", "runs", "context failures", "recall", "min_k", "max_k", "sd", "within noise",
            "demoted", "unlabeled/brief", "out tokens", "in tokens", "cache read", "cache write", "wall s",
-           "contaminated")
+           "contaminated", "usage limit")
 
 
 def order(descriptor: str) -> tuple:
@@ -473,7 +495,8 @@ def render_table(scores: list[Score], receipts: list[Receipt]) -> str:
 
     by_run = {r.run: r for r in receipts}
     keys = {(s.run.descriptor, s.run.brief.axis) for s in scores}
-    keys |= {(r.run.descriptor, r.run.brief.axis) for r in receipts if r.status == "contaminated"}
+    keys |= {(r.run.descriptor, r.run.brief.axis) for r in receipts
+             if r.status == "contaminated" or usage_limited(r)}
     bands = {axis: noise(scores, axis) for axis in AXES}
     near = {axis: within(bands[axis]) for axis in AXES}
     rows = [cells(COLUMNS), cells("---" for _ in COLUMNS)]
@@ -495,11 +518,12 @@ def render_table(scores: list[Score], receipts: list[Receipt]) -> str:
             mean([t.cache_read for t in tok], 0), mean([t.cache_write for t in tok], 0),
             mean(walls, 1),
             str(sum(1 for r in receipts if r.status == "contaminated" and r.run.descriptor == d and r.run.brief.axis == axis)),
+            str(sum(1 for r in receipts if usage_limited(r) and r.run.descriptor == d and r.run.brief.axis == axis)),
         ]))
     dropped = []
     for d in sorted({r.run.descriptor for r in receipts}, key=order):
-        mine = [r for r in receipts if r.run.descriptor == d]
-        if all(r.status == "dropout" for r in mine):
+        mine = [r for r in receipts if r.run.descriptor == d and not usage_limited(r)]
+        if mine and all(r.status == "dropout" for r in mine):
             dropped.append(cells([d, f"dropout {mine[0].detail.split(':', 1)[0]}", str(mine[0].source)]))
     if dropped:
         rows += ["", cells(["model", "result", "receipt"]), cells(["---"] * 3), *dropped]
@@ -742,7 +766,13 @@ def cmd_run(fx: Fixtures, env: Env, descriptor: str, bid: BriefId, n: int) -> in
                       capture_output=True).returncode:
         raise Refusal(f"round {bid.round} head {brief.head} is not in this repository's objects; "
                       f"the fixture pins it as refs/keep/103/{brief.head[:7]}")
-    states = {run: state(run.dir(out)) for run in runs}
+    states = {}
+    for run in runs:
+        d, st = run.dir(out), state(run.dir(out))
+        if st == "collected" and usage_limited(receipt_at(d)):
+            shutil.rmtree(d)
+            st = "absent"
+        states[run] = st
     for run, st in states.items():
         if st == "broken":
             raise Refusal(f"{run.dir(out)} has no run.json: it was left half-prepared; remove it and rerun")
@@ -766,7 +796,7 @@ def cmd_run(fx: Fixtures, env: Env, descriptor: str, bid: BriefId, n: int) -> in
             materialize(p, brief, env)
             receipt = receipt_from_runner(run, dispatch(p, route, env), d / "runner-receipt.json")
             print(collect_one(p, receipt, brief, fx, out))
-            if receipt.status == "dropout":
+            if receipt.status == "dropout" and not usage_limited(receipt):
                 return 0
         elif st == "absent":
             materialize(plans[run], brief, env)
@@ -806,7 +836,7 @@ def cmd_collect(fx: Fixtures, env: Env) -> int:
             continue
         route = MODELS[run.descriptor]
         assert isinstance(route, Native)
-        done.append((p, receipt_from_transcript(run, lines, route.expect, p.checkout, path)))
+        done.append((p, receipt_from_transcript(run, lines, route.expect, p.checkout, env.transcripts, path)))
     for p, receipt in done:
         print(collect_one(p, receipt, fx.briefs[p.run.brief], fx, out))
         collected += 1
