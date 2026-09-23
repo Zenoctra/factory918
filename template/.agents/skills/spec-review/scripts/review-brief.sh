@@ -256,17 +256,11 @@ fi
 # The items a fix-only round's briefs carry: after a Would-break fix, the Act on items the deciding
 # comment marked fixed; at round three, every Act on item not filed as a ticket, since round two
 # fixes its items after its comment is posted and a marked one is a fix too.
-if [ "$via" = "fix only after" ]; then
-  fixed_items="$(printf '%s\n' "$deciding" | awk "$fenced"'
-    /^## / { if (h == "Judgment") j = 1; next }
-    j && h == "Act on" && /^[0-9]+\. / && !/ticket: #[0-9]+$/
-  ')"
-else
-  fixed_items="$(printf '%s\n' "$deciding" | awk "$fenced"'
-    /^## / { if (h == "Judgment") j = 1; next }
-    j && h == "Act on" && /^[0-9]+\. / && /fixed: [0-9a-f]+$/
-  ')"
-fi
+all=""; [ "$via" != "fix only after" ] || all=yes
+fixed_items="$(printf '%s\n' "$deciding" | awk -v all="$all" "$fenced"'
+  /^## / { if (h == "Judgment") j = 1; next }
+  j && h == "Act on" && /^[0-9]+\. / && (all != "" ? !/ticket: #[0-9]+$/ : /fixed: [0-9a-f]+$/)
+')"
 [ -z "$ticket" ] || echo "ticket: #$ticket"
 [ -z "$restarted" ] || echo "restart: the round and the settled items count from the last restart comment"
 # review-comment.sh holds the same line (the same test holds the copies together).
