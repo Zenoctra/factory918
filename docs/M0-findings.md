@@ -202,6 +202,8 @@ What went wrong in the harness and how it was handled. The standalone `claude` C
 
 2026-09-23. Claude Code 2.1.280 reads an `effort` field (`low` to `max`, or an integer) in a `.claude/agents/*.md` definition, but loads the definitions only when a session starts and on `/clear`: a definition added while a session runs is "not found" by the `Agent` tool. Otherwise a lane inherits its session's effort, and every lane of a session started with `--effort medium` records `effort: medium` in its transcript. The standalone CLI still answers "Not logged in". So a measurement at effort high needs a session started after its agent definitions exist (#138).
 
+2026-09-23. Claude Code 2.1.280 ends a lane cut off by the account's limit with one `<synthetic>` assistant line reading either "You've hit your usage limit" or "You've hit your session limit · resets <time>"; both wordings occur in this machine's transcripts (142 and 59 times, the session wording on six lanes of 2026-09-22, one of them `claude-fable-5-1`). A lane that fails on a server error ends the same way with `API Error: 500 ...` (two such lanes of session 3741483c hold nothing else). `reviewer.py` reads both as dropouts (#138).
+
 ## Still open
 
 - A review costs two sub-agent floors (about 92K) before any reading; one sub-agent per review, or the orchestrator running one axis, would halve it. Manuel's call (ticket #33).
