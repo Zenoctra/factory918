@@ -21,7 +21,9 @@ Environment, each with a default: REVIEWER_FIXTURES (this directory), REVIEWER_O
 (<repository>/.scratch/eval/reviewer), REVIEWER_WORK (${TMPDIR:-/tmp}/review-work),
 REVIEWER_TRANSCRIPTS (~/.claude/projects/<main checkout path, every character outside A-Za-z0-9
 as ->), REVIEWER_RUNNER (the vendored pstack-runner), REVIEWER_REPO (the repository holding the
-reviewed heads), REVIEWER_TIMEOUT (seconds for pstack-runner; unset means none).
+reviewed heads), REVIEWER_TIMEOUT (seconds for pstack-runner; unset means none),
+REVIEWER_SETTLE_SECONDS (120; how long a transcript whose last line carries no stop reason must sit
+untouched before it counts as finished).
 """
 from __future__ import annotations
 
@@ -34,6 +36,7 @@ import shutil
 import statistics
 import subprocess
 import sys
+import time
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path, PurePosixPath
@@ -541,6 +544,7 @@ class Env:
     runner: Path
     repo: Path
     timeout: str | None
+    settle: float
 
 
 def git(cwd: Path, *args: str) -> str:
@@ -563,6 +567,7 @@ def load_env() -> Env:
                     or top / "template/.agents/skills/poteto-mode/scripts/runner/pstack-runner"),
         repo=Path(os.environ.get("REVIEWER_REPO") or top),
         timeout=os.environ.get("REVIEWER_TIMEOUT") or None,
+        settle=float(os.environ.get("REVIEWER_SETTLE_SECONDS") or 120),
     )
 
 
@@ -723,9 +728,20 @@ def locate(prepared: Mapping[RunId, Prepared], root: Path, out: Path) -> Mapping
     return {run: paths[0] if paths else None for run, paths in found.items()}
 
 
-def finished(lines: list[dict]) -> bool:
+def finished(lines: list[dict], path: Path, settle: float) -> bool:
     last = next((line for line in reversed(lines) if line.get("type") == "assistant"), None)
-    return bool(last) and (last.get("message") or {}).get("stop_reason") == "end_turn"
+    if not last:
+        return False
+    message = last.get("message") or {}
+    if message.get("stop_reason") == "end_turn":
+        return True
+    # A run can end on a text-only line the harness never stamped with a stop reason, so read a
+    # transcript that has stopped growing as done.
+    content = message.get("content")
+    blocks = content if isinstance(content, list) else []
+    if not blocks or any(not isinstance(c, dict) or c.get("type") != "text" for c in blocks):
+        return False
+    return time.time() - path.stat().st_mtime >= settle
 
 
 def cmd_check(fx: Fixtures, list_only: bool) -> int:
@@ -803,7 +819,7 @@ def cmd_run(fx: Fixtures, env: Env, descriptor: str, bid: BriefId, n: int) -> in
             print(launch_line(plans[run], brief, out))
         elif transcripts[run] is None:
             print(launch_line(prepared[run], brief, out))
-        elif finished(read_jsonl(transcripts[run])):
+        elif finished(read_jsonl(transcripts[run]), transcripts[run], env.settle):
             print(f"finished {d}; collect it")
     return 0
 
@@ -831,7 +847,7 @@ def cmd_collect(fx: Fixtures, env: Env) -> int:
             unlaunched.append(p)
             continue
         lines = read_jsonl(path)
-        if not finished(lines):
+        if not finished(lines, path, env.settle):
             in_flight += 1
             continue
         route = MODELS[run.descriptor]
