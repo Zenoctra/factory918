@@ -464,7 +464,9 @@ def usage_limited_transcript(lines: list[dict]) -> bool:
 # network; any other tool call is contamination.
 CHECKED_TOOLS = ("Read", "Write", "Edit", "Grep", "Glob", "Bash", "TodoWrite", "ToolSearch")
 COMMAND_WORDS = ("gh", "git", "curl", "wget")
-PREFIX_WORDS = ("env", "sudo", "command", "exec", "time", "nohup", "xargs", "builtin")
+# Words that stand before the command they run: wrappers, and the shell's own keywords.
+PREFIX_WORDS = ("env", "sudo", "command", "exec", "time", "nohup", "xargs", "builtin",
+                "if", "then", "do", "else", "elif", "while", "until", "{", "!")
 TRUSTED_BINS = ("/usr/", "/bin/", "/opt/homebrew/")
 SEGMENT_SPLIT = re.compile(r"&&|\|\||;|\||\$\(|`|\n|\(")
 PATH_TOKEN = re.compile(r"(?:^|(?<=[\s'\"=:(<>]))([/~][^\s'\"`;|&()<>]*)")

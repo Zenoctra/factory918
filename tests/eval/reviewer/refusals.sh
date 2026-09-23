@@ -559,6 +559,12 @@ pycheck "bash: /usr/bin/python3 as the command word is clean" 'assert r.bash_rea
 pycheck "bash: /usr/bin as an argument is flagged" 'assert r.bash_reaches(f"ls {X} /usr/bin", X)'
 pycheck "bash: an awk pattern is not a path" 'assert r.bash_reaches(f"awk \"/^## /\" {X}/a.md", X) == []'
 pycheck "bash: an env assignment before gh is still gh" 'assert "runs gh" in r.bash_reaches(f"cd {X} && GH_PAGER= gh pr view", X)'
+pycheck "bash: a command behind a shell keyword is still seen" '
+for cmd, word in [("if true; then gh issue view 90; fi", "gh"), ("for f in a b; do git log $f; done", "git"),
+                  ("{ curl -s https://x.com; }", "curl"), ("! gh issue view 90", "gh"),
+                  ("while read l; do gh api $l; done < f", "gh"), ("until false; do wget x; done", "wget"),
+                  ("if false; then :; elif true; then git log; else gh pr view; fi", "git")]:
+    assert f"runs {word}" in r.bash_reaches(f"cd {X} && {cmd}", X), cmd'
 
 pycheck "rule: one item claims one bug, the one with more anchors" '
 bugs = (G("G1", "glob", "exits"), G("G2", "glob", "exits", "unmatched"))
