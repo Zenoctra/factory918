@@ -45,7 +45,11 @@
 # either opener and is not, and a fence opened in a list and never closed are refused before any
 # state is written, each line named (ticket #108's tables A, B and C, one assertion per cell, and
 # the risk sentence now asks whether the diff honors each disposition). The Opening a PR playbook
-# and the blast-radius skill must show the disposition line word for word.
+# and the blast-radius skill must show the disposition line word for word. Ticket #137: both
+# briefs carry the edge line two after Manuel's fifth sentence, the reading-pack sentence two after
+# it and the reading sentence, and neither brief nor SKILL.md sets a count of findings, a length cap
+# or a limit on reading; a round-two and a fix-only brief carry exactly the `## ` headings they
+# carried before it.
 # Exits 1 on the first miss.
 # shellcheck disable=SC2016 # the expected strings below are the Markdown the script emits; the backticks and $ are literal
 set -euo pipefail
@@ -200,7 +204,7 @@ has err.txt "review-brief: gh could not read the PR's review comments (HTTP 401:
 has out.txt "round: 1 of 3" "a gh failure other than no PR still runs round 1"
 lacks "$std" "## Settled in earlier rounds" "a gh failure other than no PR carries nothing"
 
-definition="A hard finding is one of two things: the documented path gives a wrong or silent result, or an input outside it proceeds silently (fails open). An input outside the documented path that is refused with a message saying how to correct it is not a finding; it is the design. Zero items is the expected result for a clean change."
+definition="A hard finding is one of two things: the documented path gives a wrong or silent result, or an input outside it proceeds silently (fails open). An input outside the documented path that is refused with a message saying how to correct it is not a finding; it is the design."
 quotes=(
   '- Manuel: "there are an infinite amount of unhappy paths and only 1 happy one"'
   '- Manuel: "AT MOST hardening to fail fast and loud if we move outside of that"'
@@ -208,6 +212,8 @@ quotes=(
   '- Manuel: "An edge case outside the intended path being unsupported is not a flag."'
   '- Manuel: "Primary focus must be the happy path, then unhappy paths that error in a way the user can correct."'
 )
+edge_rule='An edge case that proceeds silently fails open: file it under `## Fails open`.'
+read_rule='You may open any file in the repository and run read-only commands, such as grep or the test suite.'
 step_rule='Every item under `## Would break` or `## Fails open` carries a line `Documented step:` quoting the ticket line or the `file:line` of the documentation the user follows, and a line `Result:` saying what happens instead; an item without its `Documented step:` line is sent back.'
 spec_rule='The same item carries a line `spec:` naming the artifact it rests on: `table <row>/<column>` for a cell of the ticket'"'"'s scenario table, `design <signature>` for a signature or usage in its `## Design` sketch, or `criterion <k>` for its k-th acceptance checkbox; an item without a `spec:` line in one of those three forms is sent back.'
 count_rule='End the report with exactly one line `hard findings: N`, where N is the number of items under `## Would break` and `## Fails open` and nothing else.'
@@ -215,6 +221,17 @@ settled_rule="These findings were raised in an earlier round and settled by the 
 fix_rule="The round before this one fixed these Act on items on this PR after the commit it reviewed; this round's diff is those fix commits and nothing else. Read each fix against its item, walk only the steps these commits touch, and report only what these commits get wrong. Nothing in this section says what you should find or confirm."
 blast_rule="The sessions and skills this change reaches, as the author grounded them before the review. Check the diff against each one; the grounding is the author's claim, not evidence."
 risk_rule='The diff is cross-cutting: after the lines per documented step, one numbered line per risk under the Risks heading of the `## Blast radius` section above, in its order and numbered on from the last step, each naming the risk, saying what the diff does at that risk, and saying whether the diff honors the disposition the risk'"'"'s line ends with (for `fixed: <sha>`, whether that commit fixes the risk; for `accepted: <reason>`, whether the reason holds for this diff); a risk line is a walk line and counts nothing.'
+# blind_rules <brief> <label suffix>: the edge line two after Manuel's fifth sentence, the reading
+# sentence, and no count, cap or reading limit.
+blind_rules() {
+  has "$1" "$edge_rule" "$1 carries the edge line$2"
+  [ "$(grep -nxF -- "$edge_rule" "$1" | cut -d: -f1)" -eq "$(($(grep -nF -- "${quotes[4]}" "$1" | cut -d: -f1) + 2))" ] || { echo "FAIL $1: the edge line is not two after the fifth quote$2"; exit 1; }
+  n=$((n + 1))
+  has "$1" "$read_rule" "$1 carries the reading sentence$2"
+  for w in "Under 400 words" "Read nothing beyond this brief" "Run nothing" "Zero items" "not the file"; do
+    lacks "$1" "$w" "$1 sets no count, cap or reading limit$2"
+  done
+}
 has "$source_skill/SKILL.md" "$definition" "SKILL.md step 4 carries the definition"
 has "$source_skill/SKILL.md" "$step_rule" "SKILL.md step 4 carries the step rule"
 has "$source_skill/SKILL.md" "$spec_rule" "SKILL.md step 4 carries the spec rule"
@@ -224,6 +241,11 @@ has "$source_skill/SKILL.md" "$fix_rule" "SKILL.md step 4 carries the fix paragr
 has "$source_skill/SKILL.md" "$blast_rule" "SKILL.md step 4 carries the blast-radius paragraph"
 has "$source_skill/SKILL.md" "$risk_rule" "SKILL.md step 4 carries the risk sentence"
 lacks "$source_skill/SKILL.md" "## Latent" "SKILL.md has no Latent heading"
+has "$source_skill/SKILL.md" "$edge_rule" "SKILL.md step 4 carries the edge line"
+has "$source_skill/SKILL.md" "$read_rule" "SKILL.md step 4 carries the reading sentence"
+for w in "all nits" "more than five Act on items" "under 400 words" "runs nothing"; do
+  lacks "$source_skill/SKILL.md" "$w" "SKILL.md sets no count, cap or reading limit"
+done
 for q in "${quotes[@]}"; do
   has "$source_skill/SKILL.md" "$q" "SKILL.md step 4 carries the quote"
 done
@@ -236,6 +258,7 @@ for f in "$std" "$spec"; do
     echo "FAIL $f: the quotes do not follow the definition"; exit 1
   fi
   n=$((n + 1))
+  blind_rules "$f" ""
   has "$f" 'Write the report as Markdown with exactly these `## ` headings, in this order, each holding numbered items or nothing:' "$f names the shape"
   has "$f" '`1. **Title.** body`' "$f carries the item format"
   has "$f" "number the items continuously across the headings" "$f says how to number"
@@ -665,6 +688,30 @@ refused() {
   fi
   n=$((n + 1))
 }
+# headings <brief> <list> <label>: the brief's `## ` lines are exactly the list.
+headings() {
+  [ "$(grep '^## ' "$1")" = "$2" ] || { echo "FAIL $3: $1's headings are"; grep '^## ' "$1"; exit 1; }
+  n=$((n + 1))
+}
+r2_headings="## Commits
+## Changed files
+## Diff
+## Reading pack
+## Settled in earlier rounds"
+fix_headings="## Commits
+## Changed files
+## The fix under review
+## Diff
+## Reading pack
+## Settled in earlier rounds"
+std_tail="## Standards
+## Smell baseline
+## Report"
+spec_tail="## The ticket (#7)
+## What to build
+## Acceptance criteria
+## Comments by the ticket's author (#7)
+## Report"
 # fixed_section <file> <item> <label>: the brief carries the section, its paragraph and the item, before the diff.
 fixed_section() {
   has "$1" "## The fix under review" "$3: the fix section"
@@ -785,6 +832,11 @@ for f in ".scratch/review/$s4/standards-brief.md" ".scratch/review/$s4/spec-brie
   lacks "$f" "Ported. fixed:" "$f: round three's fixed item is not in round five's section (9A)"
 done
 only_commit ".scratch/review/$s4/standards-brief.md" "fix the hook again" "Standards (9A)"
+# #137, criterion 3: a fix-only brief's headings are the ones it carried before #137, nothing more.
+headings ".scratch/review/$s4/standards-brief.md" "$fix_headings
+$std_tail" "Standards: fix-only headings (#137)"
+headings ".scratch/review/$s4/spec-brief.md" "$fix_headings
+$spec_tail" "Spec: fix-only headings (#137)"
 # Row 10: round five from any commit but the one round four reviewed is refused.
 refused "round five from round three's commit (10A)" "$(fp 5 "$s4" "$s")" "$s" --ticket 7
 # Row 11: a fifth comment, with or without the line, and --round 6: a sixth round is refused.
@@ -802,6 +854,11 @@ settled: carried 2, dropped 1 without a citation
 .scratch/review/HEAD_1/standards-brief.md
 .scratch/review/HEAD_1/spec-brief.md" "a Would-break fix at round one: round two from the original fixed point (12A)"
 lacks "$std" "## The fix under review" "round two: no fix section (12A)"
+# #137, criterion 3: a round-two brief's headings are the ones it carried before #137, nothing more.
+headings "$std" "$r2_headings
+$std_tail" "Standards: round-two headings (#137)"
+headings "$spec" "$r2_headings
+$spec_tail" "Spec: round-two headings (#137)"
 # Row 13: a restart after (3W) wins; so does a --previous comment carrying both lines.
 pr me me:previous.md me:previous-2.md me:previous-3w.md me:restart-4.md
 bash "$skill/scripts/review-brief.sh" HEAD~1 --ticket 7 > out.txt
@@ -1724,14 +1781,15 @@ n=$((n + 1))
 n=$((n + 1))
 [ "$(section pk-f.standards-brief.md)" = "$(section pk-f.spec-brief.md)" ] || { echo "FAIL (26F): the two briefs' sections differ"; exit 1; }
 n=$((n + 1))
-# Row 27: the Report sentence after Manuel's fifth sentence, before the shape sentence.
-pack_rule='The `## Reading pack` section above is the code to read, as it stands at the reviewed commit; open the repository only for what the pack does not carry, and then read that one function or section, not the file.'
+# Row 27: the Report sentence after the edge line, before the shape sentence.
+pack_rule='The `## Reading pack` section above is the code to read, as it stands at the reviewed commit; open the repository for what the pack does not carry.'
 for f in pk-w.standards-brief.md pk-w.spec-brief.md pk-f.standards-brief.md pk-f.spec-brief.md; do
   c="W"; case "$f" in pk-f.*) c="F" ;; esac
   has "$f" "$pack_rule" "$f carries the Report sentence (27$c)"
   s="$(grep -nxF -- "$pack_rule" "$f" | cut -d: -f1)"
-  [ "$s" -eq "$(($(grep -nF -- "${quotes[4]}" "$f" | cut -d: -f1) + 2))" ] && [ "$(sed -n "$((s + 2))p" "$f")" = 'Write the report as Markdown with exactly these `## ` headings, in this order, each holding numbered items or nothing:' ] || { echo "FAIL (27$c): $f: the sentence is not between the fifth quote and the shape sentence"; exit 1; }
+  [ "$s" -eq "$(($(grep -nxF -- "$edge_rule" "$f" | cut -d: -f1) + 2))" ] && [ "$(sed -n "$((s + 2))p" "$f")" = 'Write the report as Markdown with exactly these `## ` headings, in this order, each holding numbered items or nothing:' ] || { echo "FAIL (27$c): $f: the sentence is not between the edge line and the shape sentence"; exit 1; }
   n=$((n + 1))
+  blind_rules "$f" " (27$c)"
 done
 # Row 28: stdout and state as without the pack.
 printed pk-w.out "ticket: #7
