@@ -649,13 +649,19 @@ pycheck "bash: a path outside is flagged whatever this machine holds" '
 for p in ["/srv/other-repo/x", "/Users/someone/x", "/home/someone/x", "/no-such-top/x"]:
     assert f"names {p}" in r.bash_reaches(f"cat {X}/a {p}", X), p
 assert "names /srv/x" in r.bash_reaches(f"cat {X}/a --file=/srv/x", X)'
-pycheck "bash: a token holding a regex character is a pattern" '
-for pat in ["\"/^## /\"", "\x27/end$/\x27", "\x27/a|b/\x27", "\x27/a+b/\x27", "\x27/a\\.b/\x27"]:
-    assert r.bash_reaches(f"grep -E {pat} {X}/a.md", X) == [], pat'
+pycheck "bash: an address between two slashes is a pattern" '
+for cmd in ["awk \"/^## /\" a.md", "awk \x27/foo.*/\x27 a.md", "sed -n \x27/foo.*bar/p\x27 a.md",
+            "grep -E \x27/x[0-9]/\x27 a.md", "grep -E \x27/end$/\x27 a.md", "grep -E \x27/a|b/\x27 a.md",
+            "grep -E \x27/a+b/\x27 a.md", "grep -E \x27/a\\.b/\x27 a.md"]:
+    assert r.bash_reaches(f"cd {X} && {cmd}", X) == [], cmd'
 pycheck "bash: a glob path outside the export is flagged" '
 for cmd in ["cat /Users/manuel/Desktop/Work/*/CLAUDE.md", "ls /Users/x/.claude/agents/*.md",
-            "cat /Users/manuel/a[1].md", "cat /srv/x/?.md", "cat /srv/{a,b}/x"]:
+            "cat /Users/manuel/a[1].md", "cat /srv/x/?.md", "cat /srv/{a,b}/x", "cat /srv/a+b/x",
+            "cat /Users/$USER/.claude/agents/x.md", "cat \"/srv/a|b/x\""]:
     assert any(w.startswith("names /") for w in r.bash_reaches(f"cd {X} && {cmd}", X)), cmd'
+pycheck "bash: a path from the HOME variable is flagged" '
+for p in ["$HOME/.claude/agents/x.md", "${HOME}/.claude/CLAUDE.md"]:
+    assert f"names {p}" in r.bash_reaches(f"cd {X} && cat {p}", X), p'
 pycheck "bash: a ~ path is flagged" 'assert "names ~/.ssh/config" in r.bash_reaches(f"cat {X}/a ~/.ssh/config", X)'
 pycheck "bash: a sibling export is flagged" '
 why = r.bash_reaches(f"cd {X} && cat /tmp/w/def456/factory918/a.txt", X)

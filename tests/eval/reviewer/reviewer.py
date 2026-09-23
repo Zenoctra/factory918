@@ -486,8 +486,9 @@ PREFIX_WORDS = ("env", "sudo", "command", "exec", "time", "nohup", "xargs", "bui
                 "if", "then", "do", "else", "elif", "while", "until", "{", "!")
 TRUSTED_BINS = ("/usr/", "/bin/", "/opt/homebrew/")
 SEGMENT_SPLIT = re.compile(r"&&|\|\||;|\||\$\(|`|\n|\(")
-# Characters only a regex uses; a glob's * ? [ { name real paths, so they exempt nothing.
-REGEX_CHARS = re.compile(r"[\^$\\+|]")
+# An awk or sed address: one segment between two slashes, then sed's address flags or command
+# letters, as in /^## / or /foo.*bar/p. Any letter would let /etc/hosts or /srv/x pass as one.
+PATTERN = re.compile(r"^/[^/]*/[gpdIiMm0-9]*$")
 
 
 def bash_reaches(command: str, root: str) -> list[str]:
@@ -511,22 +512,21 @@ def bash_reaches(command: str, root: str) -> list[str]:
     for p in path_tokens(inside.sub(" ", command)):
         if p == "/dev/null" or (p.startswith(TRUSTED_BINS) and p in words):
             continue
-        # A token holding a regex character is a pattern, as in awk '/^## /'.
-        if REGEX_CHARS.search(p):
+        if PATTERN.match(p):
             continue
         why.append(f"names {p}")
     return why
 
 
 def path_tokens(command: str) -> list[str]:
-    """The absolute and ~ paths a command names, a quoted string being one token."""
+    """The absolute, ~ and $HOME paths a command names, a quoted string being one token."""
     try:
         lex = shlex.shlex(command, posix=True, punctuation_chars=True)
         lex.whitespace_split = True
         tokens = list(lex)
     except ValueError:
         tokens = command.split()
-    return [part for t in tokens for part in re.split(r"[=:]", t) if part.startswith(("/", "~"))]
+    return [part for t in tokens for part in re.split(r"[=:]", t) if part.startswith(("/", "~", "$HOME", "${HOME}"))]
 
 
 def receipt_from_transcript(run: RunId, lines: list[dict], expect: re.Pattern[str], checkout: Path,
