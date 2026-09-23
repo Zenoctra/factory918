@@ -461,6 +461,20 @@ finish "$out" "$tmp/rep/hit.md" claude-opus-5 finished "WebFetch|https://example
 run collect
 check "contamination: a tool outside the checked six is contaminated" is "$(h field "$(rundir "$C" standards 1)/receipt.json" status)" contaminated
 check "contamination: named as unchecked" is "$(h field "$(rundir "$C" standards 1)/receipt.json" detail)" "WebFetch (unchecked tool)"
+for tool in Skill Agent WebSearch; do
+  fresh "unchecked-$tool"
+  run next "$C" --limit 1
+  finish "$out" "$tmp/rep/hit.md" claude-opus-5 finished "$tool|x"
+  run collect
+  check "contamination: $tool is unchecked" is "$(h field "$(rundir "$C" standards 1)/receipt.json" detail)" "$tool (unchecked tool)"
+done
+for tool in TodoWrite ToolSearch; do
+  fresh "passes-$tool"
+  run next "$C" --limit 1
+  finish "$out" "$tmp/rep/hit.md" claude-opus-5 finished "$tool|x"
+  run collect
+  check "contamination: $tool reads nothing and passes" is "$(h field "$(rundir "$C" standards 1)/receipt.json" status)" complete
+done
 
 fresh twice
 run next "$C" --limit 1

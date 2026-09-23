@@ -460,8 +460,9 @@ def usage_limited_transcript(lines: list[dict]) -> bool:
                for line in lines if line.get("type") == "assistant")
 
 
-# The tools whose reach receipt_from_transcript can judge; any other tool call is contamination.
-CHECKED_TOOLS = ("Read", "Write", "Edit", "Grep", "Glob", "Bash")
+# The tools whose reach receipt_from_transcript can judge, then the ones that read no file and no
+# network; any other tool call is contamination.
+CHECKED_TOOLS = ("Read", "Write", "Edit", "Grep", "Glob", "Bash", "TodoWrite", "ToolSearch")
 COMMAND_WORDS = ("gh", "git", "curl", "wget")
 PREFIX_WORDS = ("env", "sudo", "command", "exec", "time", "nohup", "xargs", "builtin")
 TRUSTED_BINS = ("/usr/", "/bin/", "/opt/homebrew/")
