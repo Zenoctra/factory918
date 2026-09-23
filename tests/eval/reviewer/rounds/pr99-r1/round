@@ -1,0 +1,8 @@
+pr=99
+ticket=90
+label=restart round: 1 of 3
+fixed_point=69bd41230e0f62e0824403196243c013118fb302
+head=52ccd8eb509a2871260827a8514c3a1fcaac4d5d
+head_source=recorded
+comment=https://github.com/Zenoctra/factory918/pull/99#issuecomment-5780539782
+brief_source=regenerated
