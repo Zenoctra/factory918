@@ -453,7 +453,11 @@ def usage_limited(receipt: Receipt) -> bool:
 
 
 def noise(scores: Iterable[Score], axis: Axis) -> Mapping[str, tuple[float, float, float, float]]:
-    """Descriptor -> (recall, min_k, max_k, sd) over its replicate recalls; descriptors with no labels are left out."""
+    """Descriptor -> (recall, min_k, max_k, sd) over its replicate recalls; descriptors with no labels are left out.
+
+    The band and sd read only the replicates that cover as many labeled briefs as the widest of
+    them; a replicate short of one is not a replicate of the set. Pooled recall counts every run.
+    """
     by: dict[str, list[Score]] = {}
     for s in scores:
         if s.run.brief.axis == axis:
@@ -463,11 +467,13 @@ def noise(scores: Iterable[Score], axis: Axis) -> Mapping[str, tuple[float, floa
         total = sum(s.labels for s in ss)
         if not total:
             continue
-        reps: dict[int, tuple[int, int]] = {}
+        reps: dict[int, tuple[int, int, frozenset[BriefId]]] = {}
         for s in ss:
-            h, n = reps.get(s.run.k, (0, 0))
-            reps[s.run.k] = (h + len(s.hits), n + s.labels)
-        rr = [h / n for h, n in reps.values() if n]
+            h, n, covered = reps.get(s.run.k, (0, 0, frozenset()))
+            reps[s.run.k] = (h + len(s.hits), n + s.labels,
+                             covered | ({s.run.brief} if s.labels else frozenset()))
+        widest = max(len(covered) for _, _, covered in reps.values())
+        rr = [h / n for h, n, covered in reps.values() if n and len(covered) == widest]
         bands[d] = (sum(len(s.hits) for s in ss) / total, min(rr), max(rr), statistics.pstdev(rr))
     return bands
 
