@@ -593,6 +593,9 @@ check "23 run claude: a settled text-only last line reads as finished" has "$out
 run collect
 check "23 collect: it is collected" has "$out" "in flight 0"
 check "23 collect: its receipt is complete" is "$(h field "$(rundir "$C" standards 1)/receipt.json" status)" complete
+run table
+check "23 table: a settled run is included in scores.tsv" has "$(scores)" "$(row "$C" r1/standards 1)"
+check "23 table: and in the table" is "$(cell runs "| $C | standards |")" 1
 
 fresh r23young
 run run "$C" r1/standards 1
@@ -601,6 +604,9 @@ export REVIEWER_SETTLE_SECONDS=3600
 run collect
 check "23 collect: the same line before it settles stays in flight" has "$out" "in flight 1"
 check "23 collect: no receipt" absent "$(rundir "$C" standards 1)/receipt.json"
+run run "$X" r1/spec 1
+run table
+check "23 table: an unsettled run is excluded" lacks "$(scores)" "$C"
 
 fresh r23tool
 run run "$C" r1/standards 1
@@ -617,6 +623,10 @@ FAKE_REPORT="$tmp/rep/fencedcount.md" run run "$X" r1/standards 1
 check "24 run codex: a count line only inside a fence" has "$out" "$(rundir "$X" standards 1) context-failure no-count-line"
 FAKE_REPORT="$tmp/rep/fencedheadings.md" run run "$X" r1/standards 2
 check "24 run codex: a hard heading only inside a fence" has "$out" "$(rundir "$X" standards 2) context-failure no-hard-headings"
+run table
+check "24 table: both counted in the context failures column" is "$(cell "context failures" "| $X | standards |")" 2
+check "24 table: the fenced count line scores no-count-line" has "$(scores)" "$(row "$X" r1/standards 1 no-count-line)"
+check "24 table: the fenced heading scores no-hard-headings" has "$(scores)" "$(row "$X" r1/standards 2 no-hard-headings)"
 fresh r24c
 run run "$C" r1/standards 2
 finish "$(sed -n 1p <<<"$out")" "$tmp/rep/fencedcount.md"
