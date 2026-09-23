@@ -1,0 +1,22 @@
+--- a/poteto-mode/references/provider-dispatch.md
++++ b/poteto-mode/references/provider-dispatch.md
+@@ -19,6 +19,10 @@
+ 
+ `fable` and `opus` are Claude Code's rolling aliases. Claude resolves each alias to the latest available family revision. A runner receipt keeps the requested alias in `model` and the concrete provider-reported revision in `reportedModel`; verification accepts only a numeric `claude-fable-*` or `claude-opus-*` revision from the matching family.
+ 
++Probed 2026-09-22. The `opus` alias resolves to Opus 5.5, reported as `claude-opus-5-5`; Opus 5 is reported as `claude-opus-5`. Both verify as the `opus` family, and no descriptor distinguishes them, so reach Opus 5 only through an agent definition pinned to `claude-opus-5`.
++
++Probed 2026-09-22. Codex CLI 0.154.0 on a ChatGPT account refuses `gpt-6-terra` and `gpt-6-sol`. Each warns that model metadata was not found, then fails with HTTP 400, `The '<model>' model is not supported when using Codex with a ChatGPT account`. `gpt-6-astra` is the served GPT-6 model on that account. None of the three has a row: the `sol` row stays on `gpt-5.6-sol` until a GPT-6 model is both served and configured for a role.
++
+ ## Read-time normalization
+ 
+ Normalize configured descriptors before matching them to the matrix or choosing a route. If a provider-qualified Claude model starts with `claude-fable-` or `claude-opus-` and its remaining revision contains only digits and hyphens, replace that model component in memory with `fable` or `opus`. Preserve provider, effort, role, and lane order. Use only the normalized descriptor for native dispatch or runner argv. Never pass the versioned predecessor to Claude.
+@@ -90,7 +94,7 @@
+ 
+ 1. Exit status `0`.
+ 2. Receipt status `complete`.
+-3. Either `modelVerified: true` with `modelEvidence: "provider-report"`, or a Codex receipt with `reportedModel: null`, `modelVerified: false`, and `modelEvidence: "pinned-argv"`. For Claude's `fable` and `opus` aliases, the concrete provider report must belong to the requested family. Codex 0.149.0 accepts the exact `--model` argument but does not report the served model in its JSONL stream.
++3. Either `modelVerified: true` with `modelEvidence: "provider-report"`, or a Codex receipt with `reportedModel: null`, `modelVerified: false`, and `modelEvidence: "pinned-argv"`. For Claude's `fable` and `opus` aliases, the concrete provider report must belong to the requested family. Codex 0.149.0 and 0.154.0 accept the exact `--model` argument but do not report the served model in their JSONL stream.
+ 4. A non-empty output file.
+ 
+ The receipt also carries elapsed time, token usage when the CLI exposes it, and cost when available. Keep it with the arena or review artifacts so parent-harness comparisons are evidence-based.
