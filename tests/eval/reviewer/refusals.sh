@@ -424,6 +424,27 @@ check "contamination: the detail says gh" has "$(h field "$(rundir "$C" standard
 run next "$C" --limit 1
 check "contamination: prepared again" is "$(h get "$out" run)" "$(rundir "$C" standards 1)"
 check "contamination: the receipt is kept aside" exists "$REVIEWER_OUT/dropped/${C//:/-}/r1/standards/1/1/receipt.json"
+fresh giveup
+run next "$C" --limit 1
+for attempt in 1 2 3; do
+  co="$(h checkout "$out")"
+  finish "$out" "$tmp/rep/hit.md" claude-opus-5 finished "Bash|cd $co && gh issue view 7"
+  run collect
+  run next "$C" --limit 1
+  [ "$attempt" = 3 ] || check "give up: contamination $attempt is prepared again" is "$(h get "$out" run)" "$(rundir "$C" standards 1)"
+done
+check "give up: the third contamination is given up" starts "$out" "given up $(rundir "$C" standards 1): contaminated 3 times"
+check "give up: the given-up run is not prepared again" lacks "$out" "\"run\": \"$(rundir "$C" standards 1)\""
+check "give up: the next run goes on" has "$out" "\"run\": \"$(rundir "$C" spec 1)\""
+finish "$(grep '^{' <<<"$out")" "$tmp/rep/hit.md"
+run collect
+check "give up: the other axis is collected" is "$(h field "$(rundir "$C" spec 1)/receipt.json" status)" complete
+run next "$C"
+check "give up: no step that needs it is prepared" lacks "$(grep '^{' <<<"$out" || true)" "/standards/"
+check "give up: the other axis goes on to pass 2" has "$out" "/spec/I2\""
+run table
+check "give up: the table counts all three contaminations" is "$(cell contaminated I 1)" 3
+
 fresh contaminated-read
 run next "$C" --limit 1
 finish "$out" "$tmp/rep/hit.md" claude-opus-5 finished /etc/hosts

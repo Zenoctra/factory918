@@ -21,7 +21,8 @@ patch from its commits the same way.
         Print up to N (8) launch lines and prepare what it prints: first the prepared runs no
         transcript names yet, then new runs, pass 1 across every brief before pass 2 before pass 3.
         A step is prepared once its prerequisites are collected complete; a contaminated run is
-        moved aside and prepared again. A model with a usage-limit receipt is paused: `next`
+        moved aside and prepared again, until its third contamination gives it up: `next` prints
+        `given up` for it and prepares neither it nor the steps that need it. A model with a usage-limit receipt is paused: `next`
         prints one `paused` line for it and prepares nothing for it until `--resume` names it,
         which prepares its limited runs again first. Collects nothing.
     python3 tests/eval/reviewer/reviewer.py collect
@@ -70,6 +71,7 @@ COUNT_LINE = re.compile(r"hard findings: ([0-9]+)")
 ITEM_LINE = re.compile(r"(\d+)\. ")
 FENCE_LINE = re.compile(r"\s*(`{3,}|~{3,})")
 USAGE_LIMIT = "usage-limit"
+GIVE_UP = 3  # contaminated attempts after which a run is prepared no more
 USAGE_LIMIT_LINE = re.compile(r"hit your usage limit", re.I)
 # review-brief.sh at e710e99 prints this heading and paragraph, word for word, above the settled items.
 SETTLED_HEADING = "## Settled in earlier rounds"
@@ -885,6 +887,14 @@ def run_dirs(out: Path) -> list[Path]:
     return sorted((d for d in out.glob("runs/*/*/*/*") if d.is_dir()), key=lambda d: natural(str(d)))
 
 
+def contaminations(run: RunId, out: Path) -> int:
+    """The contaminated attempts of a run: those set aside under dropped/ and the one in its directory."""
+    rel = run.dir(out).relative_to(out / "runs")
+    kept = [receipt_at(p) for p in (out / "dropped" / rel).glob("*") if (p / "receipt.json").is_file()]
+    here = receipt_at(run.dir(out))
+    return sum(1 for r in [*kept, here] if r and r.status == "contaminated")
+
+
 def set_aside(d: Path, out: Path) -> None:
     """Keep a contaminated or usage-limit receipt for the table and free the run for a new attempt."""
     rel = d.relative_to(out / "runs")
@@ -944,6 +954,7 @@ def cmd_next(fx: Fixtures, env: Env, descriptors: list[str], limit: int, resume:
     states: dict[RunId, str] = {}
     held: dict[str, float] = {}
     resumed: set[RunId] = set()
+    given_up: list[Path] = []
     for run in runs:
         d = run.dir(out)
         st = state(d)
@@ -952,6 +963,8 @@ def cmd_next(fx: Fixtures, env: Env, descriptors: list[str], limit: int, resume:
         receipt = receipt_at(d) if st == "collected" else None
         if receipt and usage_limited(receipt) and run.descriptor not in resume:
             held[run.descriptor] = max(held.get(run.descriptor, 0.0), (d / "receipt.json").stat().st_mtime)
+        elif receipt and receipt.status == "contaminated" and contaminations(run, out) >= GIVE_UP:
+            given_up.append(d)
         elif receipt and redo(receipt):
             set_aside(d, out)
             st = "absent"
@@ -974,6 +987,8 @@ def cmd_next(fx: Fixtures, env: Env, descriptors: list[str], limit: int, resume:
         brief = fx.briefs[run.brief]
         p = materialize(plan(run, brief, env.work), brief, fx, env)
         lines.append(launch_line(p, brief, out))
+    for d in given_up:
+        print(f"given up {d}: contaminated {GIVE_UP} times")
     for desc, at in held.items():
         print(f"paused {desc}: usage limit at {datetime.fromtimestamp(at).isoformat(timespec='minutes')}; "
               f"after the reset run: python3 tests/eval/reviewer/reviewer.py next --resume {desc}")
