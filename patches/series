@@ -18,3 +18,14 @@ pstack/setup-pstack/SKILL.md.patch
 pstack/unslop/SKILL.md.patch
 mattpocock/spec-review.SKILL.md.patch
 mattpocock/to-spec/SKILL.md.patch
+pstack/poteto-mode/playbooks/autonomous-run.md.patch
+pstack/poteto-mode/playbooks/eval.md.patch
+pstack/poteto-mode/playbooks/hillclimb.md.patch
+pstack/poteto-mode/playbooks/orchestrate.md.patch
+pstack/poteto-mode/playbooks/runtime-forensics.md.patch
+pstack/poteto-mode/playbooks/session-pickup.md.patch
+pstack/poteto-mode/playbooks/shipping.md.patch
+pstack/poteto-mode/playbooks/trace-forensics.md.patch
+pstack/poteto-mode/playbooks/visual-parity.md.patch
+pstack/poteto-mode/playbooks/worktree-cleanup.md.patch
+pstack/poteto-mode/playbooks/investigation.md.patch
