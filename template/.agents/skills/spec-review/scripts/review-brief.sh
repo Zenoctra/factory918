@@ -244,8 +244,8 @@ echo "round: $round of $cap"
 # ticket's cell, signature or criterion), each distinct line once, so a decision from round one
 # still reaches round three and a rebuilt comment repeats nothing. An item without a citation is
 # dropped, since a reason alone can steer a reviewer. The quoted hunks are fenced text and never
-# items.
-cites='cites: (user: "[^"]+" on #[0-9]+|DECISIONS\.md [A-Z]?[0-9]+|#[0-9]+ comment [0-9]{4}-[0-9]{2}-[0-9]{2}|#[0-9]+ '"$ref"')$'
+# items. A Provisional id may end in a sibling letter, P110b for a ticket's second row (#110).
+cites='cites: (user: "[^"]+" on #[0-9]+|DECISIONS\.md [A-Z]?[0-9]+[b-z]?|#[0-9]+ comment [0-9]{4}-[0-9]{2}-[0-9]{2}|#[0-9]+ '"$ref"')$'
 settled=""
 if [ -n "$bodies" ]; then
   judged="$(printf '%s\n' "$bodies" | awk -v sep="$rs" "$split$fenced"'
