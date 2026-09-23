@@ -239,6 +239,15 @@ printf 'r1\tf3.patch\tshow 1111111111111111111111111111111111111111\ta.txt\n' >>
 REBUILD_FIXTURES="$tmp/fx-nocommit" REBUILD_REPO="$tmp/repo" bash "$here/tests/eval/reviewer/fixes.sh" > "$tmp/rb" 2>&1 && code=0 || code=$?
 check "fixes.sh: a commit not in the repository exits 2" is "$code" 2
 check "fixes.sh: naming it and the fetch" is "$(tail -1 "$tmp/rb")" "fixes: r1 f3.patch: commit 1111111111111111111111111111111111111111 is not in this repository; git fetch origin 'refs/keep/103/*:refs/keep/103/*'"
+for bad in "bogus 1111111111111111111111111111111111111111|bogus 1111111111111111111111111111111111111111 is not show or diff" \
+           "show 1111111111111111111111111111111111111111 2222222222222222222222222222222222222222|show takes one commit" \
+           "diff 1111111111111111111111111111111111111111|diff takes two commits"; do
+  cp -R "$fx" "$tmp/fx-badverb"
+  printf 'r1\tf3.patch\t%s\ta.txt\n' "${bad%%|*}" >> "$tmp/fx-badverb/fixes"
+  REBUILD_FIXTURES="$tmp/fx-badverb" REBUILD_REPO="$tmp/repo" bash "$here/tests/eval/reviewer/fixes.sh" > "$tmp/rb" 2>&1 && code=0 || code=$?
+  check "fixes.sh: a malformed line is named for its verb or arity before its commits: ${bad#*|}" is "$code:$(tail -1 "$tmp/rb")" "2:fixes: r1 f3.patch: ${bad#*|}"
+  rm -rf "$tmp/fx-badverb"
+done
 
 # check
 fresh check
