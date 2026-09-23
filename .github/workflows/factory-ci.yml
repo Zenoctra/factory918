@@ -70,7 +70,11 @@ jobs:
           d=.scratch/review/HEAD_1
           test -s "$d/standards-brief.md" && test -s "$d/spec-brief.md"
           for f in "$d/standards-brief.md" "$d/spec-brief.md"; do
-            grep -qF 'A hard finding is one of two things: the documented path gives a wrong or silent result, or an input outside it proceeds silently (fails open). An input outside the documented path that is refused with a message saying how to correct it is not a finding; it is the design. Zero items is the expected result for a clean change.' "$f"
+            grep -qxF 'A hard finding is one of two things: the documented path gives a wrong or silent result, or an input outside it proceeds silently (fails open). An input outside the documented path that is refused with a message saying how to correct it is not a finding; it is the design.' "$f"
+            grep -qF 'An edge case that proceeds silently fails open: file it under `## Fails open`.' "$f"
+            grep -qF 'You may open any file in the repository and run read-only commands, such as grep or the test suite.' "$f"
+            if grep -qF 'Under 400 words' "$f"; then echo "$f carries a word cap" && exit 1; fi
+            if grep -qF 'Read nothing beyond this brief unless' "$f"; then echo "$f carries a reading limit" && exit 1; fi
             grep -qF '`## Fails open`' "$f"
             if grep -qF '## Latent' "$f"; then echo "$f carries ## Latent" && exit 1; fi
           done
