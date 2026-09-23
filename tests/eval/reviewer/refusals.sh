@@ -426,6 +426,12 @@ run next "$C" --limit 1
 finish "$out" "$tmp/rep/hit.md" claude-opus-5 finished "Read|$REVIEWER_TRANSCRIPTS/s/tool-results/b0gweyh98.txt"
 run collect
 check "contamination: a Read of the harness's own overflow is not" is "$(h field "$(rundir "$C" standards 1)/receipt.json" status)" complete
+fresh unchecked
+run next "$C" --limit 1
+finish "$out" "$tmp/rep/hit.md" claude-opus-5 finished "WebFetch|https://example.com"
+run collect
+check "contamination: a tool outside the checked six is contaminated" is "$(h field "$(rundir "$C" standards 1)/receipt.json" status)" contaminated
+check "contamination: named as unchecked" is "$(h field "$(rundir "$C" standards 1)/receipt.json" detail)" "WebFetch (unchecked tool)"
 
 fresh twice
 run next "$C" --limit 1

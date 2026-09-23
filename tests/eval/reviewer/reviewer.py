@@ -456,6 +456,8 @@ def usage_limited_transcript(lines: list[dict]) -> bool:
                for line in lines if line.get("type") == "assistant")
 
 
+# The tools whose reach receipt_from_transcript can judge; any other tool call is contamination.
+CHECKED_TOOLS = ("Read", "Write", "Edit", "Grep", "Glob", "Bash")
 COMMAND_WORDS = ("gh", "git", "curl", "wget")
 PREFIX_WORDS = ("env", "sudo", "command", "exec", "time", "nohup", "xargs", "builtin")
 TRUSTED_BINS = ("/usr/", "/bin/", "/opt/homebrew/")
@@ -553,6 +555,8 @@ def receipt_from_transcript(run: RunId, lines: list[dict], expect: re.Pattern[st
                 reaches.append(f"{name} {args['path']}")
             elif name == "Bash" and (why := bash_reaches(args.get("command", ""), root)):
                 reaches.append(f"Bash ({', '.join(why)}) {args.get('command', '')[:120]}")
+            elif name not in CHECKED_TOOLS:
+                reaches.append(f"{name} (unchecked tool)")
     status: Status = "contaminated" if reaches else "complete"
     return Receipt(run, status, "; ".join(reaches) or "complete", models[-1], efforts[0], tokens, wall_ms, source)
 
