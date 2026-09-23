@@ -35,6 +35,8 @@ Use your configured architect runners (defaults `claude:fable@max`, `codex:gpt-5
 
 Design it twice. Require at least two structurally distinct candidates before synthesis, even when the first looks sufficient. This is the **exhaust-the-design-space** principle skill made concrete. Whole-shape alternatives, not point fixes inside one shape.
 
+A caller whose tier asks for one runner (Factory918's `eco`, Ticket step 0) keeps the cross-judge and briefs it to read that one candidate adversarially against the rubric and the grounding; the judge's defects stand in for the second candidate.
+
 Screen every candidate against [`references/design-red-flags.md`](references/design-red-flags.md) before synthesis. Reject or revise shallow modules, information leakage, temporal decomposition, and pass-through methods.
 
 Compare viable candidates on interface depth. Prefer the design that hides more complexity behind a smaller, simpler public surface. A rich interface can keep call chains short by concentrating capability instead of scattering it across layers.
