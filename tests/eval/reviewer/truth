@@ -1,7 +1,10 @@
 # The ground truth of ticket #138: every real bug in each kept round's head, from either axis.
 # anchors: ` && `-joined regexes, each searched in the normalized item text. fix: the patches under
 # rounds/<round>/fixes/ that remove the bug (fixes.sh builds them from their commits), or -.
-# where: file:line at the head. sources: who found it. The proofs are the #138 truth notes.
+# where: file:line at the head. sources: who found it. truth-notes.md holds each bug's proof.
+# In sources, `label <brief> <id>` names a row of tests/eval/reviewer/labels and `hist <round>/<axis>#<n>`
+# item n of tests/eval/reviewer/rounds/<round>/review/<axis>-report.historical.md, both as they
+# stand at e710e99 (`git show e710e99:<path>`). U-numbers are the #103 audit's.
 # round	id	anchors	fix	where	sources	title
 pr94-r1	G1	gh issue edit|body-file|ticket'?s? body|issue body && replac|overwrit|clobber|wipe|drop|lost|lose|truncat|never merges|sets the body|does not append|instead of append	body-file.patch	template/.agents/skills/poteto-mode/playbooks/ticket.md:10 @ c83f166	label pr94-r1/standards S1; U04; hist pr94-r1/standards#1; opus-5 pr94-r1/spec/1#1, pr94-r1/standards/3#1	Ticket step 6 says to append the table with gh issue edit --body-file, which replaces the whole body, so an agent following it wipes the ticket's criteria.
 pr94-r1	G2	overlap && pathspec|backtick|token	overlap.patch	template/.agents/skills/poteto-mode/scripts/overlap.sh:48 @ c83f166	label pr94-r1/spec P1; U06; hist pr94-r1/spec#1, pr94-r1/standards#5 (S5, Fix alongside); opus-5 pr94-r1/spec/2#2, pr94-r1/standards/2#1; verifier 94 worker-audit Issues 2 (the sibling-heading residual)	The overlap check reads every backticked token outside ## Diff as a pathspec, so the paths quoted in a posted scenario table match unrelated PRs and stop the run.
