@@ -37,7 +37,15 @@
 # skill and the script cannot drift apart. Both briefs carry the same `## Reading pack` section
 # after the diff (ticket #107's table, one assertion per cell): the changed files' text at HEAD,
 # whole or by function, comment-led block, section or window, within the byte cutoffs, the rest
-# named on one line; a failing git inside the pack refuses before any state is written.
+# named on one line; a failing git inside the pack refuses before any state is written. Every
+# line under a Risks heading of a cross-cutting diff's grounding, and every line under a
+# `### Writer flags <YYYY-MM-DD>` heading of the ticket body (the fake gh reads it from the file
+# FAKE_ISSUE_BODY names, and fails when an `issue-error` file exists), ends with `fixed: <sha>`, a
+# commit in HEAD's history, or `accepted: <reason>`; a line without one, a heading that looks like
+# either opener and is not, and a fence opened in a list and never closed are refused before any
+# state is written, each line named (ticket #108's tables A, B and C, one assertion per cell, and
+# the risk sentence now asks whether the diff honors each disposition). The Opening a PR playbook
+# and the blast-radius skill must show the disposition line word for word.
 # Exits 1 on the first miss.
 # shellcheck disable=SC2016 # the expected strings below are the Markdown the script emits; the backticks and $ are literal
 set -euo pipefail
@@ -206,7 +214,7 @@ count_rule='End the report with exactly one line `hard findings: N`, where N is 
 settled_rule="These findings were raised in an earlier round and settled by the decision each one cites. Do not raise them again. Nothing in this section says what you should find or confirm."
 fix_rule="The round before this one fixed these Act on items on this PR after the commit it reviewed; this round's diff is those fix commits and nothing else. Read each fix against its item, walk only the steps these commits touch, and report only what these commits get wrong. Nothing in this section says what you should find or confirm."
 blast_rule="The sessions and skills this change reaches, as the author grounded them before the review. Check the diff against each one; the grounding is the author's claim, not evidence."
-risk_rule='The diff is cross-cutting: after the lines per documented step, one numbered line per risk under the Risks heading of the `## Blast radius` section above, in its order and numbered on from the last step, each naming the risk and saying what the diff does at that risk; a risk line is a walk line and counts nothing.'
+risk_rule='The diff is cross-cutting: after the lines per documented step, one numbered line per risk under the Risks heading of the `## Blast radius` section above, in its order and numbered on from the last step, each naming the risk, saying what the diff does at that risk, and saying whether the diff honors the disposition the risk'"'"'s line ends with (for `fixed: <sha>`, whether that commit fixes the risk; for `accepted: <reason>`, whether the reason holds for this diff); a risk line is a walk line and counts nothing.'
 has "$source_skill/SKILL.md" "$definition" "SKILL.md step 4 carries the definition"
 has "$source_skill/SKILL.md" "$step_rule" "SKILL.md step 4 carries the step rule"
 has "$source_skill/SKILL.md" "$spec_rule" "SKILL.md step 4 carries the spec rule"
@@ -1320,9 +1328,9 @@ cat > blast.md <<'EOF'
 - **What it does.** Adds a hook that exits 0.
 - **Risks.** `factory-start` at day zero runs it before any skill is installed: `.claude/hooks/x.sh:1`.
 EOF
-{ cat blast.md; printf '\n## Risks\n\n1. A subagent inherits it: `.claude/hooks/x.sh:1`.\n'; } > blast-risks.md
+{ cat blast.md; printf '\n## Risks\n\n1. A subagent inherits it: `.claude/hooks/x.sh:1`. accepted: fixture\n'; } > blast-risks.md
 sed 's/^## Risks$/### Risks/' blast-risks.md > blast-risks-demoted.md
-{ cat blast-risks.md; printf '\n### Risks\n\n2. The same risk, demoted.\n'; } > blast-both.md
+{ cat blast-risks.md; printf '\n### Risks\n\n2. The same risk, demoted. accepted: fixture\n'; } > blast-both.md
 { cat blast.md; printf '\n## Risks\n'; } > blast-empty-risks.md
 { cat blast.md; printf '\n```md\n## Risks\n\n1. inside a fence\n```\n'; } > blast-fenced.md
 # refused_risks <label> <where> [arg ...]: HEAD~1 with the args exits 1 with the ticket and round
@@ -1397,7 +1405,7 @@ n=$((n + 1))
 # 3A: with a PR, the grounding is the body's `## Blast Radius` section with its headings demoted:
 # CRLF line ends, a fenced `## ` line kept inside it, `### Risks` inside it, and the next heading
 # ending it. The Spec brief's Walk bullet continues with the risk sentence; the Standards brief's does not.
-printf '## Why\r\n\r\nA hook.\r\n\r\n## Blast Radius\r\n\r\n- **Risks.** a subagent inherits it: `.claude/hooks/x.sh:1`.\r\n\r\n### Risks\r\n\r\n1. a subagent inherits it: `.claude/hooks/x.sh:1`.\r\n\r\n```sh\r\n## not a heading, part of the proof\r\n```\r\n\r\n## Verification\r\n\r\nran it\r\n' > pr-body.md
+printf '## Why\r\n\r\nA hook.\r\n\r\n## Blast Radius\r\n\r\n- **Risks.** a subagent inherits it: `.claude/hooks/x.sh:1`.\r\n\r\n### Risks\r\n\r\n1. a subagent inherits it: `.claude/hooks/x.sh:1`. accepted: fixture\r\n\r\n```sh\r\n## not a heading, part of the proof\r\n```\r\n\r\n## Verification\r\n\r\nran it\r\n' > pr-body.md
 FAKE_PR_BODY="$fx/pr-body.md" bash "$skill/scripts/review-brief.sh" HEAD~1 > out.txt
 for f in "$std" "$spec"; do
   has "$f" '- **Risks.** a subagent inherits it: `.claude/hooks/x.sh:1`.' "$f carries the PR body's section (3A)"
@@ -1763,6 +1771,203 @@ grep -qx 'pack_whole=8192 pack_unit=4096 pack_total=65536' "$skill/scripts/readi
 n=$((n + 1))
 has "$source_skill/SKILL.md" '- `## Reading pack`, right after the diff, from `scripts/reading-pack.sh`: the code the diff touches as it stands at the reviewed commit. A changed file of 8192 bytes or less is carried whole; in a larger one, each changed line brings the shell function, the comment-led block or the Markdown section around it when that is 4096 bytes or less, else the widest window around the line within 4096 bytes. The pack carries 65536 bytes at most, smallest entries first, and names what it leaves out on one closing line; a file with no text to carry (deleted, binary, generated, a link) is named with the reason. The sweep form carries no pack.' "SKILL.md step 4 names the pack and its cutoffs"
 has "$source_skill/SKILL.md" "$pack_rule" "SKILL.md step 4 carries the Report sentence"
+
+# Ticket #108, tables A, B and C, one assertion per cell, each named by its row and column: every
+# line under a Risks heading of a cross-cutting diff's grounding, and every line under a
+# `### Writer flags <YYYY-MM-DD>` heading of the ticket body, ends with `fixed: <sha>` (a commit in
+# HEAD's history) or `accepted: <reason>`, or the brief is refused before any state is written,
+# naming each offending line. o8 is the commit so far, t8 a text commit on it and k8 a hook commit
+# on t8, so a run at k8 from t8 is cross-cutting (cc) and a run at t8 from o8 is not (nc); x8 is on
+# a side branch, outside HEAD's history. The commits name no ticket, so a run passes --ticket 7
+# unless the cell has no ticket. The templates under f8/ write <H> for HEAD's short sha and <X> for x8.
+br8="$(git symbolic-ref --short HEAD)"
+o8="$(git rev-parse HEAD)"
+git switch -q -c side108
+echo side > side.txt
+git add side.txt
+git commit -qm "a side commit"
+x8="$(git rev-parse --short HEAD)"
+git switch -q "$br8"
+echo text > t8.txt
+git add t8.txt
+git commit -qm "a text file"
+t8="$(git rev-parse HEAD)"
+echo 'exit 0 # 108' > "$hooks/x.sh"
+git add "$hooks/x.sh"
+git commit -qm "the hook, again"
+k8="$(git rev-parse HEAD)"
+hk="$(git rev-parse --short "$k8")"
+fo_comment previous-3-spec.md "$t8" > prev8.md
+mkdir -p f8
+# risks8 <name> <line>...: a grounding, the hand-back's first bullet, then `## Risks` and the lines.
+risks8() { local f="f8/$1"; shift; { printf -- '- **What it does.** Adds a hook that exits 0.\n\n## Risks\n\n'; [ $# -eq 0 ] || printf '%s\n' "$@"; } > "$f"; }
+# ground8 <name> <line>...: a grounding holding the lines, then `## Risks` with one settled risk.
+ground8() { local f="f8/$1"; shift; { printf -- '- **What it does.** Adds a hook that exits 0.\n\n'; printf '%s\n' "$@"; printf '\n## Risks\n\n1. A subagent inherits it accepted: ok\n'; } > "$f"; }
+# flags8 <name> <line>...: a ticket body, `### Writer flags 2026-09-23` inside `## Testing decisions`, then the lines.
+flags8() { local f="f8/$1"; shift; { printf '## What to build\n\nThe ticket body.\n\n## Testing decisions\n\n### Writer flags 2026-09-23\n\n'; [ $# -eq 0 ] || printf '%s\n' "$@"; } > "$f"; }
+# body8 <name> <line>...: a ticket body holding the lines and no list.
+body8() { local f="f8/$1"; shift; { printf '## What to build\n\nThe ticket body.\n\n'; printf '%s\n' "$@"; } > "$f"; }
+# go8 <cc|nc> <F|P|R|S> <grounding|-> <ticket|-|none> [arg ...]: review-brief.sh in the column's
+# form, the grounding as blast8.md (`-`: none) and the ticket body as ticket8.md (`-`: the fake's
+# fixed body, which has no list; `none`: no ticket). Leaves the stdout in out8, the stderr in err8,
+# the exit in code and the review directory in d8.
+go8() {
+  local kind="$1" form="$2" g="$3" tk="$4" fp="$t8" h a=(); shift 4
+  if [ "$kind" = nc ]; then git switch -q --detach "$t8"; fp="$o8"; fi
+  h="$(git rev-parse --short HEAD)"
+  d8=".scratch/review/$fp"
+  if [ "$g" = - ]; then : > blast8.md; else sed "s/<H>/$h/g; s/<X>/$x8/g" "f8/$g" > blast8.md; fi
+  case "$tk" in
+    none) ;;
+    -) a=(--ticket 7) ;;
+    *) sed "s/<H>/$h/g; s/<X>/$x8/g" "f8/$tk" > ticket8.md; export FAKE_ISSUE_BODY="$fx/ticket8.md"; a=(--ticket 7) ;;
+  esac
+  rm -rf .scratch .claude/state pr8.md
+  [ "$g" = - ] || { printf '## Why\n\nA hook.\n\n## Blast Radius\n\n'; sed 's/^\(#\{1,\}\) /#\1 /' blast8.md; printf '\n## Verification\n\nran it\n'; } > pr8.md
+  set +e
+  case "$form" in
+    F) bash "$skill/scripts/review-brief.sh" "$fp" --blast-radius blast8.md ${a[@]+"${a[@]}"} "$@" ;;
+    P) FAKE_PR_BODY="$fx/pr8.md" bash "$skill/scripts/review-brief.sh" "$fp" ${a[@]+"${a[@]}"} "$@" ;;
+    R) bash "$skill/scripts/review-brief.sh" "$fp" --previous prev8.md --blast-radius blast8.md ${a[@]+"${a[@]}"} "$@" ;;
+    S) d8=".scratch/review/sweep-$h"; bash "$skill/scripts/review-brief.sh" --paths "$hooks/x.sh" --commits HEAD --blast-radius blast8.md ${a[@]+"${a[@]}"} "$@" ;;
+  esac > out8 2> err8
+  code=$?
+  set -e
+  unset FAKE_ISSUE_BODY
+  [ "$kind" = cc ] || git switch -q "$br8"
+}
+# where8 <column>: the grounding's source as the risk refusal names it.
+where8() { if [ "$1" = P ]; then echo "the PR body's Blast Radius section"; else echo blast8.md; fi; }
+# rr8 <where> <line>..., rf8 <line>...: the two refusals, each offending line after the header.
+rr8() { local w="$1"; shift; printf 'review-brief: the blast-radius grounding (%s) has risk lines without a disposition; every line under a `## Risks` or `### Risks` heading that is not indented deeper or fenced is a risk and ends with `fixed: <sha>` (a commit in HEAD'"'"'s history) or `accepted: <reason>` as plain text; indent a continuation, fence a proof, and write the heading exactly that way:' "$w"; printf '\n  %s' "$@"; }
+rf8() { printf 'review-brief: ticket #7 has Writer flags without a disposition; every line under a `### Writer flags <YYYY-MM-DD>` heading that is not indented deeper or fenced is a flag and ends with `fixed: <sha>` (a commit in HEAD'"'"'s history) or `accepted: <reason>` as plain text; indent a continuation, fence a proof, and write the heading exactly that way:'; printf '\n  %s' "$@"; }
+nd='no disposition'
+na='`accepted:` has no reason'
+fo='a fence opened here never closes'
+nmr='not the heading `## Risks` or `### Risks`'
+nmf='not the heading `### Writer flags <YYYY-MM-DD>`'
+nc8() { printf '`fixed: %s` is not a commit id (7 to 40 lowercase hex characters)' "$1"; }
+nr8() { printf '`fixed: %s` does not resolve to a commit here' "$1"; }
+nh8() { printf '`fixed: %s` is not in HEAD'"'"'s history' "$1"; }
+np8="review-brief: the diff is not cross-cutting; blast8.md is not pasted"
+# refused8 <label> <stderr>: exit 1, exactly that stderr, and neither the review state nor the review directory.
+refused8() {
+  if [ "$code" != 1 ] || [ "$(cat err8)" != "$2" ] || [ -e .claude/state/review ] || [ -e "$d8" ]; then
+    echo "FAIL $1: exit $code, wanted 1, the refusal and no state"; echo "  got:"; cat err8; echo "  wanted:"; printf '%s\n' "$2"; exit 1
+  fi
+  n=$((n + 1))
+}
+# briefed8 <label> <stderr>: exit 0, exactly that stderr (empty: none), both briefs and the review state.
+briefed8() {
+  if [ "$code" != 0 ] || [ "$(cat err8)" != "$2" ] || [ ! -s "$d8/standards-brief.md" ] || [ ! -s "$d8/spec-brief.md" ] || [ "$(cat .claude/state/review/dir 2>/dev/null)" != "$d8" ]; then
+    echo "FAIL $1: exit $code, wanted 0, both briefs in $d8 and the state, stderr: $2"; echo "  got:"; cat err8; exit 1
+  fi
+  n=$((n + 1))
+}
+# plus8 <label>: briefed8 with nothing on stderr; both briefs carry `## Blast radius` and every
+# line of the grounding that is not blank or a heading, dispositions included, and the Spec brief's
+# Walk bullet ends with the risk sentence.
+plus8() {
+  local f l
+  briefed8 "$1" ""
+  for f in "$d8/standards-brief.md" "$d8/spec-brief.md"; do
+    has "$f" "## Blast radius" "$1: $f has the blast-radius section"
+    while IFS= read -r l; do
+      l="${l%$'\r'}"
+      case "$l" in ''|'#'*) ;; *) has "$f" "$l" "$1: $f carries the grounding line" ;; esac
+    done < blast8.md
+  done
+  has "$d8/spec-brief.md" "${spec_bullets[0]} $risk_rule" "$1: the Walk bullet ends with the risk sentence"
+}
+# nospec8 <label> <stderr>: exit 0, exactly that stderr, the Standards brief alone and the no-spec line last.
+nospec8() {
+  if [ "$code" != 0 ] || [ "$(cat err8)" != "$2" ] || [ "$(tail -1 out8)" != "no spec: Standards axis only" ] || [ ! -s "$d8/standards-brief.md" ] || [ -e "$d8/spec-brief.md" ]; then
+    echo "FAIL $1: exit $code, wanted 0, the Standards brief alone and the no-spec line, stderr: $2"; echo "  got:"; cat out8 err8; exit 1
+  fi
+  n=$((n + 1))
+}
+# Table A. Risks OK: risk 1 fixed at HEAD, risk 2 accepted; one risk bare: risk 2 has none.
+risks8 ok '1. A subagent inherits it: `.claude/hooks/x.sh:1`. fixed: <H>' '2. factory-start at day zero runs it accepted: the hook exits 0 before any skill'
+risks8 bare '1. A subagent inherits it: `.claude/hooks/x.sh:1`. fixed: <H>' '2. factory-start at day zero runs it'
+flags8 fok '1. flag one fixed: <H>' '2. flag nine: the table misses a row accepted: filed #130'
+flags8 fbare '1. flag one fixed: <H>' '2. flag nine: the table misses a row'
+go8 nc F bare -; briefed8 "(A1/F)" "$np8"
+go8 nc P bare -; briefed8 "(A1/P)" ""
+rg8="review-brief: cross-cutting diff ($hooks/x.sh) without a blast-radius grounding; run the blast-radius skill, put the result in the PR body's Blast Radius section or pass --blast-radius FILE"
+go8 cc F - -; refused8 "(A2/F)" "$rg8"
+go8 cc P - -; refused8 "(A2/P)" "$rg8"
+for c in F P R S; do go8 cc "$c" ok -; plus8 "(A3/$c)"; done
+for c in F P R S; do go8 cc "$c" bare -; refused8 "(A4/$c)" "$(rr8 "$(where8 "$c")" "$nd: 2. factory-start at day zero runs it")"; done
+for c in F P R S; do go8 cc "$c" ok fbare; refused8 "(A5/$c)" "$(rf8 "$nd: 2. flag nine: the table misses a row")"; done
+go8 nc F ok fbare; refused8 "(A6/F)" "$np8
+$(rf8 "$nd: 2. flag nine: the table misses a row")"
+go8 nc P ok fbare; refused8 "(A6/P)" "$(rf8 "$nd: 2. flag nine: the table misses a row")"
+for c in F P; do go8 cc "$c" bare fbare; refused8 "(A7/$c)" "$(rr8 "$(where8 "$c")" "$nd: 2. factory-start at day zero runs it")"; done
+for c in F P; do
+  go8 cc "$c" ok fok
+  plus8 "(A8/$c)"
+  has "$d8/spec-brief.md" "### Writer flags 2026-09-23" "(A8/$c): the Spec brief carries the list"
+  has "$d8/spec-brief.md" "1. flag one fixed: $hk" "(A8/$c): the Spec brief carries flag 1"
+  has "$d8/spec-brief.md" "2. flag nine: the table misses a row accepted: filed #130" "(A8/$c): the Spec brief carries flag 2"
+done
+for c in F P; do go8 cc "$c" ok none; nospec8 "(A9/$c)" ""; done
+printf 'could not resolve to an issue\n' > issue-error
+for c in F P; do go8 cc "$c" ok -; nospec8 "(A10/$c)" "review-brief: gh could not fetch #7 (could not resolve to an issue); no spec"; done
+rm issue-error
+# Table B: column r under `## Risks` in the grounding, cross-cutting, form F, the fixed body; column
+# f under `### Writer flags 2026-09-23` in the ticket body, not cross-cutting, no grounding.
+risks8 b1 '1. text fixed: <H>'; go8 cc F b1 -; plus8 "(B1/r)"
+flags8 fb1 '1. text fixed: <H>'; go8 nc P - fb1; briefed8 "(B1/f)" ""
+risks8 b2 '1. text accepted: out of scope, #130'; go8 cc F b2 -; plus8 "(B2/r)"
+risks8 b3 '1. text'; go8 cc F b3 -; refused8 "(B3/r)" "$(rr8 blast8.md "$nd: 1. text")"
+flags8 fb3 '1. text'; go8 nc P - fb3; refused8 "(B3/f)" "$(rf8 "$nd: 1. text")"
+risks8 b4 '- a bullet item'; go8 cc F b4 -; refused8 "(B4/r)" "$(rr8 blast8.md "$nd: - a bullet item")"
+risks8 b5 '1. first half' 'second half accepted: ok'; go8 cc F b5 -; refused8 "(B5/r)" "$(rr8 blast8.md "$nd: 1. first half")"
+b6=('1. a accepted: ok' '   an indented continuation with no disposition' '```' '## x' '1. y' '```' '2. b fixed: <H>')
+risks8 b6 "${b6[@]}"; go8 cc F b6 -; plus8 "(B6/r)"
+flags8 fb6 "${b6[@]}"; go8 nc P - fb6; briefed8 "(B6/f)" ""
+risks8 b7 '1. the binary is not fixed: it stays stale'; go8 cc F b7 -; refused8 "(B7/r)" "$(rr8 blast8.md "$(nc8 'it stays stale'): 1. the binary is not fixed: it stays stale")"
+risks8 b8 '1. text fixed: 1234abc'; go8 cc F b8 -; refused8 "(B8/r)" "$(rr8 blast8.md "$(nr8 1234abc): 1. text fixed: 1234abc")"
+risks8 b9 '1. text fixed: <X>'; go8 cc F b9 -; refused8 "(B9/r)" "$(rr8 blast8.md "$(nh8 "$x8"): 1. text fixed: $x8")"
+risks8 b10 '1. text accepted:'; go8 cc F b10 -; refused8 "(B10/r)" "$(rr8 blast8.md "$na: 1. text accepted:")"
+risks8 b11 '1. text accepted: partly, then fixed: <H>'; go8 cc F b11 -; plus8 "(B11/r)"
+risks8 b12 '1. text fixed: <H> (the second commit)'; go8 cc F b12 -; refused8 "(B12/r)" "$(rr8 blast8.md "$(nc8 "$hk (the second commit)"): 1. text fixed: $hk (the second commit)")"
+risks8 b13 '1. text `fixed: <H>`'; go8 cc F b13 -; refused8 "(B13/r)" "$(rr8 blast8.md "$nd: 1. text \`fixed: $hk\`")"
+risks8 b14 '1. text fixed: ABCDEF1'; go8 cc F b14 -; refused8 "(B14/r)" "$(rr8 blast8.md "$(nc8 ABCDEF1): 1. text fixed: ABCDEF1")"
+risks8 b15 '1. a accepted: ok' '```sh' '2. hidden'; go8 cc F b15 -; refused8 "(B15/r)" "$(rr8 blast8.md "$fo: \`\`\`sh")"
+flags8 fb15 '1. a accepted: ok' '```sh' '2. hidden'; go8 nc P - fb15; refused8 "(B15/f)" "$(rf8 "$fo: \`\`\`sh")"
+risks8 b16 '1. a accepted: ok' '#### Risks' '2. b'; go8 cc F b16 -; refused8 "(B16/r)" "$(rr8 blast8.md "$nmr: #### Risks" "$nd: 2. b")"
+flags8 fb16 '1. a accepted: ok' '#### Writer flags 2026-09-23' '2. b'; go8 nc P - fb16; refused8 "(B16/f)" "$(rf8 "$nmf: #### Writer flags 2026-09-23" "$nd: 2. b")"
+risks8 b17 '1. a accepted: ok' '#### Proof'; go8 cc F b17 -; refused8 "(B17/r)" "$(rr8 blast8.md "$nd: #### Proof")"
+risks8 b18; go8 cc F b18 -; plus8 "(B18/r)"
+risks8 b19 '  1. a accepted: ok' '  2. b'; go8 cc F b19 -; refused8 "(B19/r)" "$(rr8 blast8.md "$nd:   2. b")"
+risks8 b20 '1. a accepted: ok' '## Risks' '2. b'; go8 cc F b20 -; refused8 "(B20/r)" "$(rr8 blast8.md "$nd: 2. b")"
+risks8 b21 '1. a accepted: ok' '## Cleared' 'prose with no disposition'; go8 cc F b21 -; plus8 "(B21/r)"
+risks8 b22 '1. text fixed: <H>   '
+awk '{ printf "%s\r\n", $0 }' f8/b22 > f8/b22.crlf
+mv f8/b22.crlf f8/b22
+go8 cc F b22 -; plus8 "(B22/r)"
+# Table C: column r a line in the grounding before an exact `## Risks` whose one risk is settled,
+# cross-cutting; column f a line in a ticket body with no list, not cross-cutting.
+ground8 c1 'Risks:'; go8 cc F c1 -; refused8 "(C1/r)" "$(rr8 blast8.md "$nmr: Risks:")"
+body8 fc1 'Writer flags:'; go8 nc P - fc1; refused8 "(C1/f)" "$(rf8 "$nmf: Writer flags:")"
+ground8 c2 '## Cleared' '' '#### Risks'; go8 cc F c2 -; refused8 "(C2/r)" "$(rr8 blast8.md "$nmr: #### Risks")"
+body8 fc2 '## Writer flags 2026-09-23'; go8 nc P - fc2; refused8 "(C2/f)" "$(rf8 "$nmf: ## Writer flags 2026-09-23")"
+ground8 c3 '### Risks (two)'; go8 cc F c3 -; refused8 "(C3/r)" "$(rr8 blast8.md "$nmr: ### Risks (two)")"
+body8 fc3 '### Writer flags 2026-09-23 (PR #99)'; go8 nc P - fc3; refused8 "(C3/f)" "$(rf8 "$nmf: ### Writer flags 2026-09-23 (PR #99)")"
+ground8 c4 '## risks'; go8 cc F c4 -; refused8 "(C4/r)" "$(rr8 blast8.md "$nmr: ## risks")"
+body8 fc4 '### writer flags 2026-09-23'; go8 nc P - fc4; refused8 "(C4/f, lowercase)" "$(rf8 "$nmf: ### writer flags 2026-09-23")"
+body8 fc4d '### Writer flags'; go8 nc P - fc4d; refused8 "(C4/f, no date)" "$(rf8 "$nmf: ### Writer flags")"
+ground8 c5 '**Risks**'; go8 cc F c5 -; refused8 "(C5/r)" "$(rr8 blast8.md "$nmr: **Risks**")"
+body8 fc5 '**Writer flags 2026-09-23**'; go8 nc P - fc5; refused8 "(C5/f)" "$(rf8 "$nmf: **Writer flags 2026-09-23**")"
+ground8 c6 '```md' '## Risks' '' '1. bare' '```'; go8 cc F c6 -; plus8 "(C6/r)"
+body8 fc6 '```md' '### Writer flags 2026-09-23' '' '1. bare' '```'; go8 nc P - fc6; briefed8 "(C6/f)" ""
+ground8 c7 'Risks here are low.' '- **Risks.** day zero: x.sh:1'; go8 cc F c7 -; plus8 "(C7/r)"
+body8 fc7 "- [ ] A writer's flags reach the ticket under \`## Testing decisions\` (or \`## Design\`) as a dated \`Writer flags\` list with a disposition per flag, and the brief refuses when the ticket body carries a \`Writer flags\` list with a flag that has none; a ticket with no such list is unaffected." 'Writer flags are recorded by the orchestrator.' '| C1 | a plain marker: `Risks:` (r), `Writer flags:` (f) | RR[`nm`] | RF[`nm`] |'
+go8 nc P - fc7; briefed8 "(C7/f)" ""
+# Criterion 5: the Opening a PR playbook's Blast Radius bullet and the blast-radius skill's hand-back show the disposition line.
+has "$here/template/.agents/skills/poteto-mode/playbooks/opening-a-pr.md" 'Each line under `### Risks` is one risk and ends with its disposition as plain text, `fixed: <sha>` (the commit on this branch that fixes it) or `accepted: <reason>`, for example `` 1. A subagent inherits the hook before its skill is installed: `.claude/hooks/x.sh:12`. fixed: 3f2a9c1 ``' "opening-a-pr.md shows the disposition line (#108)"
+has "$here/template/.agents/skills/blast-radius/SKILL.md" 'Once the author has acted on a risk, its line ends with the disposition, `fixed: <sha>` or `accepted: <reason>`, as in `` 1. A subagent inherits the hook: `.claude/hooks/x.sh:12`, likely, blocks every read. fixed: 3f2a9c1 ``.' "the blast-radius hand-back shows the disposition line (#108)"
 }
 
 suite project
