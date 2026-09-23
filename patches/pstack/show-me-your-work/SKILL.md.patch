@@ -1,0 +1,32 @@
+--- a/show-me-your-work/SKILL.md
++++ b/show-me-your-work/SKILL.md
+@@ -11,9 +11,9 @@
+ 
+ A single TSV file, one row per decision. TSV because GitHub renders it as a sortable table, `column -s$'\t' -t` and spreadsheets read it, and a row appends with one command. Cells stay single-line. Evidence is a pointer, not prose.
+ 
+-Copy `references/decision-log-template.tsv` (the header row) to start a clean log. Columns:
++`scripts/log.sh` starts the log with the header row in `references/decision-log-template.tsv`. Columns:
+ 
+-- **ts.** ISO8601 timestamp. The timeline axis.
++- **ts.** The UTC second `scripts/log.sh` stamped from `date -u` when it appended the row. It is the timeline axis and the timing record the post-mortem tooling reads for how long each phase took, so it is always the clock's time.
+ - **phase.** The phase or workstream.
+ - **decision.** What was chosen or done, one line.
+ - **why.** The reason in plain words. If a principle drove it, say it plainly (`explored options first, this was a one-way door`), not as a jargon tag.
+@@ -34,7 +34,7 @@
+ 
+ Write each entry the way you'd tell a teammate what you did. Plain words, concrete actions, no AI speak or abstract jargon (the **unslop** skill applies to log text too). A reviewer should understand each row without decoding it.
+ 
+-Use the helper so rows stay well-formed: `scripts/log.sh <logfile> <phase> <decision> <why> <evidence> <result>`. It stamps `ts`, writes the header on first use, strips stray tabs/newlines, and prefixes any cell starting with `=`, `+`, `-`, or `@` with a single quote so a reviewer opening the log in a spreadsheet doesn't trigger formula execution. A bare `printf` appending a row works too, but mind those same bytes if cells come from generated or user-supplied text.
++Append every row with `scripts/log.sh <logfile> <phase> <decision> <why> <evidence> <result>`, and only with it: a lane never types a row or a timestamp. It stamps `ts`, writes the header on first use, strips stray tabs/newlines, and prefixes any cell starting with `=`, `+`, `-`, or `@` with a single quote so a reviewer opening the log in a spreadsheet doesn't trigger formula execution. Log a row when the thing happens; a row logged late carries the late time, which is true.
+ 
+ Log decision points and checkpoints, not every action: a fork chosen, a unit completed with its verification result, a pivot or revert with its trigger, a blocker surfaced, a gate fixed. For loop runs, one row per iteration. Skip the trivial and self-evident.
+ 
+@@ -65,6 +65,8 @@
+ 
+ Before handing back, you must spawn a subagent on a different model family from the one that did the work. Self-review is not a substitute; the point is fresh eyes you cannot bring yourself. The subagent reads the audit trail and the run's transcript, then flags what the user should pay attention to. Not a redo of the work, a scan for what's suboptimal or risky.
+ 
++The reviewer first runs `scripts/check-trail.sh <logfile> <transcript>...` with the transcript of every lane that appended to the log. A subagent's transcript is `~/.claude/projects/<encoded-cwd>/<session>/subagents/agent-<id>.jsonl`, the id from the Agent tool's result; the main session's is `<session>.jsonl` in the same directory. The script prints one `ok` line and exits 0, or exits 1 with one line per offending row: a header other than the template's, a row without six columns, a `ts` that is not a `log.sh` stamp, a row earlier than the stamped row above it, or a row outside the run, the first to the last timestamp in those transcripts. Exit 1 refuses the trail as a timing record: its lines go first under Attention, verbatim, and the post-mortem times the run from the transcript instead. The refusal does not block merge-ready, because the log is append-only and its rows stay as written. Exit 2 means the check did not run: fix the path and rerun, or write `trail clock not checked: <message>` under Attention.
++
+ - Decisions logged with weak or absent evidence.
+ - Verification steps skipped or claimed without proof in the transcript.
+ - Choices that look risky in hindsight (premature, scope-creeping, papering over a symptom).
