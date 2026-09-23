@@ -27,8 +27,13 @@
 # `## Blast Radius` section; without one the script refuses before writing any state. The grounding
 # holds its risks under a line that is exactly `## Risks` (a file) or `### Risks` (a PR body, whose
 # headings are demoted one level so the section stays intact), outside fenced text; without one the
-# script refuses the same way. With a grounding, the Spec brief's `## Walk` bullet continues with
-# one numbered line per risk, so the reviewer walks the risks after the steps.
+# script refuses the same way. Every line under that heading, and every line under a heading that
+# is exactly `### Writer flags <YYYY-MM-DD>` in the ticket body at any round, ends with its
+# disposition, `fixed: <sha>` (a commit in HEAD's history) or `accepted: <reason>`; a line without
+# one, a heading that looks like either and is not, or a fence opened in the list and never closed
+# is refused before any state is written, each line named. With a grounding, the Spec brief's
+# `## Walk` bullet continues with one numbered line per risk, so the reviewer walks the risks after
+# the steps and says whether the diff honors each disposition.
 # Both briefs carry `## Reading pack` after the diff, the code around each change at HEAD, which
 # scripts/reading-pack.sh writes to `<dir>/pack.md`; if it fails the script refuses before writing any state.
 # shellcheck disable=SC2016 # every single-quoted string here is a jq program or a Markdown template; the backticks and $ are literal
@@ -141,6 +146,64 @@ fenced='
   fence != "" { next }
   /^## / { h = substr($0, 4); sub(/[ \t\r]+$/, "", h) }
 '
+# The disposition grammar (#108), one for both sites: the risks of a cross-cutting diff's grounding
+# and the Writer flags lists of the ticket body. An opener is an unfenced line that is exactly
+# `## Risks` or `### Risks` (mode risks), or `### Writer flags YYYY-MM-DD` (mode flags); its list
+# runs to the next unfenced heading no deeper than the opener. Every unfenced, non-blank line of a
+# list indented no deeper than the list's first line is an item, whatever its shape, so no form
+# passes unread; a deeper line is a continuation. An item's disposition is its last `fixed:` or
+# `accepted:` field that starts the line or follows a blank, to the end of the line. A heading that
+# starts with the site's word, or a line holding only the word, that is not an opener is a
+# near-miss, since it would hide its list; so is a fence opened in a list and never closed. The awk
+# prints one record per item or offender, `kind US value US line`, kind none, near, fence, fixed
+# or accepted: US and not a tab, since read collapses consecutive tabs and an empty value would
+# shift the line into it.
+disposed='
+  function field(s,   rest, off, k, v) {
+    k = ""; off = 0; rest = s
+    while (match(rest, /(^|[ \t])(fixed|accepted):/)) {
+      k = (substr(rest, RSTART, RLENGTH) ~ /fixed:$/) ? "fixed" : "accepted"
+      off += RSTART + RLENGTH - 1; v = substr(s, off + 1); rest = v
+    }
+    if (k == "") return "none" US
+    sub(/^[ \t]+/, "", v); return k US v
+  }
+  BEGIN { US = "\037"; base = -1 }
+  { sub(/\r$/, ""); sub(/[ \t]+$/, "") }
+  /^(```|~~~)/ && fence == "" { opened = on ? $0 : "" }
+'"$fenced"'
+  { t = tolower($0); lv = 0; if (match($0, /^#+[ \t]/)) lv = RLENGTH - 1 }
+  (mode == "risks" && ($0 == "## Risks" || $0 == "### Risks")) || (mode == "flags" && $0 ~ /^### Writer flags [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) { on = 1; top = lv; base = -1; next }
+  { x = t; sub(/^#+[ \t]+/, "", x) }
+  (lv && index(x, w) == 1 && substr(x, length(w) + 1, 1) !~ /[a-z]/) || t ~ ("^[*_]*" w "[ 0-9-]*[*_]*[.:]?[*_]*$") { print "near" US US $0; if (lv && lv <= top) on = 0; next }
+  lv && lv <= top { on = 0; next }
+  !on || $0 == "" { next }
+  { match($0, /^[ \t]*/); if (base < 0) base = RLENGTH; if (RLENGTH > base) next; print field($0) US $0 }
+  END { if (fence != "" && opened != "") print "fence" US US opened }
+'
+# undisposed <risks|flags>: reads Markdown on stdin and prints `  <reason>: <line>` per offender, in
+# text order, and nothing when every list is settled. The awk classifies; this loop does the git
+# checks a `fixed:` value needs.
+undisposed() {
+  local w=risks nm='not the heading `## Risks` or `### Risks`' kind value line
+  if [ "$1" = flags ]; then w="writer flags" nm='not the heading `### Writer flags <YYYY-MM-DD>`'; fi
+  awk -v mode="$1" -v w="$w" "$disposed" | while IFS=$'\037' read -r kind value line; do
+    case "$kind" in
+      none) echo "  no disposition: $line" ;;
+      near) echo "  $nm: $line" ;;
+      fence) echo "  a fence opened here never closes: $line" ;;
+      accepted) [ -n "$value" ] || echo "  \`accepted:\` has no reason: $line" ;;
+      fixed)
+        if ! printf '%s' "$value" | grep -qE '^[0-9a-f]{7,40}$'; then
+          echo "  \`fixed: $value\` is not a commit id (7 to 40 lowercase hex characters): $line"
+        elif ! git rev-parse --verify -q "$value^{commit}" >/dev/null; then
+          echo "  \`fixed: $value\` does not resolve to a commit here: $line"
+        elif ! git merge-base --is-ancestor "$value" HEAD; then
+          echo "  \`fixed: $value\` is not in HEAD's history: $line"
+        fi ;;
+    esac
+  done
+}
 # The reference a `cites:` field may name, one grammar: `table <row>/<column>` a cell of the
 # ticket's scenario table by its own labels, no spaces or slashes; `design <signature>` the rest of
 # the line, a signature or usage as the `## Design` sketch writes it; `criterion <k>` the k-th
@@ -317,6 +380,8 @@ while read -r p; do
 done < "$dir/files"
 grounding=""
 if [ -n "$crossing" ]; then
+  where="the PR body's Blast Radius section"
+  [ -z "$blast" ] || where="$blast"
   if [ -n "$blast" ]; then
     grounding="$(cat "$blast")"
   else
@@ -338,13 +403,40 @@ if [ -n "$crossing" ]; then
       $0 == "## Risks" || $0 == "### Risks" { found = 1; exit }
       END { exit !found }'; then
     rm -rf "$dir"
-    where="the PR body's Blast Radius section"
-    [ -z "$blast" ] || where="$blast"
     echo "review-brief: the blast-radius grounding ($where) has no Risks heading outside fenced text; put the risks under a line that is exactly \`## Risks\` in the file, \`### Risks\` in the PR body, where the grounding's headings are demoted one level so the section stays intact" >&2
+    exit 1
+  fi
+  # Each risk ends with what the author did about it, so the review reads a claim it can check.
+  bad="$(printf '%s\n' "$grounding" | undisposed risks)"
+  if [ -n "$bad" ]; then
+    rm -rf "$dir"
+    echo "review-brief: the blast-radius grounding ($where) has risk lines without a disposition; every line under a \`## Risks\` or \`### Risks\` heading that is not indented deeper or fenced is a risk and ends with \`fixed: <sha>\` (a commit in HEAD's history) or \`accepted: <reason>\` as plain text; indent a continuation, fence a proof, and write the heading exactly that way:" >&2
+    printf '%s\n' "$bad" >&2
     exit 1
   fi
 elif [ -n "$blast" ]; then
   echo "review-brief: the diff is not cross-cutting; $blast is not pasted" >&2
+fi
+# The spec is the ticket body plus the comments its author posted, each under its date. Comments by
+# anyone else, and the PR's own comments, are never spec.
+spec="" comments=""
+if [ -n "$ticket" ]; then
+  err="$(gh issue view "$ticket" --json body -q .body 2>&1 >"$dir/ticket.md" || true)"
+  spec="$(cat "$dir/ticket.md")"
+  [ -n "$spec" ] || echo "review-brief: gh could not fetch #$ticket ($(printf '%s' "$err" | tr '\n' ' ')); no spec" >&2
+  by_author='.author.login as $a | .comments[] | select(.author.login == $a) | "### \(.createdAt[:10])\n\n\(.body)\n"'
+  [ -z "$spec" ] || comments="$(gh issue view "$ticket" --json author,comments -q "$by_author" 2>/dev/null || true)"
+fi
+# A writer's flags on the ticket (Ticket step 6) each end with a disposition too, at every round;
+# a ticket with no such list passes.
+if [ -n "$spec" ]; then
+  bad="$(printf '%s\n' "$spec" | undisposed flags)"
+  if [ -n "$bad" ]; then
+    rm -rf "$dir"
+    echo "review-brief: ticket #$ticket has Writer flags without a disposition; every line under a \`### Writer flags <YYYY-MM-DD>\` heading that is not indented deeper or fenced is a flag and ends with \`fixed: <sha>\` (a commit in HEAD's history) or \`accepted: <reason>\` as plain text; indent a continuation, fence a proof, and write the heading exactly that way:" >&2
+    printf '%s\n' "$bad" >&2
+    exit 1
+  fi
 fi
 pack=("$fixed")
 [ "$fixed" != paths ] || pack=(--paths "${paths[@]}" --commits "${commits[@]}")
@@ -382,17 +474,6 @@ if [ "$round" -eq 2 ] && [ "$top" -eq 1 ] && [ -n "$rv" ] && git rev-parse --ver
         if (c > 0) printf "%d\t%d\t%s\n", r[1], r[1] + c - 1, ENVIRON["P"] }' >> "$dir/fix-ranges"
   done < <(git diff --no-renames -z --name-only "$rv" HEAD)
 fi
-
-# The spec is the ticket body plus the comments its author posted, each under its date. Comments by
-# anyone else, and the PR's own comments, are never spec.
-spec="" comments=""
-if [ -n "$ticket" ]; then
-  err="$(gh issue view "$ticket" --json body -q .body 2>&1 >"$dir/ticket.md" || true)"
-  spec="$(cat "$dir/ticket.md")"
-  [ -n "$spec" ] || echo "review-brief: gh could not fetch #$ticket ($(printf '%s' "$err" | tr '\n' ' ')); no spec" >&2
-  by_author='.author.login as $a | .comments[] | select(.author.login == $a) | "### \(.createdAt[:10])\n\n\(.body)\n"'
-  [ -z "$spec" ] || comments="$(gh issue view "$ticket" --json author,comments -q "$by_author" 2>/dev/null || true)"
-fi
 if [ ${#standards[@]} -eq 0 ] && [ -f CODING_STANDARDS.md ]; then standards=(CODING_STANDARDS.md); fi
 # The definition both reports rest on, Manuel's words it follows, the step rule, the spec rule and
 # the count rule; SKILL.md step 4 carries each word for word (tests/spec-review/review-brief.sh
@@ -413,7 +494,7 @@ spec_rule='The same item carries a line `spec:` naming the artifact it rests on:
 blast_rule="The sessions and skills this change reaches, as the author grounded them before the review. Check the diff against each one; the grounding is the author's claim, not evidence."
 # The risk sentence, appended to the Spec brief's Walk bullet when a grounding is present; SKILL.md
 # step 4 carries it word for word (the same test holds them together).
-risk_rule='The diff is cross-cutting: after the lines per documented step, one numbered line per risk under the Risks heading of the `## Blast radius` section above, in its order and numbered on from the last step, each naming the risk and saying what the diff does at that risk; a risk line is a walk line and counts nothing.'
+risk_rule='The diff is cross-cutting: after the lines per documented step, one numbered line per risk under the Risks heading of the `## Blast radius` section above, in its order and numbered on from the last step, each naming the risk, saying what the diff does at that risk, and saying whether the diff honors the disposition the risk'"'"'s line ends with (for `fixed: <sha>`, whether that commit fixes the risk; for `accepted: <reason>`, whether the reason holds for this diff); a risk line is a walk line and counts nothing.'
 count_rule='End the report with exactly one line `hard findings: N`, where N is the number of items under `## Would break` and `## Fails open` and nothing else.'
 # The paragraph over a fix-only round's fixed items; SKILL.md step 4 carries it word for word (the
 # same test holds them together). It says what the diff is, never what to find.
