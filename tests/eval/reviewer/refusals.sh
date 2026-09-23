@@ -386,6 +386,31 @@ run next "$C" --limit 1
 finish "$out" "$tmp/rep/hit.md" claude-opus-5-5
 run collect
 check "model: a wrong served model refuses" has "$err" "was served claude-opus-5-5"
+fresh refused-one
+run next "$C" --limit 2
+finish "$(sed -n 1p <<<"$out")" "$tmp/rep/hit.md" claude-opus-5-5
+finish "$(sed -n 2p <<<"$out")" "$tmp/rep/hit.md"
+run collect
+check "collect: one run's refusal still exits 1" is "$code" 1
+check "collect: the other finished run is collected first" is "$(h field "$(rundir "$C" spec 1)/receipt.json" status)" complete
+check "collect: the refused run has no receipt" absent "$(rundir "$C" standards 1)/receipt.json"
+fresh dead
+run next "$C" --limit 1
+for attempt in 1 2 3; do
+  finish "$out" none claude-opus-5 dead
+  run collect
+  [ "$attempt" != 1 ] || check "no response: a lane with no served model is a dropout" is "$(h field "$(rundir "$C" standards 1)/receipt.json" status)" dropout
+  [ "$attempt" != 1 ] || check "no response: named with the text it left" is "$(h field "$(rundir "$C" standards 1)/receipt.json" detail)" "no-response: API Error: 500 Internal server error. $(printf 'x%.0s' $(seq 82))"
+  run next "$C" --limit 1
+  [ "$attempt" = 3 ] || check "no response: attempt $attempt is prepared again" is "$(h get "$out" run)" "$(rundir "$C" standards 1)"
+done
+check "no response: the third is given up" starts "$out" "given up $(rundir "$C" standards 1): failed 3 times"
+finish "$(grep '^{' <<<"$out")" "$tmp/rep/hit.md"
+run collect
+run table
+check "no response: counted in the table" is "$(cell "no response" I 1)" 3
+check "no response: not as a usage limit" is "$(cell "usage limit" I 1)" 0
+
 fresh fx-fable
 run next "$F" --limit 1
 finish "$out" "$tmp/rep/hit.md" claude-fable-5-1

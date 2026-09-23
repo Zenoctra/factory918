@@ -20,14 +20,16 @@ patch from its commits the same way.
     python3 tests/eval/reviewer/reviewer.py next <descriptor>... [--resume <descriptor>]... [--limit N]
         Print up to N (8) launch lines and prepare what it prints: first the prepared runs no
         transcript names yet, then new runs, pass 1 across every brief before pass 2 before pass 3.
-        A step is prepared once its prerequisites are collected complete; a contaminated run is
-        moved aside and prepared again, until its third contamination gives it up: `next` prints
-        `given up` for it and prepares neither it nor the steps that need it. A model with a
+        A step is prepared once its prerequisites are collected complete; a contaminated run, or
+        one no model answered (a `no-response` dropout, as on an API error), is moved aside and
+        prepared again, until its third such attempt gives it up: `next` prints `given up` for it
+        and prepares neither it nor the steps that need it. A model with a
         usage-limit receipt is paused: `next` prints one `paused` line for it and prepares nothing
         for it until `--resume` names it, which prepares its limited runs again first. Collects
         nothing.
     python3 tests/eval/reviewer/reviewer.py collect
         Collect every finished run; list what is in flight, unlaunched or stuck. Safe to repeat.
+        A run served the wrong model or effort is refused after every other run is collected.
     python3 tests/eval/reviewer/reviewer.py table
         Rescore every collected report; write scores.tsv and table.md, one table per model.
 
@@ -74,8 +76,9 @@ COUNT_LINE = re.compile(r"hard findings: ([0-9]+)")
 ITEM_LINE = re.compile(r"(\d+)\. ")
 FENCE_LINE = re.compile(r"\s*(`{3,}|~{3,})")
 USAGE_LIMIT = "usage-limit"
+NO_RESPONSE = "no-response"  # a lane that died before any model answered, as on an API error
 VERSION = 2  # of receipt.json and run.json; #103 wrote version 1
-GIVE_UP = 3  # contaminated attempts after which a run is prepared no more
+GIVE_UP = 3  # contaminated or unanswered attempts after which a run is prepared no more
 USAGE_LIMIT_LINE = re.compile(r"hit your (?:\w+ )?limit", re.I)  # "usage limit" and "session limit" both occur
 # review-brief.sh at e710e99 prints this heading and paragraph, word for word, above the settled items.
 SETTLED_HEADING = "## Settled in earlier rounds"
@@ -528,9 +531,12 @@ def receipt_from_transcript(run: RunId, lines: list[dict], expect: re.Pattern[st
         return Receipt(run, "dropout", f"{USAGE_LIMIT}: the transcript says the account hit its usage limit",
                        None, None, None, wall_ms, source)
     served = [line for line in assistant if (line.get("message") or {}).get("model") not in (None, "<synthetic>")]
+    if not served:
+        said = " ".join(assistant_text(line) for line in assistant).strip()
+        return Receipt(run, "dropout", f"{NO_RESPONSE}: {said[:120]}", None, None, None, wall_ms, source)
     models = sorted({line["message"]["model"] for line in served})
     wrong = [m for m in models if not expect.search(m)]
-    if wrong or not models:
+    if wrong:
         raise Refusal(f"{run.descriptor} {run.brief} step {run.step} was served {', '.join(wrong) or 'no model'}; "
                       f"{run.descriptor} pins {expect.pattern}; the agent definition drifted: fix it, "
                       f"remove the run directory, run next again")
@@ -589,9 +595,18 @@ def usage_limited(receipt: Receipt) -> bool:
     return receipt.status == "dropout" and receipt.detail.startswith(USAGE_LIMIT)
 
 
+def no_response(receipt: Receipt) -> bool:
+    return receipt.status == "dropout" and receipt.detail.startswith(NO_RESPONSE)
+
+
+def failed(receipt: Receipt) -> bool:
+    """An attempt that counts toward giving the run up."""
+    return receipt.status == "contaminated" or no_response(receipt)
+
+
 def redo(receipt: Receipt) -> bool:
     """A run whose result says nothing about the model: moved aside and prepared again."""
-    return receipt.status == "contaminated" or usage_limited(receipt)
+    return failed(receipt) or usage_limited(receipt)
 
 
 @dataclass(frozen=True)
@@ -610,6 +625,7 @@ class Row:
     wall_s: float | None
     contaminated: int
     usage_limit: int
+    no_response: int
 
 
 def mean(xs: list[float]) -> float | None:
@@ -648,12 +664,14 @@ def rows_for(descriptor: str, scores: Mapping[RunId, Score], receipts: Mapping[R
             rows.append(Row(arm, p, len(new), mean(new), mean(cum), mean(dem), mean(oth), failures,
                             mean(out), mean(cache), mean(wall),
                             sum(1 for r in mine if r.status == "contaminated"),
-                            sum(1 for r in mine if r.status == "dropout")))
+                            sum(1 for r in mine if usage_limited(r)),
+                            sum(1 for r in mine if no_response(r))))
     return rows
 
 
 COLUMNS = ("arm", "pass", "chains", "new truth bugs", "cumulative", "demoted", "other hard items",
-           "context failures", "out tokens", "cache read", "wall s", "contaminated", "usage limit")
+           "context failures", "out tokens", "cache read", "wall s", "contaminated", "usage limit",
+           "no response")
 
 
 def render_table(descriptor: str, rows: list[Row]) -> str:
@@ -668,7 +686,7 @@ def render_table(descriptor: str, rows: list[Row]) -> str:
     for r in rows:
         lines.append(cells([r.arm, str(r.pass_), str(r.chains), f(r.new, 2), f(r.cumulative, 2), f(r.demoted, 2),
                             f(r.other, 2), str(r.failures), f(r.output, 0), f(r.cache_read, 0), f(r.wall_s, 1),
-                            str(r.contaminated), str(r.usage_limit)]))
+                            str(r.contaminated), str(r.usage_limit), str(r.no_response)]))
     return "\n".join(lines) + "\n"
 
 
@@ -900,7 +918,8 @@ def finished(lines: list[dict], path: Path, settle_s: float) -> bool:
     if not last:
         return False
     message = last.get("message") or {}
-    if message.get("stop_reason") == "end_turn" or usage_limited_transcript([last]):
+    # The harness writes a <synthetic> line only when the lane has ended: a limit or an API error.
+    if message.get("stop_reason") == "end_turn" or message.get("model") == "<synthetic>" or usage_limited_transcript([last]):
         return True
     # A run can end on a text-only line the harness never stamped with a stop reason, so read a
     # transcript that has stopped growing as done.
@@ -915,12 +934,11 @@ def run_dirs(out: Path) -> list[Path]:
     return sorted((d for d in out.glob("runs/*/*/*/*") if d.is_dir()), key=lambda d: natural(str(d)))
 
 
-def contaminations(run: RunId, out: Path) -> int:
-    """The contaminated attempts of a run: those set aside under dropped/ and the one in its directory."""
+def failures(run: RunId, out: Path) -> list[Receipt]:
+    """The failed attempts of a run: those set aside under dropped/ and the one in its directory."""
     rel = run.dir(out).relative_to(out / "runs")
     kept = [receipt_at(p) for p in (out / "dropped" / rel).glob("*") if (p / "receipt.json").is_file()]
-    here = receipt_at(run.dir(out))
-    return sum(1 for r in [*kept, here] if r and r.status == "contaminated")
+    return [r for r in [*kept, receipt_at(run.dir(out))] if r and failed(r)]
 
 
 def set_aside(d: Path, out: Path) -> None:
@@ -982,7 +1000,7 @@ def cmd_next(fx: Fixtures, env: Env, descriptors: list[str], limit: int, resume:
     states: dict[RunId, str] = {}
     held: dict[str, float] = {}
     resumed: set[RunId] = set()
-    given_up: list[Path] = []
+    given_up: list[tuple[Path, str]] = []
     for run in runs:
         d = run.dir(out)
         st = state(d)
@@ -991,8 +1009,8 @@ def cmd_next(fx: Fixtures, env: Env, descriptors: list[str], limit: int, resume:
         receipt = receipt_at(d) if st == "collected" else None
         if receipt and usage_limited(receipt) and run.descriptor not in resume:
             held[run.descriptor] = max(held.get(run.descriptor, 0.0), (d / "receipt.json").stat().st_mtime)
-        elif receipt and receipt.status == "contaminated" and contaminations(run, out) >= GIVE_UP:
-            given_up.append(d)
+        elif receipt and failed(receipt) and len(tries := failures(run, out)) >= GIVE_UP:
+            given_up.append((d, "contaminated" if all(r.status == "contaminated" for r in tries) else "failed"))
         elif receipt and redo(receipt):
             set_aside(d, out)
             st = "absent"
@@ -1015,8 +1033,8 @@ def cmd_next(fx: Fixtures, env: Env, descriptors: list[str], limit: int, resume:
         brief = fx.briefs[run.brief]
         p = materialize(plan(run, brief, env.work), brief, fx, env)
         lines.append(launch_line(p, brief, out))
-    for d in given_up:
-        print(f"given up {d}: contaminated {GIVE_UP} times")
+    for d, how in given_up:
+        print(f"given up {d}: {how} {GIVE_UP} times")
     for desc, at in held.items():
         print(f"paused {desc}: usage limit at {datetime.fromtimestamp(at).isoformat(timespec='minutes')}; "
               f"after the reset run: python3 tests/eval/reviewer/reviewer.py next --resume {desc}")
@@ -1044,7 +1062,7 @@ def cmd_collect(fx: Fixtures, env: Env) -> int:
         else:
             stuck.append(d)
     transcripts = locate(native, env.transcripts, out) if native else {}
-    done: list[tuple[Prepared, Receipt]] = []
+    refused: list[Refusal] = []
     unlaunched: list[Prepared] = []
     in_flight = 0
     for run, p in native.items():
@@ -1056,9 +1074,13 @@ def cmd_collect(fx: Fixtures, env: Env) -> int:
         if not finished(lines, path, env.settle):
             in_flight += 1
             continue
-        done.append((p, receipt_from_transcript(run, lines, MODELS[run.descriptor].expect, p.checkout,
-                                                env.transcripts, path)))
-    for p, receipt in done:
+        # One run's refusal must not leave the others uncollected: it is raised after the rest.
+        try:
+            receipt = receipt_from_transcript(run, lines, MODELS[run.descriptor].expect, p.checkout,
+                                              env.transcripts, path)
+        except Refusal as e:
+            refused.append(e)
+            continue
         print(collect_one(p, receipt, fx.briefs[p.run.brief], fx, out))
         collected += 1
     for p in unlaunched:
@@ -1066,6 +1088,8 @@ def cmd_collect(fx: Fixtures, env: Env) -> int:
     for d in stuck:
         print(f"stuck {d}")
     print(f"collected {collected} · in flight {in_flight} · unlaunched {len(unlaunched)} · stuck {len(stuck)}")
+    if refused:
+        raise Refusal("; ".join(map(str, refused)))
     return 0
 
 
