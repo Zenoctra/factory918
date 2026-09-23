@@ -22,6 +22,12 @@ while IFS=$'\t' read -r round patch cmd paths; do
   case "$round" in "#"* | "") continue ;; esac
   read -r -a words <<<"$cmd"
   read -r -a files <<<"$paths"
+  for c in "${words[@]:1}"; do
+    git -C "$repo" cat-file -e "$c^{commit}" 2>/dev/null || {
+      echo "fixes: $round $patch: commit $c is not in this repository; git fetch origin 'refs/keep/103/*:refs/keep/103/*'" >&2
+      exit 2
+    }
+  done
   case "${words[0]}" in
     show) [ ${#words[@]} -eq 2 ] || { echo "fixes: $round $patch: show takes one commit" >&2; exit 2; }
           git -C "$repo" show --format= --no-color --no-ext-diff "${words[1]}" -- "${files[@]}" > "$tmp" ;;

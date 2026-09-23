@@ -232,6 +232,11 @@ check "rebuild --export: and names round and patch" has "$(cat "$tmp/rb")" "r1: 
 # fixes.sh
 REBUILD_FIXTURES="$fx" REBUILD_REPO="$tmp/repo" bash "$here/tests/eval/reviewer/fixes.sh" > "$tmp/rb" 2>&1 && code=0 || code=$?
 check "fixes.sh: the written patches rebuild identical" is "$code:$(grep -c identical "$tmp/rb")" 0:2
+cp -R "$fx" "$tmp/fx-nocommit"
+printf 'r1\tf3.patch\tshow 1111111111111111111111111111111111111111\ta.txt\n' >> "$tmp/fx-nocommit/fixes"
+REBUILD_FIXTURES="$tmp/fx-nocommit" REBUILD_REPO="$tmp/repo" bash "$here/tests/eval/reviewer/fixes.sh" > "$tmp/rb" 2>&1 && code=0 || code=$?
+check "fixes.sh: a commit not in the repository exits 2" is "$code" 2
+check "fixes.sh: naming it and the fetch" is "$(tail -1 "$tmp/rb")" "fixes: r1 f3.patch: commit 1111111111111111111111111111111111111111 is not in this repository; git fetch origin 'refs/keep/103/*:refs/keep/103/*'"
 
 # check
 fresh check
