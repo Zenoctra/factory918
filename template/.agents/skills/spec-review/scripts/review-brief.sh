@@ -31,8 +31,10 @@
 # is exactly `### Writer flags <YYYY-MM-DD>` in the ticket body at any round, ends with its
 # disposition, `fixed: <sha>` (a commit in HEAD's history) or `accepted: <reason>`; a line without
 # one, a heading that looks like either and is not, or a fence opened in the list and never closed
-# is refused before any state is written, each line named. With a grounding, the Spec brief's
-# `## Walk` bullet continues with one numbered line per risk, so the reviewer walks the risks after
+# is refused before any state is written, each line named. A ticket body with a writer flags
+# heading line anywhere, fenced, quoted or misspelt, and no flag read is refused too, since a list
+# the check cannot read would otherwise pass as no list. With a grounding, the Spec brief's `## Walk`
+# bullet continues with one numbered line per risk, so the reviewer walks the risks after
 # the steps and says whether the diff honors each disposition.
 # Both briefs carry `## Reading pack` after the diff, the code around each change at HEAD, which
 # scripts/reading-pack.sh writes to `<dir>/pack.md`; if it fails the script refuses before writing any state.
@@ -435,6 +437,16 @@ if [ -n "$spec" ]; then
     rm -rf "$dir"
     echo "review-brief: ticket #$ticket has Writer flags without a disposition; every line under a \`### Writer flags <YYYY-MM-DD>\` heading that is not indented deeper or fenced is a flag and ends with \`fixed: <sha>\` (a commit in HEAD's history) or \`accepted: <reason>\` as plain text; indent a continuation, fence a proof, and write the heading exactly that way:" >&2
     printf '%s\n' "$bad" >&2
+    exit 1
+  fi
+  # A count, not a parse: whatever hid the list from the check above, a heading line with no flag
+  # read refuses.
+  heads="$(printf '%s\n' "$spec" | awk '{ sub(/\r$/, ""); sub(/[ \t]+$/, "") }
+    tolower($0) ~ /^[[:space:]>]*#+[[:space:]]*writer[ -]flags?([^[:alpha:]]|$)/')"
+  if [ -n "$heads" ] && [ -z "$(printf '%s\n' "$spec" | awk -v mode=flags -v w="writer flags" "$disposed")" ]; then
+    rm -rf "$dir"
+    echo "review-brief: ticket #$ticket has a writer flags heading and no flag could be read from its body; flags are read only under an unfenced, unquoted line that is exactly \`### Writer flags <YYYY-MM-DD>\`, one flag per line with its disposition; the headings found:" >&2
+    printf '%s\n' "$heads" | sed 's/^/  /' >&2
     exit 1
   fi
 fi
