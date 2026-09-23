@@ -22,15 +22,17 @@ patch from its commits the same way.
         transcript names yet, then new runs, pass 1 across every brief before pass 2 before pass 3.
         A step is prepared once its prerequisites are collected complete with a report that parses;
         a prerequisite whose report fails to parse stops its chain (`stopped <run dir>: <failure>`).
-        A contaminated run, or
-        one no model answered (a `no-response` dropout, as on an API error), is moved aside and
-        prepared again, until its third such attempt gives it up: `next` prints `given up` for it
-        and prepares neither it nor the steps that need it. A model with a usage-limit receipt is
-        paused: `next` prints one `paused` line for it and prepares nothing for it until
-        `--resume` names it, which prepares its limited runs again first. Collects nothing.
+        A contaminated run, or one whose lane died with the harness's own line last (a
+        `no-response` dropout, as on an API error), is moved aside and prepared again, until its
+        third such attempt gives it up: `next` prints `given up` for it and prepares neither it nor
+        the steps that need it. A model with a usage-limit receipt is paused: `next` prints one
+        `paused` line for it and prepares nothing for it until `--resume` names it, which prepares
+        its limited runs again first. Collects nothing.
     python3 tests/eval/reviewer/reviewer.py collect
         Collect every finished run; list what is in flight, unlaunched or stuck. Safe to repeat.
-        A run served the wrong model or effort is refused after every other run is collected.
+        A run served the wrong model or effort is refused after every other run is collected. A
+        transcript ending on a line with no stop reason is finished once it has sat untouched for
+        REVIEWER_SETTLE_SECONDS.
     python3 tests/eval/reviewer/reviewer.py table
         Rescore every collected report; write scores.tsv and table.md, one table per model.
 
@@ -927,8 +929,7 @@ def finished(lines: list[dict], path: Path, settle_s: float) -> bool:
     if not last:
         return False
     message = last.get("message") or {}
-    # The harness writes a <synthetic> line only when the lane has ended: a limit or an API error.
-    if message.get("stop_reason") == "end_turn" or message.get("model") == "<synthetic>" or usage_limited_transcript([last]):
+    if message.get("stop_reason") == "end_turn":
         return True
     # A run can end on a text-only line the harness never stamped with a stop reason, so read a
     # transcript that has stopped growing as done.

@@ -417,7 +417,7 @@ fresh dead
 run next "$C" --limit 1
 for attempt in 1 2 3; do
   finish "$out" none claude-opus-5 dead
-  run collect
+  REVIEWER_SETTLE_SECONDS=0 run collect
   [ "$attempt" != 1 ] || check "no response: a lane with no served model is a dropout" is "$(h field "$(rundir "$C" standards 1)/receipt.json" status)" dropout
   [ "$attempt" != 1 ] || check "no response: named with the text it left" is "$(h field "$(rundir "$C" standards 1)/receipt.json" detail)" "no-response: API Error: 500 Internal server error. $(printf 'x%.0s' $(seq 82))"
   run next "$C" --limit 1
@@ -433,7 +433,9 @@ check "no response: not as a usage limit" is "$(cell "usage limit" I 1)" 0
 fresh late
 run next "$C" --limit 1
 finish "$out" none claude-opus-5 late
-run collect
+REVIEWER_SETTLE_SECONDS=3600 run collect
+check "settle: a young <synthetic> last line stays in flight" has "$out" "in flight 1"
+REVIEWER_SETTLE_SECONDS=0 run collect
 check "no response: a lane that answered once and then died is a dropout" is "$(h field "$(rundir "$C" standards 1)/receipt.json" detail)" "no-response: API Error: 500 Internal server error"
 run next "$C" --limit 1
 check "no response: it is prepared again, not stopped" is "$(h get "$out" run)" "$(rundir "$C" standards 1)"
@@ -451,13 +453,13 @@ fresh usage
 run next "$F" --limit 1
 first="$out"
 finish "$first" none claude-fable-5-1 usage
-run collect
+REVIEWER_SETTLE_SECONDS=0 run collect
 check "usage limit: a dropout receipt" is "$(h field "$(rundir "$F" standards 1)/receipt.json" status)" dropout
 check "usage limit: named" starts "$(h field "$(rundir "$F" standards 1)/receipt.json" detail)" usage-limit
 fresh session
 run next "$F" --limit 1
 finish "$out" none claude-fable-5-1 session
-run collect
+REVIEWER_SETTLE_SECONDS=0 run collect
 check "session limit: the real wording, a synthetic line, is a usage-limit dropout" starts "$(h field "$(rundir "$F" standards 1)/receipt.json" detail)" usage-limit
 run next "$F"
 check "session limit: the model is paused" starts "$out" "paused $F: usage limit at "
