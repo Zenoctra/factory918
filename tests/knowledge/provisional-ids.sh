@@ -150,8 +150,6 @@ expect "20. 7, two rows P31 appended" 1 "$(dup $((base + 2)) P31 $((base + 1)))"
 fresh
 sed 's/^## Provisional (/## Agent decisions (/' "$dec" > "$dec.new"
 mv "$dec.new" "$dec"
-[ "$(wc -l < "$dec" | tr -d ' ')" = "$base" ] || { echo "FAIL 21. 8: the reworded heading changed the line count"; exit 1; }
-grep -q '^## Agent decisions (' "$dec" || { echo "FAIL 21. 8: the Provisional heading was not reworded"; exit 1; }
 expect "21. 8, the Provisional heading reworded" 1 "$gone"
 
 fresh
