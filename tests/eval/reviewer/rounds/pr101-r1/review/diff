@@ -1,0 +1,503 @@
+diff --git a/.github/workflows/factory-ci.yml b/.github/workflows/factory-ci.yml
+index df94b8c..8aeb061 100644
+--- a/.github/workflows/factory-ci.yml
++++ b/.github/workflows/factory-ci.yml
+@@ -59,7 +59,7 @@ jobs:
+         run: |
+           git add -A && git commit -qm "factory918 apply"
+           mkdir -p /tmp/fake-gh && cp "$GITHUB_WORKSPACE/tests/spec-review/fake-gh.sh" /tmp/fake-gh/gh && chmod +x /tmp/fake-gh/gh
+-          printf -- '- **What it does.** Applies the factory.\n- **Risks.** Every hook under `.claude/hooks/` is new here.\n' > /tmp/blast.md
++          printf -- '## What it does\n\nApplies the factory.\n\n## Risks\n\n1. Every hook under `.claude/hooks/` is new here: `.claude/hooks/delegation.sh:1`.\n' > /tmp/blast.md
+           PATH="/tmp/fake-gh:$PATH" .agents/skills/spec-review/scripts/review-brief.sh HEAD~1 --ticket 1 --blast-radius /tmp/blast.md
+           d=.scratch/review/HEAD_1
+           test -s "$d/standards-brief.md" && test -s "$d/spec-brief.md"
+@@ -70,6 +70,8 @@ jobs:
+           done
+           grep -qF '`## Walk`' "$d/spec-brief.md"
+           if grep -qF '`## Walk`' "$d/standards-brief.md"; then echo "the Standards brief carries a walk" && exit 1; fi
++          grep -qF 'The diff is cross-cutting: after the lines per documented step' "$d/spec-brief.md"
++          if grep -qF 'The diff is cross-cutting:' "$d/standards-brief.md"; then echo "the Standards brief carries the risk sentence" && exit 1; fi
+           rm -rf .claude/state/review
+       - name: The gates a project runs
+         working-directory: /tmp/fx
+diff --git a/SOURCES.md b/SOURCES.md
+index 65a6811..65aa654 100644
+--- a/SOURCES.md
++++ b/SOURCES.md
+@@ -12,10 +12,10 @@ Upstream pins for everything vendored into `template/`. Pinned copies of each up
+ 
+ 1. Namespace: `pstack:<name>` → `<name>` in all vendored pstack markdown and the session mandate; mandate gains a PHASES block. The sweep also covers `*.ts` under `poteto-mode/scripts/`, where `model-matrix.test.ts` asserts the `<!-- models:begin -->` markers that `setup-pstack/SKILL.md` writes.
+ 2. Router: Ticket playbook line added before "Opening a PR" in `poteto-mode/SKILL.md`; `playbooks/ticket.md` added.
+-3. `playbooks/opening-a-pr.md`: "Run `/no-comments` before review." replaced by keep-comments + spec-review + review-ladder; the subagent sentence drops `/no-comments`. The `## Blast Radius` bullet says that for a cross-cutting diff the section is `.scratch/<ticket>/blast-radius.md` verbatim and that `review-brief.sh` reads it from there. The `**PRs.**` paragraph also tells the lane to run `bash .github/shellcheck.sh` on every changed shell file before the PR opens.
++3. `playbooks/opening-a-pr.md`: "Run `/no-comments` before review." replaced by keep-comments + spec-review + review-ladder; the subagent sentence drops `/no-comments`. The `## Blast Radius` bullet says that for a cross-cutting diff the section is `.scratch/<ticket>/blast-radius.md` with its `## ` headings demoted to `###`, since an undemoted `## ` line ends the section, and that `review-brief.sh` reads it from there and finds the risks under `### Risks`. The `**PRs.**` paragraph also tells the lane to run `bash .github/shellcheck.sh` on every changed shell file before the PR opens.
+ 4. `playbooks/babysit.md`: step 8 made conditional on an external bot being listed in `docs/agents/review-ladder.md`; step 6 adds `act-on items: 0` on the latest commit's `spec-review` comment to merge-ready, with a nonzero count or a missing review comment a blocker of the same class as a red check, fixed on this PR. The review runs at most three rounds on one PR: a comment reading `round: 3 of 3` and `act-on items: 0` makes the PR review-ready even when the fix commits it names come after the reviewed commit, and an Ask item waits for the human, then is re-sorted and the comment rebuilt with `review-comment.sh <dir>` in the same round. A review comment carrying the line `restart` names a design hole and is not merge-ready whatever its count; the PR is ready only when a later comment without that line reads `act-on items: 0`.
+ 5. `unslop/SKILL.md`: trigger-focused description so it fires on human-facing text.
+-6. `code-review` → `spec-review` (directory, `name:`, first heading). Step 2.4 no longer asks the author where the spec is: without a ticket, a passed path or a spec file, the Spec axis skips and says "no spec: Standards axis only". Step 6 ends the report with the line `act-on items: N` so babysit can read it. Steps 1 and 4 hand each reviewer content instead of commands: the commit list, the `--stat` list and the diff pasted in (a path to it past the paste limit), the standards sections that apply, the ticket body verbatim; each brief says to read nothing beyond it. The Standards axis dispatches through the factory's `standards reviewer` role and the Spec axis through its `spec reviewer` role. Each report sorts its findings under `## Would break` and two axis-specific headings, and its `hard findings: N` counts only the Would-break items; a new step 5, Judge, has the orchestrator sort every finding into Act on, Ask, Consider, Noted or Dismissed in `judgment.md`, with `act-on items` the Act on plus Ask count. Step 1 runs `scripts/review-brief.sh`, ours, which writes the diff, the two briefs and the review state under `.claude/state/review/` that the delegation hook reads; step 6 runs `scripts/review-comment.sh`, ours, which checks the reports and the judgment against those shapes, builds the comment from them and clears the state; the sweep form (`--paths`, `--commits`) is the same skill. One PR gets three rounds at most: `review-brief.sh` reads the PR author's comments ending in `act-on items:`, takes the round from their `round: N of 3` lines and refuses a fourth, carries every earlier judgment's Noted and Dismissed items that cite a decision (`cites:`) into both briefs as settled and drops the rest, and pastes the ticket author's comments after the ticket body as spec; `review-comment.sh` prints `round: N of 3`, leaves an Act on item fixed on the PR (`fixed: <sha>`, the round-three path) or filed as a ticket (`ticket: #N`) out of the count, and rebuilds an earlier comment from its directory. Step 6's two sentences for a person end with the model and harness, plus `approved by <name>` when the human approved the comment before it was posted. A cross-cutting diff (a `.claude/hooks/` file, a `.claude/settings.json` or the `factory918` skill, at any depth) is briefed with its blast-radius grounding under `## Blast radius` before the diff, from `--blast-radius FILE` or the PR body's `## Blast Radius` section, and `review-brief.sh` refuses it without one. Every counted report item carries a `spec:` line naming the cell, signature or criterion it rests on (`table <row>/<column>`, `design <signature>`, `criterion <k>`; the briefs carry the rule and `review-comment.sh` refuses an item without it); step 5 defines a design hole, a finding whose fix changes that artifact rather than the code, and a fourth trailing field, `hole: <reference>`, marks one on an Act on item, which `review-comment.sh` checks against the item's `spec:`, leaves out of the count and answers with the line `restart` before `round:`; `review-brief.sh` reads the round and the settled items from the comments after the last `restart` comment and prints a `restart:` line, and `cites: #N <reference>` is a fourth citation form. Both scripts are in `sync`'s `keep_files`.
++6. `code-review` → `spec-review` (directory, `name:`, first heading). Step 2.4 no longer asks the author where the spec is: without a ticket, a passed path or a spec file, the Spec axis skips and says "no spec: Standards axis only". Step 6 ends the report with the line `act-on items: N` so babysit can read it. Steps 1 and 4 hand each reviewer content instead of commands: the commit list, the `--stat` list and the diff pasted in (a path to it past the paste limit), the standards sections that apply, the ticket body verbatim; each brief says to read nothing beyond it. The Standards axis dispatches through the factory's `standards reviewer` role and the Spec axis through its `spec reviewer` role. Each report sorts its findings under `## Would break` and two axis-specific headings, and its `hard findings: N` counts only the Would-break items; a new step 5, Judge, has the orchestrator sort every finding into Act on, Ask, Consider, Noted or Dismissed in `judgment.md`, with `act-on items` the Act on plus Ask count. Step 1 runs `scripts/review-brief.sh`, ours, which writes the diff, the two briefs and the review state under `.claude/state/review/` that the delegation hook reads; step 6 runs `scripts/review-comment.sh`, ours, which checks the reports and the judgment against those shapes, builds the comment from them and clears the state; the sweep form (`--paths`, `--commits`) is the same skill. One PR gets three rounds at most: `review-brief.sh` reads the PR author's comments ending in `act-on items:`, takes the round from their `round: N of 3` lines and refuses a fourth, carries every earlier judgment's Noted and Dismissed items that cite a decision (`cites:`) into both briefs as settled and drops the rest, and pastes the ticket author's comments after the ticket body as spec; `review-comment.sh` prints `round: N of 3`, leaves an Act on item fixed on the PR (`fixed: <sha>`, the round-three path) or filed as a ticket (`ticket: #N`) out of the count, and rebuilds an earlier comment from its directory. Step 6's two sentences for a person end with the model and harness, plus `approved by <name>` when the human approved the comment before it was posted. A cross-cutting diff (a `.claude/hooks/` file, a `.claude/settings.json` or the `factory918` skill, at any depth) is briefed with its blast-radius grounding under `## Blast radius` before the diff, from `--blast-radius FILE` or the PR body's `## Blast Radius` section, and `review-brief.sh` refuses it without one. The grounding carries its risks under a line that is exactly `## Risks` (a file) or `### Risks` (a PR body, its headings demoted one level), outside fenced text, or `review-brief.sh` refuses it naming the source; with a grounding the Spec brief's `## Walk` bullet continues with the risk sentence, one numbered line per risk after the steps, which step 4 carries word for word. Every counted report item carries a `spec:` line naming the cell, signature or criterion it rests on (`table <row>/<column>`, `design <signature>`, `criterion <k>`; the briefs carry the rule and `review-comment.sh` refuses an item without it); step 5 defines a design hole, a finding whose fix changes that artifact rather than the code, and a fourth trailing field, `hole: <reference>`, marks one on an Act on item, which `review-comment.sh` checks against the item's `spec:`, leaves out of the count and answers with the line `restart` before `round:`; `review-brief.sh` reads the round and the settled items from the comments after the last `restart` comment and prints a `restart:` line, and `cites: #N <reference>` is a fourth citation form. Both scripts are in `sync`'s `keep_files`.
+ 7. Session mandate replaced by ours (`template/.claude/hooks/session-mandate.md`).
+ 8. `mobile-fingerprint-check.yml` copied into `profiles/react-native/` (T3 Code, MIT) with two edits: `runs-on: ubuntu-latest` instead of T3's Blacksmith runner, and the watched paths reduced to `apps/mobile/**`, `packages/shared/**` and the workspace files.
+ 11. `playbooks/autopilot-stack.md` step 1: when a unit is a ticket, its owner runs the Ticket playbook, so tickets close on merge and blockers are checked under a stack run. Step 3: on the go, it runs `overlap.sh go "autopilot-stack" 4 5 8` over the unit tickets, as bare numbers, the program line the owners' Ticket step 1 reads. `poteto-mode/scripts/overlap.sh` is ours, not a patch, and is in `sync`'s `keep_files`.
+diff --git a/docs/M0-findings.md b/docs/M0-findings.md
+index 1318bf0..3920dd7 100644
+--- a/docs/M0-findings.md
++++ b/docs/M0-findings.md
+@@ -179,3 +179,5 @@ ShellCheck 0.11.0, Homebrew, macOS arm64, is the pin: `shellcheck-v0.11.0.linux.
+ - `gh auth login` and `/setup-pstack` are human steps; `/factory-start` is M4.
+ 
+ 2026-09-18. The factory checkout has no `.claude/agents/`, so the `pstack-<family>-<effort>` lanes named in `models.md` do not exist here; the Agent tool's `model` field (`fable`, `opus`) dispatched every lane of #76 and effort could not be set. A project made by `factory918 apply` gets the lanes from `template/.claude/agents/`.
++
++2026-09-22. The 2026-09-17 finding above (a closing-issue link exists only on a PR whose base is the default branch) reached `overlap.sh`'s coverage rule for #91: PR #96, opened against `main`, linked #88 and kept the link after `gh pr edit --base feat/design-artifact-on-ticket`; PR #99, opened against `feat/shellcheck`, had an empty `closingIssuesReferences` although its body ends with `Closes #90`, so `overlap.sh 91` exited 1 under a go naming #90. Retargeting #99 to `main` created the link within eight seconds and it survived the retarget back; the GraphQL timeline (`BaseRefChangedEvent`, `ConnectedEvent`) shows both. gh 2.x on GitHub.com; ticket #100 makes the check read the body's closing line.
+diff --git a/docs/agents/ledger.md b/docs/agents/ledger.md
+index e49b562..9b2ed26 100644
+--- a/docs/agents/ledger.md
++++ b/docs/agents/ledger.md
+@@ -23,3 +23,5 @@ One line per time an agent surprised you: `YYYY-MM-DD | model | what it did | wh
+ 2026-09-21 | fable | briefed the writer lane with the script path .agents/skills/factory918/scripts/overlap.sh after its own design note said .claude/skills resolves in both the factory and a project; the wrong path shipped to the playbook and the router and the Spec reviewer found it in round two | the brief is checked against the design note before it is sent; a path an agent will type is tested the way it is typed
+ 2026-09-21 | fable | cut the detached-HEAD cell from the #42 scenario table on the judge's word that git would fail loudly on its own; git ran fine with an empty branch name and round two found the record step reporting the ticket's own PR | a cell cut as 'the tool refuses it' is cut only after the refusal was run and seen; an assumption about a tool's failure mode is a rung-1 claim until then
+ 2026-09-22 | Claude Fable 5.1 | as the #88 owner lane, ended its turn to wait on a background lane; the harness removed the lane's empty worktree and its result reached nobody, so the lane and the worktree were redone | drain a lane in the foreground when the next step depends on it, and commit early so the worktree has something to keep
++2026-09-22 | Claude Fable 5.1 | as the #91 owner lane, ran the overlap check under a go that named every ticket in the stack and got exit 1, because PR #99 had been opened with `--base feat/shellcheck` and GitHub never linked its `Closes #90`; the #42 contract read the ticket a PR closes from that link, and M0-findings had said since 2026-09-17 that the link exists only on a default-branch PR | a contract that reads forge state is checked against M0-findings for that forge's rule before the table is approved; until #100 lands, a stacked PR is opened against trunk and retargeted to its parent in the next command
++2026-09-22 | Claude Fable 5.1 | as the #91 owner lane, was told the check would print `base: origin/feat/design-hole-restart` and it printed `origin/feat/shellcheck`, because #96 had been rebased under #99 after #99 branched from it and the containment the base rule relies on was gone; branched from #99 anyway, since its files are the ones the ticket builds on, and wrote the deviation into the report | a parent rebased under an open child breaks the check's containment tie-break for every later lane; the root rebases the chain before the next lane's step 1, or the lane branches from the PR whose files it builds on and says so where the root reads it
+diff --git a/docs/knowledge/INDEX.md b/docs/knowledge/INDEX.md
+index bb0f6d7..07d9b9b 100644
+--- a/docs/knowledge/INDEX.md
++++ b/docs/knowledge/INDEX.md
+@@ -7,7 +7,7 @@ The literal transcript of the conversation that produced this system is not avai
+ |---|---|---|---|
+ | `core/PHILOSOPHY.md` | Factory918: philosophy | 64 | First. Whenever the spec is silent. |
+ | `core/MANUAL.md` | Factory918: the manual | 174 | How to run the loop; what the human does at each point. |
+-| `core/DECISIONS.md` | Factory918: decisions | 93 | Before overriding any vendored skill; these win. |
++| `core/DECISIONS.md` | Factory918: decisions | 95 | Before overriding any vendored skill; these win. |
+ | `core/GLOSSARY.md` | Factory918: glossary | 69 | A term in AGENTS.md, a playbook or a ticket is unclear. |
+ | `core/CONVERSATION-DIGEST.md` | How Factory918 was arrived at | 53 | Why something was chosen, historically; the corrections. |
+ | `spec/FACTORY-SPEC-v2/01-preamble.md` | The Factory spec, v2 — (preamble) | 11 | Building or updating the factory itself. |
+diff --git a/docs/knowledge/core/DECISIONS.md b/docs/knowledge/core/DECISIONS.md
+index 7ef2bf0..6e6156d 100644
+--- a/docs/knowledge/core/DECISIONS.md
++++ b/docs/knowledge/core/DECISIONS.md
+@@ -1,4 +1,4 @@
+-<!-- lines: 93 | source: core/DECISIONS.md | part 1/1 | title: Factory918: decisions -->
++<!-- lines: 95 | source: core/DECISIONS.md | part 1/1 | title: Factory918: decisions -->
+ 
+ ## Contents (line numbers are for the Read tool's offset)
+ - L13: Settled (2026-09-09)
+@@ -91,3 +91,5 @@ Travels anywhere without change: the planning skills, the execution playbooks, `
+ | P2 | Tool versions in CI | Pin every tool CI runs to an exact version, as a devDependency where the tool publishes one | `dlx` and `npx` resolve the latest version, so a rule engine or formatter can change under a project with no diff to show for it. Spec §0 rule 1 already says to pin what you install; this extends it to what CI fetches. First applied to `@ast-grep/cli` 0.45.3 in M0. |
+ | P24 | Overlap is not coupling; a go is a line that covers its own tickets | Two unblocked tickets relate three ways: dependent (`Blocked by`, off the frontier), disjoint in files (parallel branches off `main`), or overlapping in files (sequenced: one to merge-ready, the merge, then the next). Coupled work, a ticket that needs code an open PR introduces, stacks, and only on a go. Ticket step 1 runs `.claude/skills/poteto-mode/scripts/overlap.sh N` before branching: every open PR's head is fetched fresh and its own commits (its diff from the open PR it stacks on, else `origin/main`) are matched with the ticket body's backticked tokens as pathspecs (its `## Diff` section excluded), so a file, a directory, a glob or a file the PR creates all match; exit 0 prints `base: <ref>` to branch from, exit 1 stops and names the PR to merge first, exit 2 means the check could not run and stderr says why. A go is a line `<label>: #a #b ...` that `overlap.sh go "<label>" N...` appends to the gitignored `.claude/state/program`, written by the orchestrator when the human gives it (autopilot-stack step 3 runs it itself). A go covers a stack only when a line names the ticket and, for every overlapping PR, the ticket that PR closes; so a line a dead program left behind covers nothing outside its own tickets' open PRs and needs no removal. Under a cover the base is the overlapping PR's head, the lowest-numbered when siblings overlap, the containing one when one contains the other; step 8's `--diff` run records the shared paths as the PR body's `## Overlap` section | Ticket #42, Manuel: "working a ticket to completion before automatically moving on"; the #16 to #22 stack was built on a seven-re-reviews mis-estimate (ledger 2026-09-17). First run (PR #87, closed): three review rounds redesigned the matcher three times; the second run designed from a scenario table Manuel approved 2026-09-21 as the ticket's Testing decisions. Rejected: a ticket label as the go (outlives the program), a line pasted into each lane's brief (a forgotten paste blocks a lane), a `done` step (a crash skips it), the script under the factory918 skill (every later edit cross-cutting). |
+ | P25 | One shell gate, carried by the template | `template/.github/shellcheck.sh` holds the ShellCheck version, both release checksums and the flags; a project gets it as `.github/shellcheck.sh` and the factory runs the template's copy. The severity is the default and `--external-sources` is on, so a lane's per-file run and CI's whole-set run give the same answer. A `disable=` directive carries its reason in a second comment on the same line; CI cannot check that a reason exists, the Standards axis does | A `run:` block in each workflow would put the pin in two files and the flags in three, and a project's CI cannot read the factory's files. SC2086 is info level, so a `--severity` floor would pass the class ticket #88 was written for; without `-x` the two spec-review tests report findings on one file that vanish on the whole set, which would make the playbook's "run it before the PR" sentence false. Ticket #88, 2026-09-22. |
++| P26 | The Spec walk covers every blast-radius risk | For a cross-cutting diff the Spec brief's `## Walk` bullet continues, on its line, with one fixed sentence: after the lines per documented step, one numbered line per risk under the Risks heading of the grounding pasted above, in its order and numbered on from the last step, each saying what the diff does at that risk; the lines are walk lines and count nothing. `review-brief.sh` finds the heading as the first unfenced line that is exactly `## Risks` or `### Risks`, from a `--blast-radius FILE` or the PR body's section alike, and refuses a grounding without one before writing any state, the message naming the form for each source. A grounding pasted into a PR body has its `## ` headings demoted to `###`, because the section is cut at the next `## ` line | On PR #87 both reviewers carried the grounding for three rounds and neither walked its first risk until round three; on PR #92 the third risk was found in round two. The brief said to check the diff against each risk, but the report shape demanded a line per step and nothing per risk (#91). One fixed sentence, no level and no count in it, so `SKILL.md` and the test pin one string and `review-comment.sh` counts nothing new (P23). Designed from the scenario table on #91, two runners converging; 2026-09-22. |
++| P27 | A stacked PR is opened against trunk, then retargeted | An owner lane whose PR stacks on another opens it with `--base main` and retargets it to the parent branch with `gh pr edit --base` in the next command, so GitHub links `Closes #N` before the base moves; until #100 lands, `overlap.sh`'s coverage can see a stacked PR's ticket only through that link | GitHub creates the closing link only for a PR whose base is the default branch (M0-findings 2026-09-17): PR #96 was opened against `main` and kept its link after a retarget, PR #99 was opened against `feat/shellcheck` and had none, so `overlap.sh 91` exited 1 under a go that named its ticket; retargeting #99 to `main` for eight seconds created the link. #91, 2026-09-22. |
+diff --git a/patches/mattpocock/spec-review.SKILL.md.patch b/patches/mattpocock/spec-review.SKILL.md.patch
+index 79b2c4a..060d848 100644
+--- a/patches/mattpocock/spec-review.SKILL.md.patch
++++ b/patches/mattpocock/spec-review.SKILL.md.patch
+@@ -19,7 +19,7 @@
+  
+ +One PR gets at most three rounds, and a round is over when its comment is posted. The script reads the branch's PR comments that carry a line `act-on items:` (`gh pr view --json comments`); the round is one more than the highest `round: N of 3` line among them (a comment without one is round 1), so a comment rebuilt in the same round does not advance it. A comment carrying a line that is exactly `restart` (step 6: a design hole returned to architect) ends the history: the round and the settled items are read from the comments after the last such comment, the script says so with a line `restart:`, so the redesign's first review is round 1 with nothing carried, and the fourth-round refusal counts only what follows it. It writes the round to `<dir>/round`, prints `round: N of 3`, and exits 1 before writing any state when three rounds were run: what remains under Act on is then fixed on this PR and marked `fixed: <sha>` (step 5), not reviewed in a fourth round. Only comments by the PR's author, the account the orchestrator posts under, are read; a comment by anyone else neither counts a round nor reaches the briefs. No PR is round 1 with nothing carried; any other `gh` failure is printed and treated the same way, so the run goes on and you see why. `--round N` sets the round directly and `--previous FILE` supplies the earlier review comments from a file instead of `gh`, for a branch whose PR is elsewhere.
+ +
+-+A cross-cutting diff, one whose changed paths include a `.claude/hooks/` file, a `.claude/settings.json` or a file of the `factory918` skill (`.agents/skills/factory918/`), at any depth, is briefed only with its blast-radius grounding (the Ticket playbook, step 5): the script takes it from `--blast-radius FILE` when given, else from the `## Blast Radius` section of the branch's PR body (`gh pr view --json body`), and exits 1 before writing any state when neither holds one: "cross-cutting diff (<the matching paths>) without a blast-radius grounding; run the blast-radius skill, put the result in the PR body's Blast Radius section or pass --blast-radius FILE". For a diff that is not cross-cutting, `--blast-radius` is ignored, and the script says so on stderr.
+++A cross-cutting diff, one whose changed paths include a `.claude/hooks/` file, a `.claude/settings.json` or a file of the `factory918` skill (`.agents/skills/factory918/`), at any depth, is briefed only with its blast-radius grounding (the Ticket playbook, step 5): the script takes it from `--blast-radius FILE` when given, else from the `## Blast Radius` section of the branch's PR body (`gh pr view --json body`), and exits 1 before writing any state when neither holds one: "cross-cutting diff (<the matching paths>) without a blast-radius grounding; run the blast-radius skill, put the result in the PR body's Blast Radius section or pass --blast-radius FILE". The grounding carries its risks under a line that is exactly `## Risks` in a file or `### Risks` in a PR body, where the file's headings are demoted one level so the `## Blast Radius` section stays intact (Opening a PR); the script reads the grounding outside fenced text and exits 1 the same way when neither line is there: "the blast-radius grounding (<the file, or: the PR body's Blast Radius section>) has no Risks heading outside fenced text; put the risks under a line that is exactly `## Risks` in the file, `### Risks` in the PR body, where the grounding's headings are demoted one level so the section stays intact". With a grounding, the Spec brief's `## Walk` bullet continues with the risk sentence (step 4), so the reviewer walks each risk after the steps. For a diff that is not cross-cutting, `--blast-radius` is ignored, and the script says so on stderr.
+ +
+ +A sweep over units already on `main`, named by paths and commits, is the same skill with the same state, not a second mode: `scripts/review-brief.sh --paths P... --commits SHA...` writes the word `paths` as the fixed point and `git show <commits> -- <paths>` as the diff.
+ +
+@@ -87,7 +87,7 @@
+  
+ +- The ticket body pasted in (What to build and Acceptance criteria, verbatim), then the ticket author's comments under `## Comments by the ticket's author (#N)`, each under `### <YYYY-MM-DD>` (absent when there are none), and the relevant section of the parent spec when there is one. Not a `gh` command or an issue number: the sub-agent fetches nothing.
+ +- The report's headings, exactly these `## ` headings, in this order, each holding numbered items or nothing, word for word as the script writes them:
+-+  - `## Walk`: one numbered line per documented step of the path the change touches (the ticket's criteria and the documentation the diff changes), each saying what the code does at that step. A walk, not findings: its lines are numbered 1..K on their own and count nothing.
+++  - `## Walk`: one numbered line per documented step of the path the change touches (the ticket's criteria and the documentation the diff changes), each saying what the code does at that step. A walk, not findings: its lines are numbered 1..K on their own and count nothing. For a cross-cutting diff the bullet continues on the same line, word for word: "The diff is cross-cutting: after the lines per documented step, one numbered line per risk under the Risks heading of the `## Blast radius` section above, in its order and numbered on from the last step, each naming the risk and saying what the diff does at that risk; a risk line is a walk line and counts nothing."
+ +  - `## Would break`: a requirement missing, partial, or implemented so that the documented path gives a wrong or silent result.
+ +  - `## Fails open`: an input outside the documented path that proceeds silently instead of being refused with a message saying how to correct it.
+ +  - `## Not asked for`: behaviour in the diff the ticket did not ask for.
+diff --git a/patches/pstack/poteto-mode/playbooks/opening-a-pr.md.patch b/patches/pstack/poteto-mode/playbooks/opening-a-pr.md.patch
+index 653c3a2..f3709d2 100644
+--- a/patches/pstack/poteto-mode/playbooks/opening-a-pr.md.patch
++++ b/patches/pstack/poteto-mode/playbooks/opening-a-pr.md.patch
+@@ -14,7 +14,7 @@
+  - `## Scope`. State facts from the diff. Name real symbols and paths. Name both sides of a rename or retarget. State what is in and out when the boundary matters.
+  - `## Tradeoffs`. State real choices only. Skip this section when there are none.
+ -- `## Blast Radius`. State who and what the change touches. Explain why the change is safe or risky. If main is red without the fix, name the continuing cost.
+-+- `## Blast Radius`. State who and what the change touches. Explain why the change is safe or risky. If main is red without the fix, name the continuing cost. For a cross-cutting diff (Ticket step 5) this section is `.scratch/<ticket>/blast-radius.md` verbatim, and `spec-review`'s `review-brief.sh` reads it from here.
+++- `## Blast Radius`. State who and what the change touches. Explain why the change is safe or risky. If main is red without the fix, name the continuing cost. For a cross-cutting diff (Ticket step 5) this section is `.scratch/<ticket>/blast-radius.md` with its `## ` headings demoted to `###`, because an undemoted `## ` line ends the section, and `spec-review`'s `review-brief.sh` reads it from here and finds the risks under `### Risks`.
+  - `## Verification`. State how you ran each check and its rigor. Name the real path, such as the `run` skill, the `verify` skill, or the targeted tests. State the outcome of each check, not only the command name.
+  
+  After these sections, attach videos or screenshots when they prove a claim. Do not use `## Summary` or `## Test plan` boilerplate. A commit body does not restate its subject.
+diff --git a/template/.agents/skills/poteto-mode/playbooks/opening-a-pr.md b/template/.agents/skills/poteto-mode/playbooks/opening-a-pr.md
+index e4a7876..222cff2 100644
+--- a/template/.agents/skills/poteto-mode/playbooks/opening-a-pr.md
++++ b/template/.agents/skills/poteto-mode/playbooks/opening-a-pr.md
+@@ -15,7 +15,7 @@ Invoked at the end of every other playbook.
+ - `## Why`. State the intent and why this approach fits.
+ - `## Scope`. State facts from the diff. Name real symbols and paths. Name both sides of a rename or retarget. State what is in and out when the boundary matters.
+ - `## Tradeoffs`. State real choices only. Skip this section when there are none.
+-- `## Blast Radius`. State who and what the change touches. Explain why the change is safe or risky. If main is red without the fix, name the continuing cost. For a cross-cutting diff (Ticket step 5) this section is `.scratch/<ticket>/blast-radius.md` verbatim, and `spec-review`'s `review-brief.sh` reads it from here.
++- `## Blast Radius`. State who and what the change touches. Explain why the change is safe or risky. If main is red without the fix, name the continuing cost. For a cross-cutting diff (Ticket step 5) this section is `.scratch/<ticket>/blast-radius.md` with its `## ` headings demoted to `###`, because an undemoted `## ` line ends the section, and `spec-review`'s `review-brief.sh` reads it from here and finds the risks under `### Risks`.
+ - `## Verification`. State how you ran each check and its rigor. Name the real path, such as the `run` skill, the `verify` skill, or the targeted tests. State the outcome of each check, not only the command name.
+ 
+ After these sections, attach videos or screenshots when they prove a claim. Do not use `## Summary` or `## Test plan` boilerplate. A commit body does not restate its subject.
+diff --git a/template/.agents/skills/poteto-mode/playbooks/ticket.md b/template/.agents/skills/poteto-mode/playbooks/ticket.md
+index 6c14084..492d9de 100644
+--- a/template/.agents/skills/poteto-mode/playbooks/ticket.md
++++ b/template/.agents/skills/poteto-mode/playbooks/ticket.md
+@@ -6,7 +6,7 @@
+ 2. Read the ticket: `gh issue view N --json title,body,labels,state,comments`. Its **What to build** is the goal; its **Acceptance criteria** are the finish condition; its **Parent** is the spec: read it too (`gh issue view <parent>`), and read `CONTEXT.md` and the ADRs in the area. The body shape is `docs/agents/issue-tracker.md`, "Ticket body".
+ 3. Check **Blocked by**. Every listed issue must be closed. If one is open, stop and report which; do not start.
+ 4. Falsifiability pass. For each criterion name the command or observation that would fail it right now. A criterion that already passes at HEAD, that another ticket owns, or that only restates the request goes back to the human as a note before work starts. A ticket whose criteria span more than one concern goes back to the human to be split before work starts, because one ticket is one PR. Criteria the human confirms become the verification plan.
+-5. Select by content and run that playbook's steps verbatim from step 1: new behavior → Feature; a defect → Bug fix; a behavior-preserving change → Refactoring; measured slowness → Perf issue. `how` and `why` over the affected subsystem come first in all of them. A change whose diff will touch a cross-cutting path, one under a `.claude/hooks/` directory, a `.claude/settings.json`, or a file of the `factory918` skill (`.agents/skills/factory918/`), at any depth (`spec-review`'s `review-brief.sh` holds the predicate), reaches every session and skill at once: after `how`, run `blast-radius` over it and write the result to `.scratch/<ticket>/blast-radius.md` in that skill's hand-back shape (what it does; the one fact it is safe because of and how far it was proven; risks; cleared; before you merge), with a risk for every session kind (the interactive session, a subagent, a hook's own invocation, `factory-start` at day zero, a review in progress) and every skill the change reaches, each with a `file:line`. Such a change never skips `architect`. The PR body's `## Blast Radius` section is that file verbatim, and `review-brief.sh` refuses to brief the diff without it.
++5. Select by content and run that playbook's steps verbatim from step 1: new behavior → Feature; a defect → Bug fix; a behavior-preserving change → Refactoring; measured slowness → Perf issue. `how` and `why` over the affected subsystem come first in all of them. A change whose diff will touch a cross-cutting path, one under a `.claude/hooks/` directory, a `.claude/settings.json`, or a file of the `factory918` skill (`.agents/skills/factory918/`), at any depth (`spec-review`'s `review-brief.sh` holds the predicate), reaches every session and skill at once: after `how`, run `blast-radius` over it and write the result to `.scratch/<ticket>/blast-radius.md` in that skill's hand-back shape (what it does; the one fact it is safe because of and how far it was proven; risks; cleared; before you merge), each part under a `## ` heading and one numbered risk per line under `## Risks`, with a risk for every session kind (the interactive session, a subagent, a hook's own invocation, `factory-start` at day zero, a review in progress) and every skill the change reaches, each with a `file:line`. Such a change never skips `architect`. The PR body's `## Blast Radius` section is that file with its `## ` headings demoted to `###`, and `review-brief.sh` refuses to brief the diff without it or without its Risks heading; the Spec reviewer walks every risk under it.
+ 6. The spec's **Testing decisions** are the pre-agreed seams. `tdd` there, and nowhere the spec did not agree unless a criterion needs it.
+ 7. Verify on the matching surface per `docs/agents/evidence.md`; the primary agent runs the project's `verify-<app>` skill once after integrating.
+ 8. Run `.claude/skills/poteto-mode/scripts/overlap.sh N --diff`; its output, when there is any, is the PR body's `## Overlap` section verbatim, placed before `## Verification`; exit 1 means the reply names the printed PR as the one to merge first. Exit 2: stop and report stderr; do not open the PR until the check runs. Then run **Opening a PR**. A `spec-review` comment carrying the line `restart` names a design hole: go to **Design hole** below, not on to step 9. The body's Verification section quotes each criterion with its evidence path. The last line before the attribution is `Closes #N`. Never close the issue by hand; the merge closes it.
+diff --git a/template/.agents/skills/spec-review/SKILL.md b/template/.agents/skills/spec-review/SKILL.md
+index 6831a7a..874d799 100644
+--- a/template/.agents/skills/spec-review/SKILL.md
++++ b/template/.agents/skills/spec-review/SKILL.md
+@@ -24,7 +24,7 @@ The script confirms the fixed point resolves and the diff is non-empty, and exit
+ 
+ One PR gets at most three rounds, and a round is over when its comment is posted. The script reads the branch's PR comments that carry a line `act-on items:` (`gh pr view --json comments`); the round is one more than the highest `round: N of 3` line among them (a comment without one is round 1), so a comment rebuilt in the same round does not advance it. A comment carrying a line that is exactly `restart` (step 6: a design hole returned to architect) ends the history: the round and the settled items are read from the comments after the last such comment, the script says so with a line `restart:`, so the redesign's first review is round 1 with nothing carried, and the fourth-round refusal counts only what follows it. It writes the round to `<dir>/round`, prints `round: N of 3`, and exits 1 before writing any state when three rounds were run: what remains under Act on is then fixed on this PR and marked `fixed: <sha>` (step 5), not reviewed in a fourth round. Only comments by the PR's author, the account the orchestrator posts under, are read; a comment by anyone else neither counts a round nor reaches the briefs. No PR is round 1 with nothing carried; any other `gh` failure is printed and treated the same way, so the run goes on and you see why. `--round N` sets the round directly and `--previous FILE` supplies the earlier review comments from a file instead of `gh`, for a branch whose PR is elsewhere.
+ 
+-A cross-cutting diff, one whose changed paths include a `.claude/hooks/` file, a `.claude/settings.json` or a file of the `factory918` skill (`.agents/skills/factory918/`), at any depth, is briefed only with its blast-radius grounding (the Ticket playbook, step 5): the script takes it from `--blast-radius FILE` when given, else from the `## Blast Radius` section of the branch's PR body (`gh pr view --json body`), and exits 1 before writing any state when neither holds one: "cross-cutting diff (<the matching paths>) without a blast-radius grounding; run the blast-radius skill, put the result in the PR body's Blast Radius section or pass --blast-radius FILE". For a diff that is not cross-cutting, `--blast-radius` is ignored, and the script says so on stderr.
++A cross-cutting diff, one whose changed paths include a `.claude/hooks/` file, a `.claude/settings.json` or a file of the `factory918` skill (`.agents/skills/factory918/`), at any depth, is briefed only with its blast-radius grounding (the Ticket playbook, step 5): the script takes it from `--blast-radius FILE` when given, else from the `## Blast Radius` section of the branch's PR body (`gh pr view --json body`), and exits 1 before writing any state when neither holds one: "cross-cutting diff (<the matching paths>) without a blast-radius grounding; run the blast-radius skill, put the result in the PR body's Blast Radius section or pass --blast-radius FILE". The grounding carries its risks under a line that is exactly `## Risks` in a file or `### Risks` in a PR body, where the file's headings are demoted one level so the `## Blast Radius` section stays intact (Opening a PR); the script reads the grounding outside fenced text and exits 1 the same way when neither line is there: "the blast-radius grounding (<the file, or: the PR body's Blast Radius section>) has no Risks heading outside fenced text; put the risks under a line that is exactly `## Risks` in the file, `### Risks` in the PR body, where the grounding's headings are demoted one level so the section stays intact". With a grounding, the Spec brief's `## Walk` bullet continues with the risk sentence (step 4), so the reviewer walks each risk after the steps. For a diff that is not cross-cutting, `--blast-radius` is ignored, and the script says so on stderr.
+ 
+ A sweep over units already on `main`, named by paths and commits, is the same skill with the same state, not a second mode: `scripts/review-brief.sh --paths P... --commits SHA...` writes the word `paths` as the fixed point and `git show <commits> -- <paths>` as the diff.
+ 
+@@ -98,7 +98,7 @@ The briefs are the two files step 1 wrote, `<dir>/standards-brief.md` and `<dir>
+ 
+ - The ticket body pasted in (What to build and Acceptance criteria, verbatim), then the ticket author's comments under `## Comments by the ticket's author (#N)`, each under `### <YYYY-MM-DD>` (absent when there are none), and the relevant section of the parent spec when there is one. Not a `gh` command or an issue number: the sub-agent fetches nothing.
+ - The report's headings, exactly these `## ` headings, in this order, each holding numbered items or nothing, word for word as the script writes them:
+-  - `## Walk`: one numbered line per documented step of the path the change touches (the ticket's criteria and the documentation the diff changes), each saying what the code does at that step. A walk, not findings: its lines are numbered 1..K on their own and count nothing.
++  - `## Walk`: one numbered line per documented step of the path the change touches (the ticket's criteria and the documentation the diff changes), each saying what the code does at that step. A walk, not findings: its lines are numbered 1..K on their own and count nothing. For a cross-cutting diff the bullet continues on the same line, word for word: "The diff is cross-cutting: after the lines per documented step, one numbered line per risk under the Risks heading of the `## Blast radius` section above, in its order and numbered on from the last step, each naming the risk and saying what the diff does at that risk; a risk line is a walk line and counts nothing."
+   - `## Would break`: a requirement missing, partial, or implemented so that the documented path gives a wrong or silent result.
+   - `## Fails open`: an input outside the documented path that proceeds silently instead of being refused with a message saying how to correct it.
+   - `## Not asked for`: behaviour in the diff the ticket did not ask for.
+diff --git a/template/.agents/skills/spec-review/scripts/review-brief.sh b/template/.agents/skills/spec-review/scripts/review-brief.sh
+index ee3fb93..f907510 100755
+--- a/template/.agents/skills/spec-review/scripts/review-brief.sh
++++ b/template/.agents/skills/spec-review/scripts/review-brief.sh
+@@ -15,7 +15,11 @@
+ # comments instead of gh, and --round N the round, for tests and a branch whose PR is elsewhere.
+ # A cross-cutting diff (one that touches a hooks directory, a settings.json or the factory918
+ # skill) is briefed only with its blast-radius grounding: --blast-radius FILE, else the PR body's
+-# `## Blast Radius` section; without one the script refuses before writing any state.
++# `## Blast Radius` section; without one the script refuses before writing any state. The grounding
++# holds its risks under a line that is exactly `## Risks` (a file) or `### Risks` (a PR body, whose
++# headings are demoted one level so the section stays intact), outside fenced text; without one the
++# script refuses the same way. With a grounding, the Spec brief's `## Walk` bullet continues with
++# one numbered line per risk, so the reviewer walks the risks after the steps.
+ # shellcheck disable=SC2016 # every single-quoted string here is a jq program or a Markdown template; the backticks and $ are literal
+ set -euo pipefail
+ usage() {
+@@ -236,6 +240,19 @@ if [ -n "$crossing" ]; then
+     echo "review-brief: cross-cutting diff (${crossing# }) without a blast-radius grounding; run the blast-radius skill, put the result in the PR body's Blast Radius section or pass --blast-radius FILE" >&2
+     exit 1
+   fi
++  # The Spec walk covers each risk by name (the Walk bullet below), so the grounding must hold them
++  # under a heading the reviewer can find, at either level: a file keeps its own `## Risks`, a PR
++  # body carries the file with its headings demoted to `###` so the section above survives. Read
++  # outside fenced text with the same fence rule as a report; a bullet hand-back has no heading.
++  if ! printf '%s\n' "$grounding" | awk '{ sub(/\r$/, ""); sub(/[ \t]+$/, "") }'"$fenced"'
++      $0 == "## Risks" || $0 == "### Risks" { found = 1; exit }
++      END { exit !found }'; then
++    rm -rf "$dir"
++    where="the PR body's Blast Radius section"
++    [ -z "$blast" ] || where="$blast"
++    echo "review-brief: the blast-radius grounding ($where) has no Risks heading outside fenced text; put the risks under a line that is exactly \`## Risks\` in the file, \`### Risks\` in the PR body, where the grounding's headings are demoted one level so the section stays intact" >&2
++    exit 1
++  fi
+ elif [ -n "$blast" ]; then
+   echo "review-brief: the diff is not cross-cutting; $blast is not pasted" >&2
+ fi
+@@ -274,6 +291,9 @@ step_rule='Every item under `## Would break` or `## Fails open` carries a line `
+ spec_rule='The same item carries a line `spec:` naming the artifact it rests on: `table <row>/<column>` for a cell of the ticket'"'"'s scenario table, `design <signature>` for a signature or usage in its `## Design` sketch, or `criterion <k>` for its k-th acceptance checkbox; an item without a `spec:` line in one of those three forms is sent back.'
+ # The blast-radius paragraph; SKILL.md step 4 carries it word for word (the same test holds them together).
+ blast_rule="The sessions and skills this change reaches, as the author grounded them before the review. Check the diff against each one; the grounding is the author's claim, not evidence."
++# The risk sentence, appended to the Spec brief's Walk bullet when a grounding is present; SKILL.md
++# step 4 carries it word for word (the same test holds them together).
++risk_rule='The diff is cross-cutting: after the lines per documented step, one numbered line per risk under the Risks heading of the `## Blast radius` section above, in its order and numbered on from the last step, each naming the risk and saying what the diff does at that risk; a risk line is a walk line and counts nothing.'
+ count_rule='End the report with exactly one line `hard findings: N`, where N is the number of items under `## Would break` and `## Fails open` and nothing else.'
+ common() {
+   echo "Read nothing beyond this brief unless a finding needs the code around a hunk, and then read that one function or section, not the file. Run nothing."
+@@ -378,7 +398,11 @@ if [ -n "$spec" ]; then
+       echo
+     fi
+     report_rules
+-    echo '- `## Walk`: one numbered line per documented step of the path the change touches (the ticket'"'"'s criteria and the documentation the diff changes), each saying what the code does at that step. A walk, not findings: its lines are numbered 1..K on their own and count nothing.'
++    # One bullet either way: the risk sentence joins it on the same line, so the bullet's own text
++    # is what SKILL.md step 4 carries and the risk sentence follows it only for a cross-cutting diff.
++    walk='- `## Walk`: one numbered line per documented step of the path the change touches (the ticket'"'"'s criteria and the documentation the diff changes), each saying what the code does at that step. A walk, not findings: its lines are numbered 1..K on their own and count nothing.'
++    [ -z "$grounding" ] || walk="$walk $risk_rule"
++    echo "$walk"
+     echo '- `## Would break`: a requirement missing, partial, or implemented so that the documented path gives a wrong or silent result.'
+     echo '- `## Fails open`: an input outside the documented path that proceeds silently instead of being refused with a message saying how to correct it.'
+     echo '- `## Not asked for`: behaviour in the diff the ticket did not ask for.'
+diff --git a/template/docs/factory918/DECISIONS.md b/template/docs/factory918/DECISIONS.md
+index bfb6a12..0fa8ce3 100644
+--- a/template/docs/factory918/DECISIONS.md
++++ b/template/docs/factory918/DECISIONS.md
+@@ -83,3 +83,5 @@ Travels anywhere without change: the planning skills, the execution playbooks, `
+ | P2 | Tool versions in CI | Pin every tool CI runs to an exact version, as a devDependency where the tool publishes one | `dlx` and `npx` resolve the latest version, so a rule engine or formatter can change under a project with no diff to show for it. Spec §0 rule 1 already says to pin what you install; this extends it to what CI fetches. First applied to `@ast-grep/cli` 0.45.3 in M0. |
+ | P24 | Overlap is not coupling; a go is a line that covers its own tickets | Two unblocked tickets relate three ways: dependent (`Blocked by`, off the frontier), disjoint in files (parallel branches off `main`), or overlapping in files (sequenced: one to merge-ready, the merge, then the next). Coupled work, a ticket that needs code an open PR introduces, stacks, and only on a go. Ticket step 1 runs `.claude/skills/poteto-mode/scripts/overlap.sh N` before branching: every open PR's head is fetched fresh and its own commits (its diff from the open PR it stacks on, else `origin/main`) are matched with the ticket body's backticked tokens as pathspecs (its `## Diff` section excluded), so a file, a directory, a glob or a file the PR creates all match; exit 0 prints `base: <ref>` to branch from, exit 1 stops and names the PR to merge first, exit 2 means the check could not run and stderr says why. A go is a line `<label>: #a #b ...` that `overlap.sh go "<label>" N...` appends to the gitignored `.claude/state/program`, written by the orchestrator when the human gives it (autopilot-stack step 3 runs it itself). A go covers a stack only when a line names the ticket and, for every overlapping PR, the ticket that PR closes; so a line a dead program left behind covers nothing outside its own tickets' open PRs and needs no removal. Under a cover the base is the overlapping PR's head, the lowest-numbered when siblings overlap, the containing one when one contains the other; step 8's `--diff` run records the shared paths as the PR body's `## Overlap` section | Ticket #42, Manuel: "working a ticket to completion before automatically moving on"; the #16 to #22 stack was built on a seven-re-reviews mis-estimate (ledger 2026-09-17). First run (PR #87, closed): three review rounds redesigned the matcher three times; the second run designed from a scenario table Manuel approved 2026-09-21 as the ticket's Testing decisions. Rejected: a ticket label as the go (outlives the program), a line pasted into each lane's brief (a forgotten paste blocks a lane), a `done` step (a crash skips it), the script under the factory918 skill (every later edit cross-cutting). |
+ | P25 | One shell gate, carried by the template | `template/.github/shellcheck.sh` holds the ShellCheck version, both release checksums and the flags; a project gets it as `.github/shellcheck.sh` and the factory runs the template's copy. The severity is the default and `--external-sources` is on, so a lane's per-file run and CI's whole-set run give the same answer. A `disable=` directive carries its reason in a second comment on the same line; CI cannot check that a reason exists, the Standards axis does | A `run:` block in each workflow would put the pin in two files and the flags in three, and a project's CI cannot read the factory's files. SC2086 is info level, so a `--severity` floor would pass the class ticket #88 was written for; without `-x` the two spec-review tests report findings on one file that vanish on the whole set, which would make the playbook's "run it before the PR" sentence false. Ticket #88, 2026-09-22. |
++| P26 | The Spec walk covers every blast-radius risk | For a cross-cutting diff the Spec brief's `## Walk` bullet continues, on its line, with one fixed sentence: after the lines per documented step, one numbered line per risk under the Risks heading of the grounding pasted above, in its order and numbered on from the last step, each saying what the diff does at that risk; the lines are walk lines and count nothing. `review-brief.sh` finds the heading as the first unfenced line that is exactly `## Risks` or `### Risks`, from a `--blast-radius FILE` or the PR body's section alike, and refuses a grounding without one before writing any state, the message naming the form for each source. A grounding pasted into a PR body has its `## ` headings demoted to `###`, because the section is cut at the next `## ` line | On PR #87 both reviewers carried the grounding for three rounds and neither walked its first risk until round three; on PR #92 the third risk was found in round two. The brief said to check the diff against each risk, but the report shape demanded a line per step and nothing per risk (#91). One fixed sentence, no level and no count in it, so `SKILL.md` and the test pin one string and `review-comment.sh` counts nothing new (P23). Designed from the scenario table on #91, two runners converging; 2026-09-22. |
++| P27 | A stacked PR is opened against trunk, then retargeted | An owner lane whose PR stacks on another opens it with `--base main` and retargets it to the parent branch with `gh pr edit --base` in the next command, so GitHub links `Closes #N` before the base moves; until #100 lands, `overlap.sh`'s coverage can see a stacked PR's ticket only through that link | GitHub creates the closing link only for a PR whose base is the default branch (M0-findings 2026-09-17): PR #96 was opened against `main` and kept its link after a retarget, PR #99 was opened against `feat/shellcheck` and had none, so `overlap.sh 91` exited 1 under a go that named its ticket; retargeting #99 to `main` for eight seconds created the link. #91, 2026-09-22. |
+diff --git a/tests/spec-review/review-brief.sh b/tests/spec-review/review-brief.sh
+index 1b5ad50..c28c766 100755
+--- a/tests/spec-review/review-brief.sh
++++ b/tests/spec-review/review-brief.sh
+@@ -15,10 +15,14 @@
+ # and a cite of a cell, a signature or a criterion (`cites: #N table <row>/<column>`, `design
+ # <signature>`, `criterion <k>`) carries like the three older forms. A diff touching
+ # a cross-cutting path is briefed with its blast-radius grounding (--blast-radius FILE, else the PR
+-# body's section) before the diff, and refused without one. The source SKILL.md, step 4, must carry
+-# the definition, the five sentences, the heading bullets, the step rule, the spec rule, the count
+-# rule, the settled paragraph and the blast-radius paragraph word for word, so the skill and the
+-# script cannot drift apart. Exits 1 on the first miss.
++# body's section) before the diff, and refused without one. For such a diff the Spec brief's
++# `## Walk` bullet continues, on its line, with the risk sentence, and a grounding with no line
++# outside fenced text that is exactly `## Risks` or `### Risks` is refused before any state is
++# written; the assertions come from ticket #91's scenario table, one per cell, each named by its
++# row and column. The source SKILL.md, step 4, must carry the definition, the five sentences, the
++# heading bullets, the step rule, the spec rule, the count rule, the settled paragraph, the
++# blast-radius paragraph and the risk sentence word for word, so the skill and the script cannot
++# drift apart. Exits 1 on the first miss.
+ # shellcheck disable=SC2016 # the expected strings below are the Markdown the script emits; the backticks and $ are literal
+ set -euo pipefail
+ here="$(cd "$(dirname "$0")/../.." && pwd -P)"
+@@ -114,12 +118,14 @@ spec_rule='The same item carries a line `spec:` naming the artifact it rests on:
+ count_rule='End the report with exactly one line `hard findings: N`, where N is the number of items under `## Would break` and `## Fails open` and nothing else.'
+ settled_rule="These findings were raised in an earlier round and settled by the decision each one cites. Do not raise them again. Nothing in this section says what you should find or confirm."
+ blast_rule="The sessions and skills this change reaches, as the author grounded them before the review. Check the diff against each one; the grounding is the author's claim, not evidence."
++risk_rule='The diff is cross-cutting: after the lines per documented step, one numbered line per risk under the Risks heading of the `## Blast radius` section above, in its order and numbered on from the last step, each naming the risk and saying what the diff does at that risk; a risk line is a walk line and counts nothing.'
+ has "$source_skill/SKILL.md" "$definition" "SKILL.md step 4 carries the definition"
+ has "$source_skill/SKILL.md" "$step_rule" "SKILL.md step 4 carries the step rule"
+ has "$source_skill/SKILL.md" "$spec_rule" "SKILL.md step 4 carries the spec rule"
+ has "$source_skill/SKILL.md" "$count_rule" "SKILL.md step 4 carries the count rule"
+ has "$source_skill/SKILL.md" "$settled_rule" "SKILL.md step 4 carries the settled paragraph"
+ has "$source_skill/SKILL.md" "$blast_rule" "SKILL.md step 4 carries the blast-radius paragraph"
++has "$source_skill/SKILL.md" "$risk_rule" "SKILL.md step 4 carries the risk sentence"
+ lacks "$source_skill/SKILL.md" "## Latent" "SKILL.md has no Latent heading"
+ for q in "${quotes[@]}"; do
+   has "$source_skill/SKILL.md" "$q" "SKILL.md step 4 carries the quote"
+@@ -152,6 +158,8 @@ for f in "$std" "$spec"; do
+   lacks "$f" "## Latent" "$f has no Latent heading"
+   lacks "$f" "## Settled in earlier rounds" "$f has no settled section without a previous comment"
+   lacks "$f" "## Blast radius" "$f has no blast-radius section for a diff that is not cross-cutting"
++  # 9B: no grounding and not cross-cutting, the bullet as before.
++  lacks "$f" "$risk_rule" "$f has no risk sentence for a diff that is not cross-cutting (9B)"
+ done
+ # The heading bullets of each Report paragraph, word for word in SKILL.md step 4 and in the brief.
+ standards_bullets=(
+@@ -502,8 +510,11 @@ if [ "$code" != 1 ] || [ "$out" != 'review-brief: three rounds were run on this
+ fi
+ n=$((n + 1))
+ 
+-# A cross-cutting diff: a commit touching the hooks directory of this layout. With --blast-radius
+-# FILE the file's text goes into both briefs under `## Blast radius`, before `## Diff`.
++# Ticket #91, the scenario table: a cross-cutting diff's Spec brief continues its `## Walk` bullet,
++# on the same line, with the risk sentence, and a grounding with no line outside fenced text that
++# is exactly `## Risks` or `### Risks` is refused before any state is written. Each assertion below
++# names its cell, row then column. The cross-cutting commit touches the hooks directory of this
++# layout; blast.md is the blast-radius skill's bullet hand-back, with a leading blank line.
+ echo 'exit 0' > "$hooks/x.sh"
+ git add "$hooks/x.sh"
+ git commit -qm "a hook, #7"
+@@ -512,24 +523,66 @@ cat > blast.md <<'EOF'
+ - **What it does.** Adds a hook that exits 0.
+ - **Risks.** `factory-start` at day zero runs it before any skill is installed: `.claude/hooks/x.sh:1`.
+ EOF
+-bash "$skill/scripts/review-brief.sh" HEAD~1 --blast-radius blast.md > out.txt 2> err.txt
++{ cat blast.md; printf '\n## Risks\n\n1. A subagent inherits it: `.claude/hooks/x.sh:1`.\n'; } > blast-risks.md
++sed 's/^## Risks$/### Risks/' blast-risks.md > blast-risks-demoted.md
++{ cat blast-risks.md; printf '\n### Risks\n\n2. The same risk, demoted.\n'; } > blast-both.md
++{ cat blast.md; printf '\n## Risks\n'; } > blast-empty-risks.md
++{ cat blast.md; printf '\n```md\n## Risks\n\n1. inside a fence\n```\n'; } > blast-fenced.md
++# refused_risks <label> <where> [arg ...]: HEAD~1 with the args exits 1 with the ticket and round
++# lines, then the refusal naming <where>, and writes no state and no briefs.
++refused_risks() {
++  local label="$1" where="$2"; shift 2
++  rm -rf .scratch .claude/state
++  set +e
++  out="$(bash "$skill/scripts/review-brief.sh" HEAD~1 "$@" 2>&1)"
++  code=$?
++  set -e
++  if [ "$code" != 1 ] || [ "$out" != "ticket: #7
++round: 1 of 3
++review-brief: the blast-radius grounding ($where) has no Risks heading outside fenced text; put the risks under a line that is exactly \`## Risks\` in the file, \`### Risks\` in the PR body, where the grounding's headings are demoted one level so the section stays intact" ] || [ -e .claude/state/review ] || [ -e .scratch/review/HEAD_1 ]; then
++    echo "FAIL $label: exit $code, wanted 1, the refusal naming $where, no state and no briefs"
++    echo "  got: $out"
++    exit 1
++  fi
++  n=$((n + 1))
++}
++# 1A: --blast-radius FILE with `## Risks` and a numbered risk. Both briefs carry the grounding under
++# `## Blast radius` before `## Diff`; the Spec brief's Walk bullet continues with the risk sentence
++# on its own line; the Standards brief does not carry the sentence.
++bash "$skill/scripts/review-brief.sh" HEAD~1 --blast-radius blast-risks.md > out.txt 2> err.txt
+ printed out.txt "ticket: #7
+ round: 1 of 3
+ .scratch/review/HEAD_1/standards-brief.md
+-.scratch/review/HEAD_1/spec-brief.md" "cross-cutting diff with --blast-radius"
+-[ ! -s err.txt ] || { echo "FAIL cross-cutting diff with --blast-radius: stderr is not empty:"; cat err.txt; exit 1; }
++.scratch/review/HEAD_1/spec-brief.md" "cross-cutting diff with --blast-radius (1A)"
++[ ! -s err.txt ] || { echo "FAIL cross-cutting diff with --blast-radius (1A): stderr is not empty:"; cat err.txt; exit 1; }
+ n=$((n + 1))
+ for f in "$std" "$spec"; do
+-  has "$f" "## Blast radius" "$f has the blast-radius section"
+-  has "$f" "$blast_rule" "$f carries the blast-radius paragraph"
+-  has "$f" '- **Risks.** `factory-start` at day zero runs it before any skill is installed: `.claude/hooks/x.sh:1`.' "$f carries the grounding text"
++  has "$f" "## Blast radius" "$f has the blast-radius section (1A)"
++  has "$f" "$blast_rule" "$f carries the blast-radius paragraph (1A)"
++  has "$f" '- **Risks.** `factory-start` at day zero runs it before any skill is installed: `.claude/hooks/x.sh:1`.' "$f carries the grounding text (1A)"
++  has "$f" '1. A subagent inherits it: `.claude/hooks/x.sh:1`.' "$f carries the numbered risk (1A)"
+   if [ "$(grep -n '^## Blast radius$' "$f" | cut -d: -f1)" -ge "$(grep -n '^## Diff$' "$f" | cut -d: -f1)" ]; then
+-    echo "FAIL $f: the blast-radius section is not before the diff"; exit 1
++    echo "FAIL $f: the blast-radius section is not before the diff (1A)"; exit 1
+   fi
+   n=$((n + 1))
+ done
+-
+-# The same diff with no --blast-radius and no PR is refused, naming the path, before any state is written.
++has "$spec" "${spec_bullets[0]} $risk_rule" "Spec: the Walk bullet continues with the risk sentence (1A)"
++lacks "$std" "$risk_rule" "Standards: no risk sentence (1A)"
++# 2A: `### Risks` in the file gives the same bullet; the source restricts no level.
++bash "$skill/scripts/review-brief.sh" HEAD~1 --blast-radius blast-risks-demoted.md > out.txt
++has "$spec" "${spec_bullets[0]} $risk_rule" "Spec: a file with ### Risks continues the Walk bullet (2A)"
++# 7A: both levels; the first unfenced one satisfies the check.
++bash "$skill/scripts/review-brief.sh" HEAD~1 --blast-radius blast-both.md > out.txt
++has "$spec" "${spec_bullets[0]} $risk_rule" "Spec: a file with ## Risks then ### Risks continues the Walk bullet (7A)"
++# 8A: a Risks heading with no numbered line under it gives the same bullet.
++bash "$skill/scripts/review-brief.sh" HEAD~1 --blast-radius blast-empty-risks.md > out.txt
++has "$spec" "${spec_bullets[0]} $risk_rule" "Spec: a Risks heading with nothing under it continues the Walk bullet (8A)"
++# 5A: the bullet hand-back, no Risks heading: refused naming the file.
++refused_risks "no Risks heading in the file (5A)" blast.md --blast-radius blast.md
++# 6A: the only Risks heading inside a fenced block: refused the same way.
++refused_risks "the only Risks heading inside a fence (6A)" blast-fenced.md --blast-radius blast-fenced.md
++
++# 9A: no --blast-radius and no PR is refused as before, naming the path, before any state is written.
+ rm -rf .scratch .claude/state
+ set +e
+ out="$(bash "$skill/scripts/review-brief.sh" HEAD~1 2>&1)"
+@@ -538,22 +591,29 @@ set -e
+ if [ "$code" != 1 ] || [ "$out" != "ticket: #7
+ round: 1 of 3
+ review-brief: cross-cutting diff ($hooks/x.sh) without a blast-radius grounding; run the blast-radius skill, put the result in the PR body's Blast Radius section or pass --blast-radius FILE" ] || [ -e .claude/state/review ] || [ -e .scratch/review/HEAD_1 ]; then
+-  echo "FAIL cross-cutting diff without a grounding: exit $code, wanted 1, the message, no state and no briefs"
++  echo "FAIL cross-cutting diff without a grounding (9A): exit $code, wanted 1, the message, no state and no briefs"
+   echo "  got: $out"
+   exit 1
+ fi
+ n=$((n + 1))
+ 
+-# With a PR, the grounding is the body's `## Blast Radius` section: CRLF line ends, a fenced `## ` line
+-# kept inside it, and the next heading ending it. An empty section is refused like a missing one.
+-printf '## Why\r\n\r\nA hook.\r\n\r\n## Blast Radius\r\n\r\n- **Risks.** a subagent inherits it: `.claude/hooks/x.sh:1`.\r\n\r\n```sh\r\n## not a heading, part of the proof\r\n```\r\n\r\n## Verification\r\n\r\nran it\r\n' > pr-body.md
++# 3A: with a PR, the grounding is the body's `## Blast Radius` section with its headings demoted:
++# CRLF line ends, a fenced `## ` line kept inside it, `### Risks` inside it, and the next heading
++# ending it. The Spec brief's Walk bullet continues with the risk sentence; the Standards brief's does not.
++printf '## Why\r\n\r\nA hook.\r\n\r\n## Blast Radius\r\n\r\n- **Risks.** a subagent inherits it: `.claude/hooks/x.sh:1`.\r\n\r\n### Risks\r\n\r\n1. a subagent inherits it: `.claude/hooks/x.sh:1`.\r\n\r\n```sh\r\n## not a heading, part of the proof\r\n```\r\n\r\n## Verification\r\n\r\nran it\r\n' > pr-body.md
+ FAKE_PR_BODY="$fx/pr-body.md" bash "$skill/scripts/review-brief.sh" HEAD~1 > out.txt
+ for f in "$std" "$spec"; do
+-  has "$f" '- **Risks.** a subagent inherits it: `.claude/hooks/x.sh:1`.' "$f carries the PR body's section"
+-  has "$f" "## not a heading, part of the proof" "$f keeps the fenced line of the section"
+-  lacks "$f" "ran it" "$f stops the section at the next heading"
+-  lacks "$f" "A hook." "$f starts the section at its heading"
++  has "$f" '- **Risks.** a subagent inherits it: `.claude/hooks/x.sh:1`.' "$f carries the PR body's section (3A)"
++  has "$f" "### Risks" "$f carries the section's demoted Risks heading (3A)"
++  has "$f" "## not a heading, part of the proof" "$f keeps the fenced line of the section (3A)"
++  lacks "$f" "ran it" "$f stops the section at the next heading (3A)"
++  lacks "$f" "A hook." "$f starts the section at its heading (3A)"
+ done
++has "$spec" "${spec_bullets[0]} $risk_rule" "Spec: the PR body's ### Risks continues the Walk bullet (3A)"
++lacks "$std" "$risk_rule" "Standards: no risk sentence from a PR body (3A)"
++# 4A: a body whose headings were not demoted ends its section at the first inner `## ` line. Nothing
++# before that line is the empty section, refused like a missing grounding; prose before it is
++# refused naming the body.
+ printf '## Why\n\nA hook.\n\n## Blast Radius\n\n## Verification\n\nran it\n' > pr-body-empty.md
+ rm -rf .scratch .claude/state
+ set +e
+@@ -561,21 +621,49 @@ out="$(FAKE_PR_BODY="$fx/pr-body-empty.md" bash "$skill/scripts/review-brief.sh"
+ code=$?
+ set -e
+ if [ "$code" != 1 ] || ! printf '%s' "$out" | grep -qF "cross-cutting diff ($hooks/x.sh) without a blast-radius grounding" || [ -e .claude/state/review ]; then
+-  echo "FAIL empty Blast Radius section: exit $code, wanted 1 with the refusal and no state"
++  echo "FAIL empty Blast Radius section (4A, nothing before the inner heading): exit $code, wanted 1 with the refusal and no state"
++  echo "  got: $out"
++  exit 1
++fi
++n=$((n + 1))
++printf '## Why\n\nA hook.\n\n## Blast Radius\n\n- **What it does.** Adds a hook that exits 0.\n\n## Risks\n\n1. a subagent inherits it: `.claude/hooks/x.sh:1`.\n\n## Verification\n\nran it\n' > pr-body-undemoted.md
++export FAKE_PR_BODY="$fx/pr-body-undemoted.md"
++refused_risks "undemoted headings in the PR body (4A, prose before the inner heading)" "the PR body's Blast Radius section"
++unset FAKE_PR_BODY
++# 10: --blast-radius naming no file is the usage block, before anything runs.
++rm -rf .scratch .claude/state
++set +e
++out="$(bash "$skill/scripts/review-brief.sh" HEAD~1 --blast-radius missing.md 2>&1)"
++code=$?
++set -e
++if [ "$code" != 1 ] || [ "$out" != "usage: review-brief.sh <fixed-point> [--ticket N] [--standards FILE ...] [--previous FILE] [--round N] [--blast-radius FILE]
++       review-brief.sh --paths P... --commits SHA... [--ticket N] [--standards FILE ...] [--blast-radius FILE]" ] || [ -e .claude/state/review ] || [ -e .scratch/review ]; then
++  echo "FAIL --blast-radius naming no file (10): exit $code, wanted 1, the usage block and no state"
+   echo "  got: $out"
+   exit 1
+ fi
+ n=$((n + 1))
+ 
+-# A diff that is not cross-cutting ignores --blast-radius and says so on stderr.
++# 1B: a diff that is not cross-cutting ignores --blast-radius, says so on stderr, and neither brief
++# carries the grounding or the risk sentence.
+ echo readme > README.md
+ git add README.md
+ git commit -qm "a readme, #7"
+-bash "$skill/scripts/review-brief.sh" HEAD~1 --blast-radius blast.md > out.txt 2> err.txt
+-printed err.txt "review-brief: the diff is not cross-cutting; blast.md is not pasted" "README-only diff with --blast-radius"
++bash "$skill/scripts/review-brief.sh" HEAD~1 --blast-radius blast-risks.md > out.txt 2> err.txt
++printed err.txt "review-brief: the diff is not cross-cutting; blast-risks.md is not pasted" "README-only diff with --blast-radius (1B)"
++for f in "$std" "$spec"; do
++  lacks "$f" "## Blast radius" "$f has no blast-radius section for a README-only diff (1B)"
++  lacks "$f" "Adds a hook that exits 0" "$f does not carry the ignored file (1B)"
++  lacks "$f" "$risk_rule" "$f has no risk sentence for a README-only diff (1B)"
++done
++# 3B: the same diff with a PR whose body holds the section: the body is never fetched.
++FAKE_PR_BODY="$fx/pr-body.md" bash "$skill/scripts/review-brief.sh" HEAD~1 > out.txt 2> err.txt
++[ ! -s err.txt ] || { echo "FAIL README-only diff with a PR body (3B): stderr is not empty:"; cat err.txt; exit 1; }
++n=$((n + 1))
+ for f in "$std" "$spec"; do
+-  lacks "$f" "## Blast radius" "$f has no blast-radius section for a README-only diff"
+-  lacks "$f" "Adds a hook that exits 0" "$f does not carry the ignored file"
++  lacks "$f" "## Blast radius" "$f has no blast-radius section for a README-only diff with a PR (3B)"
++  lacks "$f" "a subagent inherits it" "$f does not carry the PR body's section (3B)"
++  lacks "$f" "$risk_rule" "$f has no risk sentence for a README-only diff with a PR (3B)"
+ done
+ }
+ 
+diff --git a/tests/spec-review/review-comment.sh b/tests/spec-review/review-comment.sh
+index d1dedb5..74e2781 100755
+--- a/tests/spec-review/review-comment.sh
++++ b/tests/spec-review/review-comment.sh
+@@ -259,6 +259,26 @@ $(cat "$dir/judgment.md")
+ Standards: 1 would break, 0 fail open, of 3; Spec: 1 would break, 1 fail open, of 2; judged: act on 2 (0 fixed, 0 with a ticket), ask 1, consider 0, noted 1, dismissed 1; fixed point main.
+ round: 2 of 3
+ act-on items: 3" "two Act on and one Ask, round 2; the walk's three lines are not items"
++# Ticket #91, criterion 3: a walk that continues with one line per blast-radius risk, numbered on
++# from the last step, is still all steps: the same counts and the same comment.
++rearm
++awk '{ print } /^3\. The state file/ { print "4. Risk: a subagent inherits the hook; the diff exits 0 there."; print "5. Risk: `factory-start` at day zero; the diff runs before any skill is installed." }' "$dir/spec-report.md" > "$dir/spec-report.risks"
++mv "$dir/spec-report.risks" "$dir/spec-report.md"
++accept "## Standards
++
++$(cat "$dir/standards-report.md")
++
++## Spec
++
++$(cat "$dir/spec-report.md")
++
++## Judgment
++
++$(cat "$dir/judgment.md")
++
++Standards: 1 would break, 0 fail open, of 3; Spec: 1 would break, 1 fail open, of 2; judged: act on 2 (0 fixed, 0 with a ticket), ask 1, consider 0, noted 1, dismissed 1; fixed point main.
++round: 2 of 3
++act-on items: 3" "the walk continued with two risk lines: the same counts (#91, criterion 3)"
+ 
+ rearm
+ echo 3 > "$dir/round"

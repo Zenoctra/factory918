@@ -1,0 +1,99 @@
+Round one found no hard finding on either axis: the Spec walk covered all eighteen documented steps of the change and reported nothing missing, and the Standards reviewer raised three wording and portability points, which a fix lane landed on the PR in fc75ac6 and the judgment marks fixed, so the count is zero. Under the rule this PR itself adds, a round whose fixes are all standards breaches may be the last, so the review ends here at round one.
+
+## Standards
+
+## Would break
+
+## Fails open
+
+## Standards breaches
+
+1. **The Ticket playbook scopes the fix-only round wider than `SKILL.md` step 1 does.** Step 1 licenses a fix-only round only as "the round after it (four, and after a round four carrying it, five)"; the new Ticket playbook section says "Below round five" with no floor, and `review-brief.sh`'s gate runs only at `round > 3`, so at a round-one or round-two comment carrying the line the same instruction would silently narrow the next round's diff to the fix commits. On the documented path the line first appears at round three (step 5: the fix lane runs "from round three on"), so behavior is unchanged; the sentence is what drifts. Standard: `CODING_STANDARDS.md`, Markdown, "Written with `/writing-for-agents` when an agent reads it".
+
+```
+1. Below round five: run the next round with `<sha>` as its fixed point and the ticket named, `scripts/review-brief.sh <sha> --ticket N`;
+```
+
+2. **`review-ladder.md` still says the comment ends with `round: N of 3`.** Two sentences later the same bullet names `round: 4 of 5`, and `review-comment.sh` now prints `of 5` from round four. Standard: `CODING_STANDARDS.md`, Markdown, "A count or a version in prose is true at the commit that lands it". `tests/spec-review/no-stale-wording.sh` was extended for "at most three rounds" but not for this phrasing.
+
+```
+The report is posted as a comment on the PR, names the commit it reviewed, and ends with the lines `round: N of 3` and `act-on items: N`.
+```
+
+3. **An awk interval expression, the first in these scripts.** `{7,40}` inside an awk ERE needs mawk 1.3.4 or a BWK awk from 2019 on; every other awk program in `review-brief.sh` and `review-comment.sh` avoids intervals, and the equivalent test elsewhere is `grep -E`. Standard: `CODING_STANDARDS.md`, Bash, "Where BSD and GNU differ ... either use a form both accept or branch on `command -v`". `[0-9a-f][0-9a-f]*` would be safe everywhere.
+
+```
+fixed_items="$(printf '%s\n' "$deciding" | awk "$fenced"'
+  /^## / { if (h == "Judgment") j = 1; next }
+  j && h == "Act on" && /^[0-9]+\. / && /fixed: [0-9a-f]{7,40}$/
+')"
+```
+
+## Fix alongside
+
+4. **Duplicated Code.** The new Would-break resolver in `review-comment.sh` repeats the hole loop above it line for line: the `[SP]` extraction, the report-file `case`, the `specs | sed -n Np` lookup. Extract one `rests_at <item line>` helper and call it from both.
+
+```
+  ref_id="$(printf '%s' "$line" | sed -nE 's/^[0-9]+\. \[([SP][0-9]+)\].*/\1/p')"
+  case "$ref_id" in S*) f="$dir/standards-report.md" ;; *) f="$dir/spec-report.md" ;; esac
+  rests="$(specs "$f" | sed -n "${ref_id#[SP]}p")"
+```
+
+hard findings: 0
+
+## Spec
+
+## Walk
+
+1. `review-brief.sh` writes `git rev-parse HEAD` to `<dir>/reviewed` beside `<dir>/round`, in the sweep form too (one code path), after the state dir is rebuilt.
+2. The round parse becomes `/^round: [0-9]+ of [35]$/`, so comments written before this ticket still parse and `of 5` comments count.
+3. The deciding comment is cut as the last non-blank comment of the post-restart history, CR and trailing blanks stripped; `wb`, `had_spec` and `fixed_items` are read from it alone, outside fenced text.
+4. `FM` fires first when the words are followed by anything but 40 lowercase hex, including nothing.
+5. `F6` next when the round exceeds five.
+6. Past three, a missing line or a round that is not `top + 1` gives `F4` (byte-identical to the old refusal when `top <= 3` and the round is four) else `F5`.
+7. `FR` when the named commit does not resolve, then `FP` when the fixed point is not that commit (the sweep form's `paths` lands here), then `FT` when no ticket resolved and the previous round had a spec.
+8. `cap=3; [ "$round" -le 3 ] || cap=5`, written identically in both scripts, prints `round: N of <cap>`.
+9. From round four `common()` prints `## The fix under review`, `$fix_rule`, then the deciding comment's fixed Act on lines, after `## Changed files` and before `## Blast radius` and `## Diff`, in both briefs.
+10. `review-comment.sh` computes the same cap, resolves each `fixed:` Act on item to its report heading through `specs()`, and prints `would-break fixed after <sha>` only when a `## Would break` item is fixed and no hole is marked; `restart` outranks it.
+11. `RM` refuses a missing or non-40-hex `<dir>/reviewed` after the round-file refusal, before any output, naming the first Would-break fix and telling the caller to write the id rather than rerun the brief.
+12. Tail order stays summary, restart/WB line, `round:`, `act-on items:` last; the summary prints no would-break count.
+13. `spec-review/SKILL.md` steps 1, 4, 5 and 6 carry the new text, and every added line of `patches/mattpocock/spec-review.SKILL.md.patch` appears verbatim in the template copy.
+14. `ticket.md` step 8 routes to a new `### Would-break fix` section; no step is renumbered.
+15. Both babysit copies carry the replacement merge-ready sentence byte-identical, pinned by `has` in the brief test; their patches match too.
+16. `review-ladder.md` rung 1, `MANUAL.md`'s merge checklist, `DECISIONS.md` P20's amendment and P30, `SOURCES.md` items 4, 6 and 12, and the generated `template/docs/factory918/` copies all say the same.
+17. `no-stale-wording.sh` blacklists `at most three rounds`; no occurrence remains under `template` or `docs/knowledge/core`.
+18. `tests/spec-review/review-brief.sh` adds one assertion per table A cell and pins the `cap=3;` line through `fragment()`; `review-comment.sh` adds one per table B cell and `rearm()` writes `reviewed`.
+
+## Would break
+
+## Fails open
+
+## Not asked for
+
+hard findings: 0
+
+## Judgment
+
+## Act on
+
+1. [S1] **The Ticket playbook scopes the fix-only round wider than `SKILL.md` step 1 does.** Real: table A row 12 says a line on a round-one or round-two comment changes nothing before round four, and the section's step 1 said otherwise; the cell stands, the prose drifted, so it is fixed on the PR and the ticket carries a dated line. fixed: fc75ac6
+2. [S2] **`review-ladder.md` still says the comment ends with `round: N of 3`.** Real; the same bullet names `round: 4 of 5` two sentences later. fixed: fc75ac6
+3. [S3] **An awk interval expression, the first in these scripts.** Real by the standard's letter; both awks here accept it today, and the plain `+` form costs nothing and removes the doubt. fixed: fc75ac6
+
+## Ask
+
+## Consider
+
+## Noted
+
+4. [S4] **Duplicated Code.** Valid; no Act on fix touches the resolver loop in `review-comment.sh`, and a helper shared with the hole loop is a refactor of reviewed code for no behavior.
+
+## Dismissed
+
+Standards: 0 would break, 0 fail open, of 4; Spec: 0 would break, 0 fail open, of 0; judged: act on 3 (3 fixed, 0 with a ticket), ask 0, consider 0, noted 1, dismissed 0; fixed point d8e382ca37233bce98724c785ecdbb677abc4e2a.
+round: 1 of 3
+act-on items: 0
+
+Claude Fable 5.1 on Claude Code
+
+

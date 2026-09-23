@@ -1,0 +1,557 @@
+diff --git a/.github/shellcheck.sh b/.github/shellcheck.sh
+new file mode 120000
+index 0000000..2e84727
+--- /dev/null
++++ b/.github/shellcheck.sh
+@@ -0,0 +1 @@
++../template/.github/shellcheck.sh
+\ No newline at end of file
+diff --git a/.github/workflows/factory-ci.yml b/.github/workflows/factory-ci.yml
+index 1395632..df94b8c 100644
+--- a/.github/workflows/factory-ci.yml
++++ b/.github/workflows/factory-ci.yml
+@@ -15,8 +15,10 @@ jobs:
+     timeout-minutes: 10
+     steps:
+       - uses: actions/checkout@v4
+-      - name: Shell syntax
+-        run: bash -n factory918.sh && for f in template/.claude/hooks/*.sh template/.agents/skills/spec-review/scripts/*.sh template/.agents/skills/poteto-mode/scripts/*.sh tests/*/*.sh; do bash -n "$f"; done
++      - name: ShellCheck
++        run: bash .github/shellcheck.sh factory918.sh template/.github/shellcheck.sh 'template/.claude/hooks/*.sh' 'template/.agents/skills/*/scripts/*.sh' 'tests/*/*.sh'
++      - name: shellcheck.sh passes, refuses and counts what the test says
++        run: bash tests/shellcheck/gate.sh
+       - name: The delegation hook blocks and passes what the test says
+         run: bash tests/hooks/delegation.sh
+       - name: review-comment.sh prints and refuses what the test says
+@@ -49,6 +51,9 @@ jobs:
+           (cd /tmp && vp create vite:monorepo --directory fx --no-interactive --git --hooks --no-agent)
+           git -C /tmp/fx add -A && git -C /tmp/fx commit -qm "chore: initial commit"
+           ./factory918.sh apply /tmp/fx --scaffold --profile python --name demo | tail -30
++      - name: The shell gate a project runs
++        working-directory: /tmp/fx
++        run: bash .github/shellcheck.sh
+       - name: review-brief.sh briefs the apply diff inside the project
+         working-directory: /tmp/fx
+         run: |
+diff --git a/AGENTS.md b/AGENTS.md
+index ce4e413..28f152e 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -35,7 +35,8 @@ Inside a playbook the writer is never the orchestrator: implementation is delega
+ 
+ ## Verifying
+ 
+-- `bash -n factory918.sh`.
++- `bash .github/shellcheck.sh factory918.sh template/.github/shellcheck.sh 'template/.claude/hooks/*.sh' 'template/.agents/skills/*/scripts/*.sh' 'tests/*/*.sh'`, ShellCheck at the pin over 20 files. It replaces `bash -n`, whose set it covers.
++- `bash tests/shellcheck/gate.sh`.
+ - `bash tests/hooks/delegation.sh`.
+ - `bash tests/spec-review/review-comment.sh`.
+ - `bash tests/spec-review/review-brief.sh`.
+diff --git a/CODING_STANDARDS.md b/CODING_STANDARDS.md
+index 67c800d..1331b1b 100644
+--- a/CODING_STANDARDS.md
++++ b/CODING_STANDARDS.md
+@@ -12,6 +12,7 @@ Read at review time by `spec-review`'s Standards axis. Skip anything the CI gate
+ - A failure a gate depends on is printed before anything continues. `|| true` may stop a failure from aborting the command (the doctor's report at the end of `apply` is one), never hide it.
+ - Test a command the way a user types it: absolute paths, from another directory, through the installed symlink.
+ - A `PreToolUse` hook that must let the call through on its own failure runs without `-e`, says so in its header, and exits 2 only on a decided block. `delegation.sh` and `format-on-write.sh` are the two that do.
++- A `# shellcheck disable=` directive carries its reason as a second comment on the same line: `# shellcheck disable=SC2016 # the backticks are the ticket's token delimiters`. The directive sits on the narrowest scope that covers the intent, above the one statement or at the top of a file whose whole job produces the pattern.
+ 
+ ## Python (`tools/`, heredocs in the CLI)
+ 
+diff --git a/SOURCES.md b/SOURCES.md
+index b462419..791dad9 100644
+--- a/SOURCES.md
++++ b/SOURCES.md
+@@ -12,7 +12,7 @@ Upstream pins for everything vendored into `template/`. Pinned copies of each up
+ 
+ 1. Namespace: `pstack:<name>` → `<name>` in all vendored pstack markdown and the session mandate; mandate gains a PHASES block. The sweep also covers `*.ts` under `poteto-mode/scripts/`, where `model-matrix.test.ts` asserts the `<!-- models:begin -->` markers that `setup-pstack/SKILL.md` writes.
+ 2. Router: Ticket playbook line added before "Opening a PR" in `poteto-mode/SKILL.md`; `playbooks/ticket.md` added.
+-3. `playbooks/opening-a-pr.md`: "Run `/no-comments` before review." replaced by keep-comments + spec-review + review-ladder; the subagent sentence drops `/no-comments`. The `## Blast Radius` bullet says that for a cross-cutting diff the section is `.scratch/<ticket>/blast-radius.md` verbatim and that `review-brief.sh` reads it from there.
++3. `playbooks/opening-a-pr.md`: "Run `/no-comments` before review." replaced by keep-comments + spec-review + review-ladder; the subagent sentence drops `/no-comments`. The `## Blast Radius` bullet says that for a cross-cutting diff the section is `.scratch/<ticket>/blast-radius.md` verbatim and that `review-brief.sh` reads it from there. The `**PRs.**` paragraph also tells the lane to run `bash .github/shellcheck.sh` on every changed shell file before the PR opens.
+ 4. `playbooks/babysit.md`: step 8 made conditional on an external bot being listed in `docs/agents/review-ladder.md`; step 6 adds `act-on items: 0` on the latest commit's `spec-review` comment to merge-ready, with a nonzero count or a missing review comment a blocker of the same class as a red check, fixed on this PR. The review runs at most three rounds on one PR: a comment reading `round: 3 of 3` and `act-on items: 0` makes the PR review-ready even when the fix commits it names come after the reviewed commit, and an Ask item waits for the human, then is re-sorted and the comment rebuilt with `review-comment.sh <dir>` in the same round.
+ 5. `unslop/SKILL.md`: trigger-focused description so it fires on human-facing text.
+ 6. `code-review` → `spec-review` (directory, `name:`, first heading). Step 2.4 no longer asks the author where the spec is: without a ticket, a passed path or a spec file, the Spec axis skips and says "no spec: Standards axis only". Step 6 ends the report with the line `act-on items: N` so babysit can read it. Steps 1 and 4 hand each reviewer content instead of commands: the commit list, the `--stat` list and the diff pasted in (a path to it past the paste limit), the standards sections that apply, the ticket body verbatim; each brief says to read nothing beyond it. The Standards axis dispatches through the factory's `standards reviewer` role and the Spec axis through its `spec reviewer` role. Each report sorts its findings under `## Would break` and two axis-specific headings, and its `hard findings: N` counts only the Would-break items; a new step 5, Judge, has the orchestrator sort every finding into Act on, Ask, Consider, Noted or Dismissed in `judgment.md`, with `act-on items` the Act on plus Ask count. Step 1 runs `scripts/review-brief.sh`, ours, which writes the diff, the two briefs and the review state under `.claude/state/review/` that the delegation hook reads; step 6 runs `scripts/review-comment.sh`, ours, which checks the reports and the judgment against those shapes, builds the comment from them and clears the state; the sweep form (`--paths`, `--commits`) is the same skill. One PR gets three rounds at most: `review-brief.sh` reads the PR author's comments ending in `act-on items:`, takes the round from their `round: N of 3` lines and refuses a fourth, carries every earlier judgment's Noted and Dismissed items that cite a decision (`cites:`) into both briefs as settled and drops the rest, and pastes the ticket author's comments after the ticket body as spec; `review-comment.sh` prints `round: N of 3`, leaves an Act on item fixed on the PR (`fixed: <sha>`, the round-three path) or filed as a ticket (`ticket: #N`) out of the count, and rebuilds an earlier comment from its directory. Step 6's two sentences for a person end with the model and harness, plus `approved by <name>` when the human approved the comment before it was posted. A cross-cutting diff (a `.claude/hooks/` file, a `.claude/settings.json` or the `factory918` skill, at any depth) is briefed with its blast-radius grounding under `## Blast radius` before the diff, from `--blast-radius FILE` or the PR body's `## Blast Radius` section, and `review-brief.sh` refuses it without one. Both scripts are in `sync`'s `keep_files`.
+diff --git a/docs/M0-findings.md b/docs/M0-findings.md
+index 118184b..dc0ebab 100644
+--- a/docs/M0-findings.md
++++ b/docs/M0-findings.md
+@@ -167,6 +167,10 @@ Measured on PR #37 with the brief shape of #39: the diff, the standards sections
+ 
+ Verified on Claude Code 2.1.271 inside the desktop app 2.110.0 (Agent SDK 0.3.271), for #74. A `PreToolUse` hook added to `.claude/settings.local.json` fires on the next tool call without a restart. Its stdin JSON from the orchestrating session carries `session_id`, `transcript_path`, `cwd`, `scratchpad_dir`, `prompt_id`, `permission_mode`, `effort`, `hook_event_name`, `tool_name`, `tool_input` and `tool_use_id`, and no agent field. The same call from a sub-agent started with the Agent tool carries two more keys, `agent_id` (the sub-agent's id) and `agent_type` (`general-purpose` for one started without a named type), with the same `session_id` and `transcript_path` as its parent. The environment is identical for both (`CLAUDE_CODE_SESSION_ID`, `CLAUDE_PID`, no agent variable), so the presence of `agent_id` in the JSON is the one way a hook tells a sub-agent from the orchestrator, and the delegation hooks use it. A `Read` with `limit` shows as `tool_input.limit`; a whole-file read has neither `offset` nor `limit`. The desktop app's session has no todo-list tool (no `TodoWrite` in the tool list), so poteto-mode's todo list was kept as a file under `.claude/state/` instead. The CLI harness could not be run from this session (the desktop app's bundled `claude` binary answers `Not logged in`). The docs agent's reading of the Claude Code tools reference (code.claude.com/docs/en/tools-reference, 2026-09-18) and a GitHub report is that the todo tools were removed from Claude Code for current models in 2.1.233 and return only with `CLAUDE_CODE_ENABLE_TODO_TOOLS=1`; not verified against a running CLI. Either way poteto-mode's non-negotiable (playbook steps copied into a todo list) has no tool in the harnesses in use unless that variable is set, and the file under `.claude/state/` is the substitute. Once the hook was registered in the repository's `.claude/settings.json`, it fired on the orchestrating session's next call without a restart: a whole `Read` of `factory918.sh` (423 lines) and a `cat` of it through Bash were blocked with the read-cap line, and a `Read` with `offset` and `limit` passed.
+ 
++## ShellCheck (2026-09-22)
++
++ShellCheck 0.11.0, Homebrew, macOS arm64, is the pin: `shellcheck-v0.11.0.linux.x86_64.tar.xz` sha256 `8c3be12b05d5c177a04c29e3c78ce89ac86f1595681cab149b65b97c4e227198`, `shellcheck-v0.11.0.darwin.aarch64.tar.xz` sha256 `56affdd8de5527894dca6dc3d7e0a99a873b0f004d7aabc30ae407d3f48b0a79`. At `ab47eb9` the 18 shell files the ticket names produced 57 findings at the default severity and 0 after five fixes and the directives; the gate itself, `template/.github/shellcheck.sh`, and `tests/shellcheck/gate.sh` join the 18, so the factory's gate checks 20 files. The severity floor is the default, not `warning`: SC2086, the unquoted expansion the ticket's Problem names, is info level, so `--severity=warning` leaves that class passing (6 findings at `warning`, 1 at `error`). `--external-sources` is required, not optional: without it the two spec-review tests report SC1091 and three SC2154 on the sourced `tests/spec-review/layout.sh`, so a lane checking one changed file would disagree with CI; `-x` resolves the sourced path relative to the working directory, so the gate runs from the repository root, and `# shellcheck source-path=SCRIPTDIR source=layout.sh` above the `.` line lets a per-file run from any directory resolve it too. No `--shell`: forcing `-s bash` hides SC3030 and SC3054 in `tests/spec-review/fake-gh.sh`, which is `#!/bin/sh`. A directive's reason must be a second comment on the same line. `# shellcheck disable=SC2016 # reason` parses, `# shellcheck disable=SC2016 reason` is SC1073 plus SC1072, an error, and `# shellcheck shell=bash disable=SC2034 # reason` on one line clears SC2148 on a file with no shebang. The SC2115 fix, `"${skills:?}/$n"` at the two `rm -rf` lines in `cmd_sync`, states an invariant rather than fixing a live bug, because `$skills` is a literal suffix on `$TEMPLATE` and is never empty. The download path was not run on this machine, which has the pin on PATH; the fixture job on `ubuntu-latest` is where it is proven.
++
+ ## Still open
+ 
+ - A review costs two sub-agent floors (about 92K) before any reading; one sub-agent per review, or the orchestrator running one axis, would halve it. Manuel's call (ticket #33).
+diff --git a/docs/agents/ledger.md b/docs/agents/ledger.md
+index b81207d..e49b562 100644
+--- a/docs/agents/ledger.md
++++ b/docs/agents/ledger.md
+@@ -22,3 +22,4 @@ One line per time an agent surprised you: `YYYY-MM-DD | model | what it did | wh
+ 2026-09-17 | fable | put the seven-re-reviews price on fixing low in a stack and used it to stack the seven independent tickets #16 to #22, which shared files but had no dependency; every review then covered all seven at once and a low fix rebased everything above | autopilot-stack step 7 re-verifies only the PRs whose patch-id changed, so a low fix costs one re-review; independent tickets that overlap in files are sequenced, one to merge-ready and then the next, and a stack is built only for coupled work on a go
+ 2026-09-21 | fable | briefed the writer lane with the script path .agents/skills/factory918/scripts/overlap.sh after its own design note said .claude/skills resolves in both the factory and a project; the wrong path shipped to the playbook and the router and the Spec reviewer found it in round two | the brief is checked against the design note before it is sent; a path an agent will type is tested the way it is typed
+ 2026-09-21 | fable | cut the detached-HEAD cell from the #42 scenario table on the judge's word that git would fail loudly on its own; git ran fine with an empty branch name and round two found the record step reporting the ticket's own PR | a cell cut as 'the tool refuses it' is cut only after the refusal was run and seen; an assumption about a tool's failure mode is a rung-1 claim until then
++2026-09-22 | Claude Fable 5.1 | as the #88 owner lane, ended its turn to wait on a background lane; the harness removed the lane's empty worktree and its result reached nobody, so the lane and the worktree were redone | drain a lane in the foreground when the next step depends on it, and commit early so the worktree has something to keep
+diff --git a/docs/knowledge/INDEX.md b/docs/knowledge/INDEX.md
+index 2b97449..bb0f6d7 100644
+--- a/docs/knowledge/INDEX.md
++++ b/docs/knowledge/INDEX.md
+@@ -7,7 +7,7 @@ The literal transcript of the conversation that produced this system is not avai
+ |---|---|---|---|
+ | `core/PHILOSOPHY.md` | Factory918: philosophy | 64 | First. Whenever the spec is silent. |
+ | `core/MANUAL.md` | Factory918: the manual | 174 | How to run the loop; what the human does at each point. |
+-| `core/DECISIONS.md` | Factory918: decisions | 92 | Before overriding any vendored skill; these win. |
++| `core/DECISIONS.md` | Factory918: decisions | 93 | Before overriding any vendored skill; these win. |
+ | `core/GLOSSARY.md` | Factory918: glossary | 69 | A term in AGENTS.md, a playbook or a ticket is unclear. |
+ | `core/CONVERSATION-DIGEST.md` | How Factory918 was arrived at | 53 | Why something was chosen, historically; the corrections. |
+ | `spec/FACTORY-SPEC-v2/01-preamble.md` | The Factory spec, v2 — (preamble) | 11 | Building or updating the factory itself. |
+diff --git a/docs/knowledge/core/DECISIONS.md b/docs/knowledge/core/DECISIONS.md
+index b22d877..7ef2bf0 100644
+--- a/docs/knowledge/core/DECISIONS.md
++++ b/docs/knowledge/core/DECISIONS.md
+@@ -1,4 +1,4 @@
+-<!-- lines: 92 | source: core/DECISIONS.md | part 1/1 | title: Factory918: decisions -->
++<!-- lines: 93 | source: core/DECISIONS.md | part 1/1 | title: Factory918: decisions -->
+ 
+ ## Contents (line numbers are for the Read tool's offset)
+ - L13: Settled (2026-09-09)
+@@ -90,3 +90,4 @@ Travels anywhere without change: the planning skills, the execution playbooks, `
+ | P22 | Who signs a comment | A comment the agent posts on a PR or a ticket ends with the model and harness (`Claude Fable 5.1 on Claude Code`), plus `approved by <name>` when the human approved it before posting; only an approved comment posted from the author's account is the author's words. `review-brief.sh` reads only the PR author's account for rounds and carry-forward | Manuel, 2026-09-18: a comment left by the orchestrator without human involvement is signed by the model on the harness; approved, it is signed by both; strangers' comments never reach a brief (#78 round 1). |
+ | P2 | Tool versions in CI | Pin every tool CI runs to an exact version, as a devDependency where the tool publishes one | `dlx` and `npx` resolve the latest version, so a rule engine or formatter can change under a project with no diff to show for it. Spec §0 rule 1 already says to pin what you install; this extends it to what CI fetches. First applied to `@ast-grep/cli` 0.45.3 in M0. |
+ | P24 | Overlap is not coupling; a go is a line that covers its own tickets | Two unblocked tickets relate three ways: dependent (`Blocked by`, off the frontier), disjoint in files (parallel branches off `main`), or overlapping in files (sequenced: one to merge-ready, the merge, then the next). Coupled work, a ticket that needs code an open PR introduces, stacks, and only on a go. Ticket step 1 runs `.claude/skills/poteto-mode/scripts/overlap.sh N` before branching: every open PR's head is fetched fresh and its own commits (its diff from the open PR it stacks on, else `origin/main`) are matched with the ticket body's backticked tokens as pathspecs (its `## Diff` section excluded), so a file, a directory, a glob or a file the PR creates all match; exit 0 prints `base: <ref>` to branch from, exit 1 stops and names the PR to merge first, exit 2 means the check could not run and stderr says why. A go is a line `<label>: #a #b ...` that `overlap.sh go "<label>" N...` appends to the gitignored `.claude/state/program`, written by the orchestrator when the human gives it (autopilot-stack step 3 runs it itself). A go covers a stack only when a line names the ticket and, for every overlapping PR, the ticket that PR closes; so a line a dead program left behind covers nothing outside its own tickets' open PRs and needs no removal. Under a cover the base is the overlapping PR's head, the lowest-numbered when siblings overlap, the containing one when one contains the other; step 8's `--diff` run records the shared paths as the PR body's `## Overlap` section | Ticket #42, Manuel: "working a ticket to completion before automatically moving on"; the #16 to #22 stack was built on a seven-re-reviews mis-estimate (ledger 2026-09-17). First run (PR #87, closed): three review rounds redesigned the matcher three times; the second run designed from a scenario table Manuel approved 2026-09-21 as the ticket's Testing decisions. Rejected: a ticket label as the go (outlives the program), a line pasted into each lane's brief (a forgotten paste blocks a lane), a `done` step (a crash skips it), the script under the factory918 skill (every later edit cross-cutting). |
++| P25 | One shell gate, carried by the template | `template/.github/shellcheck.sh` holds the ShellCheck version, both release checksums and the flags; a project gets it as `.github/shellcheck.sh` and the factory runs the template's copy. The severity is the default and `--external-sources` is on, so a lane's per-file run and CI's whole-set run give the same answer. A `disable=` directive carries its reason in a second comment on the same line; CI cannot check that a reason exists, the Standards axis does | A `run:` block in each workflow would put the pin in two files and the flags in three, and a project's CI cannot read the factory's files. SC2086 is info level, so a `--severity` floor would pass the class ticket #88 was written for; without `-x` the two spec-review tests report findings on one file that vanish on the whole set, which would make the playbook's "run it before the PR" sentence false. Ticket #88, 2026-09-22. |
+diff --git a/factory918.sh b/factory918.sh
+index 9ecfacd..d4962b6 100755
+--- a/factory918.sh
++++ b/factory918.sh
+@@ -246,6 +246,7 @@ cmd_doctor() {
+   doctor_branch
+   chk "factory files reachable"       "[ -d \"$TEMPLATE\" ] && [ -d \"$F918_DIR/profiles\" ]" "the factory918 command does not resolve to a clone (template/ missing beside it); run ./factory918.sh install from the clone"
+   chk "factory918 installed"          "command -v factory918 && [ -d \"\${FACTORY918_HOME:-\$HOME/.factory918}/docs/knowledge\" ]" "in the factory918 clone run ./factory918.sh install, add ~/.local/bin to PATH, open a new terminal"
++  # shellcheck disable=SC2088 # the tilde is inside the fix text printed to a person, never a path this script expands
+   chk "one factory on this machine"   "[ ! -e \"\$HOME/.factory918\" ] || [ \"\$(cd \"\$HOME/.factory918\" && pwd -P)\" = \"\$(cd \"\$(dirname \"\$(readlink \"\$(command -v factory918)\")\")\" && pwd -P)\" ]" "~/.factory918 and ~/.local/bin/factory918 point at different clones; run ./factory918.sh install from the one you want"
+   chk "vp matches the ADR pin"        "[ \"\$(vp --version | head -1 | sed 's/^vp v//')\" = \"\$(sed -n 's/.*vite-plus \\([0-9][0-9.]*\\).*/\\1/p' docs/adr/0001-toolchain.md | head -1)\" ]" "docs/adr/0001-toolchain.md pins a different vite-plus than vp --version reports; update the ADR or run the Vite+ installer with VP_VERSION=<pin>"
+   chk "vp on PATH"                    "command -v vp" "curl -fsSL https://vite.plus -o /tmp/vp.sh && VP_VERSION=0.3.1 VP_NODE_MANAGER=yes bash /tmp/vp.sh, then open a new terminal"
+@@ -269,7 +270,10 @@ cmd_doctor() {
+   fi
+   chk "vp check (format, lint, types)" "vp check" "vp fmt, then vp check, and fix what it reports; it stops at the first failing stage"
+   chk "tests"                         "vp test run" "vp test run and read the failing test"
+-  [ -f "$HOME/.claude/pstack-models.md" ] && echo "PASS  models sheet" || note "models sheet" "factory918 install writes ~/.claude/pstack-models.md"
++  if [ -f "$HOME/.claude/pstack-models.md" ]; then echo "PASS  models sheet"; else note "models sheet" "factory918 install writes ~/.claude/pstack-models.md"; fi
++  local scv; scv="$(shellcheck --version 2>/dev/null | sed -n 's/^version: //p' || true)"
++  if [ -n "$scv" ]; then echo "PASS  shellcheck $scv"
++  else note "shellcheck" "brew install shellcheck (apt install shellcheck, dnf install ShellCheck, winget install koalaman.shellcheck); .github/shellcheck.sh downloads the pinned build without it, so this is a NOTE"; fi
+   chk "AGENTS.md is Factory918's"     "grep -q 'factory918' AGENTS.md" "factory918 apply --scaffold replaces the AGENTS.md that vp create wrote"
+   chk "slots filled (/factory-start)" "! grep -q '<[A-Za-z].*slot\|<Project name>\|<One paragraph' AGENTS.md" "open Claude Code here and run /factory-start, the Day-0 interview; it fills every <slot>"
+   chk "slim knowledge present"        "[ -f docs/factory918/PHILOSOPHY.md ] && [ -f docs/factory918/MANUAL.md ]" "factory918 update restores docs/factory918/"
+@@ -381,9 +385,9 @@ cmd_sync() {
+   local keep_files="poteto-mode/playbooks/ticket.md poteto-mode/scripts/overlap.sh spec-review/scripts/review-brief.sh spec-review/scripts/review-comment.sh"
+   local tmp; tmp="$(mktemp -d)"
+   for k in $keep_files; do mkdir -p "$tmp/keep/$(dirname "$k")"; cp "$skills/$k" "$tmp/keep/$k"; done
+-  for d in "$pstack"/skills/*/; do n="$(basename "$d")"; [ "$n" = no-comments ] && continue; rm -rf "$skills/$n"; cp -R "$d" "$skills/$n"; done
++  for d in "$pstack"/skills/*/; do n="$(basename "$d")"; [ "$n" = no-comments ] && continue; rm -rf "${skills:?}/$n"; cp -R "$d" "$skills/$n"; done
+   for n in grilling grill-me grill-with-docs domain-modeling to-spec to-tickets wayfinder research prototype setup-matt-pocock-skills writing-for-agents wizard wait-what; do
+-    src="$(find "$matt" -maxdepth 2 -type d -name "$n" | head -1)"; rm -rf "$skills/$n"; cp -R "$src" "$skills/$n"; done
++    src="$(find "$matt" -maxdepth 2 -type d -name "$n" | head -1)"; rm -rf "${skills:?}/$n"; cp -R "$src" "$skills/$n"; done
+   rm -rf "$skills/spec-review"; cp -R "$matt/engineering/code-review" "$skills/spec-review"
+   for k in $keep_files; do mkdir -p "$skills/$(dirname "$k")"; cp "$tmp/keep/$k" "$skills/$k"; done
+   rm -rf "$TEMPLATE/.claude/agents"; mkdir -p "$TEMPLATE/.claude/agents"; cp "$pstack"/agents/*.md "$TEMPLATE/.claude/agents/"; rm -f "$TEMPLATE/.claude/agents/comment-sicko.md"
+@@ -395,7 +399,8 @@ cmd_sync() {
+   done < "$F918_DIR/patches/series"
+   rm -rf "$tmp"
+   for n in $ours; do [ -f "$skills/$n/SKILL.md" ] || { echo "missing our skill: $n" >&2; failed=1; }; done
+-  echo "vendored: $(ls -d "$skills"/*/ | wc -l | tr -d ' ') skills. Review with git status, bump VERSION, commit."
++  local -a dirs; dirs=("$skills"/*/)
++  echo "vendored: ${#dirs[@]} skills. Review with git status, bump VERSION, commit."
+   return $failed
+ }
+ 
+diff --git a/patches/pstack/poteto-mode/playbooks/opening-a-pr.md.patch b/patches/pstack/poteto-mode/playbooks/opening-a-pr.md.patch
+index a36fd3f..653c3a2 100644
+--- a/patches/pstack/poteto-mode/playbooks/opening-a-pr.md.patch
++++ b/patches/pstack/poteto-mode/playbooks/opening-a-pr.md.patch
+@@ -5,7 +5,7 @@
+  **Commits.** Commit liberally; rebase into small, ordered commits before opening PRs. Each commit is a future PR: landable, ordered to tell the story. Amend when the fix belongs in a just-made commit; new commit when separable.
+  
+ -**PRs.** Run `/deslop` over the diff before commit. Run `/no-comments` before review. Write every PR title, PR description, and commit body with `/technical-writing`, then apply `/unslop`. Apply every technical-writing layer except Diátaxis. Use one word for each action, keep articles, and avoid `-ing` when a plain verb works.
+-+**PRs.** Run `/deslop` over the diff before commit. Keep comments (DECISIONS.md #4); do not run `/no-comments`. After CI is green, run `spec-review` in a fresh context against the originating ticket (and its parent spec) and `CODING_STANDARDS.md`; fix Act-on items, record the rest in the PR body. The full ladder is `docs/agents/review-ladder.md`. Write every PR title, PR description, and commit body with `/technical-writing`, then apply `/unslop`. Apply every technical-writing layer except Diátaxis. Use one word for each action, keep articles, and avoid `-ing` when a plain verb works.
+++**PRs.** Run `/deslop` over the diff before commit. Run `bash .github/shellcheck.sh` on every shell file the diff changes before the PR opens; it is the gate CI runs, so the finding lands in this lane instead of a review round. Keep comments (DECISIONS.md #4); do not run `/no-comments`. After CI is green, run `spec-review` in a fresh context against the originating ticket (and its parent spec) and `CODING_STANDARDS.md`; fix Act-on items, record the rest in the PR body. The full ladder is `docs/agents/review-ladder.md`. Write every PR title, PR description, and commit body with `/technical-writing`, then apply `/unslop`. Apply every technical-writing layer except Diátaxis. Use one word for each action, keep articles, and avoid `-ing` when a plain verb works.
+  
+  **Titles.** Use Conventional Commits in the form `type(scope): subject`. Use `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, or `perf` as the type. Use the changed area, such as `pstack` or `poteto-mode`, as the scope. Keep the subject short and imperative. Apply the same `/technical-writing` and `/unslop` pass as the body. Name a real symbol when one carries the change. For example, `fix(pstack): retarget opening-a-pr babysit trigger`. Do not add a trailing period.
+  
+diff --git a/template/.agents/skills/poteto-mode/playbooks/opening-a-pr.md b/template/.agents/skills/poteto-mode/playbooks/opening-a-pr.md
+index 32ebb74..e4a7876 100644
+--- a/template/.agents/skills/poteto-mode/playbooks/opening-a-pr.md
++++ b/template/.agents/skills/poteto-mode/playbooks/opening-a-pr.md
+@@ -6,7 +6,7 @@ Invoked at the end of every other playbook.
+ 
+ **Commits.** Commit liberally; rebase into small, ordered commits before opening PRs. Each commit is a future PR: landable, ordered to tell the story. Amend when the fix belongs in a just-made commit; new commit when separable.
+ 
+-**PRs.** Run `/deslop` over the diff before commit. Keep comments (DECISIONS.md #4); do not run `/no-comments`. After CI is green, run `spec-review` in a fresh context against the originating ticket (and its parent spec) and `CODING_STANDARDS.md`; fix Act-on items, record the rest in the PR body. The full ladder is `docs/agents/review-ladder.md`. Write every PR title, PR description, and commit body with `/technical-writing`, then apply `/unslop`. Apply every technical-writing layer except Diátaxis. Use one word for each action, keep articles, and avoid `-ing` when a plain verb works.
++**PRs.** Run `/deslop` over the diff before commit. Run `bash .github/shellcheck.sh` on every shell file the diff changes before the PR opens; it is the gate CI runs, so the finding lands in this lane instead of a review round. Keep comments (DECISIONS.md #4); do not run `/no-comments`. After CI is green, run `spec-review` in a fresh context against the originating ticket (and its parent spec) and `CODING_STANDARDS.md`; fix Act-on items, record the rest in the PR body. The full ladder is `docs/agents/review-ladder.md`. Write every PR title, PR description, and commit body with `/technical-writing`, then apply `/unslop`. Apply every technical-writing layer except Diátaxis. Use one word for each action, keep articles, and avoid `-ing` when a plain verb works.
+ 
+ **Titles.** Use Conventional Commits in the form `type(scope): subject`. Use `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, or `perf` as the type. Use the changed area, such as `pstack` or `poteto-mode`, as the scope. Keep the subject short and imperative. Apply the same `/technical-writing` and `/unslop` pass as the body. Name a real symbol when one carries the change. For example, `fix(pstack): retarget opening-a-pr babysit trigger`. Do not add a trailing period.
+ 
+diff --git a/template/.agents/skills/poteto-mode/scripts/overlap.sh b/template/.agents/skills/poteto-mode/scripts/overlap.sh
+index 2ff658b..48fa407 100755
+--- a/template/.agents/skills/poteto-mode/scripts/overlap.sh
++++ b/template/.agents/skills/poteto-mode/scripts/overlap.sh
+@@ -46,7 +46,7 @@ fi
+ if [ -z "$diff" ]; then
+   body="$(gh issue view "$n" --json body -q .body)"
+   outside="$(printf '%s\n' "$body" | awk '/^## /{skip=($0 ~ /^## Diff[[:space:]]*$/)} !skip')"
+-  # shellcheck disable=SC2016
++  # shellcheck disable=SC2016 # the backticks are the ticket's token delimiters, not command substitution
+   paths="$(printf '%s\n' "$outside" | grep -oE '`[^`[:space:]]+`' | tr -d '`' | sort -u || true)"
+   if [ -z "$paths" ]; then printf '%s\npaths: none\nbase: origin/main\n' "$go"; exit 0; fi
+ fi
+diff --git a/template/.agents/skills/spec-review/scripts/review-brief.sh b/template/.agents/skills/spec-review/scripts/review-brief.sh
+index 7c92f42..bcc1039 100755
+--- a/template/.agents/skills/spec-review/scripts/review-brief.sh
++++ b/template/.agents/skills/spec-review/scripts/review-brief.sh
+@@ -14,6 +14,7 @@
+ # A cross-cutting diff (one that touches a hooks directory, a settings.json or the factory918
+ # skill) is briefed only with its blast-radius grounding: --blast-radius FILE, else the PR body's
+ # `## Blast Radius` section; without one the script refuses before writing any state.
++# shellcheck disable=SC2016 # every single-quoted string here is a jq program or a Markdown template; the backticks and $ are literal
+ set -euo pipefail
+ usage() {
+   echo "usage: review-brief.sh <fixed-point> [--ticket N] [--standards FILE ...] [--previous FILE] [--round N] [--blast-radius FILE]" >&2
+diff --git a/template/.agents/skills/spec-review/scripts/review-comment.sh b/template/.agents/skills/spec-review/scripts/review-comment.sh
+index a6414da..80f2ddb 100755
+--- a/template/.agents/skills/spec-review/scripts/review-comment.sh
++++ b/template/.agents/skills/spec-review/scripts/review-comment.sh
+@@ -37,6 +37,7 @@ fi
+ # nor does ``` inside a ```` block or a ~~~ block, and the quoted hunk stays fenced. A heading's
+ # name is the text after `## ` less trailing whitespace. review-brief.sh carries this fragment
+ # word for word (tests/spec-review/review-brief.sh holds the copies together).
++# shellcheck disable=SC2016 # the fenced block is Markdown emitted verbatim; the backticks are literal
+ fenced='
+   /^(```|~~~)/ { match($0, /^(`+|~+)/); m = substr($0, 1, RLENGTH); rest = substr($0, RLENGTH + 1)
+     if (fence == "") { fence = m; next }
+diff --git a/template/.claude/hooks/delegation.sh b/template/.claude/hooks/delegation.sh
+index 4ed9a24..64f4658 100755
+--- a/template/.claude/hooks/delegation.sh
++++ b/template/.claude/hooks/delegation.sh
+@@ -18,6 +18,7 @@ cwd="$(field 3p)"
+ file="$(field 4p)"
+ offset="$(field 5p)"
+ limit="$(field 6p)"
++# shellcheck disable=SC2016 # $p is the sed address 7,$p, not a shell expansion
+ command="$(field '7,$p')"
+ root="$(cd "${CLAUDE_PROJECT_DIR:-${cwd:-.}}" 2>/dev/null && pwd -P)" || exit 0
+ git -C "$root" rev-parse --is-inside-work-tree >/dev/null 2>&1 || exit 0
+@@ -161,6 +162,7 @@ scan_sed() {
+     esac
+     [ $# -gt 0 ] && shift
+   done
++  # shellcheck disable=SC2086 # set -f is on (line 7), so this splits words without globbing, which is the intent
+   set -- $args
+   if [ "$scripts" = 0 ]; then script="${1:-}"; [ $# -gt 0 ] && shift; fi
+   if [ "$inplace" = 1 ]; then for a in "$@"; do target_write "$a"; done; return 0; fi
+@@ -181,6 +183,7 @@ scan_segment() {
+     if [ "$a" = ">" ]; then prev=">"; continue; fi
+     words="$words $a"; prev=""
+   done
++  # shellcheck disable=SC2086 # set -f is on (line 7), so this splits words without globbing, which is the intent
+   set -- $words
+   while [ $# -gt 0 ]; do case "$1" in [A-Za-z_]*=*) shift ;; *) break ;; esac; done
+   [ $# -gt 0 ] || return 0
+@@ -203,6 +206,7 @@ case "$tool" in
+     rel="$(relative "$file")" || exit 0
+     if [ -n "$offset$limit" ]; then guard_read "$rel" ranged; else guard_read "$rel" whole; fi ;;
+   Bash)
++    # shellcheck disable=SC2086 # set -f is on (line 7), so the tokenised segment splits into words without globbing
+     while IFS= read -r seg; do scan_segment $seg; done <<< "$(printf '%s\n' "$command" | tokens)" ;;
+ esac
+ exit 0
+diff --git a/template/.github/shellcheck.sh b/template/.github/shellcheck.sh
+new file mode 100755
+index 0000000..f9bea53
+--- /dev/null
++++ b/template/.github/shellcheck.sh
+@@ -0,0 +1,48 @@
++#!/usr/bin/env bash
++# The shell gate, in this project and in the factory that wrote it. Runs ShellCheck at the pinned
++# version over the files the globs name. When this machine does not have that version it downloads
++# the release tarball once, verifies its sha256 on every run, and runs the binary it extracts from
++# it, so the run a lane makes before a PR and the run CI makes are one run.
++#   bash .github/shellcheck.sh                  this project's shell files
++#   bash .github/shellcheck.sh '<glob>' ...     exactly these; quote a glob, this script expands it
++# Run it from the repository root: --external-sources resolves a sourced file against the working
++# directory. The severity is the default, because SC2086, the unquoted expansion, is info level and
++# a --severity floor would pass the class this gate exists for. No --shell: each file is read in the
++# dialect of its own shebang, so a `#!/bin/sh` file keeps its bashism checks. A glob that matches
++# no file is refused before ShellCheck runs, even beside globs that match, because a gate that
++# checks fewer files than it names is a failure, not a pass.
++set -euo pipefail
++version=0.11.0
++sha_linux_x86_64=8c3be12b05d5c177a04c29e3c78ce89ac86f1595681cab149b65b97c4e227198
++sha_darwin_aarch64=56affdd8de5527894dca6dc3d7e0a99a873b0f004d7aabc30ae407d3f48b0a79
++
++bin=shellcheck
++if ! "$bin" --version 2>/dev/null | grep -qx "version: $version"; then
++  case "$(uname -s).$(uname -m)" in
++    Linux.x86_64)                 plat=linux.x86_64;   sha="$sha_linux_x86_64" ;;
++    Darwin.arm64|Darwin.aarch64)  plat=darwin.aarch64; sha="$sha_darwin_aarch64" ;;
++    *) echo "shellcheck.sh: ShellCheck $version is not pinned for $(uname -s).$(uname -m); install it by hand" >&2; exit 1 ;;
++  esac
++  dir="${TMPDIR:-/tmp}/shellcheck-$version"
++  tarball="$dir/sc.tar.xz"
++  bin="$dir/shellcheck-v$version/shellcheck"
++  mkdir -p "$dir"
++  [ -f "$tarball" ] || curl -fsSL -o "$tarball" "https://github.com/koalaman/shellcheck/releases/download/v$version/shellcheck-v$version.$plat.tar.xz"
++  if command -v sha256sum >/dev/null; then echo "$sha  $tarball" | sha256sum -c - >/dev/null
++  else echo "$sha  $tarball" | shasum -a 256 -c - >/dev/null; fi
++  tar -xJf "$tarball" -C "$dir"
++fi
++
++if [ "$#" = 0 ]; then set -- '.claude/hooks/*.sh' '.agents/skills/*/scripts/*.sh' '.github/shellcheck.sh'; fi
++files=()
++IFS=  # an argument is one path or one glob, never split on the spaces in it
++for g in "$@"; do
++  matched=0
++  for f in $g; do if [ -f "$f" ]; then files+=("$f"); matched=1; fi; done
++  if [ "$matched" = 0 ]; then
++    echo "shellcheck.sh: no file matched $g; the gate checked nothing" >&2
++    exit 1
++  fi
++done
++echo "ShellCheck $version, files checked: ${#files[@]}"
++exec "$bin" --external-sources "${files[@]}"
+diff --git a/template/.github/workflows/ci.yml b/template/.github/workflows/ci.yml
+index 891fa97..f76c31c 100644
+--- a/template/.github/workflows/ci.yml
++++ b/template/.github/workflows/ci.yml
+@@ -14,6 +14,8 @@ jobs:
+     timeout-minutes: 10
+     steps:
+       - uses: actions/checkout@v4
++      - name: ShellCheck
++        run: bash .github/shellcheck.sh
+       - name: Reject committed PR evidence
+         run: |
+           files="$(git ls-files .github/pr-assets .artifacts)"
+diff --git a/template/AGENTS.md b/template/AGENTS.md
+index 2e7283d..62436b7 100644
+--- a/template/AGENTS.md
++++ b/template/AGENTS.md
+@@ -60,6 +60,7 @@ The most common defect in agent-built projects is a change that works on the pat
+ ## Verifying
+ 
+ - Commands, TypeScript surfaces: `vp check` (format, lint and types; it stops at the first failing stage, so format first), `pnpm sg` (ast-grep rules), `vp test run <files>`, `vp run -r build`. Vite+'s own docs are at `node_modules/vite-plus/docs/`. Mobile: the same, plus `expo` for running and EAS for builds (see `profiles/react-native`). Python: `uv run ruff format --check`, `uv run ruff check`, `uv run pyright`, `uv run pytest <files>` (see `profiles/python`). Exact versions are in `docs/adr/0001-toolchain.md`.
++- Shell: `bash .github/shellcheck.sh` before a PR, on the files the diff changes; with no arguments it checks the project's hooks and skill scripts, which is what CI runs.
+ - Smallest proof that the change works: the tests you touched, targeted lint and typecheck for the scope you changed.
+ - Run the whole suite only if it finishes in under 30 seconds. Otherwise CI owns the full suite.
+ - Test meaningful logic or observable behavior at a seam. No tests that assert wiring or mirror the implementation. A test that needs a timeout to pass is wrong. Expected values come from an independent source of truth.
+diff --git a/template/CODING_STANDARDS.md b/template/CODING_STANDARDS.md
+index e51d673..113db37 100644
+--- a/template/CODING_STANDARDS.md
++++ b/template/CODING_STANDARDS.md
+@@ -34,4 +34,4 @@ Shallow module (large interface, little hidden) · Information leakage (one deci
+ 
+ ## Suppressions
+ 
+-Every new or broadened `oxlint-disable`, `@ts-ignore`, `@ts-expect-error` needs an adjacent comment explaining why. The directive itself is not an explanation. A stale directive fails lint.
++Every new or broadened `oxlint-disable`, `@ts-ignore`, `@ts-expect-error` needs an adjacent comment explaining why. The directive itself is not an explanation. A stale directive fails lint. A `# shellcheck disable=` in a hook or a skill script puts its reason in a second comment on the same line, because the directive is itself a comment and an adjacent one would be ambiguous.
+diff --git a/template/docs/factory918/DECISIONS.md b/template/docs/factory918/DECISIONS.md
+index 8f73598..bfb6a12 100644
+--- a/template/docs/factory918/DECISIONS.md
++++ b/template/docs/factory918/DECISIONS.md
+@@ -82,3 +82,4 @@ Travels anywhere without change: the planning skills, the execution playbooks, `
+ | P22 | Who signs a comment | A comment the agent posts on a PR or a ticket ends with the model and harness (`Claude Fable 5.1 on Claude Code`), plus `approved by <name>` when the human approved it before posting; only an approved comment posted from the author's account is the author's words. `review-brief.sh` reads only the PR author's account for rounds and carry-forward | Manuel, 2026-09-18: a comment left by the orchestrator without human involvement is signed by the model on the harness; approved, it is signed by both; strangers' comments never reach a brief (#78 round 1). |
+ | P2 | Tool versions in CI | Pin every tool CI runs to an exact version, as a devDependency where the tool publishes one | `dlx` and `npx` resolve the latest version, so a rule engine or formatter can change under a project with no diff to show for it. Spec §0 rule 1 already says to pin what you install; this extends it to what CI fetches. First applied to `@ast-grep/cli` 0.45.3 in M0. |
+ | P24 | Overlap is not coupling; a go is a line that covers its own tickets | Two unblocked tickets relate three ways: dependent (`Blocked by`, off the frontier), disjoint in files (parallel branches off `main`), or overlapping in files (sequenced: one to merge-ready, the merge, then the next). Coupled work, a ticket that needs code an open PR introduces, stacks, and only on a go. Ticket step 1 runs `.claude/skills/poteto-mode/scripts/overlap.sh N` before branching: every open PR's head is fetched fresh and its own commits (its diff from the open PR it stacks on, else `origin/main`) are matched with the ticket body's backticked tokens as pathspecs (its `## Diff` section excluded), so a file, a directory, a glob or a file the PR creates all match; exit 0 prints `base: <ref>` to branch from, exit 1 stops and names the PR to merge first, exit 2 means the check could not run and stderr says why. A go is a line `<label>: #a #b ...` that `overlap.sh go "<label>" N...` appends to the gitignored `.claude/state/program`, written by the orchestrator when the human gives it (autopilot-stack step 3 runs it itself). A go covers a stack only when a line names the ticket and, for every overlapping PR, the ticket that PR closes; so a line a dead program left behind covers nothing outside its own tickets' open PRs and needs no removal. Under a cover the base is the overlapping PR's head, the lowest-numbered when siblings overlap, the containing one when one contains the other; step 8's `--diff` run records the shared paths as the PR body's `## Overlap` section | Ticket #42, Manuel: "working a ticket to completion before automatically moving on"; the #16 to #22 stack was built on a seven-re-reviews mis-estimate (ledger 2026-09-17). First run (PR #87, closed): three review rounds redesigned the matcher three times; the second run designed from a scenario table Manuel approved 2026-09-21 as the ticket's Testing decisions. Rejected: a ticket label as the go (outlives the program), a line pasted into each lane's brief (a forgotten paste blocks a lane), a `done` step (a crash skips it), the script under the factory918 skill (every later edit cross-cutting). |
++| P25 | One shell gate, carried by the template | `template/.github/shellcheck.sh` holds the ShellCheck version, both release checksums and the flags; a project gets it as `.github/shellcheck.sh` and the factory runs the template's copy. The severity is the default and `--external-sources` is on, so a lane's per-file run and CI's whole-set run give the same answer. A `disable=` directive carries its reason in a second comment on the same line; CI cannot check that a reason exists, the Standards axis does | A `run:` block in each workflow would put the pin in two files and the flags in three, and a project's CI cannot read the factory's files. SC2086 is info level, so a `--severity` floor would pass the class ticket #88 was written for; without `-x` the two spec-review tests report findings on one file that vanish on the whole set, which would make the playbook's "run it before the PR" sentence false. Ticket #88, 2026-09-22. |
+diff --git a/tests/poteto-mode/overlap.sh b/tests/poteto-mode/overlap.sh
+index 196141e..5d5aac4 100644
+--- a/tests/poteto-mode/overlap.sh
++++ b/tests/poteto-mode/overlap.sh
+@@ -12,9 +12,8 @@
+ # line, a linked worktree reading the main checkout's file, --diff skipping the own PR and counting
+ # only the branch's own commits, a literal token under --diff, and the mode bit. The fixture root
+ # has a space, and from the third call on the script runs by the relative path the playbooks name.
+-# Exits 1 on the first miss. The backticks in the bodies below are the ticket's token delimiters,
+-# not command substitutions.
+-# shellcheck disable=SC2016
++# Exits 1 on the first miss.
++# shellcheck disable=SC2016 # the backticks in the bodies below are the ticket's token delimiters, not command substitution
+ set -euo pipefail
+ here="$(cd "$(dirname "$0")/../.." && pwd -P)"
+ script="$here/template/.agents/skills/poteto-mode/scripts/overlap.sh"
+diff --git a/tests/shellcheck/gate.sh b/tests/shellcheck/gate.sh
+new file mode 100755
+index 0000000..42db0ce
+--- /dev/null
++++ b/tests/shellcheck/gate.sh
+@@ -0,0 +1,98 @@
++#!/usr/bin/env bash
++# Runs template/.github/shellcheck.sh, the shell gate, from a temp directory whose path has a
++# space, and asserts one case per row of the table under ## Design on ticket #88: a clean file
++# passes and is counted, a planted SC2086 is reported, a glob that matches no file is refused on
++# stderr, also when it stands beside a file that matched, a #!/bin/sh file keeps its POSIX checks,
++# the zero-argument form from a project's root counts the project's hooks, skill scripts and the
++# gate itself, a platform the pin has no build for is refused when no ShellCheck is on PATH
++# (a fake uname on PATH, ShellCheck hidden), an absolute path or a glob whose directory has a
++# space is one argument, not split on it, and on the two pinned platforms a cached tarball that
++# fails its checksum is refused and not downloaded again (a bogus tarball under TMPDIR, ShellCheck
++# hidden). The download is not exercised here; the fixture job in factory-ci.yml proves it. Exits 1
++# on the first miss.
++set -euo pipefail
++here="$(cd "$(dirname "$0")/../.." && pwd -P)"
++script="$here/template/.github/shellcheck.sh"
++tmp="$(mktemp -d)"
++trap 'rm -rf "$tmp"' EXIT
++fx="$tmp/with space"
++mkdir -p "$fx/bin" "$fx/project/.claude/hooks" "$fx/project/.agents/skills/x/scripts" "$fx/project/.github"
++cd "$fx"
++cat > clean.sh <<'SH'
++#!/usr/bin/env bash
++set -euo pipefail
++name="$1"
++echo "hello $name"
++SH
++cat > unquoted.sh <<'SH'
++#!/usr/bin/env bash
++f="$1"
++cat $f
++SH
++cat > posix.sh <<'SH'
++#!/bin/sh
++arr=(a b)
++echo "${arr[0]}"
++SH
++cp clean.sh project/.claude/hooks/a.sh
++cp clean.sh project/.claude/hooks/b.sh
++cp clean.sh project/.agents/skills/x/scripts/c.sh
++cp "$script" project/.github/shellcheck.sh
++ln -s ../.agents/skills project/.claude/skills
++cat > bin/uname <<'SH'
++#!/bin/sh
++case "$1" in -s) echo Plan9 ;; -m) echo mips ;; esac
++SH
++chmod +x bin/uname
++
++n=0
++fail() { echo "FAIL $1"; echo "  got:    $2"; echo "  wanted: $3"; exit 1; }
++# run <args...>: the gate from the current directory, its exit in code, stdout in got, stderr in err.
++run() { set +e; got="$(bash "$script" "$@" 2>"$tmp/err")"; code=$?; set -e; err="$(cat "$tmp/err")"; }
++# check <name> <exit> <stdout> <args...>: both exact.
++check() {
++  local name="$1" want="$2" out="$3"; shift 3
++  run "$@"
++  if [ "$code" != "$want" ] || [ "$got" != "$out" ]; then fail "$name" "exit $code: $got$err" "exit $want: $out"; fi
++  n=$((n + 1))
++}
++# check_err <name> <exit> <pattern> <args...>: the exit exact, stdout plus stderr holding the pattern.
++check_err() {
++  local name="$1" want="$2" pat="$3"; shift 3
++  run "$@"
++  if [ "$code" != "$want" ] || ! grep -qF -- "$pat" <<< "$got$err"; then fail "$name" "exit $code: $got$err" "exit $want with $pat"; fi
++  n=$((n + 1))
++}
++# same <name> <wanted> <got>
++same() { [ "$2" = "$3" ] || fail "$1" "$3" "$2"; n=$((n + 1)); }
++
++check "1 a clean file" 0 "ShellCheck 0.11.0, files checked: 1" clean.sh
++check_err "2 a planted SC2086" 1 "SC2086" unquoted.sh
++check_err "3 a glob that matches nothing" 1 "no file matched nope/*.sh; the gate checked nothing" 'nope/*.sh'
++same "3 the refusal is on stderr" "shellcheck.sh: no file matched nope/*.sh; the gate checked nothing" "$err"
++same "3 nothing on stdout" "" "$got"
++check_err "3b a matched file beside a glob that matches nothing" 1 "no file matched nope/*.sh; the gate checked nothing" clean.sh 'nope/*.sh'
++same "3b nothing on stdout" "" "$got"
++check_err "4 a #!/bin/sh file keeps its POSIX checks" 1 "SC3030" posix.sh
++cd project
++check "5 the zero-argument form from a project's root" 0 "ShellCheck 0.11.0, files checked: 4"
++cd ..
++PATH="$fx/bin:/usr/bin:/bin" run clean.sh
++same "6 an unpinned platform without ShellCheck is refused" 1 "$code"
++same "6 the refusal names the pair" "shellcheck.sh: ShellCheck 0.11.0 is not pinned for Plan9.mips; install it by hand" "$err"
++test -x "$script" || fail "7 the mode bit" "not executable" "executable"
++n=$((n + 1))
++check "8 an absolute path with a space" 0 "ShellCheck 0.11.0, files checked: 1" "$fx/clean.sh"
++check "8b a glob whose directory has a space" 0 "ShellCheck 0.11.0, files checked: 1" "$fx/clea*.sh"
++case "$(uname -s).$(uname -m)" in
++  Linux.x86_64|Darwin.arm64)
++    mkdir -p "$fx/tmp/shellcheck-0.11.0"
++    printf 'not a tarball' > "$fx/tmp/shellcheck-0.11.0/sc.tar.xz"
++    PATH=/usr/bin:/bin TMPDIR="$fx/tmp" check_err "9 a cached tarball that fails its checksum is refused" 1 "did NOT match" clean.sh
++    same "9 nothing on stdout" "" "$got"
++    same "9 the tarball is not downloaded again" "not a tarball" "$(cat "$fx/tmp/shellcheck-0.11.0/sc.tar.xz")"
++    ;;
++  *) echo "skip 9 a cached tarball that fails its checksum: no pin for $(uname -s).$(uname -m), the gate would refuse the platform first" ;;
++esac
++
++echo "ok $n assertions"
+diff --git a/tests/spec-review/fake-gh.sh b/tests/spec-review/fake-gh.sh
+index fa32377..d6358c7 100755
+--- a/tests/spec-review/fake-gh.sh
++++ b/tests/spec-review/fake-gh.sh
+@@ -12,7 +12,7 @@
+ # someone else is left out), so a run needs no fixture at all.
+ d="${FAKE_GH_DIR:-.}"
+ case "$*" in
+-  "pr view --json body"*) [ -f "${FAKE_PR_BODY:-}" ] && cat "$FAKE_PR_BODY" || { echo 'no pull requests found for branch "x"' >&2; exit 1; } ;;
++  "pr view --json body"*) if [ -f "${FAKE_PR_BODY:-}" ]; then cat "$FAKE_PR_BODY"; else echo 'no pull requests found for branch "x"' >&2; exit 1; fi ;;
+   "pr view"*)
+     if [ -f "$d/pr-error" ]; then cat "$d/pr-error" >&2; exit 1; fi
+     while [ "$1" != -q ]; do shift; done
+diff --git a/tests/spec-review/layout.sh b/tests/spec-review/layout.sh
+index 06ce544..d598c53 100644
+--- a/tests/spec-review/layout.sh
++++ b/tests/spec-review/layout.sh
+@@ -4,6 +4,7 @@
+ # with an executable hook, and `.claude/skills -> ../.agents/skills`. The factory has the same
+ # under `template/`, with `.claude/skills` and `.claude/hooks` linking there. Sets `skill`, the
+ # copy of the skill to run, and `hooks`, the hooks directory a cross-cutting commit touches.
++# shellcheck shell=bash disable=SC2034 # sourced by the two spec-review tests, so it has no shebang; hooks and skill are read by the sourcing test
+ source_skill="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)/template/.agents/skills/spec-review"
+ layout() {
+   local base link
+diff --git a/tests/spec-review/review-brief.sh b/tests/spec-review/review-brief.sh
+index b368f33..f443c42 100755
+--- a/tests/spec-review/review-brief.sh
++++ b/tests/spec-review/review-brief.sh
+@@ -15,8 +15,10 @@
+ # the definition, the five sentences, the heading bullets, the step rule, the count rule, the
+ # settled paragraph and the blast-radius paragraph word for word, so the skill and the script
+ # cannot drift apart. Exits 1 on the first miss.
++# shellcheck disable=SC2016 # the expected strings below are the Markdown the script emits; the backticks and $ are literal
+ set -euo pipefail
+ here="$(cd "$(dirname "$0")/../.." && pwd -P)"
++# shellcheck source-path=SCRIPTDIR source=layout.sh
+ . "$here/tests/spec-review/layout.sh"
+ command -v jq >/dev/null || { echo "FAIL: jq is needed to play gh pr view"; exit 1; }
+ tmp="$(mktemp -d)"
+diff --git a/tests/spec-review/review-comment.sh b/tests/spec-review/review-comment.sh
+index f80e45b..3caf90f 100755
+--- a/tests/spec-review/review-comment.sh
++++ b/tests/spec-review/review-comment.sh
+@@ -8,6 +8,7 @@
+ # review state in place; an accepted run clears it. Exits 1 on the first miss.
+ set -euo pipefail
+ here="$(cd "$(dirname "$0")/../.." && pwd -P)"
++# shellcheck source-path=SCRIPTDIR source=layout.sh
+ . "$here/tests/spec-review/layout.sh"
+ tmp="$(mktemp -d)"
+ trap 'rm -rf "$tmp"' EXIT
+@@ -91,6 +92,7 @@ refuse "$dir/standards-report.md has the headings [Would Break|Standards breache
+ 
+ # A Would-break or Fails-open item without a `Documented step:` line is refused by name; a line
+ # inside a quoted hunk does not count; a body sentence is not the item's title.
++# shellcheck disable=SC2016 # the expected Markdown is literal; the backticks are not command substitution
+ printf '## Would break\n\n1. **One.** a\nDocumented step: ticket line\nResult: r\n\n## Fails open\n\n2. **Open, silently.** the guard returns. More.\n\n```sh\nDocumented step: inside the hunk\n```\n\n## Standards breaches\n\n## Fix alongside\n\nhard findings: 2\n' > "$dir/standards-report.md"
+ refuse "$dir/standards-report.md item '2. **Open, silently.**' under '## Fails open' has no 'Documented step:' line; a counted item quotes the ticket line or the file:line of the documentation the user follows, then 'Result:' what happens instead. Ask the reviewer for both" "Fails-open item without a Documented step line, the fenced one not counting"
+ printf '## Would break\n\n1. **One.** a\n\n## Fails open\n\n2. **Open.** o\nDocumented step: ticket line\n\n## Standards breaches\n\n3. **Breach.** b\n\n## Fix alongside\n\nhard findings: 2\n' > "$dir/standards-report.md"
+@@ -506,6 +508,7 @@ fenced_twin 'a ~~~ fence quoting a ``` line' '~~~sh
+ ```
+ 1. still the hunk
+ ~~~'
++# shellcheck disable=SC2016 # the expected Markdown is literal; the backticks are not command substitution
+ fenced_twin 'a ```sh fence quoted inside a ``` block' '```
+ ## Would break
+ ```sh

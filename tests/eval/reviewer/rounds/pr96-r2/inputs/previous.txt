@@ -1,0 +1,95 @@
+Round one found one hard item, the same one on both axes, and it is fixed on this PR next: a glob among several that matches no file is dropped silently and the gate still passes, where the design says such a glob is refused, so the fix is in the script and its test, not in the design. The test file's mode bit rides on that fix; the duplicated factory glob list is noted and left, since a factory default inside the gate would change the posted design.
+
+## Standards
+
+## Would break
+
+## Fails open
+
+1. **One argument that matches nothing is dropped, and the gate still passes.** The gate's own header makes an unmatched glob a failure; the code enforces that only when *every* argument misses. One glob out of five that names nothing (a renamed directory, a typo, or a path with a space, which splits on the unquoted `$g` and matches no file) is skipped without a word, and the run exits 0 over a smaller set. `files checked: N` is the only tell, and nothing in CI or the playbook asserts N. Standard: `CODING_STANDARDS.md`, Bash, "Quote every path. Paths here contain spaces"; and the file's own rule at `template/.github/shellcheck.sh:10-11`, "Globs that match no file at all leave the gate checking nothing, which is a failure, not a pass."
+
+Documented step: `AGENTS.md:38`, "`bash .github/shellcheck.sh factory918.sh ... 'tests/*/*.sh'`, ShellCheck at the pin over 20 files"; `template/.agents/skills/poteto-mode/playbooks/opening-a-pr.md:9`, "Run `bash .github/shellcheck.sh` on every shell file the diff changes before the PR opens".
+Result: after a rename, the factory's CI step checks 15 files and stays green; a lane that names a changed file the gate cannot see reports the gate as passed on a file nobody linted.
+
+```sh
+for g in "$@"; do
+  for f in $g; do if [ -f "$f" ]; then files+=("$f"); fi; done
+done
+if [ "${#files[@]}" = 0 ]; then
+```
+
+## Standards breaches
+
+## Fix alongside
+
+2. **Duplicated Code: the factory's five globs live in two files.** `.github/workflows/factory-ci.yml:20` and `AGENTS.md:38` carry the same list; the gate holds a zero-argument default for a project but not for the factory, so the two copies drift apart on the next rename. A factory default inside the gate would leave one copy.
+
+```yaml
+run: bash .github/shellcheck.sh factory918.sh template/.github/shellcheck.sh 'template/.claude/hooks/*.sh' 'template/.agents/skills/*/scripts/*.sh' 'tests/*/*.sh'
+```
+
+3. **`tests/shellcheck/gate.sh` lands mode 100644.** Every other test script is 100755, and test 7 asserts the mode bit on the gate it tests. CI invokes it through `bash`, so nothing breaks today.
+
+hard findings: 1
+
+## Spec
+
+# Spec review report
+
+## Walk
+
+1. AC1: `.github/workflows/factory-ci.yml:18-19` replaces `bash -n` with the gate over the four sets plus the gate itself; the pin is `version=0.11.0` (`template/.github/shellcheck.sh:13`), and a PATH binary is used only when `--version` matches it exactly (`:18`), else the release is downloaded.
+2. AC2: `template/.github/workflows/ci.yml:17-18` runs the zero-argument form first in `check`; the fixture job runs that same line inside `/tmp/fx` (`factory-ci.yml:54-56`). One script, one pin.
+3. AC3: the `**PRs.**` sentence lands in the patch (`opening-a-pr.md.patch:8`) and in the vendored copy, so `sync` keeps it.
+4. AC4: `factory918.sh:274-276` prints `PASS  shellcheck <v>` or `note`, never `chk`, so a bare machine gets NOTE; the fix names brew, apt, dnf and winget.
+5. AC5: the rule is stated in `CODING_STANDARDS.md:15` and `template/CODING_STANDARDS.md:37`; every directive the diff adds carries its reason on the same line, and `overlap.sh:49` gains the one it lacked. No CI check, as asked.
+6. AC6: `AGENTS.md:38-39` lists both commands; `docs/M0-findings.md:170-172` is the dated line with the version, both shas and why the severity stays default.
+7. Other prose: P25 in `DECISIONS.md` with the INDEX count and the regenerated template copy, `SOURCES.md` item 3, the ledger line.
+8. Risk 1 (cached binary, no sha): nothing; `:26` skips the download and the checksum whenever that path is executable.
+9. Risk 2 (`gate.sh:75` assumes no on-pin `/usr/bin` ShellCheck): nothing in the code; the failure is a red CI, loud.
+10. Risk 3 (a dropped glob): nothing; item 1 below.
+11. Risk 4 (no network, no ShellCheck, or an unpinned platform): refused at `:22` or by curl at `:28`, exit nonzero with a message.
+12. Risk 5 (`cmd_update` conflict leaves a project's `ci.yml` without the step): nothing; the doctor gains no check for the step.
+
+## Would break
+
+## Fails open
+
+1. **One glob of several matching nothing passes the gate.** `template/.github/shellcheck.sh:37-39` keeps only paths that exist, and `:40` refuses only when the whole set is empty, so a renamed or mistyped path among good ones is dropped silently.
+
+```
+| A glob matches no file | `shellcheck.sh: no file matched <globs>; the gate checked nothing` on stderr | 1 | fixes the glob; a gate that checked nothing is not a pass |
+```
+
+Documented step: `template/.agents/skills/poteto-mode/playbooks/opening-a-pr.md:9`, "Run `bash .github/shellcheck.sh` on every shell file the diff changes before the PR opens", and the CI line's five globs.
+Result: exit 0 with the count quietly one lower; the lane and CI both report a pass over files nobody checked.
+
+## Not asked for
+
+hard findings: 1
+
+## Judgment
+
+## Act on
+
+1. [S1] **One argument that matches nothing is dropped, and the gate still passes.** Both reviewers hit it independently and it is a concrete path, not a hypothetical: the gate refuses only when every glob is empty, so a renamed directory among the factory's five globs leaves CI green over fewer files, which is exactly the "checked nothing is not a pass" cell failing open per glob; the fix is in `shellcheck.sh` (refuse when any argument expands to no file) plus one assertion in `gate.sh`, the design cell "A glob matches no file → refused, exit 1" stands as written, so this is a code fix, not a design hole. The space-splitting aside is folded in: paths inside the repo carry no spaces and the unquoted expansion is the design's "the script expands it".
+2. [P1] **One glob of several matching nothing passes the gate.** The same hole from the Spec axis, resting on the design table's third row; same fix, same verdict: code, not the artifact, not a design hole.
+3. [S3] **`tests/shellcheck/gate.sh` lands mode 100644.** Fix alongside: the fix for 1 and 2 adds an assertion to this file, so `chmod +x` rides on that commit; on its own it would be Noted, since CI and AGENTS.md invoke it through `bash`.
+
+## Ask
+
+## Consider
+
+## Noted
+
+4. [S2] **Duplicated Code: the factory's five globs live in two files.** Valid observation, not actionable here: the `## Design` usage makes the zero-argument form mean the project's own files and has the factory's CI pass its list explicitly, so folding a factory default into the gate changes the design, and the two copies (a CI line and a Verifying line a person reads) drift only on a rename, which item 1's fix now turns into a loud failure instead of a silent one.
+
+## Dismissed
+
+Standards: 0 would break, 1 fail open, of 3; Spec: 0 would break, 1 fail open, of 1; judged: act on 3 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 1, dismissed 0; fixed point ab47eb9.
+round: 1 of 3
+act-on items: 3
+
+Claude Fable 5.1 on Claude Code
+
+

@@ -1,0 +1,211 @@
+Round one found one hard item, the same one on both axes, and it is fixed on this PR next: a glob among several that matches no file is dropped silently and the gate still passes, where the design says such a glob is refused, so the fix is in the script and its test, not in the design. The test file's mode bit rides on that fix; the duplicated factory glob list is noted and left, since a factory default inside the gate would change the posted design.
+
+## Standards
+
+## Would break
+
+## Fails open
+
+1. **One argument that matches nothing is dropped, and the gate still passes.** The gate's own header makes an unmatched glob a failure; the code enforces that only when *every* argument misses. One glob out of five that names nothing (a renamed directory, a typo, or a path with a space, which splits on the unquoted `$g` and matches no file) is skipped without a word, and the run exits 0 over a smaller set. `files checked: N` is the only tell, and nothing in CI or the playbook asserts N. Standard: `CODING_STANDARDS.md`, Bash, "Quote every path. Paths here contain spaces"; and the file's own rule at `template/.github/shellcheck.sh:10-11`, "Globs that match no file at all leave the gate checking nothing, which is a failure, not a pass."
+
+Documented step: `AGENTS.md:38`, "`bash .github/shellcheck.sh factory918.sh ... 'tests/*/*.sh'`, ShellCheck at the pin over 20 files"; `template/.agents/skills/poteto-mode/playbooks/opening-a-pr.md:9`, "Run `bash .github/shellcheck.sh` on every shell file the diff changes before the PR opens".
+Result: after a rename, the factory's CI step checks 15 files and stays green; a lane that names a changed file the gate cannot see reports the gate as passed on a file nobody linted.
+
+```sh
+for g in "$@"; do
+  for f in $g; do if [ -f "$f" ]; then files+=("$f"); fi; done
+done
+if [ "${#files[@]}" = 0 ]; then
+```
+
+## Standards breaches
+
+## Fix alongside
+
+2. **Duplicated Code: the factory's five globs live in two files.** `.github/workflows/factory-ci.yml:20` and `AGENTS.md:38` carry the same list; the gate holds a zero-argument default for a project but not for the factory, so the two copies drift apart on the next rename. A factory default inside the gate would leave one copy.
+
+```yaml
+run: bash .github/shellcheck.sh factory918.sh template/.github/shellcheck.sh 'template/.claude/hooks/*.sh' 'template/.agents/skills/*/scripts/*.sh' 'tests/*/*.sh'
+```
+
+3. **`tests/shellcheck/gate.sh` lands mode 100644.** Every other test script is 100755, and test 7 asserts the mode bit on the gate it tests. CI invokes it through `bash`, so nothing breaks today.
+
+hard findings: 1
+
+## Spec
+
+# Spec review report
+
+## Walk
+
+1. AC1: `.github/workflows/factory-ci.yml:18-19` replaces `bash -n` with the gate over the four sets plus the gate itself; the pin is `version=0.11.0` (`template/.github/shellcheck.sh:13`), and a PATH binary is used only when `--version` matches it exactly (`:18`), else the release is downloaded.
+2. AC2: `template/.github/workflows/ci.yml:17-18` runs the zero-argument form first in `check`; the fixture job runs that same line inside `/tmp/fx` (`factory-ci.yml:54-56`). One script, one pin.
+3. AC3: the `**PRs.**` sentence lands in the patch (`opening-a-pr.md.patch:8`) and in the vendored copy, so `sync` keeps it.
+4. AC4: `factory918.sh:274-276` prints `PASS  shellcheck <v>` or `note`, never `chk`, so a bare machine gets NOTE; the fix names brew, apt, dnf and winget.
+5. AC5: the rule is stated in `CODING_STANDARDS.md:15` and `template/CODING_STANDARDS.md:37`; every directive the diff adds carries its reason on the same line, and `overlap.sh:49` gains the one it lacked. No CI check, as asked.
+6. AC6: `AGENTS.md:38-39` lists both commands; `docs/M0-findings.md:170-172` is the dated line with the version, both shas and why the severity stays default.
+7. Other prose: P25 in `DECISIONS.md` with the INDEX count and the regenerated template copy, `SOURCES.md` item 3, the ledger line.
+8. Risk 1 (cached binary, no sha): nothing; `:26` skips the download and the checksum whenever that path is executable.
+9. Risk 2 (`gate.sh:75` assumes no on-pin `/usr/bin` ShellCheck): nothing in the code; the failure is a red CI, loud.
+10. Risk 3 (a dropped glob): nothing; item 1 below.
+11. Risk 4 (no network, no ShellCheck, or an unpinned platform): refused at `:22` or by curl at `:28`, exit nonzero with a message.
+12. Risk 5 (`cmd_update` conflict leaves a project's `ci.yml` without the step): nothing; the doctor gains no check for the step.
+
+## Would break
+
+## Fails open
+
+1. **One glob of several matching nothing passes the gate.** `template/.github/shellcheck.sh:37-39` keeps only paths that exist, and `:40` refuses only when the whole set is empty, so a renamed or mistyped path among good ones is dropped silently.
+
+```
+| A glob matches no file | `shellcheck.sh: no file matched <globs>; the gate checked nothing` on stderr | 1 | fixes the glob; a gate that checked nothing is not a pass |
+```
+
+Documented step: `template/.agents/skills/poteto-mode/playbooks/opening-a-pr.md:9`, "Run `bash .github/shellcheck.sh` on every shell file the diff changes before the PR opens", and the CI line's five globs.
+Result: exit 0 with the count quietly one lower; the lane and CI both report a pass over files nobody checked.
+
+## Not asked for
+
+hard findings: 1
+
+## Judgment
+
+## Act on
+
+1. [S1] **One argument that matches nothing is dropped, and the gate still passes.** Both reviewers hit it independently and it is a concrete path, not a hypothetical: the gate refuses only when every glob is empty, so a renamed directory among the factory's five globs leaves CI green over fewer files, which is exactly the "checked nothing is not a pass" cell failing open per glob; the fix is in `shellcheck.sh` (refuse when any argument expands to no file) plus one assertion in `gate.sh`, the design cell "A glob matches no file → refused, exit 1" stands as written, so this is a code fix, not a design hole. The space-splitting aside is folded in: paths inside the repo carry no spaces and the unquoted expansion is the design's "the script expands it".
+2. [P1] **One glob of several matching nothing passes the gate.** The same hole from the Spec axis, resting on the design table's third row; same fix, same verdict: code, not the artifact, not a design hole.
+3. [S3] **`tests/shellcheck/gate.sh` lands mode 100644.** Fix alongside: the fix for 1 and 2 adds an assertion to this file, so `chmod +x` rides on that commit; on its own it would be Noted, since CI and AGENTS.md invoke it through `bash`.
+
+## Ask
+
+## Consider
+
+## Noted
+
+4. [S2] **Duplicated Code: the factory's five globs live in two files.** Valid observation, not actionable here: the `## Design` usage makes the zero-argument form mean the project's own files and has the factory's CI pass its list explicitly, so folding a factory default into the gate changes the design, and the two copies (a CI line and a Verifying line a person reads) drift only on a rename, which item 1's fix now turns into a loud failure instead of a silent one.
+
+## Dismissed
+
+Standards: 0 would break, 1 fail open, of 3; Spec: 0 would break, 1 fail open, of 1; judged: act on 3 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 1, dismissed 0; fixed point ab47eb9.
+round: 1 of 3
+act-on items: 3
+
+Claude Fable 5.1 on Claude Code
+
+
+Round two found one Would-break item and one Fails-open item, plus a wrong count in the M0 section, all fixed on this PR next: an argument with a space in it is word-split before it is globbed, so a lane passing an absolute path under this repository's own path is refused for a file that exists, and the binary cached by the gate's download is never checked again after the run that fetched it, so anything sitting at that path runs under the pin's name. Neither changes the design posted on the ticket, whose usage already says the script expands the glob and whose signature already says the checksum is checked, so both are code fixes and the review continues to round three.
+
+## Standards
+
+## Would break
+
+1. **An argument with a space is split, so the gate refuses a file that exists.** `CODING_STANDARDS.md`, Bash: "Quote every path. Paths here contain spaces", and "Test a command the way a user types it: absolute paths, from another directory, through the installed symlink." `$g` is unquoted, so word splitting runs before pathname expansion: an argument holding a space becomes several words, none a file, and the gate exits 1 claiming nothing matched. This repository's path has spaces; `tests/shellcheck/gate.sh` misses the case, because its fixture root has a space but every argument is relative and space-free.
+
+```sh
+for g in "$@"; do
+  matched=0
+  for f in $g; do if [ -f "$f" ]; then files+=("$f"); matched=1; fi; done
+  if [ "$matched" = 0 ]; then
+    echo "shellcheck.sh: no file matched $g; the gate checked nothing" >&2
+```
+
+Documented step: `template/AGENTS.md:63`, "`bash .github/shellcheck.sh` before a PR, on the files the diff changes", and `opening-a-pr.md`, "Run `bash .github/shellcheck.sh` on every shell file the diff changes".
+Result: a lane that names a file by absolute path under `.../Under The Sun Collective/...` is told `no file matched /Users/.../factory918.sh; the gate checked nothing`, exit 1, for a file that is there; the message names no way to correct it.
+
+## Fails open
+
+2. **A cached binary is run as the pin without ever being checked.** `CODING_STANDARDS.md`, Bash: "A failure a gate depends on is printed before anything continues"; `DECISIONS.md` P25: the gate "holds the ShellCheck version, both release checksums and the flags". The version test runs on PATH's `shellcheck` only; once the cache path exists, `[ ! -x "$bin" ]` skips the download and the sha, and nothing tests what is there. The author's probe put a two-line script at that path and the gate exited 0.
+
+```sh
+  dir="${TMPDIR:-/tmp}/shellcheck-$version"
+  bin="$dir/shellcheck-v$version/shellcheck"
+  if [ ! -x "$bin" ]; then
+```
+
+Documented step: `AGENTS.md:38`, "ShellCheck at the pin over 20 files".
+Result: whatever sits at that path runs instead, and the gate prints `ShellCheck 0.11.0, files checked: 20` and passes. One `"$bin" --version | grep -qx` after the `fi` closes it.
+
+## Standards breaches
+
+3. **The M0 arithmetic is one short.** `CODING_STANDARDS.md`, Markdown: "A count or a version in prose is true at the commit that lands it." 18 plus `gate.sh` is 19; the twentieth, `template/.github/shellcheck.sh`, is never counted.
+
+```
+the 18 shell files the ticket names produced 57 findings ... `tests/shellcheck/gate.sh` joins the set, so the factory's gate checks 20 files.
+```
+
+## Fix alongside
+
+4. **Speculative Generality (breadth).** `review-brief.sh` takes a file-level `disable=SC2016` where its sibling `review-comment.sh` takes statement-level ones; the blanket also hides a future real one.
+
+```sh
+# shellcheck disable=SC2016 # every single-quoted string here is a jq program or a Markdown template; the backticks and $ are literal
+```
+
+5. **The skill count now cannot be zero.** An unmatched glob leaves the literal, so the line would say `vendored: 1 skills`; `ls -d | wc -l` said 0.
+
+```sh
+local -a dirs; dirs=("$skills"/*/)
+```
+
+hard findings: 2
+
+## Spec
+
+## Walk
+
+1. AC1, factory CI: `factory-ci.yml:19` passes the five globs to the symlinked gate and `bash -n` goes; the pin is `version=0.11.0` plus two sha constants, and a PATH binary is used only when `--version` matches exactly (`shellcheck.sh:12-17`).
+2. AC2, template CI: `ci.yml:17-18` runs the zero-argument form, whose default set is the project's hooks, skill scripts and the gate (`shellcheck.sh:34`); `cmd_apply` copies it with `cp -p`, and the fixture step runs it in `/tmp/fx`.
+3. AC3, playbook: the `**PRs.**` paragraph gains the sentence in the patch and the vendored copy alike, and `SOURCES.md` item 3 records it.
+4. AC4, doctor: `factory918.sh:274-276` reads `shellcheck --version`, prints PASS with it or `note` with brew, apt, dnf and winget; `note` only prints, so the doctor's exit is unchanged.
+5. AC5, directives: both `CODING_STANDARDS.md` state the same-line reason rule, every new directive carries one, `overlap.sh`'s existing one gains one, and no CI check was added.
+6. AC6, records: AGENTS.md Verifying names the command over 20 files; `M0-findings.md` gains a dated section with both checksums; DECISIONS gains P25 and the generated copies were rebuilt.
+7. Risk 1, a cached binary reused with no checksum: nothing in the code addresses it; `[ ! -x "$bin" ]` (`shellcheck.sh:26`) is the only guard. Item 1.
+8. Risk 2, `gate.sh:75` assuming no 0.11.0 in `/usr/bin`: unaddressed, but the failure is a red `FAIL 6` line, never a silent pass.
+9. Risk 3, an unmatched glob dropped beside matched ones: closed by 01e5386; `shellcheck.sh:38-41` refuses, `gate.sh` asserts it as case 3b.
+10. Risk 4, an offline or unpinned lane: refused at `:20-22` or by curl, with the install line; design row 5.
+11. Risk 5, a project's edited `ci.yml`: `cmd_update` prints `conflicts ci.yml` and the hand-resolve count (`factory918.sh:362,369-371`), so it is loud.
+
+## Would break
+
+## Fails open
+
+1. **A binary already at the cache path runs unchecked, and the gate reports the pin.** The PATH candidate is version-checked (`shellcheck.sh:17`); the cached one never is. `[ ! -x "$bin" ]` skips the download, the sha and any `--version`, so whatever sits at `${TMPDIR:-/tmp}/shellcheck-0.11.0/shellcheck-v0.11.0/shellcheck` runs, prints `ShellCheck 0.11.0, files checked: N` and exits 0. The author proved it with a two-line fake. Moving the existing version test onto `$bin` after the cache hit refuses it loudly for one line.
+
+```
+otherwise downloads the pinned release for Linux x86_64 or macOS arm64 into `${TMPDIR:-/tmp}/shellcheck-0.11.0` once, checks its sha256, and runs that
+```
+
+Documented step: ticket #88, `## Design`, the Signature paragraph.
+Result: the sha is checked only on the run that downloads; every later run trusts the path, so a foreign or off-pin binary passes the gate silently under the pin's own name.
+
+## Not asked for
+
+hard findings: 1
+
+## Judgment
+
+## Act on
+
+1. [S1] **An argument with a space is split, so the gate refuses a file that exists.** Real, and reachable from the playbook's own sentence: this repository's path has spaces, a lane in this harness types absolute paths, and `for f in $g` word-splits before it globs. The Design usage ("quote a glob, the script expands it") and the case table stand; the fix is in the expansion (no word splitting, pathname expansion only) plus one `gate.sh` case with an absolute path that contains a space. Code, not a design hole.
+2. [S2] **A cached binary is run as the pin without ever being checked.** Real fails-open, proven by the author's own blast-radius probe. The Design signature already says the gate "checks its sha256, and runs that"; the code checks it only on the run that downloads. Fix: keep only the tarball as the cache, verify its sha256 on every run and extract from it on every run, so a foreign binary at the cache path is overwritten and a foreign tarball is refused with the checksum tool's own message (the table's last row); one `gate.sh` case with a cached tarball whose checksum is wrong. Code, not a design hole.
+3. [P1] **A binary already at the cache path runs unchecked, and the gate reports the pin.** The same hole from the Spec axis, resting on the signature paragraph; same fix as item 2, same verdict.
+4. [S3] **The M0 arithmetic is one short.** Real breach of the documented count rule: 18 plus `gate.sh` is 19, and the twentieth is the gate itself. One sentence in `docs/M0-findings.md`, fixed alongside the two code fixes.
+
+## Ask
+
+## Consider
+
+## Noted
+
+5. [S4] **File-level `disable=SC2016` in `review-brief.sh` where its sibling takes statement-level ones.** Valid observation; the file holds sixteen occurrences and its whole job is jq programs and Markdown templates, its sibling holds one, so the scope is the narrowest that covers each intent, which is the rule `CODING_STANDARDS.md` states. No Act on fix touches that line.
+6. [S5] **The skill count can no longer read zero.** Valid; `cmd_sync` has just copied the vendored skills when the line runs, so the count is never zero on the documented path, and an unmatched glob there would mean the copies failed, which `set -e` already aborts on. No Act on fix touches that line.
+
+## Dismissed
+
+Standards: 1 would break, 1 fail open, of 5; Spec: 0 would break, 1 fail open, of 1; judged: act on 4 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 2, dismissed 0; fixed point ab47eb9.
+round: 2 of 3
+act-on items: 4
+
+Claude Fable 5.1 on Claude Code
+
+

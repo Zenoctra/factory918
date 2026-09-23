@@ -12,6 +12,7 @@ pstack/poteto-mode/playbooks/refactoring.md.patch
 pstack/architect/SKILL.md.patch
 pstack/architect/references/runner-prompt.md.patch
 pstack/poteto-mode/references/codex-tools.md.patch
+pstack/poteto-mode/references/provider-dispatch.md.patch
 pstack/poteto-mode/scripts/runner/model-matrix.test.ts.patch
 pstack/interrogate/SKILL.md.patch
 pstack/setup-pstack/SKILL.md.patch
