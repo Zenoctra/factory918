@@ -465,7 +465,8 @@ finish "$(sed -n 2p <<<"$out")" none claude-opus-5 late "" medium
 REVIEWER_SETTLE_SECONDS=0 run collect
 check "drift: a lane that died after a wrong model is refused, not retried" has "$err" "$C r1/standards step 1 was served claude-opus-5-5"
 check "drift: a lane that died after effort medium is refused, not retried" has "$err" "$C r1/spec step 1 ran at effort medium"
-check "drift: neither is a dropout" is "$(ls "$(rundir "$C" standards 1)/receipt.json" "$(rundir "$C" spec 1)/receipt.json" 2>/dev/null | wc -l | tr -d ' ')" 0
+check "drift: the wrong model is not a dropout" absent "$(rundir "$C" standards 1)/receipt.json"
+check "drift: effort medium is not a dropout" absent "$(rundir "$C" spec 1)/receipt.json"
 
 fresh fx-fable
 run next "$F" --limit 1
