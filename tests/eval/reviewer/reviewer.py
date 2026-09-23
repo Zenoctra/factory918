@@ -50,6 +50,7 @@ import json
 import os
 import re
 import secrets
+import shlex
 import shutil
 import subprocess
 import sys
@@ -469,7 +470,7 @@ PREFIX_WORDS = ("env", "sudo", "command", "exec", "time", "nohup", "xargs", "bui
                 "if", "then", "do", "else", "elif", "while", "until", "{", "!")
 TRUSTED_BINS = ("/usr/", "/bin/", "/opt/homebrew/")
 SEGMENT_SPLIT = re.compile(r"&&|\|\||;|\||\$\(|`|\n|\(")
-PATH_TOKEN = re.compile(r"(?:^|(?<=[\s'\"=:(<>]))([/~][^\s'\"`;|&()<>]*)")
+REGEX_CHARS = re.compile(r"[\^$*\[\]\\?+{}|]")
 
 
 def bash_reaches(command: str, root: str) -> list[str]:
@@ -490,16 +491,25 @@ def bash_reaches(command: str, root: str) -> list[str]:
     if re.search(r"(^|[\s/'\"=])\.\.(/|[\s'\";&|)<>]|$)", command):
         why.append("has a .. path component")
     inside = re.compile(re.escape(root) + r"(?=$|[/\s'\"`;|&()<>])[^\s'\"`;|&()<>]*")
-    rest = inside.sub(" ", command)
-    for m in PATH_TOKEN.finditer(rest):
-        p = m.group(1)
+    for p in path_tokens(inside.sub(" ", command)):
         if p == "/dev/null" or (p.startswith(TRUSTED_BINS) and p in words):
             continue
-        # A slash that opens no real top-level directory is a pattern, as in awk '/^## /'.
-        if p.startswith("/") and not (p.split("/")[1] and os.path.exists("/" + p.split("/")[1])):
+        # A token holding a regex character is a pattern, as in awk '/^## /'.
+        if REGEX_CHARS.search(p):
             continue
         why.append(f"names {p}")
     return why
+
+
+def path_tokens(command: str) -> list[str]:
+    """The absolute and ~ paths a command names, a quoted string being one token."""
+    try:
+        lex = shlex.shlex(command, posix=True, punctuation_chars=True)
+        lex.whitespace_split = True
+        tokens = list(lex)
+    except ValueError:
+        tokens = command.split()
+    return [part for t in tokens for part in re.split(r"[=:]", t) if part.startswith(("/", "~"))]
 
 
 def receipt_from_transcript(run: RunId, lines: list[dict], expect: re.Pattern[str], checkout: Path,

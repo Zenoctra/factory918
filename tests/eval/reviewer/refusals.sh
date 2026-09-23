@@ -551,6 +551,13 @@ pycheck "bash: .. before a shell separator is flagged" '
 for tail in ["cd ..; ls", "cd ..&& ls", "cd ..|| ls", "cd ..| cat", "(cd ..)", "ls ..> f", "wc -l ..< f"]:
     assert "has a .. path component" in r.bash_reaches(f"cd {X} && {tail}", X), tail'
 pycheck "bash: an absolute path outside is flagged" 'assert "names /etc/hosts" in r.bash_reaches(f"cat {X}/a /etc/hosts", X)'
+pycheck "bash: a path outside is flagged whatever this machine holds" '
+for p in ["/srv/other-repo/x", "/Users/someone/x", "/home/someone/x", "/no-such-top/x"]:
+    assert f"names {p}" in r.bash_reaches(f"cat {X}/a {p}", X), p
+assert "names /srv/x" in r.bash_reaches(f"cat {X}/a --file=/srv/x", X)'
+pycheck "bash: a token holding a regex character is a pattern" '
+for pat in ["\"/^## /\"", "\x27/foo.*/\x27", "\x27/a|b/\x27", "\x27/x[0-9]/\x27"]:
+    assert r.bash_reaches(f"grep -E {pat} {X}/a.md", X) == [], pat'
 pycheck "bash: a ~ path is flagged" 'assert "names ~/.ssh/config" in r.bash_reaches(f"cat {X}/a ~/.ssh/config", X)'
 pycheck "bash: a sibling export is flagged" '
 why = r.bash_reaches(f"cd {X} && cat /tmp/w/def456/factory918/a.txt", X)
