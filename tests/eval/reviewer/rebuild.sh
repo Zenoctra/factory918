@@ -5,7 +5,8 @@
 #   rebuild.sh <round>                      compare diff and both briefs byte for byte with review/
 #   rebuild.sh <round> --write              write them into review/ instead
 #   rebuild.sh <round> --export DIR [PATCH...] apply the round's fixes/PATCH files to the head in
-#       the order given and fold them into the head commit (the brief's commit list keeps its
+#       the order given with `git apply --3way` (the clone holds each patch's preimage blobs, so a
+#       hunk lands by merge, never by fuzz) and fold them into the head commit (the brief's commit list keeps its
 #       shape), brief that tree, archive it into DIR and put diff and both briefs in DIR's review
 #       directory; prints the folded commit (the head itself when no PATCH is given)
 # REBUILD_FIXTURES (this directory) holds rounds/; REBUILD_REPO (this repository) holds the commits.
@@ -48,7 +49,7 @@ git clone -q --shared --no-checkout "$repo" "$tmp/clone"
 git -C "$tmp/clone" checkout -q --detach "$head"
 if [ ${#picks[@]} -gt 0 ]; then
   for p in "${picks[@]}"; do
-    git -C "$tmp/clone" apply --index "$rdir/fixes/$p" 2> "$tmp/apply" ||
+    git -C "$tmp/clone" apply --3way "$rdir/fixes/$p" > "$tmp/apply" 2>&1 ||
       { echo "rebuild: $name: the patches ${picks[*]} do not apply to $head: $p: $(tr '\n' ' ' < "$tmp/apply")" >&2; exit 3; }
   done
   (
