@@ -10,6 +10,7 @@ Issues and specs for this repo live as GitHub issues. Use the `gh` CLI for all o
 - **Comment on an issue**: `gh issue comment <number> --body "..."`
 - **Apply / remove labels**: `gh issue edit <number> --add-label "..."` / `--remove-label "..."`
 - **Close**: `gh issue close <number> --comment "..."`
+- **Record a decision**: a row a PR adds to a decisions table that parallel PRs share takes the id `P<N>`, N the ticket the PR closes; a second row from the same ticket takes `P<N>b`, then `P<N>c`. When `P<N>` is already in the table (`P1` to `P30` predate this rule), the row takes the next free letter, `P<N>b`. The id comes from the ticket, so two PRs branched from one base hold different ids and a rebase changes none. The highest id plus one is the id to avoid: two lanes from one base both take it, and every rebase then renumbers it and the reviews that cite it. In the factory these are the Provisional rows of `docs/knowledge/core/DECISIONS.md`, and `python3 tools/check_knowledge.py` refuses a duplicate or any other form.
 
 Infer the repo from `git remote -v`; `gh` does this automatically when run inside a clone.
 

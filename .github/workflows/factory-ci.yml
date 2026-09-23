@@ -29,6 +29,8 @@ jobs:
         run: bash tests/poteto-mode/overlap.sh
       - name: No retired review wording under template/ or the core knowledge
         run: bash tests/spec-review/no-stale-wording.sh
+      - name: The knowledge check refuses the Provisional ids the test says
+        run: bash tests/knowledge/provisional-ids.sh
       - name: Knowledge base is consistent and built from its sources
         run: python3 tools/check_knowledge.py && python3 tools/build_knowledge.py && git diff --exit-code
       - name: Vendored skills equal the pins plus the patches
