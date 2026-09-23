@@ -79,7 +79,7 @@ COUNT_LINE = re.compile(r"hard findings: ([0-9]+)")
 ITEM_LINE = re.compile(r"(\d+)\. ")
 FENCE_LINE = re.compile(r"\s*(`{3,}|~{3,})")
 USAGE_LIMIT = "usage-limit"
-NO_RESPONSE = "no-response"  # a lane that died before any model answered, as on an API error
+NO_RESPONSE = "no-response"  # a lane whose last line is the harness's own, as on an API error
 VERSION = 2  # of receipt.json and run.json; #103 wrote version 1
 GIVE_UP = 3  # contaminated or unanswered attempts after which a run is prepared no more
 USAGE_LIMIT_LINE = re.compile(r"hit your (?:\w+ )?limit", re.I)  # "usage limit" and "session limit" both occur
@@ -944,7 +944,7 @@ def run_dirs(out: Path) -> list[Path]:
     return sorted((d for d in out.glob("runs/*/*/*/*") if d.is_dir()), key=lambda d: natural(str(d)))
 
 
-def failures(run: RunId, out: Path) -> list[Receipt]:
+def failed_attempts(run: RunId, out: Path) -> list[Receipt]:
     """The failed attempts of a run: those set aside under dropped/ and the one in its directory."""
     rel = run.dir(out).relative_to(out / "runs")
     kept = [receipt_at(p) for p in (out / "dropped" / rel).glob("*") if (p / "receipt.json").is_file()]
@@ -1019,7 +1019,7 @@ def cmd_next(fx: Fixtures, env: Env, descriptors: list[str], limit: int, resume:
         receipt = receipt_at(d) if st == "collected" else None
         if receipt and usage_limited(receipt) and run.descriptor not in resume:
             held[run.descriptor] = max(held.get(run.descriptor, 0.0), (d / "receipt.json").stat().st_mtime)
-        elif receipt and failed(receipt) and len(tries := failures(run, out)) >= GIVE_UP:
+        elif receipt and failed(receipt) and len(tries := failed_attempts(run, out)) >= GIVE_UP:
             given_up.append((d, "contaminated" if all(r.status == "contaminated" for r in tries) else "failed"))
         elif receipt and redo(receipt):
             set_aside(d, out)
