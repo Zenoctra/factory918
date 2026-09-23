@@ -34,7 +34,7 @@ Project terms live in `CONTEXT.md`. Decisions that were hard to reverse live in 
 
 **Planning** is `/wayfinder` (big and foggy), `/grill-with-docs` (one feature), then `/to-spec` and `/to-tickets`. In planning, decisions are the human's and facts are yours; questions are read-only; no production code is written; the output is tickets on GitHub with `Blocked by` edges.
 
-**Execution** is `/poteto-mode`. An issue reference in the request (`#N`, `owner/repo#N`, an issue URL) means the Ticket playbook. Match ceremony to the task. Inside a playbook the writer is never the orchestrator: implementation is delegated to its own lane and the orchestrator reviews the diff it gets back; a trivial edit outside any playbook is the orchestrator's own. Anything the ticket settles is not re-asked; anything it does not settle is prototyped and presented, unless it is irreversible, in which case ask.
+**Execution** is `/poteto-mode`. An issue reference in the request (`#N`, `owner/repo#N`, an issue URL) means the Ticket playbook. Match ceremony to the task. Inside a playbook the writer is never the orchestrator: implementation is delegated to its own lane and the orchestrator reviews the diff it gets back; in `eco` a subagent owner writes its own small fixes and records commit (Ticket step 0, "The tier"); a trivial edit outside any playbook is the orchestrator's own. Anything the ticket settles is not re-asked; anything it does not settle is prototyped and presented, unless it is irreversible, in which case ask.
 
 A hook prints the current phase at every prompt. Follow it. `/mode-plan` and `/mode-build` switch it by hand.
 
@@ -76,7 +76,7 @@ The most common defect in agent-built projects is a change that works on the pat
 - UI changes need before/after images. Motion or timing needs a short video. Upload them; never commit them.
 - One concern per PR. If the description says "also", split it.
 - Any comment or report you write that runs longer than about forty lines opens with two plain sentences for a person, under the label `For a person:`. PR bodies are exempt: their problem-then-fix opening is that summary. Reviewers ignore body prose by design, so the label is for people, not a signal to models.
-- At the first push, run `spec-review` round one in a fresh context, with CI running alongside; a green CI is required before merge-ready, not before round one. Then babysit: poll checks and comments newer than the last push, verify each bot finding against the source, fix real ones, dismiss false positives with a written reason. Stop when the bots are green on the latest commit. Fixes land on the PR that was reviewed, the chain above it is rebased and re-verified, and a finding outside its scope becomes a ticket. The review ladder is `docs/agents/review-ladder.md`.
+- At the first push, run `spec-review` round one in a fresh context (in `eco` its two reviewers are the fresh context, Ticket step 0), with CI running alongside; a green CI is required before merge-ready, not before round one. Then babysit: poll checks and comments newer than the last push, verify each bot finding against the source, fix real ones, dismiss false positives with a written reason. Stop when the bots are green on the latest commit. Fixes land on the PR that was reviewed, the chain above it is rebased and re-verified, and a finding outside its scope becomes a ticket. The review ladder is `docs/agents/review-ladder.md`.
 - You never merge. Merging is the human's act.
 
 ## Plans and work artifacts
