@@ -27,6 +27,8 @@ jobs:
         run: bash tests/spec-review/review-brief.sh
       - name: overlap.sh prints, stops and refuses what the test says
         run: bash tests/poteto-mode/overlap.sh
+      - name: check-trail.sh passes and refuses the trails the test says
+        run: bash tests/show-me-your-work/check-trail.sh
       - name: reviewer.py prints, collects, scores and refuses what the test says
         run: bash tests/eval/reviewer/refusals.sh
       - name: No retired review wording under template/ or the core knowledge

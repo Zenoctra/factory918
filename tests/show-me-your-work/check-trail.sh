@@ -54,6 +54,15 @@ check() {
   fi
   n=$((n + 1))
 }
+# check_err <name> <args...>: exit 2, nothing on stdout, and jq's own message on stderr.
+check_err() {
+  local name="$1"; shift
+  run "$@"
+  if [ "$code" != 2 ] || [ -n "$out" ] || ! grep -q "Could not open file t/gone.jsonl" <<< "$err"; then
+    fail "$name" "exit $code, stdout [$out], stderr [$err]" "exit 2, no stdout, jq's Could not open file t/gone.jsonl"
+  fi
+  n=$((n + 1))
+}
 
 check "1 no transcript" 64 "" "$usage" t/none.tsv
 check "1 own" 2 "" "no trail at t/none.tsv" t/none.tsv "$own"
@@ -71,11 +80,10 @@ check "3 no transcript" 64 "" "$usage" t/five.tsv
 check "3 own, a five-column header" 1 "$H"$'\nline 2 2026-09-22T10:10:00Z: has 5 columns, expected 6' "" t/five.tsv "$own"
 check "3 every writer, a five-column header" 1 "$H"$'\nline 2 2026-09-22T10:10:00Z: has 5 columns, expected 6' "" t/five.tsv "$own" "$second"
 check "3 wrong, a five-column header" 1 "$H"$'\nline 2 2026-09-22T10:10:00Z: has 5 columns, expected 6; '"$run_wrong" "" t/five.tsv "$wrong"
-trail t/crlf.tsv 2026-09-22T10:10:00Z
-sed 's/$/\r/' t/crlf.tsv > t/crlf2.tsv
-check "3 own, a CRLF header" 1 "$H" "" t/crlf2.tsv "$own"
-check "3 every writer, a CRLF header" 1 "$H" "" t/crlf2.tsv "$own" "$second"
-check "3 wrong, a CRLF header" 1 "$H"$'\nline 2 2026-09-22T10:10:00Z: '"$run_wrong" "" t/crlf2.tsv "$wrong"
+printf '%s\r\n2026-09-22T10:10:00Z\tp\td\tw\te\tr\r\n' "$header" > t/crlf.tsv
+check "3 own, a CRLF header" 1 "$H" "" t/crlf.tsv "$own"
+check "3 every writer, a CRLF header" 1 "$H" "" t/crlf.tsv "$own" "$second"
+check "3 wrong, a CRLF header" 1 "$H"$'\nline 2 2026-09-22T10:10:00Z: '"$run_wrong" "" t/crlf.tsv "$wrong"
 
 trail t/seven.tsv
 printf '2026-09-22T10:10:00Z\tp\td\tw\te\tr\textra\n' >> t/seven.tsv
@@ -155,15 +163,6 @@ line 3 2026-09-22T10:50:00Z: $run_wrong
 line 4 2026-09-22T12:10:00Z: $run_wrong
 line 5 2026-09-22T12:50:00Z: $run_wrong" "" t/shared.tsv "$wrong"
 
-# check_err <name> <args...>: exit 2, nothing on stdout, and jq's own message on stderr.
-check_err() {
-  local name="$1"; shift
-  run "$@"
-  if [ "$code" != 2 ] || [ -n "$out" ] || ! grep -q "Could not open file t/gone.jsonl" <<< "$err"; then
-    fail "$name" "exit $code, stdout [$out], stderr [$err]" "exit 2, no stdout, jq's Could not open file t/gone.jsonl"
-  fi
-  n=$((n + 1))
-}
 check "13 no transcript" 64 "" "$usage" t/clean.tsv
 check_err "13 own" t/clean.tsv t/gone.jsonl
 check_err "13 every writer" t/clean.tsv "$own" t/gone.jsonl

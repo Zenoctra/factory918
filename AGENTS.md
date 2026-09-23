@@ -35,12 +35,13 @@ Inside a playbook the writer is never the orchestrator: implementation is delega
 
 ## Verifying
 
-- `bash .github/shellcheck.sh factory918.sh template/.github/shellcheck.sh 'template/.claude/hooks/*.sh' 'template/.agents/skills/*/scripts/*.sh' 'tests/*/*.sh' 'tests/*/*/*.sh'`, ShellCheck at the pin over 24 files. It replaces `bash -n`, whose set it covers.
+- `bash .github/shellcheck.sh factory918.sh template/.github/shellcheck.sh 'template/.claude/hooks/*.sh' 'template/.agents/skills/*/scripts/*.sh' 'tests/*/*.sh' 'tests/*/*/*.sh'`, ShellCheck at the pin over 26 files. It replaces `bash -n`, whose set it covers.
 - `bash tests/shellcheck/gate.sh`.
 - `bash tests/hooks/delegation.sh`.
 - `bash tests/spec-review/review-comment.sh`.
 - `bash tests/spec-review/review-brief.sh`.
 - `bash tests/poteto-mode/overlap.sh`.
+- `bash tests/show-me-your-work/check-trail.sh`.
 - `bash tests/spec-review/no-stale-wording.sh`.
 - `bash tests/knowledge/provisional-ids.sh`.
 - `bash tests/eval/reviewer/refusals.sh`.
