@@ -26,10 +26,15 @@
 # fix under review` before the diff, and a sixth round, a hand-written line, a fixed point that is
 # not the commit, one that does not resolve, and a fix-only round with no ticket after a round
 # with a spec are each refused before any state is written; every run records HEAD in
-# `<dir>/reviewed`. The source SKILL.md, step 4, must carry the definition, the five sentences, the
-# heading bullets, the step rule, the spec rule, the count rule, the settled paragraph, the
-# blast-radius paragraph, the risk sentence and the fix paragraph word for word, and the two
-# babysit copies the same merge-ready sentence, so the skill and the script cannot drift apart.
+# `<dir>/reviewed`. Round three is fix-only the same way when round two's comment carries
+# `fix only after <sha>` (ticket #106's table A, one assertion per cell); rounds one and two print
+# byte for byte what they print with the `reviewed:`, `fix only after` and `next round owed:`
+# lines deleted, and round two after a `reviewed: <sha>` line writes the fix lines to
+# `<dir>/fix-lines`. The source SKILL.md, step 4, must carry the definition, the five sentences,
+# the heading bullets, the step rule, the spec rule, the count rule, the settled paragraph, the
+# blast-radius paragraph, the risk sentence and the fix paragraph word for word, step 1 the
+# fix-only round three, and the two babysit copies the same merge-ready and owed sentences, so the
+# skill and the script cannot drift apart.
 # Exits 1 on the first miss.
 # shellcheck disable=SC2016 # the expected strings below are the Markdown the script emits; the backticks and $ are literal
 set -euo pipefail
@@ -1164,6 +1169,11 @@ rm pr.json
 babysit_rule='The review runs three rounds on one PR, five when round three or four fixed a Would-break item; a comment reading `round: 3 of 3`, `round: 4 of 5` or `round: 5 of 5` with `act-on items: 0` and no `would-break fixed after <sha>` line makes the PR review-ready even when the fix commits it names come after the reviewed commit. A comment carrying the line `would-break fixed after <sha>` is not review-ready whatever its count: below round five another round is owed and the orchestrator runs it (`spec-review` step 1 says its fixed point); at `round: 5 of 5` it is the human'"'"'s line, a wait like an `## Ask` item and not a blocker to fix here, until the human answers the report the orchestrator posted on the PR.'
 has "$here/template/.agents/skills/poteto-mode/playbooks/babysit.md" "$babysit_rule" "the babysit playbook carries the merge-ready sentence"
 has "$here/template/.agents/skills/babysit/SKILL.md" "$babysit_rule" "the babysit skill carries the merge-ready sentence"
+# #106: the owed line's sentence, byte-identical in both babysit copies, and step 1's fix-only round three.
+babysit_owed='A round-one or round-two comment carrying the line `next round owed: round <N> reviews the fixes marked here` is not review-ready whatever its count: the orchestrator runs that round (`spec-review` step 1); the lines `reviewed: <sha>` and `fix only after <sha>` only record where the next round starts and change nothing here.'
+has "$here/template/.agents/skills/poteto-mode/playbooks/babysit.md" "$babysit_owed" "the babysit playbook carries the owed sentence (#106)"
+has "$here/template/.agents/skills/babysit/SKILL.md" "$babysit_owed" "the babysit skill carries the owed sentence (#106)"
+has "$source_skill/SKILL.md" 'Round three is fix-only too when round two'"'"'s comment carries `fix only after <sha>`' "SKILL.md step 1 says round three is fix-only after the line (#106)"
 
 # Ticket #91, the scenario table: a cross-cutting diff's Spec brief continues its `## Walk` bullet,
 # on the same line, with the risk sentence, and a grounding with no line outside fenced text that
