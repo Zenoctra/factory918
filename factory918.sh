@@ -382,7 +382,7 @@ cmd_sync() {
   local pstack="$F918_DIR/research/3-pstack/open-pstack-claude-code-port/plugins/pstack"
   local matt="$F918_DIR/research/1-matt-pocock/skills-repo/skills"
   local ours="factory918 factory-start knowledge mode-plan mode-build factory-doctor factory-retro"
-  local keep_files="poteto-mode/playbooks/ticket.md poteto-mode/scripts/overlap.sh spec-review/scripts/review-brief.sh spec-review/scripts/review-comment.sh"
+  local keep_files="poteto-mode/playbooks/ticket.md poteto-mode/scripts/overlap.sh spec-review/scripts/review-brief.sh spec-review/scripts/review-comment.sh spec-review/scripts/reading-pack.sh"
   local tmp; tmp="$(mktemp -d)"
   for k in $keep_files; do mkdir -p "$tmp/keep/$(dirname "$k")"; cp "$skills/$k" "$tmp/keep/$k"; done
   for d in "$pstack"/skills/*/; do n="$(basename "$d")"; [ "$n" = no-comments ] && continue; rm -rf "${skills:?}/$n"; cp -R "$d" "$skills/$n"; done

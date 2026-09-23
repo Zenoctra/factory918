@@ -34,7 +34,10 @@
 # the heading bullets, the step rule, the spec rule, the count rule, the settled paragraph, the
 # blast-radius paragraph, the risk sentence and the fix paragraph word for word, step 1 the
 # fix-only round three, and the two babysit copies the same merge-ready and owed sentences, so the
-# skill and the script cannot drift apart.
+# skill and the script cannot drift apart. Both briefs carry the same `## Reading pack` section
+# after the diff (ticket #107's table, one assertion per cell): the changed files' text at HEAD,
+# whole or by function, comment-led block, section or window, within the byte cutoffs, the rest
+# named on one line; a failing git inside the pack refuses before any state is written.
 # Exits 1 on the first miss.
 # shellcheck disable=SC2016 # the expected strings below are the Markdown the script emits; the backticks and $ are literal
 set -euo pipefail
@@ -78,6 +81,74 @@ printed() {
   fi
   n=$((n + 1))
 }
+# section <brief>: the brief's `## Reading pack` section, to the next `## ` line outside the pack's fences.
+# A reader of section's output reads it to the end: a reader that exits early kills section with
+# SIGPIPE on its next write, and under pipefail the pipeline then fails.
+section() {
+  awk '$0 == "## Reading pack" { on = 1; print; next }
+    on && fence == "" && /^## / { exit }
+    on { print }
+    on && /^```+$/ { if (fence == "") fence = $0; else if ($0 == fence) fence = "" }' "$1"
+}
+# entry <brief> <header> <first> <last> <label>: the section holds the header line, a blank line, a
+# fence line, text from the line <first> to the line <last>, and the same fence line.
+entry() {
+  if ! section "$1" | H="$2" F="$3" L="$4" awk '
+      st == 0 && $0 == ENVIRON["H"] { st = 1; next }
+      st == 1 { st = ($0 == "") ? 2 : -1; next }
+      st == 2 { if ($0 ~ /^```+$/) { fence = $0; st = 3 } else st = -1; next }
+      st == 3 { if ($0 == ENVIRON["F"]) { last = $0; st = 4 } else st = -1; next }
+      st == 4 { if ($0 == fence) { ok = (last == ENVIRON["L"]); st = 5 } else last = $0; next }
+      END { exit !ok }'; then
+    echo "FAIL $5: $1 has no entry"; echo "  $2"; echo "  from: $3"; echo "  to: $4"; exit 1
+  fi
+  n=$((n + 1))
+}
+# fence <brief> <header> <fence> <label>: the entry under the header opens with exactly that fence line.
+fence() {
+  if ! section "$1" | H="$2" F="$3" awk '
+      st == 0 && $0 == ENVIRON["H"] { st = 1; next }
+      st == 1 { st = ($0 == "") ? 2 : -1; next }
+      st == 2 { ok = ($0 == ENVIRON["F"]); st = -1 }
+      END { exit !ok }'; then
+    echo "FAIL $4: $1: the entry $2 does not open with $3"; exit 1
+  fi
+  n=$((n + 1))
+}
+# none <brief> <path> <label>: no line of the section starts with `### <path>,`.
+none() {
+  if section "$1" | P="### $2," awk 'index($0, ENVIRON["P"]) == 1 { found = 1 } END { exit !found }'; then
+    echo "FAIL $3: $1 carries an entry for $2"; exit 1
+  fi
+  n=$((n + 1))
+}
+# notext <brief> <line> <label>: the section holds the line, then a blank line.
+notext() {
+  if ! section "$1" | L="$2" awk 'st == 0 && $0 == ENVIRON["L"] { st = 1; next } st == 1 { ok = ($0 == ""); st = 2 } END { exit !ok }'; then
+    echo "FAIL $3: $1 lacks the line, then a blank line: $2"; exit 1
+  fi
+  n=$((n + 1))
+}
+# rows <prefix> <count>: lines `<prefix><i>` padded with dots to 64 bytes each, the newline included.
+rows() { awk -v p="$1" -v c="$2" 'BEGIN { for (i = 1; i <= c; i++) { s = p i; while (length(s) < 63) s = s "."; print s } }'; }
+# funcs <prefix> <count>: shell functions `<prefix><i>() {` of four lines each, a blank line after each.
+funcs() {
+  awk -v p="$1" -v c="$2" 'BEGIN { for (i = 1; i <= c; i++) {
+    print p i "() {"; for (j = 1; j <= 4; j++) print "  echo \"" p i " line " j " of the function body, padded\""; print "}"; print "" } }'
+}
+# sections <name> <count>: Markdown sections `## <name> <i>` of four lines each, a blank line after each.
+sections() {
+  awk -v p="$1" -v c="$2" 'BEGIN { for (i = 1; i <= c; i++) {
+    print "## " p " " i; print ""; for (j = 1; j <= 4; j++) print "Line " j " of " p " " i ", with filler text so the section has some weight."; print "" } }'
+}
+# at <file> <line>: the number of the first line that is exactly <line>.
+at() { grep -m 1 -nxF -- "$2" "$1" | cut -d: -f1; }
+# close_of <file> <n>: the number of the first line after line n that starts with `}`.
+close_of() { awk -v s="$2" 'NR > s && /^}/ { print NR; exit }' "$1"; }
+# line_of <file> <n>: line n of the file.
+line_of() { sed -n "$2p" "$1"; }
+# edit <file> <sed program>: the file rewritten by the program.
+edit() { sed "$2" "$1" > "$1.new"; mv "$1.new" "$1"; }
 
 # suite <project|factory>: every assertion, against the copy of the skill a repo of that layout holds.
 suite() {
@@ -1391,6 +1462,307 @@ for f in "$std" "$spec"; do
   lacks "$f" "a subagent inherits it" "$f does not carry the PR body's section (3B)"
   lacks "$f" "$risk_rule" "$f has no risk sentence for a README-only diff with a PR (3B)"
 done
+
+# Ticket #107, the reading pack's scenario table, one assertion per cell, each named by its row and
+# column. K0 holds every file under pk/, P changes each as its row says, F1 changes only pk/t.sh,
+# f50 of pk/big.sh and section 20 of pk/big.md; W is round one from K0, F a fix-only round three
+# from P (#106's `fix only after` comment naming P). Both runs are at F1. Windows are 63 lines of
+# 64 bytes, the widest odd run within 4096 bytes.
+mkdir pk
+printf 'pk/gen.txt linguist-generated\n' > .gitattributes
+echo 'echo s' > pk/s.sh
+echo 'echo t' > pk/t.sh
+{ echo '#!/usr/bin/env bash'; echo; funcs f 70; } > pk/big.sh
+{ echo '#!/usr/bin/env bash'; echo; funcs a 35; echo '# top block'; echo 'top_a=1'; echo 'top_b=2'; echo '# next block'; funcs b 35; } > pk/top.sh
+{ echo '#!/usr/bin/env bash'; echo 'long() {'; for i in 1 2 3 4 5 6 7 8; do echo "# part $i"; rows "  part${i}_" 10; done; echo '}'; echo; funcs l 30; } > pk/long.sh
+{ echo '#!/usr/bin/env bash'; echo 'g() {'; echo "  cat <<'EOF'"; echo 'heredoc one'; echo 'heredoc two'; echo '}'; echo 'EOF'; echo '}'; echo; funcs h 70; } > pk/heredoc.sh
+{ echo '#!/usr/bin/env bash'; echo; funcs v 3; echo '# wide block'; rows w_ 200; } > pk/wide.sh
+{ echo '#!/usr/bin/env bash'; echo; funcs da 35; echo 'del_a() {'; echo '  echo del a'; echo '}'; echo ':'; echo 'del_b() {'; echo '  echo del b'; echo '}'; echo; funcs db 35; } > pk/del.sh
+sections Section 40 > pk/big.md
+{ sections Pad 40; echo '## Fenced'; echo; echo 'before the fence'; echo '````md'; echo '## not a heading'; echo '```'; echo '````'; echo 'after the fence'; echo '## After'; echo; sections Tail 5; } > pk/fenced.md
+{ sections Pad 10; echo '## Long'; echo; rows long_ 200; echo; sections Tail 10; } > pk/longsec.md
+rows code_ 200 > pk/code.py
+{ echo '#!/usr/bin/env bash'; echo; funcs x 35; echo 'm1() {'; echo '  echo m one'; echo '}'; echo 'm2() {'; echo '  echo m two'; echo '}'; echo; funcs y 35; } > pk/touch.sh
+printf 'ticks\n```\n````\na ````` b\n' > pk/ticks.md
+printf 'one\ntwo' > pk/nonl.txt
+printf 'a\r\nb\r\n' > pk/crlf.txt
+{ echo '#!/usr/bin/env bash'; echo; funcs r 70; } > "pk/old name.sh"
+rows mode_ 200 > pk/mode.txt
+rows moved_ 200 > pk/moved-from.txt
+echo gone > pk/gone.txt
+printf 'a\000b' > pk/bin.dat
+echo 'gen one' > pk/gen.txt
+ln -s target-a pk/link
+mkdir pk/sub
+echo full > pk/emptied.txt
+nl_path="$(printf 'pk/nl\nname.txt')"
+echo nl > "$nl_path"
+git add .gitattributes pk
+git update-index --add --cacheinfo "160000,1111111111111111111111111111111111111111,pk/sub"
+git commit -qm "the pack's files, #7"
+k0="$(git rev-parse HEAD)"
+echo 'echo s changed' > pk/s.sh
+echo 'echo t changed' > pk/t.sh
+edit pk/big.sh 's/f10 line 2 of/f10 line 2, changed, of/'
+edit pk/top.sh 's/^top_b=2$/top_b=3/'
+edit pk/long.sh 's/^  part3_5\./  part3_5X/'
+edit pk/heredoc.sh 's/^heredoc two$/heredoc two changed/'
+edit pk/wide.sh 's/^w_100\./w_100X/'
+edit pk/del.sh '/^:$/d'
+edit pk/big.md 's/^Line 2 of Section 7,/Line 2 of Section 7, changed,/'
+edit pk/fenced.md 's/^after the fence$/after the fence, changed/'
+edit pk/longsec.md 's/^long_100\./long_100X/'
+edit pk/code.py 's/^code_100\./code_100X/'
+edit pk/touch.sh 's/^  echo m one$/  echo m one changed/; s/^  echo m two$/  echo m two changed/'
+echo end >> pk/ticks.md
+printf 'one\nthree' > pk/nonl.txt
+printf 'a\r\nc\r\n' > pk/crlf.txt
+git mv "pk/old name.sh" "pk/new name.sh"
+edit "pk/new name.sh" 's/r5 line 2 of/r5 line 2, changed, of/'
+chmod +x pk/mode.txt
+git update-index --chmod=+x pk/mode.txt
+git mv pk/moved-from.txt pk/moved-to.txt
+echo 'added small' > pk/added-small.txt
+rows added_ 200 > pk/added-big.txt
+git rm -q pk/gone.txt
+printf 'a\000c' > pk/bin.dat
+echo 'gen two' > pk/gen.txt
+rm pk/link
+ln -s target-b pk/link
+: > pk/emptied.txt
+echo 'nl changed' > "$nl_path"
+git add pk
+git update-index --cacheinfo "160000,2222222222222222222222222222222222222222,pk/sub"
+git commit -qm "the pack's changes, #7"
+p="$(git rev-parse HEAD)"
+echo 'echo t fixed' > pk/t.sh
+edit pk/big.sh 's/f50 line 2 of/f50 line 2, changed, of/'
+edit pk/big.md 's/^Line 2 of Section 20,/Line 2 of Section 20, changed,/'
+git commit -qam "the pack's fix, #7"
+f1="$(git rev-parse HEAD)"
+[ -z "$(git status --porcelain -- pk .gitattributes)" ] || { echo "FAIL: the pack's fixtures left the tree dirty:"; git status --porcelain -- pk .gitattributes; exit 1; }
+wd=".scratch/review/$k0"
+fd=".scratch/review/$p"
+bash "$skill/scripts/review-brief.sh" "$k0" --ticket 7 > pk-w.out
+for f in standards-brief.md spec-brief.md round reviewed; do cp "$wd/$f" "pk-w.$f"; done
+for f in fixed-point files dir; do cp ".claude/state/review/$f" "pk-w.state.$f"; done
+ls "$wd" > pk-w.ls
+fo_comment previous-3-spec.md "$p" > previous-2f-pk.md
+pr me me:previous-1r.md me:previous-2f-pk.md
+bash "$skill/scripts/review-brief.sh" "$p" --ticket 7 > pk-f.out
+for f in standards-brief.md spec-brief.md round reviewed; do cp "$fd/$f" "pk-f.$f"; done
+for f in fixed-point files dir; do cp ".claude/state/review/$f" "pk-f.state.$f"; done
+ls "$fd" > pk-f.ls
+rm pr.json
+wb=pk-w.standards-brief.md
+fb=pk-f.standards-brief.md
+section "$fb" > pk-f.section
+# Row 1: the small files.
+entry "$wb" "### pk/s.sh, whole, 1 line" "echo s changed" "echo s changed" "(1W)"
+entry "$wb" "### pk/t.sh, whole, 1 line" "echo t fixed" "echo t fixed" "(1W)"
+entry "$fb" "### pk/t.sh, whole, 1 line" "echo t fixed" "echo t fixed" "(1F)"
+none "$fb" pk/s.sh "(1F)"
+# Row 2: the enclosing function.
+nb="$(wc -l < pk/big.sh | tr -d ' ')"
+a10="$(at pk/big.sh 'f10() {')"; a50="$(at pk/big.sh 'f50() {')"
+entry "$wb" "### pk/big.sh, lines $a10-$(close_of pk/big.sh "$a10") of $nb" 'f10() {' '}' "(2W)"
+entry "$wb" "### pk/big.sh, lines $a50-$(close_of pk/big.sh "$a50") of $nb" 'f50() {' '}' "(2W)"
+entry "$fb" "### pk/big.sh, lines $a50-$(close_of pk/big.sh "$a50") of $nb" 'f50() {' '}' "(2F)"
+lacks pk-f.section 'f10() {' "(2F)"
+# Row 3: top-level code, the comment-led block.
+a="$(at pk/top.sh '# top block')"
+entry "$wb" "### pk/top.sh, lines $a-$(($(at pk/top.sh '# next block') - 1)) of $(wc -l < pk/top.sh | tr -d ' ')" '# top block' 'top_b=3' "(3W)"
+none "$fb" pk/top.sh "(3F)"
+# Row 4: a long function, the comment-led block inside it.
+a="$(at pk/long.sh '# part 3')"; b="$(($(at pk/long.sh '# part 4') - 1))"
+entry "$wb" "### pk/long.sh, lines $a-$b of $(wc -l < pk/long.sh | tr -d ' ')" '# part 3' "$(line_of pk/long.sh "$b")" "(4W)"
+none "$fb" pk/long.sh "(4F)"
+# Row 5: the function ends at the heredoc's column-0 `}`, the line before EOF.
+entry "$wb" "### pk/heredoc.sh, lines $(at pk/heredoc.sh 'g() {')-$(($(at pk/heredoc.sh 'EOF') - 1)) of $(wc -l < pk/heredoc.sh | tr -d ' ')" 'g() {' '}' "(5W)"
+none "$fb" pk/heredoc.sh "(5F)"
+# Row 6: no rung fits, the window inside the block.
+l="$(grep -n '^w_100X' pk/wide.sh | cut -d: -f1)"
+entry "$wb" "### pk/wide.sh, lines $((l - 31))-$((l + 31)) of $(wc -l < pk/wide.sh | tr -d ' ')" "$(line_of pk/wide.sh $((l - 31)))" "$(line_of pk/wide.sh $((l + 31)))" "(6W)"
+none "$fb" pk/wide.sh "(6F)"
+# Row 7: the deletion's lines c (del_a's `}`) and c+1 (`del_b() {`), their functions merged.
+a="$(at pk/del.sh 'del_a() {')"
+entry "$wb" "### pk/del.sh, lines $a-$(close_of pk/del.sh "$(at pk/del.sh 'del_b() {')") of $(wc -l < pk/del.sh | tr -d ' ')" 'del_a() {' '}' "(7W)"
+none "$fb" pk/del.sh "(7F)"
+# Row 8: the Markdown section, less its trailing blank line.
+nm="$(wc -l < pk/big.md | tr -d ' ')"
+a7="$(at pk/big.md '## Section 7')"; a20="$(at pk/big.md '## Section 20')"
+b7="$(($(at pk/big.md '## Section 8') - 2))"; b20="$(($(at pk/big.md '## Section 21') - 2))"
+entry "$wb" "### pk/big.md, lines $a7-$b7 of $nm" '## Section 7' "$(line_of pk/big.md "$b7")" "(8W)"
+entry "$wb" "### pk/big.md, lines $a20-$b20 of $nm" '## Section 20' "$(line_of pk/big.md "$b20")" "(8W)"
+entry "$fb" "### pk/big.md, lines $a20-$b20 of $nm" '## Section 20' "$(line_of pk/big.md "$b20")" "(8F)"
+lacks pk-f.section '## Section 7' "(8F)"
+# Row 9: past the fenced heading, in a fence of five backticks.
+h="### pk/fenced.md, lines $(at pk/fenced.md '## Fenced')-$(($(at pk/fenced.md '## After') - 1)) of $(wc -l < pk/fenced.md | tr -d ' ')"
+entry "$wb" "$h" '## Fenced' 'after the fence, changed' "(9W)"
+fence "$wb" "$h" '`````' "(9W)"
+none "$fb" pk/fenced.md "(9F)"
+# Row 10: a section over 4096 bytes, the window inside it.
+l="$(grep -n '^long_100X' pk/longsec.md | cut -d: -f1)"
+entry "$wb" "### pk/longsec.md, lines $((l - 31))-$((l + 31)) of $(wc -l < pk/longsec.md | tr -d ' ')" "$(line_of pk/longsec.md $((l - 31)))" "$(line_of pk/longsec.md $((l + 31)))" "(10W)"
+none "$fb" pk/longsec.md "(10F)"
+# Row 11: another kind, the window.
+l="$(grep -n '^code_100X' pk/code.py | cut -d: -f1)"
+entry "$wb" "### pk/code.py, lines $((l - 31))-$((l + 31)) of 200" "$(line_of pk/code.py $((l - 31)))" "$(line_of pk/code.py $((l + 31)))" "(11W)"
+none "$fb" pk/code.py "(11F)"
+# Row 12: m1 and m2 touch, one entry.
+entry "$wb" "### pk/touch.sh, lines $(at pk/touch.sh 'm1() {')-$(close_of pk/touch.sh "$(at pk/touch.sh 'm2() {')") of $(wc -l < pk/touch.sh | tr -d ' ')" 'm1() {' '}' "(12W)"
+none "$fb" pk/touch.sh "(12F)"
+# Row 13: a fence of six backticks.
+entry "$wb" "### pk/ticks.md, whole, 5 lines" 'ticks' 'end' "(13W)"
+fence "$wb" "### pk/ticks.md, whole, 5 lines" '``````' "(13W)"
+none "$fb" pk/ticks.md "(13F)"
+# Row 14: no final newline, and CRLF.
+entry "$wb" "### pk/nonl.txt, whole, 2 lines" 'one' 'three' "(14W)"
+entry "$wb" "### pk/crlf.txt, whole, 2 lines" $'a\r' $'c\r' "(14W)"
+none "$fb" pk/nonl.txt "(14F)"
+none "$fb" pk/crlf.txt "(14F)"
+# Row 15: renamed with an edit, a space in the path.
+a="$(at "pk/new name.sh" 'r5() {')"
+entry "$wb" "### pk/new name.sh, renamed from pk/old name.sh, lines $a-$(close_of "pk/new name.sh" "$a") of $(wc -l < "pk/new name.sh" | tr -d ' ')" 'r5() {' '}' "(15W)"
+none "$fb" "pk/new name.sh" "(15F)"
+# Row 16: no changed line.
+notext "$wb" "### pk/mode.txt, 200 lines, no line changed: no text" "(16W)"
+notext "$wb" "### pk/moved-to.txt, renamed from pk/moved-from.txt, 200 lines, no line changed: no text" "(16W)"
+none "$fb" pk/mode.txt "(16F)"
+none "$fb" pk/moved-to.txt "(16F)"
+# Row 17: added.
+entry "$wb" "### pk/added-small.txt, whole, 1 line" 'added small' 'added small' "(17W)"
+notext "$wb" "### pk/added-big.txt, added, 200 lines; the diff carries it whole: no text" "(17W)"
+none "$fb" pk/added-small.txt "(17F)"
+none "$fb" pk/added-big.txt "(17F)"
+# Row 18: deleted.
+notext "$wb" "### pk/gone.txt, deleted at HEAD: no text" "(18W)"
+none "$fb" pk/gone.txt "(18F)"
+# Row 19: binary and generated.
+notext "$wb" "### pk/bin.dat, binary: no text" "(19W)"
+notext "$wb" "### pk/gen.txt, generated (linguist-generated): no text" "(19W)"
+none "$fb" pk/bin.dat "(19F)"
+none "$fb" pk/gen.txt "(19F)"
+# Row 20: a symbolic link and a submodule.
+notext "$wb" "### pk/link, a symbolic link to target-b: no text" "(20W)"
+notext "$wb" "### pk/sub, a submodule: no text" "(20W)"
+none "$fb" pk/link "(20F)"
+none "$fb" pk/sub "(20F)"
+# Row 21: emptied, and a path holding a newline.
+notext "$wb" "### pk/emptied.txt, empty at HEAD: no text" "(21W)"
+notext "$wb" "### $(printf %q "$nl_path"), a path holding a newline: no text" "(21W)"
+none "$fb" pk/emptied.txt "(21F)"
+none "$fb" "$(printf %q "$nl_path")" "(21F)"
+# Rows 22 to 24: the total. K2 holds pk2/z.txt; eight files of 8192 bytes, then one of 2 bytes, then
+# z.txt as one line of 70000 bytes.
+mkdir pk2
+awk 'BEGIN { s = "a"; while (length(s) < 70000) s = s s; print substr(s, 1, 70000) }' > pk2/z.txt
+git add pk2
+git commit -qm "the total's base, #7"
+k2="$(git rev-parse HEAD)"
+w2=".scratch/review/$k2/standards-brief.md"
+for i in 1 2 3 4 5 6 7 8; do rows "f${i}_" 128 > "pk2/f$i.txt"; done
+git add pk2
+git commit -qm "eight files, #7"
+bash "$skill/scripts/review-brief.sh" "$k2" --ticket 7 > out.txt
+for i in 1 2 3 4 5 6 7 8; do
+  entry "$w2" "### pk2/f$i.txt, whole, 128 lines" "$(line_of "pk2/f$i.txt" 1)" "$(line_of "pk2/f$i.txt" 128)" "(22W)"
+done
+section "$w2" > pk2.section
+lacks pk2.section "Not carried" "(22W)"
+printf 'a\n' > pk2/a.txt
+git add pk2
+git commit -qm "a 2-byte file, #7"
+bash "$skill/scripts/review-brief.sh" "$k2" --ticket 7 > out.txt
+over23="Not carried, over the pack's 65536 bytes: pk2/f8.txt whole. Read these at HEAD from the repository."
+carried23="### pk2/a.txt, whole, 1 line
+### pk2/f1.txt, whole, 128 lines
+### pk2/f2.txt, whole, 128 lines
+### pk2/f3.txt, whole, 128 lines
+### pk2/f4.txt, whole, 128 lines
+### pk2/f5.txt, whole, 128 lines
+### pk2/f6.txt, whole, 128 lines
+### pk2/f7.txt, whole, 128 lines"
+[ "$(section "$w2" | grep '^### ')" = "$carried23" ] && [ "$(section "$w2" | grep -v '^$' | tail -1)" = "$over23" ] || { echo "FAIL (23W): the carried entries in path order, then the eighth on the over line:"; section "$w2" | grep -e '^### ' -e '^Not carried'; exit 1; }
+n=$((n + 1))
+awk 'BEGIN { s = "b"; while (length(s) < 70000) s = s s; print substr(s, 1, 70000) }' > pk2/z.txt
+git commit -qam "one line of 70000 bytes, #7"
+bash "$skill/scripts/review-brief.sh" "$k2" --ticket 7 > out.txt
+[ "$(section "$w2" | grep '^### ')" = "$carried23" ] && [ "$(section "$w2" | grep -v '^$' | tail -1)" = "Not carried, over the pack's 65536 bytes: pk2/f8.txt whole; pk2/z.txt lines 1-1. Read these at HEAD from the repository." ] || { echo "FAIL (24W): row 23's entries carried, z.txt named on the over line after f8.txt:"; section "$w2" | grep -e '^### ' -e '^Not carried'; exit 1; }
+n=$((n + 1))
+# Row 25: the sweep form.
+bash "$skill/scripts/review-brief.sh" --paths pk/s.sh pk/big.sh --commits "$p" --ticket 7 > out.txt
+[ "$(section ".scratch/review/sweep-$(git rev-parse --short "$p")/standards-brief.md")" = "## Reading pack
+
+The sweep form carries no reading pack: its diff numbers lines as the swept commits did, so the files at HEAD are not the code it shows." ] || { echo "FAIL (25W): the sweep's section is not the one line"; exit 1; }
+n=$((n + 1))
+# Row 26: after the diff, before the next section; the two briefs' sections equal.
+# around <brief>: the `## ` line before the section and the one after it, outside the pack's fences.
+around() {
+  awk '/^## / && !on && $0 != "## Reading pack" { before = $0 }
+    $0 == "## Reading pack" { on = 1; next }
+    on && fence == "" && /^## / { print before; print; exit }
+    on && /^```+$/ { if (fence == "") fence = $0; else if ($0 == fence) fence = "" }' "$1"
+}
+[ "$(around pk-w.standards-brief.md)" = "## Diff
+## Standards" ] && [ "$(around pk-w.spec-brief.md)" = "## Diff
+## The ticket (#7)" ] || { echo "FAIL (26W): the section is not between the diff and the next section"; exit 1; }
+n=$((n + 1))
+[ "$(section pk-w.standards-brief.md)" = "$(section pk-w.spec-brief.md)" ] || { echo "FAIL (26W): the two briefs' sections differ"; exit 1; }
+n=$((n + 1))
+[ "$(around pk-f.standards-brief.md)" = "## Diff
+## Settled in earlier rounds" ] && [ "$(around pk-f.spec-brief.md)" = "## Diff
+## Settled in earlier rounds" ] || { echo "FAIL (26F): the section is not between the diff and the settled items"; exit 1; }
+n=$((n + 1))
+[ "$(section pk-f.standards-brief.md)" = "$(section pk-f.spec-brief.md)" ] || { echo "FAIL (26F): the two briefs' sections differ"; exit 1; }
+n=$((n + 1))
+# Row 27: the Report sentence after Manuel's fifth sentence, before the shape sentence.
+pack_rule='The `## Reading pack` section above is the code to read, as it stands at the reviewed commit; open the repository only for what the pack does not carry, and then read that one function or section, not the file.'
+for f in pk-w.standards-brief.md pk-w.spec-brief.md pk-f.standards-brief.md pk-f.spec-brief.md; do
+  c="W"; case "$f" in pk-f.*) c="F" ;; esac
+  has "$f" "$pack_rule" "$f carries the Report sentence (27$c)"
+  s="$(grep -nxF -- "$pack_rule" "$f" | cut -d: -f1)"
+  [ "$s" -eq "$(($(grep -nF -- "${quotes[4]}" "$f" | cut -d: -f1) + 2))" ] && [ "$(sed -n "$((s + 2))p" "$f")" = 'Write the report as Markdown with exactly these `## ` headings, in this order, each holding numbered items or nothing:' ] || { echo "FAIL (27$c): $f: the sentence is not between the fifth quote and the shape sentence"; exit 1; }
+  n=$((n + 1))
+done
+# Row 28: stdout and state as without the pack.
+printed pk-w.out "ticket: #7
+round: 1 of 3
+$wd/standards-brief.md
+$wd/spec-brief.md" "(28W)"
+[ "$(cat pk-w.round)" = 1 ] && [ "$(cat pk-w.reviewed)" = "$f1" ] && [ "$(cat pk-w.state.fixed-point)" = "$k0" ] && [ "$(cat pk-w.state.dir)" = "$wd" ] && [ "$(cat pk-w.state.files)" = "$(git diff "$k0...$f1" --name-only)" ] && [ "$(tr '\n' ' ' < pk-w.ls)" = "diff files fixed-point log pack.md reviewed round spec-brief.md standards-brief.md stat ticket.md " ] || { echo "FAIL (28W): the state is not what the run writes without the pack"; exit 1; }
+n=$((n + 1))
+printed pk-f.out "ticket: #7
+round: 3 of 3
+settled: carried 3, dropped 1 without a citation
+$fd/standards-brief.md
+$fd/spec-brief.md" "(28F)"
+[ "$(cat pk-f.round)" = 3 ] && [ "$(cat pk-f.reviewed)" = "$f1" ] && [ "$(cat pk-f.state.fixed-point)" = "$p" ] && [ "$(cat pk-f.state.dir)" = "$fd" ] && [ "$(cat pk-f.state.files)" = "$(git diff "$p...$f1" --name-only)" ] && [ "$(tr '\n' ' ' < pk-f.ls)" = "diff files fixed-point log pack.md reviewed round spec-brief.md standards-brief.md stat ticket.md " ] || { echo "FAIL (28F): the state is not what the run writes without the pack"; exit 1; }
+n=$((n + 1))
+# Row 29: a git that fails on check-attr.
+mkdir -p "$tmp/failgit"
+printf '#!/bin/sh\nif [ "$1" = check-attr ]; then echo "fatal: check-attr refused by the test" >&2; exit 128; fi\nexec '"'"'%s'"'"' "$@"\n' "$(command -v git)" > "$tmp/failgit/git"
+chmod +x "$tmp/failgit/git"
+git switch -q --detach "$f1"
+for c in W F; do
+  if [ "$c" = F ]; then pr me me:previous-1r.md me:previous-2f-pk.md; from="$p" d="$fd"; else from="$k0" d="$wd"; fi
+  rm -rf .scratch .claude/state
+  set +e
+  PATH="$tmp/failgit:$PATH" bash "$skill/scripts/review-brief.sh" "$from" --ticket 7 > out.txt 2> err.txt
+  code=$?
+  set -e
+  if [ "$code" != 1 ] || [ "$(tail -1 err.txt)" != "review-brief: the reading pack failed (above); nothing written" ] || ! grep -qF "fatal: check-attr refused by the test" err.txt || [ -e .claude/state/review ] || [ -e "$d" ]; then
+    echo "FAIL (29$c): exit $code, wanted 1, git's message, the refusal, no state and no $d"; cat err.txt; exit 1
+  fi
+  n=$((n + 1))
+done
+rm pr.json
+git switch -q -
+# The drift guard: the cutoffs line, and SKILL.md step 4's bullet and Report sentence.
+grep -qx 'pack_whole=8192 pack_unit=4096 pack_total=65536' "$skill/scripts/reading-pack.sh" || { echo "FAIL: reading-pack.sh has no cutoffs line"; exit 1; }
+n=$((n + 1))
+has "$source_skill/SKILL.md" '- `## Reading pack`, right after the diff, from `scripts/reading-pack.sh`: the code the diff touches as it stands at the reviewed commit. A changed file of 8192 bytes or less is carried whole; in a larger one, each changed line brings the shell function, the comment-led block or the Markdown section around it when that is 4096 bytes or less, else the widest window around the line within 4096 bytes. The pack carries 65536 bytes at most, smallest entries first, and names what it leaves out on one closing line; a file with no text to carry (deleted, binary, generated, a link) is named with the reason. The sweep form carries no pack.' "SKILL.md step 4 names the pack and its cutoffs"
+has "$source_skill/SKILL.md" "$pack_rule" "SKILL.md step 4 carries the Report sentence"
 }
 
 suite project
