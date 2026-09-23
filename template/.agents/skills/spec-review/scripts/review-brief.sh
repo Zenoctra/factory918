@@ -480,7 +480,7 @@ if [ ${#standards[@]} -eq 0 ] && [ -f CODING_STANDARDS.md ]; then standards=(COD
 # holds them together). The spec rule is written only with a spec in hand, the same test that
 # writes the Spec brief: a review with no spec has no table, sketch or criterion for a `spec:` line
 # to name, so its Standards brief goes from the step rule to the report path and the count rule.
-definition="A hard finding is one of two things: the documented path gives a wrong or silent result, or an input outside it proceeds silently (fails open). An input outside the documented path that is refused with a message saying how to correct it is not a finding; it is the design. Zero items is the expected result for a clean change."
+definition="A hard finding is one of two things: the documented path gives a wrong or silent result, or an input outside it proceeds silently (fails open). An input outside the documented path that is refused with a message saying how to correct it is not a finding; it is the design."
 quotes=(
   '- Manuel: "there are an infinite amount of unhappy paths and only 1 happy one"'
   '- Manuel: "AT MOST hardening to fail fast and loud if we move outside of that"'
@@ -488,6 +488,8 @@ quotes=(
   '- Manuel: "An edge case outside the intended path being unsupported is not a flag."'
   '- Manuel: "Primary focus must be the happy path, then unhappy paths that error in a way the user can correct."'
 )
+# The line after Manuel's words; SKILL.md step 4 carries it word for word (the same test holds them together).
+edge_rule='An edge case that proceeds silently fails open: file it under `## Fails open`.'
 step_rule='Every item under `## Would break` or `## Fails open` carries a line `Documented step:` quoting the ticket line or the `file:line` of the documentation the user follows, and a line `Result:` saying what happens instead; an item without its `Documented step:` line is sent back.'
 spec_rule='The same item carries a line `spec:` naming the artifact it rests on: `table <row>/<column>` for a cell of the ticket'"'"'s scenario table, `design <signature>` for a signature or usage in its `## Design` sketch, or `criterion <k>` for its k-th acceptance checkbox; an item without a `spec:` line in one of those three forms is sent back.'
 # The blast-radius paragraph; SKILL.md step 4 carries it word for word (the same test holds them together).
@@ -499,11 +501,13 @@ count_rule='End the report with exactly one line `hard findings: N`, where N is 
 # The paragraph over a fix-only round's fixed items; SKILL.md step 4 carries it word for word (the
 # same test holds them together). It says what the diff is, never what to find.
 fix_rule="The round before this one fixed these Act on items on this PR after the commit it reviewed; this round's diff is those fix commits and nothing else. Read each fix against its item, walk only the steps these commits touch, and report only what these commits get wrong. Nothing in this section says what you should find or confirm."
-# The sentence over the reading pack, after Manuel's words; SKILL.md step 4 carries it word for word
+# The sentence over the reading pack, after the edge line; SKILL.md step 4 carries it word for word
 # (the same test holds them together).
-pack_rule='The `## Reading pack` section above is the code to read, as it stands at the reviewed commit; open the repository only for what the pack does not carry, and then read that one function or section, not the file.'
+pack_rule='The `## Reading pack` section above is the code to read, as it stands at the reviewed commit; open the repository for what the pack does not carry.'
+# Each brief's first line; SKILL.md step 4 carries it word for word (the same test holds them together).
+read_rule='You may open any file in the repository and run read-only commands, such as grep or the test suite.'
 common() {
-  echo "Read nothing beyond this brief unless a finding needs the code around a hunk, and then read that one function or section, not the file. Run nothing."
+  echo "$read_rule"
   echo
   echo "## Commits"
   echo
@@ -549,13 +553,16 @@ common() {
     echo
   fi
 }
-# The opening of each brief's Report section: the definition, Manuel's words, the shape sentence.
+# The opening of each brief's Report section: the definition, Manuel's words, the edge line, the
+# reading-pack sentence, the shape sentence.
 report_rules() {
   echo "## Report"
   echo
   echo "$definition"
   echo
   printf '%s\n' "${quotes[@]}"
+  echo
+  echo "$edge_rule"
   echo
   echo "$pack_rule"
   echo
@@ -591,7 +598,7 @@ report_rules() {
   echo '- `## Standards breaches`: documented-standard breaches that do not change behavior. Cite the standard and quote the hunk.'
   echo '- `## Fix alongside`: baseline smells and other judgement calls. Name the smell and quote the hunk. They are fixed only when a would-break fix already touches that code; they never count.'
   echo
-  echo 'Each item opens with a line of the form `1. **Title.** body`, with the quoted hunk in a fenced block under it; number the items continuously across the headings, so the judgment can name your third item as [S3]. A documented repo standard overrides the baseline. Skip anything tooling enforces. Read nothing beyond this brief unless a finding needs the code around a hunk, and then read that one function or section, not the file. Under 400 words.'
+  echo 'Each item opens with a line of the form `1. **Title.** body`, with the quoted hunk in a fenced block under it; number the items continuously across the headings, so the judgment can name your third item as [S3]. A documented repo standard overrides the baseline. Skip anything tooling enforces.'
   echo
   echo "$step_rule"
   echo
@@ -627,7 +634,7 @@ if [ -n "$spec" ]; then
     echo '- `## Fails open`: an input outside the documented path that proceeds silently instead of being refused with a message saying how to correct it.'
     echo '- `## Not asked for`: behaviour in the diff the ticket did not ask for.'
     echo
-    echo 'Each item opens with a line of the form `1. **Title.** body` and quotes the spec line it rests on in a fenced block (a criterion can carry `## ` or `1. ` lines, and only fenced text is exempt from the report shape); number the items continuously across the headings from `## Would break` on, so the judgment can name your third item as [P3]. Read nothing beyond this brief unless a finding needs the code around a hunk, and then read that one function or section, not the file. Under 400 words.'
+    echo 'Each item opens with a line of the form `1. **Title.** body` and quotes the spec line it rests on in a fenced block (a criterion can carry `## ` or `1. ` lines, and only fenced text is exempt from the report shape); number the items continuously across the headings from `## Would break` on, so the judgment can name your third item as [P3].'
     echo
     echo "$step_rule"
     echo
