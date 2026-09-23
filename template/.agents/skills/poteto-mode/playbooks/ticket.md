@@ -19,7 +19,7 @@
 
 **Reply:** the ticket, the criteria and how each was proven, what the ticket did not settle and what you chose, the PR URL.
 
-A decision the ticket records goes under Provisional in `DECISIONS.md` as `P<N>`, N this ticket's number, and a second row as `P<N>b`, then `P<N>c`. The id comes from the ticket, never from the table, so a parallel PR or a rebase leaves it unchanged. `python3 tools/check_knowledge.py` refuses a duplicate or any other form. The rule and its reason are `docs/agents/issue-tracker.md`, "Record a decision".
+A decision the ticket records goes under Provisional in `DECISIONS.md` as `P<N>`, N this ticket's number, and a second row as `P<N>b`, then `P<N>c`. The id comes from the ticket, never from the table, so a parallel PR or a rebase leaves it unchanged. In the factory, `python3 tools/check_knowledge.py` refuses a duplicate or any other form. The rule and its reason are `docs/agents/issue-tracker.md`, "Record a decision".
 
 ### Quick ticket
 
