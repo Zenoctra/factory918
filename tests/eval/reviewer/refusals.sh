@@ -476,6 +476,32 @@ for tool in TodoWrite ToolSearch; do
   check "contamination: $tool reads nothing and passes" is "$(h field "$(rundir "$C" standards 1)/receipt.json" status)" complete
 done
 
+fresh foreign
+old="$(rundir "$C" standards 1)"
+mkdir -p "$old"
+printf '{"version": 1, "run": {"descriptor": "%s", "round": "r1", "axis": "standards", "k": 1}, "status": "complete", "detail": "complete", "reported_model": "claude-opus-5", "model_verified": true, "effort": "medium", "tokens": null, "wall_ms": 1, "source": "x"}\n' "$C" > "$old/receipt.json"
+run collect
+check "foreign: collect lists a #103 receipt as stuck" has "$out" "stuck $old"
+check "foreign: and does not count it collected" has "$out" "collected 0 ·"
+run next "$C"
+check "foreign: next refuses" is "$code" 1
+check "foreign: saying what to do" is "$err" "reviewer: $old: a receipt from another measurement (version 1); set REVIEWER_OUT to a fresh directory or move it aside"
+run table
+check "foreign: table refuses the same way" has "$err" "$old: a receipt from another measurement (version 1)"
+rm "$old/receipt.json"
+printf '{"run": {"descriptor": "%s", "round": "r1", "axis": "standards", "k": 1}, "nonce": "n", "checkout": "/x", "prompt": "p"}\n' "$C" > "$old/run.json"
+run collect
+check "foreign: a #103 run.json is stuck too" has "$out" "stuck $old"
+run next "$C"
+check "foreign: next refuses a #103 run.json" has "$err" "$old: a run.json from another measurement (version None)"
+default_out="$(env -u REVIEWER_OUT python3 -c 'import importlib.util, sys
+spec = importlib.util.spec_from_file_location("reviewer", sys.argv[1])
+r = importlib.util.module_from_spec(spec)
+sys.modules["reviewer"] = r
+spec.loader.exec_module(r)
+print(r.load_env().out)' "$script")"
+check "foreign: the default output directory is not #103's" is "$default_out" "$here/.scratch/eval/reviewer-138"
+
 fresh twice
 run next "$C" --limit 1
 finish "$out" "$tmp/rep/hit.md"

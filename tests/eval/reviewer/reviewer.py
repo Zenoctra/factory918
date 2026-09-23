@@ -22,9 +22,10 @@ patch from its commits the same way.
         transcript names yet, then new runs, pass 1 across every brief before pass 2 before pass 3.
         A step is prepared once its prerequisites are collected complete; a contaminated run is
         moved aside and prepared again, until its third contamination gives it up: `next` prints
-        `given up` for it and prepares neither it nor the steps that need it. A model with a usage-limit receipt is paused: `next`
-        prints one `paused` line for it and prepares nothing for it until `--resume` names it,
-        which prepares its limited runs again first. Collects nothing.
+        `given up` for it and prepares neither it nor the steps that need it. A model with a
+        usage-limit receipt is paused: `next` prints one `paused` line for it and prepares nothing
+        for it until `--resume` names it, which prepares its limited runs again first. Collects
+        nothing.
     python3 tests/eval/reviewer/reviewer.py collect
         Collect every finished run; list what is in flight, unlaunched or stuck. Safe to repeat.
     python3 tests/eval/reviewer/reviewer.py table
@@ -35,7 +36,8 @@ where it is given), `description` and `prompt` to the Agent tool in the backgrou
 `collect`.
 
 Environment, each with a default: REVIEWER_FIXTURES (this directory), REVIEWER_OUT
-(<repository>/.scratch/eval/reviewer), REVIEWER_WORK (${TMPDIR:-/tmp}/review-work),
+(<repository>/.scratch/eval/reviewer-138; a receipt or run.json another measurement wrote there is
+refused), REVIEWER_WORK (${TMPDIR:-/tmp}/review-work),
 REVIEWER_TRANSCRIPTS (~/.claude/projects/<main checkout path, every character outside A-Za-z0-9
 as ->), REVIEWER_REPO (the repository holding the reviewed heads), REVIEWER_AGENTS (<main
 checkout>/.claude/agents, where the installed agent definitions must match agents/),
@@ -72,6 +74,7 @@ COUNT_LINE = re.compile(r"hard findings: ([0-9]+)")
 ITEM_LINE = re.compile(r"(\d+)\. ")
 FENCE_LINE = re.compile(r"\s*(`{3,}|~{3,})")
 USAGE_LIMIT = "usage-limit"
+VERSION = 2  # of receipt.json and run.json; #103 wrote version 1
 GIVE_UP = 3  # contaminated attempts after which a run is prepared no more
 USAGE_LIMIT_LINE = re.compile(r"hit your usage limit", re.I)
 # review-brief.sh at e710e99 prints this heading and paragraph, word for word, above the settled items.
@@ -238,6 +241,10 @@ class Score:
 
 class Refusal(Exception):
     """Printed as `reviewer: <msg>` on stderr, exit 1."""
+
+
+class Foreign(Refusal):
+    """A run directory written by another measurement, such as #103's."""
 
 
 class Conflict(Refusal):
@@ -690,7 +697,7 @@ def load_env() -> Env:
         Path.home() / ".claude" / "projects" / re.sub(r"[^A-Za-z0-9]", "-", str(main)))
     return Env(
         fixtures=Path(os.environ.get("REVIEWER_FIXTURES") or here),
-        out=Path(os.environ.get("REVIEWER_OUT") or top / ".scratch" / "eval" / "reviewer"),
+        out=Path(os.environ.get("REVIEWER_OUT") or top / ".scratch" / "eval" / "reviewer-138"),
         work=Path(os.environ.get("REVIEWER_WORK") or Path(os.environ.get("TMPDIR") or "/tmp") / "review-work"),
         transcripts=Path(transcripts),
         repo=Path(os.environ.get("REVIEWER_REPO") or top),
@@ -714,16 +721,24 @@ def read_jsonl(path: Path) -> list[dict]:
 
 
 def receipt_json(r: Receipt) -> dict:
-    return {"version": 2, "run": r.run.to_json(), "status": r.status, "detail": r.detail,
+    return {"version": VERSION, "run": r.run.to_json(), "status": r.status, "detail": r.detail,
             "reported_model": r.reported_model, "effort": r.effort,
             "tokens": asdict(r.tokens) if r.tokens else None, "wall_ms": r.wall_ms, "source": str(r.source)}
+
+
+def ours(d: Path, j: dict, what: str) -> dict:
+    """The file's contents when this measurement wrote it; a Foreign refusal otherwise."""
+    if j.get("version") != VERSION or "step" not in (j.get("run") or {}):
+        raise Foreign(f"{d}: a {what} from another measurement (version {j.get('version')}); "
+                      f"set REVIEWER_OUT to a fresh directory or move it aside")
+    return j
 
 
 def receipt_at(d: Path) -> Receipt | None:
     path = d / "receipt.json"
     if not path.is_file():
         return None
-    j = json.loads(path.read_text())
+    j = ours(d, json.loads(path.read_text()), "receipt")
     return Receipt(RunId.from_json(j["run"]), j["status"], j["detail"], j["reported_model"], j["effort"],
                    Tokens(**j["tokens"]) if j["tokens"] else None, j["wall_ms"], Path(j["source"]))
 
@@ -732,7 +747,7 @@ def prepared_at(d: Path) -> Prepared | None:
     path = d / "run.json"
     if not path.is_file():
         return None
-    j = json.loads(path.read_text())
+    j = ours(d, json.loads(path.read_text()), "run.json")
     return Prepared(RunId.from_json(j["run"]), j["nonce"], Path(j["checkout"]), j["prompt"],
                     tuple(j.get("settled", ())), tuple(j.get("applied", ())), tuple(j.get("masked", ())), j.get("tree"))
 
@@ -820,7 +835,7 @@ def materialize(p: Prepared, brief: Brief, fx: Fixtures, env: Env) -> Prepared:
         bfile.write_text(settle(bfile.read_text(), run.brief.axis, list(settled)))
     done = Prepared(run, p.nonce, p.checkout, p.prompt, settled, applied, masked, tree)
     (d / "prompt.txt").write_text(p.prompt)
-    write_json(d / "run.json", {"run": run.to_json(), "nonce": p.nonce, "checkout": str(p.checkout),
+    write_json(d / "run.json", {"version": VERSION, "run": run.to_json(), "nonce": p.nonce, "checkout": str(p.checkout),
                                 "prompt": p.prompt, "tree": tree, "settled": list(settled),
                                 "applied": list(applied), "masked": list(masked),
                                 "plain_head": not applied})
@@ -1016,8 +1031,13 @@ def cmd_collect(fx: Fixtures, env: Env) -> int:
     native: dict[RunId, Prepared] = {}
     for d in run_dirs(out):
         st = state(d)
-        p = prepared_at(d) if st == "prepared" else None
-        if st == "collected":
+        try:
+            p = prepared_at(d) if st == "prepared" else None
+            receipt = receipt_at(d) if st == "collected" else None
+        except Foreign:
+            stuck.append(d)
+            continue
+        if receipt:
             collected += 1
         elif p and p.run.descriptor in MODELS and p.run.brief in fx.briefs:
             native[p.run] = p
