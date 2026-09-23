@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """Re-run a frozen reviewer brief against one model N times and score the reports (ticket #103).
 
+On a fresh clone, first fetch the reviewed heads the fixtures point at; they are not on any branch:
+
+    git fetch origin 'refs/keep/103/*:refs/keep/103/*'
+
     python3 tests/eval/reviewer/reviewer.py check [--list]
         Validate the fixture set; calibrate every label against the historical report where one
         survives. --list prints the brief ids.
@@ -47,6 +51,7 @@ AXES: tuple[Axis, ...] = ("standards", "spec")
 BANNED = ("eval", "test", "judge", "score", "benchmark", "candidate", "rubric", "experiment",
           "compare", "arena")
 HARD_HEADINGS = ("Would break", "Fails open")
+FETCH_KEEP_REFS = "git fetch origin 'refs/keep/103/*:refs/keep/103/*'"
 EFFORT: Mapping[Axis, str] = {"standards": "medium", "spec": "high"}
 COUNT_LINE = re.compile(r"hard findings: ([0-9]+)")
 ITEM_LINE = re.compile(r"(\d+)\. ")
@@ -792,7 +797,8 @@ def cmd_run(fx: Fixtures, env: Env, descriptor: str, bid: BriefId, n: int) -> in
     if subprocess.run(["git", "-C", str(env.repo), "cat-file", "-e", f"{brief.head}^{{commit}}"],
                       capture_output=True).returncode:
         raise Refusal(f"round {bid.round} head {brief.head} is not in this repository's objects; "
-                      f"the fixture pins it as refs/keep/103/{brief.head[:7]}")
+                      f"the fixture pins it as refs/keep/103/{brief.head[:7]}, so fetch the "
+                      f"reviewed heads with: {FETCH_KEEP_REFS}")
     states = {}
     for run in runs:
         d, st = run.dir(out), state(run.dir(out))
