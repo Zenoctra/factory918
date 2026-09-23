@@ -324,10 +324,12 @@ fresh r5
 REVIEWER_FIXTURES="$tmp/fx-gone" run run "$C" r1/standards 1
 check "5 run claude: exit 1" is "$code" 1
 check "5 run claude: names the keep ref" has "$err" "refs/keep/103/1111111"
+check "5 run claude: names the fetch command" has "$err" "git fetch origin 'refs/keep/103/*:refs/keep/103/*'"
 check "5 run claude: nothing written" absent "$REVIEWER_OUT/runs"
 REVIEWER_FIXTURES="$tmp/fx-gone" run run "$X" r1/standards 1
 check "5 run codex: exit 1" is "$code" 1
 check "5 run codex: names the keep ref" has "$err" "refs/keep/103/1111111"
+check "5 run codex: names the fetch command" has "$err" "git fetch origin 'refs/keep/103/*:refs/keep/103/*'"
 check "5 run codex: nothing written" absent "$REVIEWER_OUT/runs"
 check "5 run codex: the runner is not called" is "$(cat "$FAKE_CALLS")" ""
 REVIEWER_FIXTURES="$tmp/fx-gone" run run "$W" r1/standards 1
