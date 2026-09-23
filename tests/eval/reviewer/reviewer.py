@@ -486,9 +486,11 @@ PREFIX_WORDS = ("env", "sudo", "command", "exec", "time", "nohup", "xargs", "bui
                 "if", "then", "do", "else", "elif", "while", "until", "{", "!")
 TRUSTED_BINS = ("/usr/", "/bin/", "/opt/homebrew/")
 SEGMENT_SPLIT = re.compile(r"&&|\|\||;|\||\$\(|`|\n|\(")
-# An awk or sed address: one segment between two slashes, then sed's address flags or command
-# letters, as in /^## / or /foo.*bar/p. Any letter would let /etc/hosts or /srv/x pass as one.
-PATTERN = re.compile(r"^/[^/]*/[gpdIiMm0-9]*$")
+# An awk or sed address: one segment between two slashes, then sed's letters, as in /^## / or
+# /foo.*bar/p, and that segment holds a regex character or a space. The shape alone would let
+# /tmp/, /etc/hosts or /srv/dip pass; a directory name rarely holds one of these.
+PATTERN = re.compile(r"^/([^/]*)/[A-Za-z]*$")
+PATTERN_BODY = re.compile(r"[\^$.*\[\]\\+?(){}| ]")
 
 
 def bash_reaches(command: str, root: str) -> list[str]:
@@ -512,7 +514,7 @@ def bash_reaches(command: str, root: str) -> list[str]:
     for p in path_tokens(inside.sub(" ", command)):
         if p == "/dev/null" or (p.startswith(TRUSTED_BINS) and p in words):
             continue
-        if PATTERN.match(p):
+        if (m := PATTERN.match(p)) and PATTERN_BODY.search(m.group(1)):
             continue
         why.append(f"names {p}")
     return why

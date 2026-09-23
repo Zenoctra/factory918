@@ -663,6 +663,9 @@ for cmd in ["awk \"/^## /\" a.md", "awk \x27/foo.*/\x27 a.md", "sed -n \x27/foo.
             "grep -E \x27/x[0-9]/\x27 a.md", "grep -E \x27/end$/\x27 a.md", "grep -E \x27/a|b/\x27 a.md",
             "grep -E \x27/a+b/\x27 a.md", "grep -E \x27/a\\.b/\x27 a.md"]:
     assert r.bash_reaches(f"cd {X} && {cmd}", X) == [], cmd'
+pycheck "bash: a directory with the address shape and no regex character is a path" '
+for p in ["/Users/", "/tmp/", "/etc/", "/home/", "/private/", "/tmp/p", "/srv/0", "/srv/dip", "/etc/hosts"]:
+    assert f"names {p}" in r.bash_reaches(f"cd {X} && ls {p}", X), p'
 pycheck "bash: a glob path outside the export is flagged" '
 for cmd in ["cat /Users/manuel/Desktop/Work/*/CLAUDE.md", "ls /Users/x/.claude/agents/*.md",
             "cat /Users/manuel/a[1].md", "cat /srv/x/?.md", "cat /srv/{a,b}/x", "cat /srv/a+b/x",
