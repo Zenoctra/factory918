@@ -31,9 +31,12 @@
 # is exactly `### Writer flags <YYYY-MM-DD>` in the ticket body at any round, ends with its
 # disposition, `fixed: <sha>` (a commit in HEAD's history) or `accepted: <reason>`; a line without
 # one, a heading that looks like either and is not, or a fence opened in the list and never closed
-# is refused before any state is written, each line named. With a grounding, the Spec brief's
-# `## Walk` bullet continues with one numbered line per risk, so the reviewer walks the risks after
-# the steps and says whether the diff honors each disposition.
+# is refused before any state is written, each line named. A writer flags heading line anywhere in
+# a ticket body, fenced, quoted, decorated or misspelt, under which no flag is read (a read flag
+# belongs to the nearest such line at or above it) is refused too, since a list the check cannot
+# read would otherwise pass as no list, or behind another list's flags. With a grounding, the Spec
+# brief's `## Walk` bullet continues with one numbered line per risk, so the reviewer walks the
+# risks after the steps and says whether the diff honors each disposition.
 # Both briefs carry `## Reading pack` after the diff, the code around each change at HEAD, which
 # scripts/reading-pack.sh writes to `<dir>/pack.md`; if it fails the script refuses before writing any state.
 # shellcheck disable=SC2016 # every single-quoted string here is a jq program or a Markdown template; the backticks and $ are literal
@@ -157,7 +160,7 @@ fenced='
 # near-miss, since it would hide its list; so is a fence opened in a list and never closed. The awk
 # prints one record per item or offender, `kind US value US line`, kind none, near, fence, fixed
 # or accepted: US and not a tab, since read collapses consecutive tabs and an empty value would
-# shift the line into it.
+# shift the line into it. With -v at=1 an item prints its line number instead.
 disposed='
   function field(s,   rest, off, k, v) {
     k = ""; off = 0; rest = s
@@ -178,7 +181,7 @@ disposed='
   (lv && index(x, w) == 1 && substr(x, length(w) + 1, 1) !~ /[a-z]/) || t ~ ("^[*_]*" w "[ 0-9-]*[*_]*[.:]?[*_]*$") { print "near" US US $0; if (lv && lv <= top) on = 0; next }
   lv && lv <= top { on = 0; next }
   !on || $0 == "" { next }
-  { match($0, /^[ \t]*/); if (base < 0) base = RLENGTH; if (RLENGTH > base) next; print field($0) US $0 }
+  { match($0, /^[ \t]*/); if (base < 0) base = RLENGTH; if (RLENGTH > base) next; print (at ? NR : field($0) US $0) }
   END { if (fence != "" && opened != "") print "fence" US US opened }
 '
 # undisposed <risks|flags>: reads Markdown on stdin and prints `  <reason>: <line>` per offender, in
@@ -435,6 +438,25 @@ if [ -n "$spec" ]; then
     rm -rf "$dir"
     echo "review-brief: ticket #$ticket has Writer flags without a disposition; every line under a \`### Writer flags <YYYY-MM-DD>\` heading that is not indented deeper or fenced is a flag and ends with \`fixed: <sha>\` (a commit in HEAD's history) or \`accepted: <reason>\` as plain text; indent a continuation, fence a proof, and write the heading exactly that way:" >&2
     printf '%s\n' "$bad" >&2
+    exit 1
+  fi
+  # A count per heading line, not a parse: whatever hid a list from the check above, a heading line
+  # with no read flag at or below it before the next heading line refuses. The check above has
+  # already refused every near-miss and unclosed-fence record, so every line number the first awk
+  # prints is a read flag's. A heading line is two or more `#` (one `#` is a code comment more often
+  # than a heading), after any spaces, `>` quote markers and list markers, whose text holds `writer`
+  # and, anywhere after it on the line, `flag`, in any case.
+  # at=1 reuses the parser for line numbers and leaves undisposed's records alone.
+  reads="$(printf '%s\n' "$spec" | awk -v mode=flags -v w="writer flags" -v at=1 "$disposed" | tr '\n' ' ')"
+  heads="$(printf '%s\n' "$spec" | awk -v reads="$reads" 'BEGIN { n = split(reads, r, " "); for (i = 1; i <= n; i++) read[r[i]] = 1 }
+    { sub(/\r$/, ""); sub(/[ \t]+$/, "") }
+    tolower($0) ~ /^([ \t>]|[-*+]|[0-9]+[.)])*##+.*writer.*flag/ { head[++k] = $0 }
+    k && (NR in read) { got[k] = 1 }
+    END { for (i = 1; i <= k; i++) if (!got[i]) print head[i] }')"
+  if [ -n "$heads" ]; then
+    rm -rf "$dir"
+    echo "review-brief: ticket #$ticket has a writer flags heading and no flag could be read from its body; flags are read only under an unfenced, unquoted line that is exactly \`### Writer flags <YYYY-MM-DD>\`, one flag per line with its disposition; the headings found:" >&2
+    printf '%s\n' "$heads" | sed 's/^/  /' >&2
     exit 1
   fi
 fi
