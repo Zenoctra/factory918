@@ -679,6 +679,16 @@ def sc(d, k, hits, labels):
 bands = r.noise([sc("a", 1, 2, 2), sc("a", 2, 1, 2), sc("a", 3, 2, 2), sc("b", 1, 3, 5), sc("c", 1, 2, 5)], "standards")
 assert bands["a"][1] == 0.5 and bands["a"][2] == 1.0, bands
 assert r.within(bands) == frozenset({"a", "b"}), bands'
+pycheck "rule: a replicate short of a labeled brief is out of the band and still in the recall" '
+B2 = r.BriefId("r2", "standards")
+def sc(k, brief, hits, labels):
+    return r.Score(r.RunId("a", brief, k), None, frozenset(f"S{i}" for i in range(hits)), frozenset(), 0, labels)
+scores = [sc(1, B, 1, 2), sc(1, B2, 1, 2), sc(2, B, 2, 2), sc(2, B2, 1, 2),
+          sc(3, B, 1, 2), sc(3, B2, 2, 2), sc(4, B, 0, 2)]
+bands = r.noise(scores, "standards")
+assert (bands["a"][1], bands["a"][2]) == (0.5, 0.75), bands
+assert bands["a"][3] == r.statistics.pstdev([0.5, 0.75, 0.75]), bands
+assert bands["a"][0] == 8 / 14, bands'
 run check
 check "rule: calibration passes on the matching item" is "$code:$out" "0:ok r1/standards S1"
 REVIEWER_FIXTURES="$tmp/fx-badcal" run check
