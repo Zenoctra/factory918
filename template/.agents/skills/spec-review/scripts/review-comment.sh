@@ -3,8 +3,12 @@
 # verbatim under their headings, the line `restart` when an Act on item is marked a design hole
 # (`hole: <reference>`), else the line `would-break fixed after <sha>` when an Act on item marked
 # `fixed:` sits under `## Would break` (`<sha>` from `<dir>/reviewed`, the commit review-brief.sh
-# reviewed; the next round's fixed point), the round (`of 5` from round four), then act-on items
-# counted from the judgment's Act on items
+# reviewed; the next round's fixed point), then, at rounds one and two with no hole, the line
+# `next round owed: round <N+1> reviews the fixes marked here` when an Act on item is marked
+# `fixed:`, and at round one `reviewed: <sha>` (`<dir>/reviewed`), at round two `fix only after
+# <sha>` when no Would-break or Fails-open item of either report is outside the fix
+# (`<dir>/fix-lines`), then the round (`of 5` from round four), then act-on items counted from the
+# judgment's Act on items
 # neither fixed on this PR (`fixed: <sha>`), filed as a ticket (`ticket: #N`) nor marked a hole,
 # plus its Ask items, and clears the review state so the delegation hook stops blocking the
 # reviewed files. No arguments: it reads .claude/state/review/dir. One argument, the review dir
@@ -225,6 +229,43 @@ if [ -n "$wb_first" ] && [ "$holes" -eq 0 ]; then
   [ ! -f "$dir/reviewed" ] || reviewed="$(head -n 1 "$dir/reviewed")"
   printf '%s' "$reviewed" | grep -qE '^[0-9a-f]{40}$' || fail "$dir/reviewed is missing or holds no full commit id ('$reviewed'); '$(title "$wb_first")' under '## Would break' is marked 'fixed:', and the next round reviews that fix from the commit this round reviewed: write its 40-character id to $dir/reviewed (git rev-parse of the first commit in $dir/log) and rerun"
 fi
+fixed_here="$(items "$dir/judgment.md" "Act on" | grep -cE 'fixed: [0-9a-f]{7,40}$' || true)"
+# outside: the number of Would-break and Fails-open items in both reports (the Spec report only
+# with a spec) that are not inside the fix. An item is inside when a quoted line's text, less one
+# leading `+`, `-` or space and trimmed, is a fix line (`<dir>/fix-lines`, absent or empty the
+# empty set) and every `+` or `-` line it quotes is one; an unmarked line that is not one is the
+# hunk's context and neutral, and a text under four characters, a fence line and a `@@` line count
+# nothing. An item that quotes no fix line is outside, so every uncertain case reviews more. The
+# capture rule runs before `$fenced`, which skips the fenced lines it reads.
+outside() {
+  local f total=0
+  for f in "$dir/standards-report.md" ${has_spec:+"$dir/spec-report.md"}; do
+    total=$((total + $(awk -v fixf="$dir/fix-lines" '
+      BEGIN { while ((getline l < fixf) > 0) fix[l] = 1 }
+      function done() { if (hard && !(hit && ok)) out++; hard = 0; hit = 0; ok = 1 }
+      fence != "" && hard && !/^(```|~~~)/ && !/^@@/ { m = /^[+-]/; s = $0; sub(/^[-+ ]/, "", s); sub(/^[ \t]+/, "", s); sub(/[ \t\r]+$/, "", s)
+        if (length(s) >= 4) { if (s in fix) hit = 1; else if (m) ok = 0 } }
+    '"$fenced"'
+      /^## / { done(); next }
+      /^[0-9]+\. / { done(); hard = (h == "Would break" || h == "Fails open"); next }
+      END { done(); print out + 0 }
+    ' "$f")))
+  done
+  echo "$total"
+}
+# Rounds one and two only (#106). Round one records the commit it reviewed for round two's brief;
+# round two says whether round three may review the fix alone: only when no hard item of either
+# report is outside the fix commits round two reviewed (<dir>/fix-lines, written by the brief).
+# A hole outranks every line, as it does the WB line.
+owed="" record=""
+if [ "$holes" -eq 0 ] && [ "$round" -le 2 ]; then
+  [ "$fixed_here" -eq 0 ] || owed="next round owed: round $((round + 1)) reviews the fixes marked here"
+  mine=""; [ ! -f "$dir/reviewed" ] || mine="$(head -n 1 "$dir/reviewed")"
+  if printf '%s' "$mine" | grep -qE '^[0-9a-f]{40}$'; then
+    if [ "$round" -eq 1 ]; then record="reviewed: $mine"
+    elif [ "$(outside)" -eq 0 ]; then record="fix only after $mine"; fi
+  fi
+fi
 
 echo "## Standards"
 echo
@@ -244,7 +285,6 @@ act="$(count "$dir/judgment.md" "Act on")"
 # `hole: <reference>`, returned to architect) is not counted; a hole prints the line `restart`
 # before the round, else a Would-break fix prints its line there. The summary never says how many
 # of the fixes were would-break: a count in the comment would invite comparing rounds.
-fixed_here="$(items "$dir/judgment.md" "Act on" | grep -cE 'fixed: [0-9a-f]{7,40}$' || true)"
 ticketed="$(items "$dir/judgment.md" "Act on" | grep -cE 'ticket: #[0-9]+$' || true)"
 ask="$(count "$dir/judgment.md" "Ask")"
 if [ -n "$has_spec" ]; then spec="$p_wb would break, $p_fo fail open, of $p_total"; else spec="no spec"; fi
@@ -254,6 +294,8 @@ else fixed="fixed point unknown"; fi
 echo "Standards: $s_wb would break, $s_fo fail open, of $s_total; Spec: $spec; judged: act on $act ($fixed_here fixed, $ticketed with a ticket), ask $ask, consider $(count "$dir/judgment.md" Consider), noted $(count "$dir/judgment.md" Noted), dismissed $(count "$dir/judgment.md" Dismissed); $fixed."
 if [ "$holes" -gt 0 ]; then echo restart
 elif [ -n "$wb_first" ]; then echo "would-break fixed after $reviewed"; fi
+[ -z "$owed" ] || echo "$owed"
+[ -z "$record" ] || echo "$record"
 echo "round: $round of $cap"
 echo "act-on items: $((act - fixed_here - ticketed - holes + ask))"
 if [ -f "$state/dir" ] && [ "$(cat "$state/dir")" = "$dir" ]; then rm -rf "$state"; fi
