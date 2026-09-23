@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Asserts tests/eval/reviewer/reviewer.py against the `## Design` section of ticket #103: first the
-# cells of the scenario table in its order (rows 1 to 21; within a row the columns run Claude, run
+# cells of the scenario table in its order (rows 1 to 22; within a row the columns run Claude, run
 # Codex, run withheld, collect, table, a dash skipped), then one check per scoring rule of the
 # Contract. It builds a temporary repository, a one-round fixture set `r1` whose Standards brief
 # carries one label, a fake pstack-runner and hand-written subagent transcripts, and points every
@@ -106,6 +106,8 @@ brief="$(sed -E 's/^Read `([^`]*)`.*/\1/' "$prompt")"
 error=null
 if [ "$FAKE_STATUS" = complete ]; then
   [ "$FAKE_REPORT" = none ] || cp "$FAKE_REPORT" "${brief%-brief.md}-report.md"
+elif [ "${FAKE_ERROR:-none}" = usage-limit ]; then
+  error="{\"message\":\"child exited with status 1\",\"evidence\":\"{\\\"type\\\":\\\"error\\\",\\\"message\\\":\\\"You have hit your usage limit. Try again at Sep 23rd, 2026 2:44 AM.\\\"}\"}"
 else
   error='"HTTP 400 not supported when using Codex with a ChatGPT account"'
 fi
@@ -208,7 +210,7 @@ fresh() {
   use "$1"
   mkdir -p "$REVIEWER_TRANSCRIPTS"
   : > "$FAKE_CALLS"
-  export FAKE_STATUS=complete FAKE_REPORT="$tmp/rep/hit.md"
+  export FAKE_STATUS=complete FAKE_REPORT="$tmp/rep/hit.md" FAKE_ERROR=none
 }
 rundir() { echo "$REVIEWER_OUT/runs/${1//:/-}/r1/$2/$3"; }
 scores() { cat "$REVIEWER_OUT/scores.tsv"; }
@@ -218,7 +220,11 @@ finish() {
   t=$((t + 1))
   transcript="$(h finish "$1" "$2" "${3:-claude-opus-5}" "${4:-finished}" "${5:-}" "$REVIEWER_TRANSCRIPTS" "$t")"
 }
-contaminated_cell() { awk -F'|' -v m="$1" 'index($0, m) == 1 { gsub(/ /, "", $(NF-1)); print $(NF-1) }' "$REVIEWER_OUT/table.md"; }
+cell() {
+  awk -F'|' -v c="$1" -v m="$2" '
+    NR == 1 { for (i = 2; i < NF; i++) { h = $i; gsub(/^ +| +$/, "", h); if (h == c) k = i } }
+    index($0, m) == 1 { v = $k; gsub(/ /, "", v); print v }' "$REVIEWER_OUT/table.md"
+}
 
 # Row 1
 fresh r1c
@@ -476,7 +482,7 @@ check "19 collect: the offending path in detail" has "$(h field "$(rundir "$C" s
 run run "$X" r1/spec 1
 run table
 check "19 table: excluded from scores" lacks "$(scores)" "$C"
-check "19 table: counted contaminated" is "$(contaminated_cell "| $C | standards |")" 1
+check "19 table: counted contaminated" is "$(cell contaminated "| $C | standards |")" 1
 i=0
 for reach in 'Grep|' 'Glob|' 'Grep|/etc' 'Glob|/etc'; do
   i=$((i + 1))
@@ -491,6 +497,18 @@ for reach in 'Grep|' 'Glob|' 'Grep|/etc' 'Glob|/etc'; do
   check "19 collect: $tool ${path:-with no path} named in detail" \
     has "$(h field "$(rundir "$C" standards 1)/receipt.json" detail)" "$tool ${path:-with no path}"
 done
+fresh r19overflow
+run run "$C" r1/standards 1
+finish "$out" "$tmp/rep/hit.md" claude-opus-5 finished "Read|$REVIEWER_TRANSCRIPTS/s/tool-results/b0gweyh98.txt"
+run collect
+check "19 collect: a Read of the harness's own overflow is not contamination" \
+  is "$(h field "$(rundir "$C" standards 1)/receipt.json" status)" complete
+fresh r19transcripts
+run run "$C" r1/standards 1
+finish "$out" "$tmp/rep/hit.md" claude-opus-5 finished "Read|$REVIEWER_TRANSCRIPTS/s/notes.txt"
+run collect
+check "19 collect: another Read under the transcripts directory is still contamination" \
+  is "$(h field "$(rundir "$C" standards 1)/receipt.json" status)" contaminated
 
 # Row 20
 fresh r20
@@ -516,6 +534,25 @@ run table
 check "21 table: exit 0" is "$code" 0
 check "21 table: writes scores.tsv" exists "$REVIEWER_OUT/scores.tsv"
 check "21 table: writes table.md" exists "$REVIEWER_OUT/table.md"
+
+# Row 22
+fresh r22
+FAKE_ERROR=usage-limit FAKE_STATUS=child-failed run run "$X" r1/standards 3
+check "22 run codex: exit 0" is "$code" 0
+check "22 run codex: a dropout receipt" is "$(h field "$(rundir "$X" standards 1)/receipt.json" status)" dropout
+check "22 run codex: the detail names the usage limit" \
+  starts "$(h field "$(rundir "$X" standards 1)/receipt.json" detail)" usage-limit
+check "22 run codex: later k still attempted" lines "$(cat "$FAKE_CALLS")" 3
+check "22 run codex: no report" absent "$(rundir "$X" standards 1)/report.md"
+run run "$X" r1/spec 1
+run table
+check "22 table: excluded from scores" lacks "$(scores)" "$(row "$X" r1/standards)"
+check "22 table: counted per model" is "$(cell "usage limit" "| $X | standards |")" 3
+: > "$FAKE_CALLS"
+run run "$X" r1/standards 1
+check "22 run codex: the usage-limit run is prepared again" has "$out" "recall 1/1"
+check "22 run codex: the runner is called once more" lines "$(cat "$FAKE_CALLS")" 1
+check "22 run codex: the receipt is now complete" is "$(h field "$(rundir "$X" standards 1)/receipt.json" status)" complete
 
 pycheck() {
   local label=$1
