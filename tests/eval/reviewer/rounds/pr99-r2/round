@@ -1,8 +1,0 @@
-pr=99
-ticket=90
-label=round: 2 of 3
-fixed_point=69bd41230e0f62e0824403196243c013118fb302
-head=384bb43a872c1bca7b63a27aab2590ac37d46fae
-head_source=recorded
-comment=https://github.com/Zenoctra/factory918/pull/99#issuecomment-5781309601
-brief_source=surviving
