@@ -20,8 +20,8 @@
 # assertion per cell): `next round owed: round <N+1> reviews the fixes marked here` when an Act on
 # item is marked `fixed:`, at round one `reviewed: <sha>` from `<dir>/reviewed`, and at round two
 # `fix only after <sha>` when no Would-break or Fails-open item of either report is outside the
-# fix lines in `<dir>/fix-lines`. A refusal leaves the review state in place; an accepted run
-# clears it. Exits 1 on the first miss.
+# fix (`<dir>/fix-lines`, `<dir>/fix-ranges`). A refusal leaves the review state in place; an
+# accepted run clears it. Exits 1 on the first miss.
 set -euo pipefail
 here="$(cd "$(dirname "$0")/../.." && pwd -P)"
 # shellcheck source-path=SCRIPTDIR source=layout.sh
@@ -992,8 +992,9 @@ act-on items: 1" "a Would-break fix in the sweep form (9)"
 # Ticket #106, table B: at rounds one and two with no hole marked, the tail gains the owed line
 # when an Act on item is marked `fixed:`, `reviewed: <sha>` at round one and `fix only after <sha>`
 # at round two when no hard item of either report is outside the fix; from round three on, and
-# beside `restart`, none of the three. The fix added `exit 1 # miss` and removed `exit 0`
-# (<dir>/fix-lines, which round two's brief writes); r2 is the id rearm writes to <dir>/reviewed.
+# beside `restart`, none of the three. The fix added `exit 1 # miss` at a.sh lines 1 to 3
+# (<dir>/fix-lines and <dir>/fix-ranges, which round two's brief writes, beside <dir>/files); r2
+# is the id rearm writes to <dir>/reviewed.
 # Each assertion names its cell, row then column; the lines above the summary line are the
 # fixture files, and the summary line is #93's, unchanged.
 r2=0123456789abcdef0123456789abcdef01234567
@@ -1001,7 +1002,7 @@ fo="fix only after $r2"
 owed2="next round owed: round 2 reviews the fixes marked here"
 owed3="next round owed: round 3 reviews the fixes marked here"
 # at <round>: a fresh review with a spec at that round (no round file at 1), empty reports and
-# judgment, and the fix lines.
+# judgment, and the fix lines, ranges and files.
 at() {
   reset
   echo brief > "$dir/spec-brief.md"
@@ -1009,7 +1010,9 @@ at() {
   empty_spec > "$dir/spec-report.md"
   empty_judgment > "$dir/judgment.md"
   [ "$1" = 1 ] || echo "$1" > "$dir/round"
-  printf 'exit 1 # miss\nexit 0\n' > "$dir/fix-lines"
+  printf 'exit 1 # miss\n' > "$dir/fix-lines"
+  printf 'a.sh\nold.sh\nlib/SKILL.md\ndocs/SKILL.md\n' > "$dir/files"
+  printf '1\t3\ta.sh\n' > "$dir/fix-ranges"
 }
 # ends <tail> <label> [dir]: exit 0, the fixture files above the summary line, exactly the tail
 # after it, the state cleared.
@@ -1047,10 +1050,14 @@ judge() {
   [ -z "${3:-}" ] || p1=$'3. [P1] **Ticket line.** Read.\n\n'
   printf '## Act on\n\n1. [S1] **Hook exits 0 on a miss.** The test proves it.%s\n2. [S2] **Bare number.** Named.%s\n\n## Ask\n\n## Consider\n\n## Noted\n\n%s## Dismissed\n' "$1" "$2" "$p1" > "$dir/judgment.md"
 }
+# named <location> <item>: the item with the location named in its opening line.
+named() { printf '%s\n' "$2" | sed "1s|\$| Also \`$1\`.|"; }
+# stepped <location> <item>: the item with its Documented step at the location.
+stepped() { printf '%s\n' "$2" | sed "s|^Documented step: \`a.sh:2\`|Documented step: \`$1\`|"; }
 # shellcheck disable=SC2016 # the expected Markdown is literal; the backticks and $1 are not expanded
 inside="$(item ' if [ -f "$1" ]; then
--  exit 0
-+  exit 1 # miss')"
++  exit 1 # miss
++fi')"
 outside="$(item '+  exit 2 # elsewhere
 +  exit 1 # miss')"
 # shellcheck disable=SC2016 # the expected Markdown is literal; the backticks and $1 are not expanded
@@ -1131,7 +1138,26 @@ at 2
 standards "$context"
 judge "" ""
 ends "round: 2 of 3
-act-on items: 2" "a hard item quoting only context lines the fix did not touch (3B)"
+act-on items: 2" "a hard item quoting only unmarked lines: no marked line (3B)"
+at 2
+standards "$(item '--- a/a.sh
++++ b/a.sh
++  exit 1 # miss')"
+judge "" ""
+ends "round: 2 of 3
+act-on items: 2" "a hard item quoting the diff's file headers beside a fix line (3B)"
+at 2
+echo 'exit 0' >> "$dir/fix-lines"
+standards "$(item '-  exit 0
++  exit 1 # miss')"
+judge "" ""
+ends "round: 2 of 3
+act-on items: 2" "a hard item quoting a - line whose text is a fix line: a - line never counts (3B)"
+at 2
+standards "$(item '+  exit 2 # elsewhere')"
+judge "" ""
+ends "round: 2 of 3
+act-on items: 2" "a hard item quoting only an added line the fix did not add (3B)"
 # Row 4: no quoted line at all.
 for it in "$bare" "$elided"; do
   at 2
@@ -1140,6 +1166,12 @@ for it in "$bare" "$elided"; do
   ends "round: 2 of 3
 act-on items: 2" "a hard item with no fenced block, or only elision and a hunk header in it (4B)"
 done
+at 2
+standards "$(item '+fi
++}')"
+judge "" ""
+ends "round: 2 of 3
+act-on items: 2" "a hard item quoting only marked lines under four characters: none counts (4B)"
 # Row 5: a Spec item quoting its ticket line.
 at 2
 standards "$inside"
@@ -1148,6 +1180,10 @@ printf '## Walk\n\n## Would break\n\n1. **Ticket line.** The brief misses it.\nD
 judge "" "" P1
 ends "round: 2 of 3
 act-on items: 2" "a Spec hard item quoting its ticket line beside one inside the fix (5B)"
+empty_standards > "$dir/standards-report.md"
+printf '## Act on\n\n## Ask\n\n## Consider\n\n## Noted\n\n1. [P1] **Ticket line.** Read.\n\n## Dismissed\n' > "$dir/judgment.md"
+ends "round: 2 of 3
+act-on items: 0" "a Spec hard item quoting its ticket line as a checkbox, alone: a - line (5B)" "$dir"
 # Row 6: a removed line and an added line, each in its own item, context around them.
 at 2
 # shellcheck disable=SC2016 # the expected Markdown is literal; the backticks and $1 are not expanded
@@ -1156,9 +1192,16 @@ standards "$(item ' if [ -f "$1" ]; then
  fi')" "$(item ' if [ -f "$1" ]; then
 +  exit 1 # miss')"
 printf '## Act on\n\n1. [S1] **Hook exits 0 on a miss.** Removed.\n2. [S2] **Hook exits 0 on a miss.** Added.\n\n## Ask\n\n## Consider\n\n## Noted\n\n3. [S3] **Bare number.** Named.\n\n## Dismissed\n' > "$dir/judgment.md"
+ends "round: 2 of 3
+act-on items: 2" "a removed line is never a fix line (6B)"
+at 2
+# shellcheck disable=SC2016 # the expected Markdown is literal; the backticks and $1 are not expanded
+standards "$(item ' if [ -f "$1" ]; then
++  exit 1 # miss')"
+judge "" ""
 ends "$fo
 round: 2 of 3
-act-on items: 2" "one item quoting a removed fix line, one an added one (6B)"
+act-on items: 2" "an indented added fix line with context around it, alone (6B)"
 # Row 7: an Act on item marked fixed, here the breach.
 at 1
 standards "$inside"
@@ -1248,6 +1291,46 @@ judge "" ""
 ends "$fo
 round: 2 of 3
 act-on items: 2" "a walk quoting a line outside the fix and carrying fixed: (12)"
+# Row 14: the PR #125 audit's reproduction, a plain quote sharing lines with the fix.
+# shellcheck disable=SC2016 # the expected Markdown is literal; the backticks and $dir are not expanded
+plain_exit="$(printf '%s\n\n```sh\nif [ -z "$dir" ]; then\n  exit 0\nfi\n```' "$(item '')")"
+# shellcheck disable=SC2016 # the expected Markdown is literal; the backticks are not expanded
+plain_else="$(printf '%s\n\n```sh\nif [ -n "$1" ]; then\n  exit 1 # miss\nelse\n  exit 2\nfi\n```' "$(item '')")"
+for it in "$(stepped old.sh:40 "$plain_exit")" "$plain_exit" "$plain_else"; do
+  at 2
+  printf 'exit 1 # miss\nexit 0\nelse\n' > "$dir/fix-lines"
+  standards "$it"
+  judge "" ""
+  ends "round: 2 of 3
+act-on items: 2" "the PR #125 audit's reproduction: a plain quote sharing a fix line (14B)"
+done
+# Row 15: every marked line a fix line, a location outside the fix.
+for it in "$(named old.sh:40 "$inside")" "$(named a.sh:9 "$inside")" "$(named SKILL.md:2 "$inside")" "$(named a.sh:2-9 "$inside")" "$(stepped docs/x.md:3 "$inside")"; do
+  at 2
+  standards "$it"
+  judge "" ""
+  ends "round: 2 of 3
+act-on items: 2" "a hard item naming a location outside the fix (15B)"
+done
+at 2
+standards "$(named a.sh:1-3 "$inside")"
+judge "" ""
+ends "$fo
+round: 2 of 3
+act-on items: 2" "a hard item naming the fix's own range (15B)"
+at 2
+printf '1\t3\ta.sh\n1\t3\tlib/SKILL.md\n' > "$dir/fix-ranges"
+standards "$(named lib/SKILL.md:2 "$inside")"
+judge "" ""
+ends "$fo
+round: 2 of 3
+act-on items: 2" "a hard item naming a fix line of one of two files ending in the same name (15B)"
+at 2
+rm "$dir/fix-ranges"
+standards "$inside"
+judge "" ""
+ends "round: 2 of 3
+act-on items: 2" "with no fix ranges, the Documented step lies in none (15B)"
 }
 
 suite project
