@@ -82,6 +82,8 @@ printed() {
   n=$((n + 1))
 }
 # section <brief>: the brief's `## Reading pack` section, to the next `## ` line outside the pack's fences.
+# A reader of section's output reads it to the end: a reader that exits early kills section with
+# SIGPIPE on its next write, and under pipefail the pipeline then fails.
 section() {
   awk '$0 == "## Reading pack" { on = 1; print; next }
     on && fence == "" && /^## / { exit }
@@ -104,7 +106,10 @@ entry() {
 }
 # fence <brief> <header> <fence> <label>: the entry under the header opens with exactly that fence line.
 fence() {
-  if ! section "$1" | H="$2" F="$3" awk '$0 == ENVIRON["H"] { getline; if ($0 == "") { getline; ok = ($0 == ENVIRON["F"]) } exit }
+  if ! section "$1" | H="$2" F="$3" awk '
+      st == 0 && $0 == ENVIRON["H"] { st = 1; next }
+      st == 1 { st = ($0 == "") ? 2 : -1; next }
+      st == 2 { ok = ($0 == ENVIRON["F"]); st = -1 }
       END { exit !ok }'; then
     echo "FAIL $4: $1: the entry $2 does not open with $3"; exit 1
   fi
@@ -119,7 +124,7 @@ none() {
 }
 # notext <brief> <line> <label>: the section holds the line, then a blank line.
 notext() {
-  if ! section "$1" | L="$2" awk '$0 == ENVIRON["L"] { getline; ok = ($0 == ""); exit } END { exit !ok }'; then
+  if ! section "$1" | L="$2" awk 'st == 0 && $0 == ENVIRON["L"] { st = 1; next } st == 1 { ok = ($0 == ""); st = 2 } END { exit !ok }'; then
     echo "FAIL $3: $1 lacks the line, then a blank line: $2"; exit 1
   fi
   n=$((n + 1))
@@ -137,7 +142,7 @@ sections() {
     print "## " p " " i; print ""; for (j = 1; j <= 4; j++) print "Line " j " of " p " " i ", with filler text so the section has some weight."; print "" } }'
 }
 # at <file> <line>: the number of the first line that is exactly <line>.
-at() { grep -nxF -- "$2" "$1" | head -1 | cut -d: -f1; }
+at() { grep -m 1 -nxF -- "$2" "$1" | cut -d: -f1; }
 # close_of <file> <n>: the number of the first line after line n that starts with `}`.
 close_of() { awk -v s="$2" 'NR > s && /^}/ { print NR; exit }' "$1"; }
 # line_of <file> <n>: line n of the file.
