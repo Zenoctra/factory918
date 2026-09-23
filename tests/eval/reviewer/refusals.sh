@@ -449,6 +449,15 @@ check "no response: a lane that answered once and then died is a dropout" is "$(
 run next "$C" --limit 1
 check "no response: it is prepared again, not stopped" is "$(h get "$out" run)" "$(rundir "$C" standards 1)"
 
+fresh late-drift
+run next "$C" --limit 2
+finish "$(sed -n 1p <<<"$out")" none claude-opus-5-5 late
+finish "$(sed -n 2p <<<"$out")" none claude-opus-5 late "" medium
+REVIEWER_SETTLE_SECONDS=0 run collect
+check "drift: a lane that died after a wrong model is refused, not retried" has "$err" "$C r1/standards step 1 was served claude-opus-5-5"
+check "drift: a lane that died after effort medium is refused, not retried" has "$err" "$C r1/spec step 1 ran at effort medium"
+check "drift: neither is a dropout" is "$(ls "$(rundir "$C" standards 1)/receipt.json" "$(rundir "$C" spec 1)/receipt.json" 2>/dev/null | wc -l | tr -d ' ')" 0
+
 fresh fx-fable
 run next "$F" --limit 1
 finish "$out" "$tmp/rep/hit.md" claude-fable-5-1
