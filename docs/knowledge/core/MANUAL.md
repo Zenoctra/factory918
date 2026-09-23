@@ -144,7 +144,7 @@ You are on the $200 Claude plan; the limit is shared across models and Fable 5.1
 | `spec reviewer` (the `spec-review` Spec axis; the orchestrator judges its findings) | Opus 5 high | Opus 5 high |
 | `arena` | off by default | off by default |
 
-The tier (Execution, **Safe and eco.**) decides how many of these roles a ticket launches; `eco` drops the explorer, explainer, review wrapper, fix and records lanes.
+The tier (Execution, **Safe and eco.**) decides how many of these roles a ticket launches; `eco` drops the explorer, explainer and review wrapper lanes, and under Autopilot-stack the fix and records lanes.
 
 Rough cost order of the skills, highest first: `arena`, autopilot-stack (one owner per ticket plus a swarm per PR), `swarm`, `interrogate`, `how` in critique mode, `/wayfinder` with parallel research, `/to-tickets` on a large spec (one user reported 1.5M tokens for 14 tickets), then everything else. Check the usage page weekly; if Fable is over a third of spend, move a role down.
 
