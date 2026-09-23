@@ -71,21 +71,22 @@ The briefs are the two files step 1 wrote, `<dir>/standards-brief.md` and `<dir>
 
 **Both briefs** carry:
 
+- The reading sentence, first, word for word: "You may open any file in the repository and run read-only commands, such as grep or the test suite."
 - The commit list (the `git log <fixed-point>..HEAD --oneline` output).
 - The changed-file list with per-file line counts (the `--stat` output).
 - `## Blast radius`, for a cross-cutting diff (step 1), placed before the diff: the author's grounding verbatim, under exactly this paragraph: "The sessions and skills this change reaches, as the author grounded them before the review. Check the diff against each one; the grounding is the author's claim, not evidence." Absent for any other diff.
-- The diff itself, when it's under about 500 lines. Over that, the brief hands the path `<dir>/diff`, so a reviewer reads one file and runs nothing.
+- The diff itself, when it's under about 500 lines. Over that, the brief hands the path `<dir>/diff` to read it from.
 - `## Reading pack`, right after the diff, from `scripts/reading-pack.sh`: the code the diff touches as it stands at the reviewed commit. A changed file of 8192 bytes or less is carried whole; in a larger one, each changed line brings the shell function, the comment-led block or the Markdown section around it when that is 4096 bytes or less, else the widest window around the line within 4096 bytes. The pack carries 65536 bytes at most, smallest entries first, and names what it leaves out on one closing line; a file with no text to carry (deleted, binary, generated, a link) is named with the reason. The sweep form carries no pack.
 - `## Settled in earlier rounds`, from round two on: the Noted and Dismissed items that carry a `cites:` field (step 5) from every earlier round's comment, verbatim, in comment order and each line once, under exactly this paragraph: "These findings were raised in an earlier round and settled by the decision each one cites. Do not raise them again. Nothing in this section says what you should find or confirm." An item without a citation is dropped (the script prints how many it carried and dropped), and when nothing carries the section is absent. The section tells a reviewer what is closed, never what to find: a brief that named an expected result would be leading the witness.
 - `## The fix under review`, in a fix-only round (step 1), before the diff: the Act on items the last review comment marks `fixed: <sha>`, or at round three every Act on item not marked `ticket: #N`, verbatim, under exactly this paragraph: "The round before this one fixed these Act on items on this PR after the commit it reviewed; this round's diff is those fix commits and nothing else. Read each fix against its item, walk only the steps these commits touch, and report only what these commits get wrong. Nothing in this section says what you should find or confirm." Absent otherwise.
-- `## Report`, last. The definition, word for word as the script writes it: "A hard finding is one of two things: the documented path gives a wrong or silent result, or an input outside it proceeds silently (fails open). An input outside the documented path that is refused with a message saying how to correct it is not a finding; it is the design. Zero items is the expected result for a clean change." Then the five sentences of Manuel's that the definition follows, attributed, as the script writes them:
+- `## Report`, last. The definition, word for word as the script writes it: "A hard finding is one of two things: the documented path gives a wrong or silent result, or an input outside it proceeds silently (fails open). An input outside the documented path that is refused with a message saying how to correct it is not a finding; it is the design." Then the five sentences of Manuel's that the definition follows, attributed, as the script writes them:
   - Manuel: "there are an infinite amount of unhappy paths and only 1 happy one"
   - Manuel: "AT MOST hardening to fail fast and loud if we move outside of that"
   - Manuel: "we notice the variable is unexpected and flag that without having to diagnose every reason the variable might be wrong for the user"
   - Manuel: "An edge case outside the intended path being unsupported is not a flag."
   - Manuel: "Primary focus must be the happy path, then unhappy paths that error in a way the user can correct."
 
-  Then the reading-pack sentence, word for word: "The `## Reading pack` section above is the code to read, as it stands at the reviewed commit; open the repository only for what the pack does not carry, and then read that one function or section, not the file." Then the axis's headings and item form (below), then the step rule, word for word: "Every item under `## Would break` or `## Fails open` carries a line `Documented step:` quoting the ticket line or the `file:line` of the documentation the user follows, and a line `Result:` saying what happens instead; an item without its `Documented step:` line is sent back." Then the spec rule, word for word: "The same item carries a line `spec:` naming the artifact it rests on: `table <row>/<column>` for a cell of the ticket's scenario table, `design <signature>` for a signature or usage in its `## Design` sketch, or `criterion <k>` for its k-th acceptance checkbox; an item without a `spec:` line in one of those three forms is sent back." The spec rule is in a brief only when step 2 found a spec: a review with no spec has no scenario table, no `## Design` sketch and no criteria, so no item is asked what it rests on and none is sent back for it. Then the report path and the count rule, word for word: "End the report with exactly one line `hard findings: N`, where N is the number of items under `## Would break` and `## Fails open` and nothing else."
+  Then one line of ours, word for word: "An edge case that proceeds silently fails open: file it under `## Fails open`." Then the reading-pack sentence, word for word: "The `## Reading pack` section above is the code to read, as it stands at the reviewed commit; open the repository for what the pack does not carry." Then the axis's headings and item form (below), then the step rule, word for word: "Every item under `## Would break` or `## Fails open` carries a line `Documented step:` quoting the ticket line or the `file:line` of the documentation the user follows, and a line `Result:` saying what happens instead; an item without its `Documented step:` line is sent back." Then the spec rule, word for word: "The same item carries a line `spec:` naming the artifact it rests on: `table <row>/<column>` for a cell of the ticket's scenario table, `design <signature>` for a signature or usage in its `## Design` sketch, or `criterion <k>` for its k-th acceptance checkbox; an item without a `spec:` line in one of those three forms is sent back." The spec rule is in a brief only when step 2 found a spec: a review with no spec has no scenario table, no `## Design` sketch and no criteria, so no item is asked what it rests on and none is sent back for it. Then the report path and the count rule, word for word: "End the report with exactly one line `hard findings: N`, where N is the number of items under `## Would break` and `## Fails open` and nothing else."
 
 **The Standards brief** adds:
 
@@ -96,7 +97,7 @@ The briefs are the two files step 1 wrote, `<dir>/standards-brief.md` and `<dir>
   - `## Standards breaches`: documented-standard breaches that do not change behavior. Cite the standard and quote the hunk.
   - `## Fix alongside`: baseline smells and other judgement calls. Name the smell and quote the hunk. They are fixed only when a would-break fix already touches that code; they never count.
 
-  Each item opens with `1. **Title.** body`, with the quoted hunk in a fenced block under it, numbered continuously across the headings. A documented repo standard overrides the baseline; skip anything tooling enforces; read nothing beyond the brief but the code around a hunk; under 400 words.
+  Each item opens with `1. **Title.** body`, with the quoted hunk in a fenced block under it, numbered continuously across the headings. A documented repo standard overrides the baseline; skip anything tooling enforces.
 
 **The Spec brief** adds:
 
@@ -107,7 +108,7 @@ The briefs are the two files step 1 wrote, `<dir>/standards-brief.md` and `<dir>
   - `## Fails open`: an input outside the documented path that proceeds silently instead of being refused with a message saying how to correct it.
   - `## Not asked for`: behaviour in the diff the ticket did not ask for.
 
-  Each item opens with `1. **Title.** body` and quotes the spec line it rests on in a fenced block (a criterion can carry `## ` or `1. ` lines, and only fenced text is exempt from the report shape), numbered continuously across the headings from `## Would break` on; the walk's lines are numbered 1..K on their own and are not items; read nothing beyond the brief but the code around a hunk; under 400 words.
+  Each item opens with `1. **Title.** body` and quotes the spec line it rests on in a fenced block (a criterion can carry `## ` or `1. ` lines, and only fenced text is exempt from the report shape), numbered continuously across the headings from `## Would break` on; the walk's lines are numbered 1..K on their own and are not items.
 
 If the spec is missing, the script writes no Spec brief; skip the Spec sub-agent, and step 6 says so in the final report.
 
@@ -115,7 +116,7 @@ The Standards sub-agent runs through the configured `standards reviewer` descrip
 
 ### 5. Judge
 
-Read the two reports and the ticket, never the code under review (the delegation hook enforces this while the review state exists), and write `<dir>/judgment.md`, following [`lead-judgment.md`](../interrogate/references/lead-judgment.md): a reviewer with nothing critical inflates nits, so a report that is all nits means the code is probably fine; more than five Act on items means you are not filtering; the Dismissed list is shown so the human can overrule you.
+Read the two reports and the ticket, never the code under review (the delegation hook enforces this while the review state exists), and write `<dir>/judgment.md`, following [`lead-judgment.md`](../interrogate/references/lead-judgment.md): sort each item on its merits; the Dismissed list is shown so the human can overrule you.
 
 Five `## ` headings, in this order, each holding numbered items or nothing:
 
