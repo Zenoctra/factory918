@@ -17,12 +17,15 @@ bad_tail="is not P<ticket> with an optional b-z sibling letter"
 dup_tail="; an id comes from its ticket (P<ticket>, then b, c, ... for a second row of the same ticket), so rename this row and its mentions"
 gone="DECISIONS.md: no Provisional row was read; the '## Provisional' section is missing or its table changed shape"
 
-# fresh: the temp tree holds the repository's check and knowledge base, unmodified.
+# fresh: the temp tree holds the repository's check and knowledge base, less every real row whose id
+# a case writes, so a P110 or P111 row landing in the real file cannot collide with a case.
 fresh() {
   rm -rf "$tmp/tools" "$tmp/docs"
   mkdir -p "$tmp/tools" "$tmp/docs"
   cp "$here/tools/check_knowledge.py" "$tmp/tools/"
   cp -R "$here/docs/knowledge" "$tmp/docs/"
+  grep -vE '^\| (P110|P110b|P111|P112|P31|P17b) \|' "$here/docs/knowledge/core/DECISIONS.md" > "$dec"
+  recount
   base="$(wc -l < "$dec" | tr -d ' ')"
 }
 # at <id>: the line number of the first row whose id cell is <id>.
