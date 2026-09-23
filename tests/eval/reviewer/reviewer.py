@@ -284,11 +284,8 @@ def parse_report(text: str | None) -> list[Item] | Failure:
     if text is None:
         return "no-report"
     lines = text.splitlines()
-    counts = [m for line in lines if (m := COUNT_LINE.fullmatch(line.rstrip()))]
-    if not counts:
-        return "no-count-line"
-    if not any(line.startswith("## ") and line[3:].strip() in HARD_HEADINGS for line in lines):
-        return "no-hard-headings"
+    counts: list[re.Match[str]] = []
+    hard_heading = False
     items: list[Item] = []
     heading = None
     current: tuple[int, bool, list[str]] | None = None
@@ -307,18 +304,26 @@ def parse_report(text: str | None) -> list[Item] | Failure:
                 fence = marker.group(1)[:3]
             elif marker.group(1).startswith(fence):
                 fence = None
+        count = COUNT_LINE.fullmatch(line.rstrip())
+        if count and not fenced:
+            counts.append(count)
         if not fenced and line.startswith("## "):
             close()
             current, heading = None, line[3:].strip()
+            hard_heading = hard_heading or heading in HARD_HEADINGS
             continue
         m = ITEM_LINE.match(line)
         # `## Walk` lines are numbered steps, not findings.
         if m and not fenced and heading != "Walk":
             close()
             current = (int(m.group(1)), heading in HARD_HEADINGS, [line[m.end():]])
-        elif current and not COUNT_LINE.fullmatch(line.rstrip()):
+        elif current and not count:
             current[2].append(line)
     close()
+    if not counts:
+        return "no-count-line"
+    if not hard_heading:
+        return "no-hard-headings"
     if int(counts[-1].group(1)) > sum(1 for i in items if i.hard):
         return "count-exceeds-items"
     return items
