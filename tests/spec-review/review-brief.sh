@@ -47,10 +47,10 @@
 # the risk sentence now asks whether the diff honors each disposition). The Opening a PR playbook
 # and the blast-radius skill must show the disposition line word for word. Ticket #139, table D: a
 # body holding a writer flags heading line anywhere, from which no flag is read, is refused. Ticket
-# #137: both briefs carry the edge line two after Manuel's fifth sentence, the reading-pack sentence two after
-# it and the reading sentence, and neither brief nor SKILL.md sets a count of findings, a length cap
-# or a limit on reading; a round-two and a fix-only brief carry exactly the `## ` headings they
-# carried before it.
+# #137: both briefs carry the edge line two after Manuel's fifth sentence, the reading-pack sentence
+# two after it and the reading sentence, and neither brief nor SKILL.md sets a count of findings, a
+# length cap or a limit on reading; a round-two and a fix-only brief carry exactly the `## `
+# headings they carried before it.
 # Exits 1 on the first miss.
 # shellcheck disable=SC2016 # the expected strings below are the Markdown the script emits; the backticks and $ are literal
 set -euo pipefail
@@ -2043,6 +2043,8 @@ body8 fd11b '1. ### Writer flags 2026-09-23' '' '   1. bare'; go8 nc P - fd11b; 
 body8 fd12 '```sh' '# writer flags are parsed here' '```'; go8 nc P - fd12; briefed8 "(D12)" ""
 body8 fd13 '### **Writer flags** 2026-09-23' '' '1. a accepted: ok'; go8 nc P - fd13; refused8 "(D13)" "$(rz8 '### **Writer flags** 2026-09-23')"
 body8 fd14 '### Writer  flags 2026-09-23' '' '1. a accepted: ok'; go8 nc P - fd14; refused8 "(D14)" "$(rz8 '### Writer  flags 2026-09-23')"
+body8 fd15 "### Writer's flags 2026-09-23" '' '1. bare'; go8 nc P - fd15; refused8 "(D15)" "$(rz8 "### Writer's flags 2026-09-23")"
+body8 fd16 '### Writers flags 2026-09-23' '' '1. a accepted: ok'; go8 nc P - fd16; refused8 "(D16)" "$(rz8 '### Writers flags 2026-09-23')"
 # Criterion 5: the Opening a PR playbook's Blast Radius bullet and the blast-radius skill's hand-back show the disposition line.
 has "$here/template/.agents/skills/poteto-mode/playbooks/opening-a-pr.md" 'Each line under `### Risks` is one risk and ends with its disposition as plain text, `fixed: <sha>` (the commit on this branch that fixes it) or `accepted: <reason>`, for example `` 1. A subagent inherits the hook before its skill is installed: `.claude/hooks/x.sh:12`. fixed: 3f2a9c1 ``' "opening-a-pr.md shows the disposition line (#108)"
 has "$here/template/.agents/skills/blast-radius/SKILL.md" 'Once the author has acted on a risk, its line ends with the disposition, `fixed: <sha>` or `accepted: <reason>`, as in `` 1. A subagent inherits the hook: `.claude/hooks/x.sh:12`, likely, blocks every read. fixed: 3f2a9c1 ``.' "the blast-radius hand-back shows the disposition line (#108)"
