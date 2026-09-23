@@ -2027,7 +2027,7 @@ ground8 c7 'Risks here are low.' '- **Risks.** day zero: x.sh:1'; go8 cc F c7 -;
 body8 fc7 "- [ ] A writer's flags reach the ticket under \`## Testing decisions\` (or \`## Design\`) as a dated \`Writer flags\` list with a disposition per flag, and the brief refuses when the ticket body carries a \`Writer flags\` list with a flag that has none; a ticket with no such list is unaffected." 'Writer flags are recorded by the orchestrator.' '| C1 | a plain marker: `Risks:` (r), `Writer flags:` (f) | RR[`nm`] | RF[`nm`] |'
 go8 nc P - fc7; briefed8 "(C7/f)" ""
 # Ticket #139, table D, not cross-cutting, form P: a body with a writer flags heading line anywhere
-# and no flag read from it is refused; D10 is the accepted hole, one read list lets a second pass.
+# (after any list marker too) and no flag read from it is refused; D10 is the accepted hole, one read list lets a second pass.
 go8 nc P - fok; briefed8 "(D1)" ""
 flags8 fd2; go8 nc P - fd2; refused8 "(D2)" "$(rz8 '### Writer flags 2026-09-23')"
 go8 nc P - fc6; refused8 "(D3)" "$(rz8 '### Writer flags 2026-09-23')"
@@ -2038,6 +2038,8 @@ body8 fd7 '### Writer flag 2026-09-23' '' '1. a accepted: ok'; go8 nc P - fd7; r
 go8 nc P - fc4; refused8 "(D8)" "$(rf8 "$nmf: ### writer flags 2026-09-23")"
 go8 nc P - fc7; briefed8 "(D9)" ""
 flags8 fd10 '1. flag one fixed: <H>' '2. flag nine: the table misses a row accepted: filed #130' '' '### Writer-flags 2026-09-24' '' '1. bare'; go8 nc P - fd10; briefed8 "(D10)" ""
+body8 fd11 '- ### Writer flags 2026-09-23' '' '   1. bare'; go8 nc P - fd11; refused8 "(D11)" "$(rz8 '- ### Writer flags 2026-09-23')"
+body8 fd11b '1. ### Writer flags 2026-09-23' '' '   1. bare'; go8 nc P - fd11b; refused8 "(D11b)" "$(rz8 '1. ### Writer flags 2026-09-23')"
 # Criterion 5: the Opening a PR playbook's Blast Radius bullet and the blast-radius skill's hand-back show the disposition line.
 has "$here/template/.agents/skills/poteto-mode/playbooks/opening-a-pr.md" 'Each line under `### Risks` is one risk and ends with its disposition as plain text, `fixed: <sha>` (the commit on this branch that fixes it) or `accepted: <reason>`, for example `` 1. A subagent inherits the hook before its skill is installed: `.claude/hooks/x.sh:12`. fixed: 3f2a9c1 ``' "opening-a-pr.md shows the disposition line (#108)"
 has "$here/template/.agents/skills/blast-radius/SKILL.md" 'Once the author has acted on a risk, its line ends with the disposition, `fixed: <sha>` or `accepted: <reason>`, as in `` 1. A subagent inherits the hook: `.claude/hooks/x.sh:12`, likely, blocks every read. fixed: 3f2a9c1 ``.' "the blast-radius hand-back shows the disposition line (#108)"
