@@ -45,8 +45,9 @@
 # either opener and is not, and a fence opened in a list and never closed are refused before any
 # state is written, each line named (ticket #108's tables A, B and C, one assertion per cell, and
 # the risk sentence now asks whether the diff honors each disposition). The Opening a PR playbook
-# and the blast-radius skill must show the disposition line word for word. Ticket #137: both
-# briefs carry the edge line two after Manuel's fifth sentence, the reading-pack sentence two after
+# and the blast-radius skill must show the disposition line word for word. Ticket #139, table D: a
+# body holding a writer flags heading line anywhere, from which no flag is read, is refused. Ticket
+# #137: both briefs carry the edge line two after Manuel's fifth sentence, the reading-pack sentence two after
 # it and the reading sentence, and neither brief nor SKILL.md sets a count of findings, a length cap
 # or a limit on reading; a round-two and a fix-only brief carry exactly the `## ` headings they
 # carried before it.
@@ -1896,9 +1897,11 @@ go8() {
 }
 # where8 <column>: the grounding's source as the risk refusal names it.
 where8() { if [ "$1" = P ]; then echo "the PR body's Blast Radius section"; else echo blast8.md; fi; }
-# rr8 <where> <line>..., rf8 <line>...: the two refusals, each offending line after the header.
+# rr8 <where> <line>..., rf8 <line>...: the two refusals, each offending line after the header;
+# rz8 <heading>...: #139's refusal, each heading line after the header.
 rr8() { local w="$1"; shift; printf 'review-brief: the blast-radius grounding (%s) has risk lines without a disposition; every line under a `## Risks` or `### Risks` heading that is not indented deeper or fenced is a risk and ends with `fixed: <sha>` (a commit in HEAD'"'"'s history) or `accepted: <reason>` as plain text; indent a continuation, fence a proof, and write the heading exactly that way:' "$w"; printf '\n  %s' "$@"; }
 rf8() { printf 'review-brief: ticket #7 has Writer flags without a disposition; every line under a `### Writer flags <YYYY-MM-DD>` heading that is not indented deeper or fenced is a flag and ends with `fixed: <sha>` (a commit in HEAD'"'"'s history) or `accepted: <reason>` as plain text; indent a continuation, fence a proof, and write the heading exactly that way:'; printf '\n  %s' "$@"; }
+rz8() { printf 'review-brief: ticket #7 has a writer flags heading and no flag could be read from its body; flags are read only under an unfenced, unquoted line that is exactly `### Writer flags <YYYY-MM-DD>`, one flag per line with its disposition; the headings found:'; printf '\n  %s' "$@"; }
 nd='no disposition'
 na='`accepted:` has no reason'
 fo='a fence opened here never closes'
@@ -2019,10 +2022,22 @@ body8 fc4d '### Writer flags'; go8 nc P - fc4d; refused8 "(C4/f, no date)" "$(rf
 ground8 c5 '**Risks**'; go8 cc F c5 -; refused8 "(C5/r)" "$(rr8 blast8.md "$nmr: **Risks**")"
 body8 fc5 '**Writer flags 2026-09-23**'; go8 nc P - fc5; refused8 "(C5/f)" "$(rf8 "$nmf: **Writer flags 2026-09-23**")"
 ground8 c6 '```md' '## Risks' '' '1. bare' '```'; go8 cc F c6 -; plus8 "(C6/r)"
-body8 fc6 '```md' '### Writer flags 2026-09-23' '' '1. bare' '```'; go8 nc P - fc6; briefed8 "(C6/f)" ""
+body8 fc6 '```md' '### Writer flags 2026-09-23' '' '1. bare' '```'; go8 nc P - fc6; refused8 "(C6/f, #139)" "$(rz8 '### Writer flags 2026-09-23')"
 ground8 c7 'Risks here are low.' '- **Risks.** day zero: x.sh:1'; go8 cc F c7 -; plus8 "(C7/r)"
 body8 fc7 "- [ ] A writer's flags reach the ticket under \`## Testing decisions\` (or \`## Design\`) as a dated \`Writer flags\` list with a disposition per flag, and the brief refuses when the ticket body carries a \`Writer flags\` list with a flag that has none; a ticket with no such list is unaffected." 'Writer flags are recorded by the orchestrator.' '| C1 | a plain marker: `Risks:` (r), `Writer flags:` (f) | RR[`nm`] | RF[`nm`] |'
 go8 nc P - fc7; briefed8 "(C7/f)" ""
+# Ticket #139, table D, not cross-cutting, form P: a body with a writer flags heading line anywhere
+# and no flag read from it is refused; D10 is the accepted hole, one read list lets a second pass.
+go8 nc P - fok; briefed8 "(D1)" ""
+flags8 fd2; go8 nc P - fd2; refused8 "(D2)" "$(rz8 '### Writer flags 2026-09-23')"
+go8 nc P - fc6; refused8 "(D3)" "$(rz8 '### Writer flags 2026-09-23')"
+body8 fd4 '```sh' 'echo open' '' '### Writer flags 2026-09-23' '' '1. a accepted: ok'; go8 nc P - fd4; refused8 "(D4)" "$(rz8 '### Writer flags 2026-09-23')"
+body8 fd5 '> ### Writer flags 2026-09-23' '>' '> 1. a accepted: ok'; go8 nc P - fd5; refused8 "(D5)" "$(rz8 '> ### Writer flags 2026-09-23')"
+body8 fd6 '### Writer-flags 2026-09-23' '' '1. a accepted: ok'; go8 nc P - fd6; refused8 "(D6)" "$(rz8 '### Writer-flags 2026-09-23')"
+body8 fd7 '### Writer flag 2026-09-23' '' '1. a accepted: ok'; go8 nc P - fd7; refused8 "(D7)" "$(rz8 '### Writer flag 2026-09-23')"
+go8 nc P - fc4; refused8 "(D8)" "$(rf8 "$nmf: ### writer flags 2026-09-23")"
+go8 nc P - fc7; briefed8 "(D9)" ""
+flags8 fd10 '1. flag one fixed: <H>' '2. flag nine: the table misses a row accepted: filed #130' '' '### Writer-flags 2026-09-24' '' '1. bare'; go8 nc P - fd10; briefed8 "(D10)" ""
 # Criterion 5: the Opening a PR playbook's Blast Radius bullet and the blast-radius skill's hand-back show the disposition line.
 has "$here/template/.agents/skills/poteto-mode/playbooks/opening-a-pr.md" 'Each line under `### Risks` is one risk and ends with its disposition as plain text, `fixed: <sha>` (the commit on this branch that fixes it) or `accepted: <reason>`, for example `` 1. A subagent inherits the hook before its skill is installed: `.claude/hooks/x.sh:12`. fixed: 3f2a9c1 ``' "opening-a-pr.md shows the disposition line (#108)"
 has "$here/template/.agents/skills/blast-radius/SKILL.md" 'Once the author has acted on a risk, its line ends with the disposition, `fixed: <sha>` or `accepted: <reason>`, as in `` 1. A subagent inherits the hook: `.claude/hooks/x.sh:12`, likely, blocks every read. fixed: 3f2a9c1 ``.' "the blast-radius hand-back shows the disposition line (#108)"
