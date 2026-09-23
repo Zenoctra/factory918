@@ -442,10 +442,10 @@ if [ -n "$spec" ]; then
   # A count, not a parse: whatever hid the list from the check above, a heading line with no flag
   # read refuses. The check above has already refused every near-miss and unclosed-fence record, so
   # any record the awk below prints is a read flag. A heading line is two or more `#` (one `#` is
-  # a code comment more often than a heading) whose text reads writer flag(s) with any non-letters
-  # around the words, after any spaces, `>` quote markers and list markers.
+  # a code comment more often than a heading), after any spaces, `>` quote markers and list
+  # markers, whose text holds `writer` and, anywhere after it on the line, `flag`, in any case.
   heads="$(printf '%s\n' "$spec" | awk '{ sub(/\r$/, ""); sub(/[ \t]+$/, "") }
-    tolower($0) ~ /^([ \t>]|[-*+]|[0-9]+[.)])*##+[^a-z]*writer[^a-z]*flags?([^a-z]|$)/')"
+    tolower($0) ~ /^([ \t>]|[-*+]|[0-9]+[.)])*##+.*writer.*flag/')"
   if [ -n "$heads" ] && [ -z "$(printf '%s\n' "$spec" | awk -v mode=flags -v w="writer flags" "$disposed")" ]; then
     rm -rf "$dir"
     echo "review-brief: ticket #$ticket has a writer flags heading and no flag could be read from its body; flags are read only under an unfenced, unquoted line that is exactly \`### Writer flags <YYYY-MM-DD>\`, one flag per line with its disposition; the headings found:" >&2
