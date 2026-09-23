@@ -23,10 +23,9 @@ patch from its commits the same way.
         A step is prepared once its prerequisites are collected complete; a contaminated run, or
         one no model answered (a `no-response` dropout, as on an API error), is moved aside and
         prepared again, until its third such attempt gives it up: `next` prints `given up` for it
-        and prepares neither it nor the steps that need it. A model with a
-        usage-limit receipt is paused: `next` prints one `paused` line for it and prepares nothing
-        for it until `--resume` names it, which prepares its limited runs again first. Collects
-        nothing.
+        and prepares neither it nor the steps that need it. A model with a usage-limit receipt is
+        paused: `next` prints one `paused` line for it and prepares nothing for it until
+        `--resume` names it, which prepares its limited runs again first. Collects nothing.
     python3 tests/eval/reviewer/reviewer.py collect
         Collect every finished run; list what is in flight, unlaunched or stuck. Safe to repeat.
         A run served the wrong model or effort is refused after every other run is collected.
@@ -350,13 +349,14 @@ def parse_report(text: str | None) -> list[Item] | Failure:
     hard_heading = False
     items: list[Item] = []
     heading = None
-    current: tuple[int, bool, list[str]] | None = None
+    # An item's number, whether it is hard, all its lines, and its lines outside fenced blocks.
+    current: tuple[int, bool, list[str], list[str]] | None = None
     fence: str | None = None
 
     def close() -> None:
         if current:
             items.append(Item(current[0], current[1], normalize(" ".join(current[2])),
-                              " ".join(s.strip() for s in current[2] if s.strip())))
+                              " ".join(" ".join(current[3]).split())))
 
     for line in text.splitlines():
         # A reviewer quotes numbered criteria and headings inside fences; they are not findings.
@@ -379,9 +379,11 @@ def parse_report(text: str | None) -> list[Item] | Failure:
         # `## Walk` lines are numbered steps, not findings.
         if m and not fenced and heading != "Walk":
             close()
-            current = (int(m.group(1)), heading in HARD_HEADINGS, [line[m.end():]])
+            current = (int(m.group(1)), heading in HARD_HEADINGS, [line[m.end():]], [line[m.end():]])
         elif current and not count:
             current[2].append(line)
+            if not fenced:
+                current[3].append(line)
     close()
     if not counts:
         return "no-count-line"
@@ -848,7 +850,9 @@ def materialize(p: Prepared, brief: Brief, fx: Fixtures, env: Env) -> Prepared:
             shutil.copyfile(brief.files / name, target / name)
     settled: tuple[str, ...] = ()
     if spec.arm == "S":
-        settled = tuple(f"- {i.raw}" for s in earlier for i in s.items if i.hard)
+        tag = "S" if run.brief.axis == "standards" else "P"
+        hard = [i for s in earlier for i in s.items if i.hard]
+        settled = tuple(f"{n}. [{tag}{i.n}] {i.raw}" for n, i in enumerate(hard, 1))
         bfile = target / f"{run.brief.axis}-brief.md"
         bfile.write_text(settle(bfile.read_text(), run.brief.axis, list(settled)))
     done = Prepared(run, p.nonce, p.checkout, p.prompt, settled, applied, masked, tree)

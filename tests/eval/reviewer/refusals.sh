@@ -336,12 +336,12 @@ check "S2: the settled section before ## Standards" is "$settled" "## Settled in
 
 These findings were raised in an earlier round and settled by the decision each one cites. Do not raise them again. Nothing in this section says what you should find or confirm.
 
-- **An unmatched glob is dropped.** The gate exits 0 anyway. Documented step: the gate.
+1. [S1] **An unmatched glob is dropped.** The gate exits 0 anyway. Documented step: the gate.
 
 ## Standards"
 check "S2: the non-hard item is not settled" lacks "$settled" "missing ticket"
-check "S2: run.json records the settled line" is "$(h field "$(rundir "$C" standards S2)/run.json" settled.0)" "- **An unmatched glob is dropped.** The gate exits 0 anyway. Documented step: the gate."
-check "S2 spec: every hard item of pass 1, in order" is "$(grep -c '^- ' <<<"$(sed -n '/^## Settled in earlier rounds$/,/^## The ticket/p' "$(h checkout "$spec_s2")/$reldir/spec-brief.md")")" 2
+check "S2: run.json records the settled line" is "$(h field "$(rundir "$C" standards S2)/run.json" settled.0)" "1. [S1] **An unmatched glob is dropped.** The gate exits 0 anyway. Documented step: the gate."
+check "S2 spec: every hard item of pass 1, in order, numbered with its P id" is "$(grep -E '^[0-9]+\. \[P[0-9]+\] ' <<<"$(sed -n '/^## Settled in earlier rounds$/,/^## The ticket/p' "$(h checkout "$spec_s2")/$reldir/spec-brief.md")" | cut -c1-8 | tr '\n' '|')" "1. [P1] |2. [P2] |"
 check "M2: G1's fix is applied" is "$(sed -n 2p "$co_m2/a.txt")" "TWO fixed"
 check "M2: run.json applied" is "$(h field "$(rundir "$C" standards M2)/run.json" applied)" '["f1.patch"]'
 check "M2: G1 masked, G2 not (its fix is not all applied)" is "$(h field "$(rundir "$C" standards M2)/run.json" masked)" '["G1"]'
@@ -360,7 +360,7 @@ check "next: the three standards pass-3 steps follow their pass 2" is "$(grep -c
 co_m3="$(h checkout "$(line_for standards M3)")"
 check "M3: G1 from pass 1 and G2 from M2, both patches" is "$(h field "$(rundir "$C" standards M3)/run.json" applied)" '["f1.patch", "f2.patch"]'
 check "M3: the tree holds both fixes" is "$(sed -n 2p "$co_m3/a.txt")" "TWO fixed twice"
-check "S3: nothing hard in S2, so pass 1's line alone" is "$(sed -n '/^## Settled in earlier rounds$/,/^## Standards$/p' "$(h checkout "$(line_for standards S3)")/$reldir/standards-brief.md" | grep -c '^- ')" 1
+check "S3: nothing hard in S2, so pass 1's line alone" is "$(sed -n '/^## Settled in earlier rounds$/,/^## Standards$/p' "$(h checkout "$(line_for standards S3)")/$reldir/standards-brief.md" | grep -cE '^[0-9]+\. \[S[0-9]+\] ')" 1
 run table
 check "table: exit 0" is "$code" 0
 check "table: one table for the model" has "$out" "## $C"
@@ -666,9 +666,9 @@ assert s.hits == frozenset() and s.demoted == frozenset({"G1"}) and s.other == 0
 pycheck "rule: a second item on a claimed bug is not other" '
 s = r.score(RUN, r.parse_report(report(["An unmatched glob exits 0.", "Another unmatched glob, it exits 0 too.", "A missing ticket line."])), (G("G1", "unmatched glob", "exits? 0"),))
 assert s.hits == frozenset({"G1"}) and s.other == 1, s'
-pycheck "rule: the raw text of an item is its lines joined" '
+pycheck "rule: an item's raw text is its lines outside fences, on one line" '
 items = r.parse_report(report(["**Title.** body\nDocumented step: `x`.\n\n```\nq\n```"]))
-assert items[0].raw == "**Title.** body Documented step: `x`. ``` q ```", items[0].raw'
+assert items[0].raw == "**Title.** body Documented step: `x`.", items[0].raw'
 pycheck "rule: masked bugs are those whose fix commits are all applied" '
 bugs = (G("G1", "a", "b", fix=["c1"]), G("G2", "a", "b", fix=["c1", "c2"]), G("G3", "a", "b"), G("G4", "a", "b", fix=["c2"]))
 assert r.fixes_for({"G1"}, bugs) == (("c1",), ("G1",))
