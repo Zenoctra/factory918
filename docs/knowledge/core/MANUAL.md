@@ -1,4 +1,4 @@
-<!-- lines: 175 | source: core/MANUAL.md | part 1/1 | title: Factory918: the manual -->
+<!-- lines: 179 | source: core/MANUAL.md | part 1/1 | title: Factory918: the manual -->
 
 ## Contents (line numbers are for the Read tool's offset)
 - L24: The loop in one screen
@@ -8,14 +8,14 @@
 - L61: Planning
 - L71: Tickets
 - L75: Execution
-- L87: Pull requests, review and merge
-- L110: Retro and the ledger
-- L114: Maintenance
-- L126: Multi-surface products
-- L130: Models and cost
-- L147: Updating the factory
-- L151: Troubleshooting
-- L163: Where to read more
+- L89: Pull requests, review and merge
+- L112: Retro and the ledger
+- L116: Maintenance
+- L128: Multi-surface products
+- L132: Models and cost
+- L151: Updating the factory
+- L155: Troubleshooting
+- L167: Where to read more
 
 # Factory918: the manual
 
@@ -75,6 +75,8 @@ A ticket is a GitHub issue with `## What to build`, `## Acceptance criteria` (ch
 ## Execution
 
 `/poteto-mode "#42"` (or paste the issue URL). The Ticket playbook reads the issue and its parent spec, refuses to start if a blocker is open, and runs a falsifiability pass over the acceptance criteria: for each one it names the command or observation that would fail it today, and sends back any criterion that already passes, that another ticket owns, or that merely restates the request. Answer those notes, then it runs the matching pstack playbook (Feature, Bug fix, Refactoring, Perf issue) from step 1: `how` and `why` over the subsystem, design, delegated build with a reviewed diff, verification on the real surface, then Opening a PR and Babysit.
+
+**Safe and eco.** A run has a tier. `safe`, the default, is every playbook as written. `eco` keeps in fresh context every lane whose job is finding someone else's mistakes (the writer, blast radius, both reviewers every round, the architect judge and the trail review) and has the owner do the rest itself: its own `how` reading, one architect runner instead of two, the review without a wrapper lane, its small fixes and records, and a one-page report. The table-first, tests-first design step is the same in both. `echo eco > .claude/state/tier` in the main checkout sets it; `rm .claude/state/tier` goes back to `safe`. A ticket reads the tier when it starts, and each autopilot-stack owner's brief carries it, so a change reaches only tickets started after it. `safe` is the fallback: when a model struggles in `eco` (a restart, a fifth review round, a verifier finding what the owner missed), run the next ticket, or this one again, in `safe`. The delegation hook guards the session you type into the same way in both tiers, so in a ticket you run directly a small fix still goes to a fix lane; an autopilot-stack owner writes its own. The full list is Ticket step 0, "The tier", and `DECISIONS.md` P109.
 
 **Several at once.** One ticket per `/poteto-mode "#N"` is the default, and a fresh session per ticket keeps the orchestrator's context clean. Two unblocked tickets relate three ways. A dependent ticket lists the other under `## Blocked by` and stays off the frontier until it merges. Two independent tickets disjoint in files each branch from `main`, in any order. Two independent tickets that overlap in files are sequenced. The first goes to merge-ready, you merge, the next starts. Overlap is not coupling. Coupled work is a ticket that needs code an open PR introduces, and only that stacks, only on your go. The Ticket playbook checks before it branches (`overlap.sh` compares each open PR's own commits, its diff from the PR under it or from `main`, with the paths the ticket names) and on overlap stops and names the PR to merge first, unless your go opened a program that names the ticket.
 
@@ -141,6 +143,8 @@ You are on the $200 Claude plan; the limit is shared across models and Fable 5.1
 | Juniors: `how` explorers, swarm workers, `standards reviewer` (the `spec-review` Standards axis) | Opus 5 medium | Opus 5 medium |
 | `spec reviewer` (the `spec-review` Spec axis; the orchestrator judges its findings) | Opus 5 high | Opus 5 high |
 | `arena` | off by default | off by default |
+
+The tier (Execution, **Safe and eco.**) decides how many of these roles a ticket launches; `eco` drops the explorer, explainer, review wrapper, fix and records lanes.
 
 Rough cost order of the skills, highest first: `arena`, autopilot-stack (one owner per ticket plus a swarm per PR), `swarm`, `interrogate`, `how` in critique mode, `/wayfinder` with parallel research, `/to-tickets` on a large spec (one user reported 1.5M tokens for 14 tickets), then everything else. Check the usage page weekly; if Fable is over a third of spend, move a role down.
 
