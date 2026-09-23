@@ -1,48 +1,54 @@
 #!/usr/bin/env python3
-"""Re-run a frozen reviewer brief against one model N times and score the reports (ticket #103).
+"""Run the reviewer measurement of ticket #138: three arms of three passes on six briefs, per model.
 
-On a fresh clone, first fetch the reviewed heads the fixtures point at; they are not on any branch:
+A run is (model, brief, step). Pass 1 is shared; arm I repeats the brief unchanged, arm S lists the
+earlier passes' hard items as settled, arm M runs on the head with the fixes of the ground-truth
+bugs the earlier passes found folded in. STEPS holds each step's arm, pass and prerequisites.
 
-    git fetch origin 'refs/keep/103/*:refs/keep/103/*'
+On a fresh clone, first fetch the reviewed heads and fix commits; they are not on any branch:
 
-After that fetch, `bash tests/eval/reviewer/rebuild.sh <round>` rebuilds a round's briefs from its
-inputs/ and compares them byte for byte with review/; the runner copies only review/.
+    git fetch origin 'refs/keep/103/*:refs/keep/103/*' 'refs/keep/138/*:refs/keep/138/*'
 
-    python3 tests/eval/reviewer/reviewer.py check [--list]
-        Validate the fixture set; calibrate every label against the historical report where one
-        survives. --list prints the brief ids.
-    python3 tests/eval/reviewer/reviewer.py run <descriptor> <round>/<axis> <N>
-        Ensure runs 1..N exist. A Codex model is dispatched through pstack-runner and scored here.
-        A Claude model prints one JSON launch line per run for the session to pass to Agent.
-        A withheld model gets a dropout receipt.
+`bash tests/eval/reviewer/rebuild.sh <round>` rebuilds a round's briefs from its inputs/ and
+compares them byte for byte with review/.
+
+    python3 tests/eval/reviewer/reviewer.py check
+        Validate the rounds, the truth file and the agent definitions, and prove that every set of
+        fix commits a masked pass can need applies to its head and briefs.
+    python3 tests/eval/reviewer/reviewer.py next <descriptor>... [--limit N]
+        Print up to N (8) launch lines and prepare what it prints: first the prepared runs no
+        transcript names yet, then new runs, pass 1 across every brief before pass 2 before pass 3.
+        A step is prepared once its prerequisites are collected complete; a contaminated or
+        usage-limit run is moved aside and prepared again. Collects nothing.
     python3 tests/eval/reviewer/reviewer.py collect
-        Collect every finished Claude run; list what is in flight, unlaunched or stuck. Safe to
-        repeat.
+        Collect every finished run; list what is in flight, unlaunched or stuck. Safe to repeat.
     python3 tests/eval/reviewer/reviewer.py table
-        Rescore every collected report from the raw files; write scores.tsv and table.md.
+        Rescore every collected report; write scores.tsv and table.md, one table per model.
 
 A launch line is {"run", "agent", "description", "prompt"}: pass `agent` (subagent_type, and model
-for Sonnet), `description` and `prompt` to the Agent tool in the background, then poll `collect`.
+where it is given), `description` and `prompt` to the Agent tool in the background, then poll
+`collect`.
 
 Environment, each with a default: REVIEWER_FIXTURES (this directory), REVIEWER_OUT
 (<repository>/.scratch/eval/reviewer), REVIEWER_WORK (${TMPDIR:-/tmp}/review-work),
 REVIEWER_TRANSCRIPTS (~/.claude/projects/<main checkout path, every character outside A-Za-z0-9
-as ->), REVIEWER_RUNNER (the vendored pstack-runner), REVIEWER_REPO (the repository holding the
-reviewed heads), REVIEWER_TIMEOUT (seconds for pstack-runner; unset means none),
+as ->), REVIEWER_REPO (the repository holding the reviewed heads), REVIEWER_AGENTS (<main
+checkout>/.claude/agents, where the installed agent definitions must match agents/),
 REVIEWER_SETTLE_SECONDS (120; how long a transcript whose last line carries no stop reason must sit
 untouched before it counts as finished).
 """
 from __future__ import annotations
 
 import argparse
+import itertools
 import json
 import os
 import re
 import secrets
 import shutil
-import statistics
 import subprocess
 import sys
+import tempfile
 import time
 from dataclasses import asdict, dataclass
 from datetime import datetime
@@ -54,11 +60,20 @@ AXES: tuple[Axis, ...] = ("standards", "spec")
 BANNED = ("eval", "test", "judge", "score", "benchmark", "candidate", "rubric", "experiment",
           "compare", "arena")
 HARD_HEADINGS = ("Would break", "Fails open")
-FETCH_KEEP_REFS = "git fetch origin 'refs/keep/103/*:refs/keep/103/*'"
-EFFORT: Mapping[Axis, str] = {"standards": "medium", "spec": "high"}
+FETCH_KEEP_REFS = "git fetch origin 'refs/keep/103/*:refs/keep/103/*' 'refs/keep/138/*:refs/keep/138/*'"
+EFFORT = "high"
 COUNT_LINE = re.compile(r"hard findings: ([0-9]+)")
 ITEM_LINE = re.compile(r"(\d+)\. ")
 FENCE_LINE = re.compile(r"\s*(`{3,}|~{3,})")
+USAGE_LIMIT = "usage-limit"
+USAGE_LIMIT_LINE = re.compile(r"hit your usage limit", re.I)
+# review-brief.sh at e710e99 prints this heading and paragraph, word for word, above the settled items.
+SETTLED_HEADING = "## Settled in earlier rounds"
+SETTLED_RULE = ("These findings were raised in an earlier round and settled by the decision each one cites. "
+                "Do not raise them again. Nothing in this section says what you should find or confirm.")
+# The heading review-brief.sh prints right after the settled section, per axis.
+AFTER_SETTLED: Mapping[Axis, re.Pattern[str]] = {"standards": re.compile(r"## Standards$"),
+                                                  "spec": re.compile(r"## The ticket \(#\d+\)$")}
 
 
 @dataclass(frozen=True, order=True)
@@ -68,11 +83,6 @@ class BriefId:
 
     def __str__(self) -> str:
         return f"{self.round}/{self.axis}"
-
-    @staticmethod
-    def parse(s: str) -> BriefId | None:
-        round_, _, axis = s.partition("/")
-        return BriefId(round_, axis) if round_ and axis in AXES else None
 
 
 @dataclass(frozen=True)
@@ -84,11 +94,13 @@ class Brief:
 
 
 @dataclass(frozen=True)
-class Label:
-    brief: BriefId
+class Bug:
+    """One real bug in a round's head, from either axis; `fix` folds it away for the masked arm."""
+    round: str
     id: str
-    kind: Literal["fixed", "hole"]
     anchors: tuple[re.Pattern[str], ...]
+    fix: tuple[str, ...]
+    title: str
 
     def matches(self, text: str) -> bool:
         return all(a.search(text) for a in self.anchors)
@@ -97,7 +109,7 @@ class Label:
 @dataclass(frozen=True)
 class Fixtures:
     briefs: Mapping[BriefId, Brief]
-    labels: Mapping[BriefId, tuple[Label, ...]]
+    truth: Mapping[str, tuple[Bug, ...]]
 
 
 @dataclass(frozen=True)
@@ -106,44 +118,59 @@ class Native:
     expect: re.Pattern[str]
 
 
-@dataclass(frozen=True)
-class External:
-    slug: str
-
-
-@dataclass(frozen=True)
-class Withheld:
-    reason: str
-
-
-Route = Native | External | Withheld
-
-MODELS: Mapping[str, Route] = {
-    "claude:sonnet": Native({"subagent_type": "general-purpose", "model": "sonnet"}, re.compile(r"^claude-sonnet-")),
-    "claude:opus-5": Native({"subagent_type": "tier-lower"}, re.compile(r"^claude-opus-5$")),
-    "claude:opus-5.5": Native({"subagent_type": "tier-upper"}, re.compile(r"^claude-opus-5-5$")),
-    "claude:fable-5.1": Withheld("operator rule 2026-09-22, Fable is not launched"),
-    "codex:gpt-6-astra": External("gpt-6-astra"),
-    "codex:gpt-6-terra": External("gpt-6-terra"),
-    "codex:gpt-6-sol": External("gpt-6-sol"),
+MODELS: Mapping[str, Native] = {
+    "claude:opus-5": Native({"subagent_type": "review-lower-high"}, re.compile(r"^claude-opus-5$")),
+    "claude:opus-5.5": Native({"subagent_type": "review-upper-high"}, re.compile(r"^claude-opus-5-5$")),
+    "claude:fable-5.1": Native({"subagent_type": "review-fable-high", "model": "fable"},
+                               re.compile(r"^claude-fable-5-1$")),
 }
+AGENT_FILES = ("review-lower-high.md", "review-upper-high.md", "review-fable-high.md")
+
+Arm = Literal["I", "S", "M"]
+ARMS: tuple[Arm, ...] = ("I", "S", "M")
+Step = Literal["1", "I2", "I3", "S2", "S3", "M2", "M3"]
+
+
+@dataclass(frozen=True)
+class StepSpec:
+    arm: Arm | None
+    pass_: int
+    needs: tuple[Step, ...]
+
+
+STEPS: Mapping[Step, StepSpec] = {
+    "1": StepSpec(None, 1, ()),
+    "I2": StepSpec("I", 2, ("1",)),
+    "I3": StepSpec("I", 3, ("1", "I2")),
+    "S2": StepSpec("S", 2, ("1",)),
+    "S3": StepSpec("S", 3, ("1", "S2")),
+    "M2": StepSpec("M", 2, ("1",)),
+    "M3": StepSpec("M", 3, ("1", "M2")),
+}
+
+
+def chain(arm: Arm) -> tuple[Step, ...]:
+    return ("1", *(s for s, spec in STEPS.items() if spec.arm == arm))
 
 
 @dataclass(frozen=True)
 class RunId:
     descriptor: str
     brief: BriefId
-    k: int
+    step: Step
 
     def dir(self, out: Path) -> Path:
-        return out / "runs" / self.descriptor.replace(":", "-") / self.brief.round / self.brief.axis / str(self.k)
+        return out / "runs" / self.descriptor.replace(":", "-") / self.brief.round / self.brief.axis / self.step
+
+    def at(self, step: Step) -> RunId:
+        return RunId(self.descriptor, self.brief, step)
 
     def to_json(self) -> dict:
-        return {"descriptor": self.descriptor, "round": self.brief.round, "axis": self.brief.axis, "k": self.k}
+        return {"descriptor": self.descriptor, "round": self.brief.round, "axis": self.brief.axis, "step": self.step}
 
     @staticmethod
     def from_json(j: dict) -> RunId:
-        return RunId(j["descriptor"], BriefId(j["round"], j["axis"]), j["k"])
+        return RunId(j["descriptor"], BriefId(j["round"], j["axis"]), j["step"])
 
 
 @dataclass(frozen=True)
@@ -152,6 +179,10 @@ class Prepared:
     nonce: str
     checkout: Path
     prompt: str
+    settled: tuple[str, ...] = ()
+    applied: tuple[str, ...] = ()
+    masked: tuple[str, ...] = ()
+    tree: str | None = None
 
 
 @dataclass(frozen=True)
@@ -171,18 +202,13 @@ class Receipt:
     status: Status
     detail: str
     reported_model: str | None
-    model_verified: bool
     effort: str | None
     tokens: Tokens | None
     wall_ms: int | None
     source: Path
 
 
-Failure = Literal["no-report", "no-count-line", "count-exceeds-items", "no-hard-headings",
-                  "timed-out", "child-failed", "malformed-output"]
-RUNNER_FAILURES: tuple[Failure, ...] = ("timed-out", "child-failed", "malformed-output")
-USAGE_LIMIT = "usage-limit"
-USAGE_LIMIT_LINE = re.compile(r"hit your usage limit", re.I)
+Failure = Literal["no-report", "no-count-line", "count-exceeds-items", "no-hard-headings"]
 
 
 @dataclass(frozen=True)
@@ -190,6 +216,7 @@ class Item:
     n: int
     hard: bool
     text: str
+    raw: str
 
 
 @dataclass(frozen=True)
@@ -198,12 +225,16 @@ class Score:
     failure: Failure | None
     hits: frozenset[str]
     demoted: frozenset[str]
-    unlabeled: int
-    labels: int
+    other: int
+    items: tuple[Item, ...] = ()
 
 
 class Refusal(Exception):
     """Printed as `reviewer: <msg>` on stderr, exit 1."""
+
+
+class Conflict(Refusal):
+    """A set of fix commits that does not apply to its round's head."""
 
 
 def natural(name: str) -> list:
@@ -251,37 +282,41 @@ def load_fixtures(root: Path) -> Fixtures:
                         raise bad(bfile, i, f"names {review_dir}/{name}, which review/ lacks")
             briefs[BriefId(rdir.name, axis)] = Brief(BriefId(rdir.name, axis), head, review, relpath)
 
-    lfile = root / "labels"
-    if not lfile.is_file():
-        raise bad(lfile, 0, "missing")
-    labels: dict[BriefId, list[Label]] = {b: [] for b in briefs}
-    for i, line in enumerate(lfile.read_text().splitlines(), 1):
+    tfile = root / "truth"
+    if not tfile.is_file():
+        raise bad(tfile, 0, "missing")
+    names = {b.round for b in briefs}
+    truth: dict[str, list[Bug]] = {r: [] for r in sorted(names, key=natural)}
+    for i, line in enumerate(tfile.read_text().splitlines(), 1):
         if not line.strip() or line.startswith("#"):
             continue
         cols = line.split("\t")
-        if len(cols) != 5:
-            raise bad(lfile, i, f"{len(cols)} columns, want 5: brief, id, kind, anchors, title")
-        brief_s, lid, kind, anchors_s, _title = cols
-        bid = BriefId.parse(brief_s)
-        if bid not in briefs:
-            raise bad(lfile, i, f"unknown brief {brief_s}")
-        if not re.fullmatch(r"[SP][1-9][0-9]*", lid):
-            raise bad(lfile, i, f"id {lid} is not S<n> or P<n>")
-        if kind not in ("fixed", "hole"):
-            raise bad(lfile, i, f"kind {kind} is not fixed or hole")
-        if any(label.id == lid for label in labels[bid]):
-            raise bad(lfile, i, f"{brief_s} {lid} is labeled twice")
+        if len(cols) != 7:
+            raise bad(tfile, i, f"{len(cols)} columns, want 7: round, id, anchors, fix, where, sources, title")
+        round_, bid, anchors_s, fix_s, where, sources, title = cols
+        if round_ not in names:
+            raise bad(tfile, i, f"unknown round {round_}")
+        if not re.fullmatch(r"G[1-9][0-9]*", bid):
+            raise bad(tfile, i, f"id {bid} is not G<n>")
+        if any(b.id == bid for b in truth[round_]):
+            raise bad(tfile, i, f"{round_} {bid} appears twice")
         parts = anchors_s.split(" && ")
         if len(parts) < 2:
-            raise bad(lfile, i, "fewer than two anchors")
+            raise bad(tfile, i, "fewer than two anchors")
         compiled = []
         for p in parts:
             try:
                 compiled.append(re.compile(p))
             except re.error as e:
-                raise bad(lfile, i, f"anchor {p!r}: {e}") from None
-        labels[bid].append(Label(bid, lid, kind, tuple(compiled)))
-    return Fixtures(briefs, {b: tuple(v) for b, v in labels.items()})
+                raise bad(tfile, i, f"anchor {p!r}: {e}") from None
+        fix = () if fix_s == "-" else tuple(fix_s.split(","))
+        if not all(re.fullmatch(r"[0-9a-f]{7,40}", c) for c in fix):
+            raise bad(tfile, i, f"fix {fix_s!r} is not - or comma-separated commit ids")
+        for name, value in (("where", where), ("sources", sources), ("title", title)):
+            if not value.strip():
+                raise bad(tfile, i, f"{name} is empty")
+        truth[round_].append(Bug(round_, bid, tuple(compiled), fix, title))
+    return Fixtures(briefs, {r: tuple(v) for r, v in truth.items()})
 
 
 def normalize(text: str) -> str:
@@ -291,7 +326,6 @@ def normalize(text: str) -> str:
 def parse_report(text: str | None) -> list[Item] | Failure:
     if text is None:
         return "no-report"
-    lines = text.splitlines()
     counts: list[re.Match[str]] = []
     hard_heading = False
     items: list[Item] = []
@@ -301,9 +335,10 @@ def parse_report(text: str | None) -> list[Item] | Failure:
 
     def close() -> None:
         if current:
-            items.append(Item(current[0], current[1], normalize(" ".join(current[2]))))
+            items.append(Item(current[0], current[1], normalize(" ".join(current[2])),
+                              " ".join(s.strip() for s in current[2] if s.strip())))
 
-    for line in lines:
+    for line in text.splitlines():
         # A reviewer quotes numbered criteria and headings inside fences; they are not findings.
         marker = FENCE_LINE.match(line)
         fenced = fence is not None or marker is not None
@@ -337,59 +372,142 @@ def parse_report(text: str | None) -> list[Item] | Failure:
     return items
 
 
-def claims(hard: list[Item], labels: tuple[Label, ...]) -> dict[int, int]:
-    """Label index -> hard item index, one to one, most anchors first, then item order, then label order."""
-    pairs = sorted((-len(label.anchors), ii, li)
-                   for ii, item in enumerate(hard) for li, label in enumerate(labels) if label.matches(item.text))
-    by_label: dict[int, int] = {}
-    for _, ii, li in pairs:
-        if li not in by_label and ii not in by_label.values():
-            by_label[li] = ii
-    return by_label
+def claims(hard: list[Item], bugs: tuple[Bug, ...]) -> dict[int, int]:
+    """Bug index -> hard item index, one to one, most anchors first, then item order, then bug order."""
+    pairs = sorted((-len(bug.anchors), ii, bi)
+                   for ii, item in enumerate(hard) for bi, bug in enumerate(bugs) if bug.matches(item.text))
+    by_bug: dict[int, int] = {}
+    for _, ii, bi in pairs:
+        if bi not in by_bug and ii not in by_bug.values():
+            by_bug[bi] = ii
+    return by_bug
 
 
-def score(run: RunId, parsed: list[Item] | Failure, labels: tuple[Label, ...]) -> Score:
+def score(run: RunId, parsed: list[Item] | Failure, bugs: tuple[Bug, ...]) -> Score:
     if isinstance(parsed, str):
-        return Score(run, parsed, frozenset(), frozenset(), 0, len(labels))
+        return Score(run, parsed, frozenset(), frozenset(), 0)
     hard = [i for i in parsed if i.hard]
-    claimed = claims(hard, labels)
-    hits = frozenset(labels[li].id for li in claimed)
-    unlabeled = sum(1 for ii, item in enumerate(hard)
-                    if ii not in claimed.values() and not any(label.matches(item.text) for label in labels))
-    demoted = frozenset(label.id for label in labels
-                        if label.id not in hits and any(label.matches(i.text) for i in parsed if not i.hard))
-    return Score(run, None, hits, demoted, unlabeled, len(labels))
+    claimed = claims(hard, bugs)
+    hits = frozenset(bugs[bi].id for bi in claimed)
+    other = sum(1 for ii, item in enumerate(hard)
+                if ii not in claimed.values() and not any(bug.matches(item.text) for bug in bugs))
+    demoted = frozenset(bug.id for bug in bugs
+                        if bug.id not in hits and any(bug.matches(i.text) for i in parsed if not i.hard))
+    return Score(run, None, hits, demoted, other, tuple(parsed))
 
 
-def calibrate(parsed: list[Item] | Failure, labels: tuple[Label, ...]) -> list[tuple[Label, str | None]]:
-    if isinstance(parsed, str):
-        return [(label, f"the historical report is a context failure: {parsed}") for label in labels]
-    hard = [i for i in parsed if i.hard]
-    claimed = claims(hard, labels)
-    result = []
-    for li, label in enumerate(labels):
-        want = int(label.id[1:])
-        got = hard[claimed[li]].n if li in claimed else None
-        matched = [i.n for i in parsed if label.matches(i.text)]
-        ok = got == want and matched == [want]
-        result.append((label, None if ok else f"claimed by item {got}, matched by items {matched}; want item {want} alone"))
-    return result
+def fixes_for(found: Iterable[str], bugs: tuple[Bug, ...]) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    """The fix commits of the found bugs, and every bug whose fix commits are all among them."""
+    ids = set(found)
+    applied = tuple(dict.fromkeys(c for b in bugs if b.id in ids for c in b.fix))
+    masked = tuple(b.id for b in bugs if b.fix and set(b.fix) <= set(applied))
+    return applied, masked
+
+
+def arising(bugs: tuple[Bug, ...]) -> list[tuple[str, ...]]:
+    """Every non-empty set of fix commits a masked pass can apply, each once."""
+    fixable = [b for b in bugs if b.fix]
+    seen: dict[frozenset[str], tuple[str, ...]] = {}
+    for n in range(1, len(fixable) + 1):
+        for subset in itertools.combinations(fixable, n):
+            applied, _ = fixes_for((b.id for b in subset), bugs)
+            seen.setdefault(frozenset(applied), applied)
+    return list(seen.values())
+
+
+def settle(brief: str, axis: Axis, lines: list[str]) -> str:
+    """The brief with `lines` under the settled heading, where review-brief.sh prints that section."""
+    if not lines:
+        return brief
+    rows = brief.split("\n")
+    fence: str | None = None
+    for i, line in enumerate(rows):
+        marker = FENCE_LINE.match(line)
+        if marker:
+            if fence is None:
+                fence = marker.group(1)[:3]
+            elif marker.group(1).startswith(fence) and not line.strip()[len(marker.group(1)):].strip():
+                fence = None
+            continue
+        if fence is None and AFTER_SETTLED[axis].match(line):
+            block = [SETTLED_HEADING, "", SETTLED_RULE, "", *lines, ""]
+            return "\n".join(rows[:i] + block + rows[i:])
+    raise Refusal(f"the {axis} brief has no line matching {AFTER_SETTLED[axis].pattern} outside a fence; "
+                  f"the settled section has nowhere to go")
 
 
 def stamp(s: str) -> datetime:
     return datetime.fromisoformat(s.replace("Z", "+00:00"))
 
 
+def assistant_text(line: dict) -> str:
+    content = (line.get("message") or {}).get("content")
+    blocks = content if isinstance(content, list) else [{"type": "text", "text": content or ""}]
+    return " ".join(str(c.get("text", "")) for c in blocks if isinstance(c, dict) and c.get("type") == "text")
+
+
+def usage_limited_transcript(lines: list[dict]) -> bool:
+    return any(USAGE_LIMIT_LINE.search(assistant_text(line) + " " + str(line.get("error") or ""))
+               for line in lines if line.get("type") == "assistant")
+
+
+COMMAND_WORDS = ("gh", "git", "curl", "wget")
+PREFIX_WORDS = ("env", "sudo", "command", "exec", "time", "nohup", "xargs", "builtin")
+TRUSTED_BINS = ("/usr/", "/bin/", "/opt/homebrew/")
+SEGMENT_SPLIT = re.compile(r"&&|\|\||;|\||\$\(|`|\n|\(")
+PATH_TOKEN = re.compile(r"(?:^|(?<=[\s'\"=:(<>]))([/~][^\s'\"`;|&()<>]*)")
+
+
+def bash_reaches(command: str, root: str) -> list[str]:
+    """Why a reviewer's Bash command leaves the export, or nothing when it stays inside."""
+    why = []
+    if root not in command:
+        why.append("does not name the export")
+    words = []
+    for seg in SEGMENT_SPLIT.split(command):
+        toks = [t for t in seg.strip().split() if t]
+        while toks and (re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*=\S*", toks[0]) or toks[0] in PREFIX_WORDS):
+            toks.pop(0)
+        if toks:
+            words.append(toks[0].strip("'\""))
+    for w in words:
+        if os.path.basename(w) in COMMAND_WORDS:
+            why.append(f"runs {os.path.basename(w)}")
+    if re.search(r"(^|[\s/'\"=])\.\.(/|[\s'\"]|$)", command):
+        why.append("has a .. path component")
+    inside = re.compile(re.escape(root) + r"(?=$|[/\s'\"`;|&()<>])[^\s'\"`;|&()<>]*")
+    rest = inside.sub(" ", command)
+    for m in PATH_TOKEN.finditer(rest):
+        p = m.group(1)
+        if p == "/dev/null" or (p.startswith(TRUSTED_BINS) and p in words):
+            continue
+        # A slash that opens no real top-level directory is a pattern, as in awk '/^## /'.
+        if p.startswith("/") and not (p.split("/")[1] and os.path.exists("/" + p.split("/")[1])):
+            continue
+        why.append(f"names {p}")
+    return why
+
+
 def receipt_from_transcript(run: RunId, lines: list[dict], expect: re.Pattern[str], checkout: Path,
                             transcripts: Path, source: Path) -> Receipt:
     assistant = [line for line in lines if line.get("type") == "assistant"]
-    models = sorted({m for line in assistant
-                     if (m := (line.get("message") or {}).get("model")) and m != "<synthetic>"})
+    stamps = [stamp(line["timestamp"]) for line in lines if line.get("timestamp")]
+    wall_ms = int((stamps[-1] - stamps[0]).total_seconds() * 1000) if stamps else None
+    if usage_limited_transcript(lines):
+        return Receipt(run, "dropout", f"{USAGE_LIMIT}: the transcript says the account hit its usage limit",
+                       None, None, None, wall_ms, source)
+    served = [line for line in assistant if (line.get("message") or {}).get("model") not in (None, "<synthetic>")]
+    models = sorted({line["message"]["model"] for line in served})
     wrong = [m for m in models if not expect.search(m)]
     if wrong or not models:
-        raise Refusal(f"{run.descriptor} {run.brief} run {run.k} was served {', '.join(wrong) or 'no model'}; "
+        raise Refusal(f"{run.descriptor} {run.brief} step {run.step} was served {', '.join(wrong) or 'no model'}; "
                       f"{run.descriptor} pins {expect.pattern}; the agent definition drifted: fix it, "
-                      f"remove the run directory, rerun")
+                      f"remove the run directory, run next again")
+    efforts = sorted({str(line.get("effort")) for line in served})
+    if efforts != [EFFORT]:
+        raise Refusal(f"{run.descriptor} {run.brief} step {run.step} ran at effort {', '.join(efforts)}; "
+                      f"every run is at effort {EFFORT}; set `effort: {EFFORT}` in the agent definition, "
+                      f"remove the run directory, run next again")
     usage: dict[str, dict] = {}
     for i, line in enumerate(assistant):
         u = (line.get("message") or {}).get("usage")
@@ -397,9 +515,6 @@ def receipt_from_transcript(run: RunId, lines: list[dict], expect: re.Pattern[st
             usage[line.get("requestId") or f"line {i}"] = u
     tokens = Tokens(*(sum(u.get(k) or 0 for u in usage.values())
                       for k in ("input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens", "output_tokens")))
-    stamps = [stamp(line["timestamp"]) for line in lines if line.get("timestamp")]
-    wall_ms = int((stamps[-1] - stamps[0]).total_seconds() * 1000) if stamps else None
-    effort = next((line["effort"] for line in lines if line.get("effort")), None)
 
     root = os.path.normpath(str(checkout))
     troot = os.path.normpath(str(transcripts))
@@ -431,125 +546,93 @@ def receipt_from_transcript(run: RunId, lines: list[dict], expect: re.Pattern[st
                 reaches.append(f"{name} with no path")
             elif name in ("Grep", "Glob") and not inside(args["path"]):
                 reaches.append(f"{name} {args['path']}")
-            elif name == "Bash" and root not in args.get("command", ""):
-                reaches.append(f"Bash {args.get('command', '')[:120]}")
+            elif name == "Bash" and (why := bash_reaches(args.get("command", ""), root)):
+                reaches.append(f"Bash ({', '.join(why)}) {args.get('command', '')[:120]}")
     status: Status = "contaminated" if reaches else "complete"
-    return Receipt(run, status, "; ".join(reaches) or "complete", models[-1], True, effort, tokens, wall_ms, source)
+    return Receipt(run, status, "; ".join(reaches) or "complete", models[-1], efforts[0], tokens, wall_ms, source)
 
 
-def receipt_from_runner(run: RunId, pstack: dict, source: Path) -> Receipt:
-    """A runner failure stays a complete receipt whose detail names it; `run_failure` reads it back."""
-    status = pstack.get("status")
-    error = pstack.get("error")
-    if isinstance(error, dict) and USAGE_LIMIT_LINE.search(str(error.get("evidence") or "")):
-        return Receipt(run, "dropout", f"{USAGE_LIMIT}: {status}", pstack.get("reportedModel"),
-                       bool(pstack.get("modelVerified")), pstack.get("effort"), None, pstack.get("elapsedMs"), source)
-    u = pstack.get("usage")
-    tokens = None
-    if u:
-        cached = u.get("cachedInputTokens") or 0
-        tokens = Tokens((u.get("inputTokens") or 0) - cached, cached, u.get("cacheCreationInputTokens") or 0,
-                        u.get("outputTokens") or 0)
-    ran = status == "complete" or status in RUNNER_FAILURES
-    return Receipt(run, "complete" if ran else "dropout", status if ran else f"{status}: {pstack.get('error')}",
-                   pstack.get("reportedModel"), bool(pstack.get("modelVerified")), pstack.get("effort"),
-                   tokens, pstack.get("elapsedMs"), source)
+def redo(receipt: Receipt) -> bool:
+    """A run whose result says nothing about the model: moved aside and prepared again."""
+    return receipt.status == "contaminated" or (receipt.status == "dropout" and receipt.detail.startswith(USAGE_LIMIT))
 
 
-def run_failure(receipt: Receipt) -> Failure | None:
-    return receipt.detail if receipt.detail in RUNNER_FAILURES else None
+@dataclass(frozen=True)
+class Row:
+    """One arm and pass of one model's table; means are per chain."""
+    arm: Arm
+    pass_: int
+    chains: int
+    new: float | None
+    cumulative: float | None
+    demoted: float | None
+    other: float | None
+    failures: int
+    output: float | None
+    cache_read: float | None
+    wall_s: float | None
+    contaminated: int
+    usage_limit: int
 
 
-def usage_limited(receipt: Receipt) -> bool:
-    """The account's quota, not the model's failure: out of every metric, and later k still run."""
-    return receipt.status == "dropout" and receipt.detail.split(":", 1)[0] == USAGE_LIMIT
+def mean(xs: list[float]) -> float | None:
+    return sum(xs) / len(xs) if xs else None
 
 
-def noise(scores: Iterable[Score], axis: Axis) -> Mapping[str, tuple[float, float, float, float]]:
-    """Descriptor -> (recall, min_k, max_k, sd) over its replicate recalls; descriptors with no labels are left out.
-
-    The band and sd read only the replicates that cover as many labeled briefs as the widest of
-    them; a replicate short of one is not a replicate of the set. Pooled recall counts every run.
-    """
-    by: dict[str, list[Score]] = {}
-    for s in scores:
-        if s.run.brief.axis == axis:
-            by.setdefault(s.run.descriptor, []).append(s)
-    bands = {}
-    for d, ss in by.items():
-        total = sum(s.labels for s in ss)
-        if not total:
-            continue
-        reps: dict[int, tuple[int, int, frozenset[BriefId]]] = {}
-        for s in ss:
-            h, n, covered = reps.get(s.run.k, (0, 0, frozenset()))
-            reps[s.run.k] = (h + len(s.hits), n + s.labels,
-                             covered | ({s.run.brief} if s.labels else frozenset()))
-        widest = max(len(covered) for _, _, covered in reps.values())
-        rr = [h / n for h, n, covered in reps.values() if n and len(covered) == widest]
-        bands[d] = (sum(len(s.hits) for s in ss) / total, min(rr), max(rr), statistics.pstdev(rr))
-    return bands
-
-
-def within(bands: Mapping[str, tuple[float, float, float, float]]) -> frozenset[str]:
-    if not bands:
-        return frozenset()
-    floor = bands[max(bands, key=lambda d: bands[d][0])][1]
-    return frozenset(d for d, band in bands.items() if band[0] >= floor)
-
-
-COLUMNS = ("model", "axis", "runs", "context failures", "recall", "min_k", "max_k", "sd", "within noise",
-           "demoted", "unlabeled/brief", "out tokens", "in tokens", "cache read", "cache write", "wall s",
-           "contaminated", "usage limit")
+def rows_for(descriptor: str, scores: Mapping[RunId, Score], receipts: Mapping[RunId, Receipt],
+             masked: Mapping[RunId, frozenset[str]], dropped: list[Receipt]) -> list[Row]:
+    briefs = sorted({r.brief for r in scores if r.descriptor == descriptor})
+    rows = []
+    for arm in ARMS:
+        steps = chain(arm)
+        for p, step in enumerate(steps, 1):
+            new, cum, dem, oth, out, cache, wall = [], [], [], [], [], [], []
+            failures = 0
+            for b in briefs:
+                runs = [RunId(descriptor, b, s) for s in steps[:p]]
+                if not all(r in scores for r in runs):
+                    continue
+                s = scores[runs[-1]]
+                gone = masked.get(runs[-1], frozenset())
+                earlier = frozenset().union(*(scores[r].hits for r in runs[:-1]))
+                found = s.hits - gone - earlier
+                new.append(len(found))
+                cum.append(len(earlier | found))
+                dem.append(len(s.demoted - gone))
+                oth.append(s.other)
+                failures += s.failure is not None
+                rc = receipts[runs[-1]]
+                if rc.tokens:
+                    out.append(rc.tokens.output)
+                    cache.append(rc.tokens.cache_read)
+                if rc.wall_ms is not None:
+                    wall.append(rc.wall_ms / 1000)
+            mine = [r for r in dropped if r.run.descriptor == descriptor and r.run.step == step]
+            rows.append(Row(arm, p, len(new), mean(new), mean(cum), mean(dem), mean(oth), failures,
+                            mean(out), mean(cache), mean(wall),
+                            sum(1 for r in mine if r.status == "contaminated"),
+                            sum(1 for r in mine if r.status == "dropout")))
+    return rows
 
 
-def order(descriptor: str) -> tuple:
-    names = list(MODELS)
-    return (names.index(descriptor) if descriptor in names else len(names), descriptor)
+COLUMNS = ("arm", "pass", "chains", "new truth bugs", "cumulative", "demoted", "other hard items",
+           "context failures", "out tokens", "cache read", "wall s", "contaminated", "usage limit")
 
 
-def render_table(scores: list[Score], receipts: list[Receipt]) -> str:
-    def mean(xs: list[float], places: int) -> str:
-        return f"{sum(xs) / len(xs):.{places}f}" if xs else "n/a"
+def render_table(descriptor: str, rows: list[Row]) -> str:
+    def f(x: float | None, places: int) -> str:
+        return "n/a" if x is None else f"{x:.{places}f}"
 
     def cells(row: Iterable[str]) -> str:
         return "| " + " | ".join(row) + " |"
 
-    by_run = {r.run: r for r in receipts}
-    keys = {(s.run.descriptor, s.run.brief.axis) for s in scores}
-    keys |= {(r.run.descriptor, r.run.brief.axis) for r in receipts
-             if r.status == "contaminated" or usage_limited(r)}
-    bands = {axis: noise(scores, axis) for axis in AXES}
-    near = {axis: within(bands[axis]) for axis in AXES}
-    rows = [cells(COLUMNS), cells("---" for _ in COLUMNS)]
-    for d, axis in sorted(keys, key=lambda k: (order(k[0]), AXES.index(k[1]))):
-        ss = [s for s in scores if s.run.descriptor == d and s.run.brief.axis == axis]
-        clean = [s for s in ss if s.failure is None]
-        tok = [by_run[s.run].tokens for s in ss if s.run in by_run and by_run[s.run].tokens]
-        walls = [by_run[s.run].wall_ms / 1000 for s in ss if s.run in by_run and by_run[s.run].wall_ms is not None]
-        hits, labels = sum(len(s.hits) for s in ss), sum(s.labels for s in ss)
-        band = bands[axis].get(d)
-        rows.append(cells([
-            d, axis, str(len(ss)), str(sum(1 for s in ss if s.failure)),
-            f"{hits}/{labels} ({hits / labels:.2f})" if labels else "n/a",
-            *([f"{band[1]:.2f}", f"{band[2]:.2f}", f"{band[3]:.2f}", "yes" if d in near[axis] else "no"]
-              if band else ["n/a"] * 4),
-            str(sum(len(s.demoted) for s in ss)),
-            mean([s.unlabeled for s in clean], 2),
-            mean([t.output for t in tok], 0), mean([t.input for t in tok], 0),
-            mean([t.cache_read for t in tok], 0), mean([t.cache_write for t in tok], 0),
-            mean(walls, 1),
-            str(sum(1 for r in receipts if r.status == "contaminated" and r.run.descriptor == d and r.run.brief.axis == axis)),
-            str(sum(1 for r in receipts if usage_limited(r) and r.run.descriptor == d and r.run.brief.axis == axis)),
-        ]))
-    dropped = []
-    for d in sorted({r.run.descriptor for r in receipts}, key=order):
-        mine = [r for r in receipts if r.run.descriptor == d and not usage_limited(r)]
-        if mine and all(r.status == "dropout" for r in mine):
-            dropped.append(cells([d, f"dropout {mine[0].detail.split(':', 1)[0]}", str(mine[0].source)]))
-    if dropped:
-        rows += ["", cells(["model", "result", "receipt"]), cells(["---"] * 3), *dropped]
-    return "\n".join(rows) + "\n"
+    lines = [f"## {descriptor}", "", "Means per chain; a masked pass leaves out the bugs its tree has fixed.", "",
+             cells(COLUMNS), cells("---" for _ in COLUMNS)]
+    for r in rows:
+        lines.append(cells([r.arm, str(r.pass_), str(r.chains), f(r.new, 2), f(r.cumulative, 2), f(r.demoted, 2),
+                            f(r.other, 2), str(r.failures), f(r.output, 0), f(r.cache_read, 0), f(r.wall_s, 1),
+                            str(r.contaminated), str(r.usage_limit)]))
+    return "\n".join(lines) + "\n"
 
 
 # Everything below touches git, the filesystem or subprocesses.
@@ -560,9 +643,8 @@ class Env:
     out: Path
     work: Path
     transcripts: Path
-    runner: Path
     repo: Path
-    timeout: str | None
+    agents: Path
     settle: float
 
 
@@ -573,19 +655,16 @@ def git(cwd: Path, *args: str) -> str:
 def load_env() -> Env:
     here = Path(__file__).resolve().parent
     top = Path(git(here, "rev-parse", "--show-toplevel"))
-    transcripts = os.environ.get("REVIEWER_TRANSCRIPTS")
-    if not transcripts:
-        main = Path(git(top, "rev-parse", "--path-format=absolute", "--git-common-dir")).parent
-        transcripts = str(Path.home() / ".claude" / "projects" / re.sub(r"[^A-Za-z0-9]", "-", str(main)))
+    main = Path(git(top, "rev-parse", "--path-format=absolute", "--git-common-dir")).parent
+    transcripts = os.environ.get("REVIEWER_TRANSCRIPTS") or str(
+        Path.home() / ".claude" / "projects" / re.sub(r"[^A-Za-z0-9]", "-", str(main)))
     return Env(
         fixtures=Path(os.environ.get("REVIEWER_FIXTURES") or here),
         out=Path(os.environ.get("REVIEWER_OUT") or top / ".scratch" / "eval" / "reviewer"),
         work=Path(os.environ.get("REVIEWER_WORK") or Path(os.environ.get("TMPDIR") or "/tmp") / "review-work"),
         transcripts=Path(transcripts),
-        runner=Path(os.environ.get("REVIEWER_RUNNER")
-                    or top / "template/.agents/skills/poteto-mode/scripts/runner/pstack-runner"),
         repo=Path(os.environ.get("REVIEWER_REPO") or top),
-        timeout=os.environ.get("REVIEWER_TIMEOUT") or None,
+        agents=Path(os.environ.get("REVIEWER_AGENTS") or main / ".claude" / "agents"),
         settle=float(os.environ.get("REVIEWER_SETTLE_SECONDS") or 120),
     )
 
@@ -605,9 +684,8 @@ def read_jsonl(path: Path) -> list[dict]:
 
 
 def receipt_json(r: Receipt) -> dict:
-    return {"version": 1, "run": r.run.to_json(), "route": type(MODELS[r.run.descriptor]).__name__.lower(),
-            "status": r.status, "detail": r.detail, "reported_model": r.reported_model,
-            "model_verified": r.model_verified, "effort": r.effort,
+    return {"version": 2, "run": r.run.to_json(), "status": r.status, "detail": r.detail,
+            "reported_model": r.reported_model, "effort": r.effort,
             "tokens": asdict(r.tokens) if r.tokens else None, "wall_ms": r.wall_ms, "source": str(r.source)}
 
 
@@ -616,8 +694,8 @@ def receipt_at(d: Path) -> Receipt | None:
     if not path.is_file():
         return None
     j = json.loads(path.read_text())
-    return Receipt(RunId.from_json(j["run"]), j["status"], j["detail"], j["reported_model"], j["model_verified"],
-                   j["effort"], Tokens(**j["tokens"]) if j["tokens"] else None, j["wall_ms"], Path(j["source"]))
+    return Receipt(RunId.from_json(j["run"]), j["status"], j["detail"], j["reported_model"], j["effort"],
+                   Tokens(**j["tokens"]) if j["tokens"] else None, j["wall_ms"], Path(j["source"]))
 
 
 def prepared_at(d: Path) -> Prepared | None:
@@ -625,7 +703,8 @@ def prepared_at(d: Path) -> Prepared | None:
     if not path.is_file():
         return None
     j = json.loads(path.read_text())
-    return Prepared(RunId.from_json(j["run"]), j["nonce"], Path(j["checkout"]), j["prompt"])
+    return Prepared(RunId.from_json(j["run"]), j["nonce"], Path(j["checkout"]), j["prompt"],
+                    tuple(j.get("settled", ())), tuple(j.get("applied", ())), tuple(j.get("masked", ())), j.get("tree"))
 
 
 def state(d: Path) -> Literal["absent", "prepared", "collected", "broken"]:
@@ -647,63 +726,87 @@ def plan(run: RunId, brief: Brief, work: Path) -> Prepared:
     return Prepared(run, nonce, checkout, prompt)
 
 
-def materialize(p: Prepared, brief: Brief, env: Env) -> None:
-    d = p.run.dir(env.out)
+def rebuild(env: Env, round_: str, *args: str) -> subprocess.CompletedProcess:
+    return subprocess.run(["bash", str(Path(__file__).resolve().parent / "rebuild.sh"), round_, *args],
+                          capture_output=True, text=True,
+                          env={**os.environ, "REBUILD_FIXTURES": str(env.fixtures), "REBUILD_REPO": str(env.repo)})
+
+
+def export_masked(env: Env, round_: str, dest: Path, commits: tuple[str, ...]) -> str:
+    proc = rebuild(env, round_, "--export", str(dest), *commits)
+    if proc.returncode == 3:
+        raise Conflict(f"round {round_}: the fix commits {' '.join(commits)} do not apply to its head; "
+                      f"the truth file's fix column needs the owner")
+    if proc.returncode:
+        raise Refusal(f"rebuild.sh {round_} --export failed ({proc.returncode}): {proc.stderr.strip()[-400:]}")
+    return proc.stdout.strip().splitlines()[-1]
+
+
+def report_of(run: RunId, out: Path) -> str | None:
+    report = run.dir(out) / "report.md"
+    return report.read_text() if report.is_file() else None
+
+
+def rescore(run: RunId, fx: Fixtures, out: Path) -> Score:
+    if run.brief not in fx.briefs:
+        raise Refusal(f"{run.dir(out)} names brief {run.brief}, which the fixture set lacks")
+    return score(run, parse_report(report_of(run, out)), fx.truth[run.brief.round])
+
+
+def materialize(p: Prepared, brief: Brief, fx: Fixtures, env: Env) -> Prepared:
+    """Build the run's export and write run.json; the masked arm's tree comes from rebuild.sh."""
+    run, out = p.run, env.out
+    spec = STEPS[run.step]
+    d = run.dir(out)
     d.parent.mkdir(parents=True, exist_ok=True)
     try:
         d.mkdir()
     except FileExistsError:
         raise Refusal(f"{d} appeared while this run started: another run holds it") from None
     p.checkout.mkdir(parents=True)
-    with subprocess.Popen(["git", "-C", str(env.repo), "archive", brief.head], stdout=subprocess.PIPE) as archive:
-        subprocess.run(["tar", "-x", "-C", str(p.checkout)], stdin=archive.stdout, check=True)
-    if archive.returncode:
-        raise Refusal(f"git archive {brief.head} failed; remove {d} and rerun")
     target = p.checkout / brief.report_relpath.parent
-    target.mkdir(parents=True, exist_ok=True)
     other = next(a for a in AXES if a != brief.id.axis)
-    for f in sorted(brief.files.iterdir()):
-        if f.is_file() and f.name != f"{other}-brief.md" and not f.name.endswith(".historical.md"):
-            shutil.copyfile(f, target / f.name)
+    earlier = [rescore(run.at(s), fx, out) for s in spec.needs]
+    applied: tuple[str, ...] = ()
+    masked: tuple[str, ...] = ()
+    tree = brief.head
+    if spec.arm == "M":
+        applied, masked = fixes_for(frozenset().union(*(s.hits for s in earlier)), fx.truth[run.brief.round])
+    if applied:
+        tree = export_masked(env, run.brief.round, p.checkout, applied)
+        (target / f"{other}-brief.md").unlink()
+    else:
+        with subprocess.Popen(["git", "-C", str(env.repo), "archive", brief.head], stdout=subprocess.PIPE) as archive:
+            subprocess.run(["tar", "-x", "-C", str(p.checkout)], stdin=archive.stdout, check=True)
+        if archive.returncode:
+            raise Refusal(f"git archive {brief.head} failed; remove {d} and run next again")
+        target.mkdir(parents=True, exist_ok=True)
+        for name in ("diff", f"{run.brief.axis}-brief.md"):
+            shutil.copyfile(brief.files / name, target / name)
+    settled: tuple[str, ...] = ()
+    if spec.arm == "S":
+        settled = tuple(f"- {i.raw}" for s in earlier for i in s.items if i.hard)
+        bfile = target / f"{run.brief.axis}-brief.md"
+        bfile.write_text(settle(bfile.read_text(), run.brief.axis, list(settled)))
+    done = Prepared(run, p.nonce, p.checkout, p.prompt, settled, applied, masked, tree)
     (d / "prompt.txt").write_text(p.prompt)
-    write_json(d / "run.json", {"run": p.run.to_json(), "nonce": p.nonce, "checkout": str(p.checkout), "prompt": p.prompt})
+    write_json(d / "run.json", {"run": run.to_json(), "nonce": p.nonce, "checkout": str(p.checkout),
+                                "prompt": p.prompt, "tree": tree, "settled": list(settled),
+                                "applied": list(applied), "masked": list(masked),
+                                "plain_head": not applied})
+    return done
 
 
 def launch_line(p: Prepared, brief: Brief, out: Path) -> str:
     route = MODELS[p.run.descriptor]
-    assert isinstance(route, Native)
     return json.dumps({"run": str(p.run.dir(out)), "agent": dict(route.agent),
                        "description": f"Review {brief.head[:7]} {p.run.brief.axis}", "prompt": p.prompt})
-
-
-def dispatch(p: Prepared, route: External, env: Env) -> dict:
-    d = p.run.dir(env.out)
-    argv = [str(env.runner), "--parent", "claude", "--provider", "codex", "--model", route.slug,
-            "--effort", EFFORT[p.run.brief.axis], "--mode", "isolated-write", "--prompt", str(d / "prompt.txt"),
-            "--cwd", str(p.checkout), "--output", str(d / "runner-output.md"),
-            "--receipt", str(d / "runner-receipt.json")]
-    if env.timeout:
-        argv += ["--timeout", env.timeout]
-    proc = subprocess.run(argv, capture_output=True, text=True)
-    path = d / "runner-receipt.json"
-    if not path.is_file():
-        raise Refusal(f"pstack-runner exited {proc.returncode} with no receipt for {d}: "
-                      f"{proc.stderr.strip()[-300:]}; remove {d} and rerun")
-    return json.loads(path.read_text())
-
-
-def rescore(receipt: Receipt, fx: Fixtures, out: Path) -> Score:
-    if receipt.run.brief not in fx.briefs:
-        raise Refusal(f"{receipt.run.dir(out)} names brief {receipt.run.brief}, which the fixture set lacks")
-    report = receipt.run.dir(out) / "report.md"
-    parsed = run_failure(receipt) or parse_report(report.read_text() if report.is_file() else None)
-    return score(receipt.run, parsed, fx.labels[receipt.run.brief])
 
 
 def collect_one(p: Prepared, receipt: Receipt, brief: Brief, fx: Fixtures, out: Path) -> str:
     d = p.run.dir(out)
     report = p.checkout / brief.report_relpath
-    if receipt.status != "dropout" and not run_failure(receipt) and report.is_file():
+    if receipt.status != "dropout" and report.is_file():
         shutil.copyfile(report, d / "report.md")
     write_json(d / "receipt.json", receipt_json(receipt))
     shutil.rmtree(p.checkout.parent, ignore_errors=True)
@@ -711,12 +814,12 @@ def collect_one(p: Prepared, receipt: Receipt, brief: Brief, fx: Fixtures, out: 
         return f"dropout {d} {receipt.detail}"
     if receipt.status == "contaminated":
         return f"contaminated {d}: {receipt.detail}"
-    s = rescore(receipt, fx, out)
+    s = rescore(p.run, fx, out)
     if s.failure:
         return f"{d} context-failure {s.failure}"
     t = receipt.tokens
     wall = f"{receipt.wall_ms / 1000:.0f}s" if receipt.wall_ms is not None else "n/a"
-    return (f"{d} recall {len(s.hits)}/{s.labels} unlabeled {s.unlabeled} demoted {len(s.demoted)} "
+    return (f"{d} truth {','.join(sorted(s.hits)) or '-'} other {s.other} demoted {len(s.demoted)} "
             f"tokens in/out {t.input if t else 'n/a'}/{t.output if t else 'n/a'} wall {wall}")
 
 
@@ -743,16 +846,16 @@ def locate(prepared: Mapping[RunId, Prepared], root: Path, out: Path) -> Mapping
         if len(paths) > 1:
             d = run.dir(out)
             raise Refusal(f"{d} has {len(paths)} transcripts {' '.join(map(str, paths))}: "
-                          f"one prompt was launched twice; remove {d} and rerun")
+                          f"one prompt was launched twice; remove {d} and run next again")
     return {run: paths[0] if paths else None for run, paths in found.items()}
 
 
-def finished(lines: list[dict], path: Path, settle: float) -> bool:
+def finished(lines: list[dict], path: Path, settle_s: float) -> bool:
     last = next((line for line in reversed(lines) if line.get("type") == "assistant"), None)
     if not last:
         return False
     message = last.get("message") or {}
-    if message.get("stop_reason") == "end_turn":
+    if message.get("stop_reason") == "end_turn" or usage_limited_transcript([last]):
         return True
     # A run can end on a text-only line the harness never stamped with a stop reason, so read a
     # transcript that has stopped growing as done.
@@ -760,87 +863,90 @@ def finished(lines: list[dict], path: Path, settle: float) -> bool:
     blocks = content if isinstance(content, list) else []
     if not blocks or any(not isinstance(c, dict) or c.get("type") != "text" for c in blocks):
         return False
-    return time.time() - path.stat().st_mtime >= settle
+    return time.time() - path.stat().st_mtime >= settle_s
 
 
-def cmd_check(fx: Fixtures, list_only: bool) -> int:
-    if list_only:
-        print("\n".join(str(b) for b in fx.briefs))
-        return 0
-    bad = 0
-    for bid, labels in fx.labels.items():
-        if not labels:
-            continue
-        hist = fx.briefs[bid].files / f"{bid.axis}-report.historical.md"
-        if not hist.is_file():
-            for label in labels:
-                print(f"unchecked {bid} {label.id}: no historical report")
-            continue
-        for label, problem in calibrate(parse_report(hist.read_text()), labels):
-            print(f"ok {bid} {label.id}" if problem is None else f"mismatch {bid} {label.id}: {problem}")
-            bad += problem is not None
-    if bad:
-        raise Refusal(f"{bad} label(s) do not calibrate against their historical report")
+def run_dirs(out: Path) -> list[Path]:
+    return sorted((d for d in out.glob("runs/*/*/*/*") if d.is_dir()), key=lambda d: natural(str(d)))
+
+
+def set_aside(d: Path, out: Path) -> None:
+    """Keep a contaminated or usage-limit receipt for the table and free the run for a new attempt."""
+    rel = d.relative_to(out / "runs")
+    n = 1
+    while (out / "dropped" / rel / str(n)).exists():
+        n += 1
+    dest = out / "dropped" / rel / str(n)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    shutil.move(str(d), str(dest))
+
+
+def cmd_check(fx: Fixtures, env: Env) -> int:
+    fixture_agents = env.fixtures / "agents"
+    for name in AGENT_FILES:
+        mine, theirs = fixture_agents / name, env.agents / name
+        if not mine.is_file():
+            raise Refusal(f"fixtures: agents/{name}: missing")
+        if not theirs.is_file():
+            raise Refusal(f"{theirs} is missing; copy {mine} there so the Agent tool can launch it")
+        if mine.read_bytes() != theirs.read_bytes():
+            raise Refusal(f"{theirs} differs from {mine}; copy the fixture's copy over it, byte for byte")
+        print(f"ok agent {name}")
+    heads = {b.id.round: b.head for b in fx.briefs.values()}
+    conflicts: list[str] = []
+    for round_, bugs in fx.truth.items():
+        for c in [heads[round_], *dict.fromkeys(c for b in bugs for c in b.fix)]:
+            if subprocess.run(["git", "-C", str(env.repo), "cat-file", "-e", f"{c}^{{commit}}"],
+                              capture_output=True).returncode:
+                raise Refusal(f"round {round_}: {c} is not in this repository's objects; fetch with: {FETCH_KEEP_REFS}")
+        print(f"ok truth {round_}: {len(bugs)} bugs, {sum(1 for b in bugs if b.fix)} with a fix")
+        for commits in arising(bugs):
+            with tempfile.TemporaryDirectory() as tmp:
+                try:
+                    export_masked(env, round_, Path(tmp) / "x", commits)
+                except Conflict as e:
+                    conflicts.append(str(e))
+                    print(f"conflict {round_}: {' '.join(commits)}")
+                    continue
+            print(f"ok masked {round_}: {' '.join(commits)}")
+    if conflicts:
+        raise Refusal(f"{len(conflicts)} set(s) of fix commits do not apply: " + "; ".join(conflicts))
     return 0
 
 
-def cmd_run(fx: Fixtures, env: Env, descriptor: str, bid: BriefId, n: int) -> int:
-    route, brief, out = MODELS[descriptor], fx.briefs[bid], env.out
-    runs = [RunId(descriptor, bid, k) for k in range(1, n + 1)]
-    if isinstance(route, Withheld):
-        d = runs[0].dir(out)
-        if state(d) == "collected":
-            print(f"dropout {d}")
-            return 0
-        d.mkdir(parents=True, exist_ok=True)
-        r = Receipt(runs[0], "dropout", f"withheld: {route.reason}", None, False, None, None, None, d / "receipt.json")
-        write_json(d / "receipt.json", receipt_json(r))
-        print(f"dropout {d} {r.detail}")
-        return 0
-    if subprocess.run(["git", "-C", str(env.repo), "cat-file", "-e", f"{brief.head}^{{commit}}"],
-                      capture_output=True).returncode:
-        raise Refusal(f"round {bid.round} head {brief.head} is not in this repository's objects; "
-                      f"the fixture pins it as refs/keep/103/{brief.head[:7]}, so fetch the "
-                      f"reviewed heads with: {FETCH_KEEP_REFS}")
-    states = {}
+def cmd_next(fx: Fixtures, env: Env, descriptors: list[str], limit: int) -> int:
+    out = env.out
+    missing = sorted({b.head for b in fx.briefs.values()
+                      if subprocess.run(["git", "-C", str(env.repo), "cat-file", "-e", f"{b.head}^{{commit}}"],
+                                        capture_output=True).returncode})
+    if missing:
+        raise Refusal(f"{' '.join(missing)} not in this repository's objects; fetch with: {FETCH_KEEP_REFS}")
+    runs = [RunId(desc, b, step) for desc in descriptors for b in fx.briefs for step in STEPS]
+    states: dict[RunId, str] = {}
     for run in runs:
-        d, st = run.dir(out), state(run.dir(out))
-        if st == "collected" and usage_limited(receipt_at(d)):
-            shutil.rmtree(d)
+        d = run.dir(out)
+        st = state(d)
+        if st == "broken":
+            raise Refusal(f"{d} has no run.json: it was left half-prepared; remove it and run next again")
+        if st == "collected" and redo(receipt_at(d)):
+            set_aside(d, out)
             st = "absent"
         states[run] = st
-    for run, st in states.items():
-        if st == "broken":
-            raise Refusal(f"{run.dir(out)} has no run.json: it was left half-prepared; remove it and rerun")
-        if st == "prepared" and isinstance(route, External):
-            d = run.dir(out)
-            raise Refusal(f"{d} was prepared and has no receipt: a runner holds it or crashed; "
-                          f"if none is running, remove {d} and rerun")
+    complete = {run for run, st in states.items() if st == "collected" and receipt_at(run.dir(out)).status == "complete"}
     prepared = {run: prepared_at(run.dir(out)) for run, st in states.items() if st == "prepared"}
     transcripts = locate(prepared, env.transcripts, out) if prepared else {}
-    plans = {run: plan(run, brief, env.work) for run, st in states.items() if st == "absent"}
-
-    for run, st in states.items():
-        d = run.dir(out)
-        if st == "collected":
-            if receipt_at(d).status == "dropout":
-                print(f"dropout {d}")
-                return 0
-            print(f"collected {d}")
-        elif isinstance(route, External):
-            p = plans[run]
-            materialize(p, brief, env)
-            receipt = receipt_from_runner(run, dispatch(p, route, env), d / "runner-receipt.json")
-            print(collect_one(p, receipt, brief, fx, out))
-            if receipt.status == "dropout" and not usage_limited(receipt):
-                return 0
-        elif st == "absent":
-            materialize(plans[run], brief, env)
-            print(launch_line(plans[run], brief, out))
-        elif transcripts[run] is None:
-            print(launch_line(prepared[run], brief, out))
-        elif finished(read_jsonl(transcripts[run]), transcripts[run], env.settle):
-            print(f"finished {d}; collect it")
+    lines = [launch_line(p, fx.briefs[run.brief], out) for run, p in prepared.items() if transcripts[run] is None]
+    ready = sorted((run for run, st in states.items()
+                    if st == "absent" and all(run.at(s) in complete for s in STEPS[run.step].needs)),
+                   key=lambda r: (STEPS[r.step].pass_, descriptors.index(r.descriptor), natural(r.brief.round),
+                                  AXES.index(r.brief.axis), list(STEPS).index(r.step)))
+    for run in ready:
+        if len(lines) >= limit:
+            break
+        brief = fx.briefs[run.brief]
+        p = materialize(plan(run, brief, env.work), brief, fx, env)
+        lines.append(launch_line(p, brief, out))
+    print("\n".join(lines[:limit]))
     return 0
 
 
@@ -848,12 +954,12 @@ def cmd_collect(fx: Fixtures, env: Env) -> int:
     out = env.out
     collected, stuck = 0, []
     native: dict[RunId, Prepared] = {}
-    for d in sorted((d for d in out.glob("runs/*/*/*/*") if d.is_dir()), key=lambda d: natural(str(d))):
+    for d in run_dirs(out):
         st = state(d)
         p = prepared_at(d) if st == "prepared" else None
         if st == "collected":
             collected += 1
-        elif p and isinstance(MODELS.get(p.run.descriptor), Native) and p.run.brief in fx.briefs:
+        elif p and p.run.descriptor in MODELS and p.run.brief in fx.briefs:
             native[p.run] = p
         else:
             stuck.append(d)
@@ -870,9 +976,8 @@ def cmd_collect(fx: Fixtures, env: Env) -> int:
         if not finished(lines, path, env.settle):
             in_flight += 1
             continue
-        route = MODELS[run.descriptor]
-        assert isinstance(route, Native)
-        done.append((p, receipt_from_transcript(run, lines, route.expect, p.checkout, env.transcripts, path)))
+        done.append((p, receipt_from_transcript(run, lines, MODELS[run.descriptor].expect, p.checkout,
+                                                env.transcripts, path)))
     for p, receipt in done:
         print(collect_one(p, receipt, fx.briefs[p.run.brief], fx, out))
         collected += 1
@@ -886,22 +991,26 @@ def cmd_collect(fx: Fixtures, env: Env) -> int:
 
 def cmd_table(fx: Fixtures, env: Env) -> int:
     out = env.out
-    receipts = [receipt_at(p.parent) for p in sorted(out.glob("runs/*/*/*/*/receipt.json"), key=lambda p: natural(str(p)))]
-    if not receipts:
+    receipts = [receipt_at(d) for d in run_dirs(out) if (d / "receipt.json").is_file()]
+    dropped = [receipt_at(p.parent) for p in sorted(out.glob("dropped/*/*/*/*/*/receipt.json"), key=lambda p: natural(str(p)))]
+    dropped += [r for r in receipts if redo(r)]
+    if not receipts and not dropped:
         raise Refusal(f"no collected runs under {out}")
-    by_run = {r.run: r for r in receipts}
-    scores = [rescore(r, fx, out) for r in receipts if r.status == "complete"]
-    rows = ["\t".join(("descriptor", "brief", "k", "failure", "hits", "labels", "hit_ids", "demoted", "unlabeled",
+    complete = {r.run: r for r in receipts if r.status == "complete"}
+    scores = {run: rescore(run, fx, out) for run in complete}
+    masked = {run: frozenset(prepared_at(run.dir(out)).masked) for run in complete}
+    rows = ["\t".join(("descriptor", "brief", "step", "failure", "hit_ids", "masked", "demoted", "other",
                        "input_tokens", "cache_read", "cache_write", "output_tokens", "wall_ms"))]
-    for s in scores:
-        r = by_run[s.run]
+    for run, s in sorted(scores.items(), key=lambda kv: (kv[0].descriptor, kv[0].brief, list(STEPS).index(kv[0].step))):
+        r = complete[run]
         t = asdict(r.tokens) if r.tokens else dict.fromkeys(("input", "cache_read", "cache_write", "output"), "")
         rows.append("\t".join(map(str, (
-            s.run.descriptor, s.run.brief, s.run.k, s.failure or "", len(s.hits), s.labels,
-            ",".join(sorted(s.hits)), ",".join(sorted(s.demoted)), s.unlabeled,
+            run.descriptor, run.brief, run.step, s.failure or "", ",".join(sorted(s.hits)),
+            ",".join(sorted(masked[run])), ",".join(sorted(s.demoted)), s.other,
             t["input"], t["cache_read"], t["cache_write"], t["output"], "" if r.wall_ms is None else r.wall_ms))))
     (out / "scores.tsv").write_text("\n".join(rows) + "\n")
-    table = render_table(scores, receipts)
+    names = [d for d in MODELS if any(r.run.descriptor == d for r in [*receipts, *dropped])]
+    table = "\n".join(render_table(d, rows_for(d, scores, complete, masked, dropped)) for d in names)
     (out / "table.md").write_text(table)
     print(table, end="")
     return 0
@@ -918,12 +1027,10 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="reviewer.py", description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     verbs = parser.add_subparsers(dest="verb", required=True)
-    check = verbs.add_parser("check")
-    check.add_argument("--list", action="store_true")
-    run = verbs.add_parser("run")
-    run.add_argument("descriptor", choices=list(MODELS))
-    run.add_argument("brief")
-    run.add_argument("N", type=at_least_one)
+    verbs.add_parser("check")
+    nxt = verbs.add_parser("next")
+    nxt.add_argument("descriptors", nargs="+", choices=list(MODELS), metavar="descriptor")
+    nxt.add_argument("--limit", type=at_least_one, default=8)
     verbs.add_parser("collect")
     verbs.add_parser("table")
     args = parser.parse_args(argv)
@@ -931,15 +1038,12 @@ def main(argv: list[str] | None = None) -> int:
         env = load_env()
         fx = load_fixtures(env.fixtures)
         if args.verb == "check":
-            return cmd_check(fx, args.list)
+            return cmd_check(fx, env)
         if args.verb == "collect":
             return cmd_collect(fx, env)
         if args.verb == "table":
             return cmd_table(fx, env)
-        bid = BriefId.parse(args.brief)
-        if bid not in fx.briefs:
-            run.error(f"argument brief: invalid choice: {args.brief!r} (choose from {', '.join(map(str, fx.briefs))})")
-        return cmd_run(fx, env, args.descriptor, bid, args.N)
+        return cmd_next(fx, env, list(dict.fromkeys(args.descriptors)), args.limit)
     except Refusal as e:
         print(f"reviewer: {e}", file=sys.stderr)
         return 1

@@ -1,0 +1,13 @@
+# The ground truth of ticket #138: every real bug in each kept round's head, from either axis.
+# anchors: ` && `-joined regexes, each searched in the normalized item text; fix: the commits that
+# remove the bug, applied in order for the masked arm, or -; where: file:line at the head; sources:
+# who found it. STUB: the #103 labels of the three rounds, translated; the owner supplies the real rows.
+# round	id	anchors	fix	where	sources	title
+pr94-r1	G1	gh issue edit|body-file|ticket'?s? body|issue body && replac|overwrit|clobber|wipe|drop|lost|lose|truncat|never merges	-	?	#103 label pr94-r1/standards S1	gh issue edit --body-file replaces the ticket body and nothing says to write it back
+pr94-r1	G2	overlap && pathspec|backtick|token	-	?	#103 label pr94-r1/spec P1	the posted scenario table's backticked paths become overlap.sh pathspecs
+pr94-r1	G3	architect && usage|sketch|module map|table slot|no table|phase b|output shape|rationale	-	?	#103 label pr94-r1/spec P2	the architect skill each runner reads still defines a candidate as usage first, with no slot for the table
+pr94-r1	G4	\b(four|4)\b.{0,40}document|document.{0,40}\b(four|4)\b|first four && manual|map|build_knowledge|build_core|reader	-	?	#103 label pr94-r1/spec P3	the manual and build_knowledge.py still count four project documents where build_core copies five
+pr94-r1	G5	fail|error && not stop|no stop|n't stop|without stopping|no clause|goes? on|continu|proceed|silent && gh issue edit|post|write|step 6|artifact	-	?	#103 label pr94-r1/spec P4	a failed gh issue edit in Ticket step 6 does not stop the work
+pr96-r1	G1	glob|argument|pattern && match(es|ed)? nothing|match(es|ed)? no file|unmatched|no match && pass|exits? 0|green|silent|dropped|skipped	-	?	#103 label pr96-r1/standards S1, pr96-r1/spec P1	one glob among several that matches nothing is dropped and the gate still exits 0
+pr99-r1	G1	hole: && reason|prose|anywhere|substring|anchor|read as a|as a field|mark	-	?	#103 label pr99-r1/standards S1	a judgment reason that says "hole:" is read as a hole: field (hole: table 1/A)
+pr99-r1	G2	no ticket|without a ticket|no spec|ticketless|standards axis only|sweep && spec:	-	?	#103 label pr99-r1/spec P1	a review with no ticket cannot satisfy spec: (hole: criterion 2)

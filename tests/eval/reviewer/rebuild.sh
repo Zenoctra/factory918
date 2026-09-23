@@ -8,6 +8,7 @@
 #       order and fold them into the head commit (the brief's commit list keeps its shape), brief
 #       that tree, archive it into DIR and put diff and both briefs in DIR's review directory;
 #       prints the folded commit (the head itself when no SHA is given)
+# REBUILD_FIXTURES (this directory) holds rounds/; REBUILD_REPO (this repository) holds the commits.
 # The heads and fix commits live under refs/keep/103/* and refs/keep/138/*; fetch them first on a
 # fresh clone. Exit 0 on success, 1 naming the first file that differs, 2 on a setup error, 3 when
 # the fix commits do not apply.
@@ -24,7 +25,7 @@ case "${1:-}" in
   *) usage ;;
 esac
 here="$(cd "$(dirname "$0")" && pwd -P)"
-rdir="$here/rounds/$name"
+rdir="${REBUILD_FIXTURES:-$here}/rounds/$name"
 inputs="$rdir/inputs"
 [ -f "$inputs/recipe" ] || { echo "rebuild: $inputs/recipe missing" >&2; exit 2; }
 value() { sed -n "s/^$1=//p" "$2"; }
@@ -33,7 +34,7 @@ script_at="$(value script_at "$inputs/recipe")"
 fixed="$(value fixed_point "$inputs/recipe")"
 ticket="$(value ticket "$inputs/recipe")"
 round="$(value round "$inputs/recipe")"
-repo="$(git -C "$here" rev-parse --show-toplevel)"
+repo="${REBUILD_REPO:-$(git -C "$here" rev-parse --show-toplevel)}"
 fetch="git fetch origin 'refs/keep/103/*:refs/keep/103/*' 'refs/keep/138/*:refs/keep/138/*'"
 for c in "$head" "$script_at" ${picks[@]+"${picks[@]}"}; do
   git -C "$repo" cat-file -e "$c^{commit}" 2>/dev/null || { echo "rebuild: $c is not in this repository; $fetch" >&2; exit 2; }
