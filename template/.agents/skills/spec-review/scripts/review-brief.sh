@@ -440,9 +440,10 @@ if [ -n "$spec" ]; then
     exit 1
   fi
   # A count, not a parse: whatever hid the list from the check above, a heading line with no flag
-  # read refuses.
+  # read refuses. The check above has already refused every near-miss and unclosed-fence record, so
+  # any record the awk below prints is a read flag.
   heads="$(printf '%s\n' "$spec" | awk '{ sub(/\r$/, ""); sub(/[ \t]+$/, "") }
-    tolower($0) ~ /^[[:space:]>]*#+[[:space:]]*writer[ -]flags?([^[:alpha:]]|$)/')"
+    tolower($0) ~ /^([[:space:]>]|[-*+]|[0-9]+[.)])*#+[[:space:]]*writer[ -]flags?([^[:alpha:]]|$)/')"
   if [ -n "$heads" ] && [ -z "$(printf '%s\n' "$spec" | awk -v mode=flags -v w="writer flags" "$disposed")" ]; then
     rm -rf "$dir"
     echo "review-brief: ticket #$ticket has a writer flags heading and no flag could be read from its body; flags are read only under an unfenced, unquoted line that is exactly \`### Writer flags <YYYY-MM-DD>\`, one flag per line with its disposition; the headings found:" >&2
