@@ -300,6 +300,19 @@ has out.txt "settled: carried 2, dropped 1 without a citation" "trailing whitesp
 has "$std" "2. [S2] **Whole DECISIONS.md is writable.** Provisional rows are the agent's to add. cites: DECISIONS.md P17" "trailing space: the item is in the brief without it"
 has "$std" "1. [S1] **Hook in Python.** A port is a later ticket. cites: #74 comment 2026-09-17" "trailing tab: the item is in the brief without it"
 
+# Ticket #110, row 5: a Provisional id is P<ticket> with an optional b-z sibling letter, and a cite of
+# either carries; an off-form id is dropped.
+for id in P110 P110b; do
+  sed "s/DECISIONS.md P17\$/DECISIONS.md $id/" previous.md > "previous-$id.md"
+  bash "$skill/scripts/review-brief.sh" HEAD~1 --ticket 7 --previous "previous-$id.md" --round 2 > out.txt
+  has out.txt "settled: carried 2, dropped 1 without a citation" "cites: DECISIONS.md $id is counted as carried (5A, 5B)"
+  has "$std" "2. [S2] **Whole DECISIONS.md is writable.** Provisional rows are the agent's to add. cites: DECISIONS.md $id" "cites: DECISIONS.md $id carries (5A, 5B)"
+done
+sed 's/DECISIONS.md P17$/DECISIONS.md P-110/' previous.md > previous-P-110.md
+bash "$skill/scripts/review-brief.sh" HEAD~1 --ticket 7 --previous previous-P-110.md --round 2 > out.txt
+has out.txt "settled: carried 1, dropped 2 without a citation" "cites: DECISIONS.md P-110 is counted as dropped (5C)"
+lacks "$std" "cites: DECISIONS.md P-110" "cites: DECISIONS.md P-110 does not carry (5C)"
+
 # The PR's earlier review comments, from gh: those by the PR's author that carry the count line.
 # The round is one more than the highest `round: N of 3` among them; a comment from before the
 # line existed is round 1. A comment rebuilt in the same round repeats its number and advances
