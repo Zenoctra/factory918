@@ -76,7 +76,7 @@ FENCE_LINE = re.compile(r"\s*(`{3,}|~{3,})")
 USAGE_LIMIT = "usage-limit"
 VERSION = 2  # of receipt.json and run.json; #103 wrote version 1
 GIVE_UP = 3  # contaminated attempts after which a run is prepared no more
-USAGE_LIMIT_LINE = re.compile(r"hit your usage limit", re.I)
+USAGE_LIMIT_LINE = re.compile(r"hit your (?:\w+ )?limit", re.I)  # "usage limit" and "session limit" both occur
 # review-brief.sh at e710e99 prints this heading and paragraph, word for word, above the settled items.
 SETTLED_HEADING = "## Settled in earlier rounds"
 SETTLED_RULE = ("These findings were raised in an earlier round and settled by the decision each one cites. "

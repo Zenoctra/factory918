@@ -132,10 +132,16 @@ elif cmd == "finish":
             "content": [{"type": "tool_use", "name": tool, "input": tool_input}]}},
         {"type": "user", "message": {"role": "user", "content": [{"type": "tool_result", "content": "ok"}]}, "timestamp": at(2)},
     ]
+    def synthetic(text, **extra):
+        return {"type": "assistant", "timestamp": at(3), **extra, "message": {
+            "model": "<synthetic>", "stop_reason": "stop_sequence", "content": [{"type": "text", "text": text}]}}
+
     if state == "usage":
-        lines.append({"type": "assistant", "timestamp": at(3), "error": "rate_limit", "isApiErrorMessage": True,
-                      "message": {"model": "<synthetic>", "stop_reason": "stop_sequence",
-                                  "content": [{"type": "text", "text": "You've hit your usage limit · resets 3am"}]}})
+        lines.append(synthetic("You've hit your usage limit · resets 3am", error="rate_limit", isApiErrorMessage=True))
+    elif state == "session":
+        lines.append(synthetic("You've hit your session limit · resets 1:40pm (America/Chicago)"))
+    elif state == "dead":
+        lines = [lines[0], synthetic("API Error: 500 Internal server error. " + "x" * 200, isApiErrorMessage=True)]
     elif state in ("finished", "textnull"):
         done = {"type": "assistant", "requestId": "r2", "timestamp": at(5), "effort": effort, "message": {
             "model": model, "stop_reason": "end_turn" if state == "finished" else None,
@@ -396,6 +402,14 @@ finish "$first" none claude-fable-5-1 usage
 run collect
 check "usage limit: a dropout receipt" is "$(h field "$(rundir "$F" standards 1)/receipt.json" status)" dropout
 check "usage limit: named" starts "$(h field "$(rundir "$F" standards 1)/receipt.json" detail)" usage-limit
+fresh session
+run next "$F" --limit 1
+finish "$out" none claude-fable-5-1 session
+run collect
+check "session limit: the real wording, a synthetic line, is a usage-limit dropout" starts "$(h field "$(rundir "$F" standards 1)/receipt.json" detail)" usage-limit
+run next "$F"
+check "session limit: the model is paused" starts "$out" "paused $F: usage limit at "
+use usage
 run next "$C" "$F" --limit 1
 check "usage limit: the model is paused" starts "$out" "paused $F: usage limit at "
 check "usage limit: the pause says how to resume" has "$out" "after the reset run: python3 tests/eval/reviewer/reviewer.py next --resume $F"
