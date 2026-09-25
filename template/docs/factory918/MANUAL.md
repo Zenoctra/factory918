@@ -112,7 +112,7 @@ The default is one monorepo per product: `apps/web`, `apps/mobile`, `apps/admin`
 
 ## Models
 
-Work is split between two tiers. Frontier is judgment and the code that gets merged; Supporting is exploration, fan-out and finding. Today both run Opus 5.5: Frontier at `xhigh` effort, Supporting at `high` (decision 20). `factory918 install` writes `~/.claude/pstack-models.md` from the `default` preset in `machine/`; the sheet names Claude's rolling alias `opus`, so a new Opus release reaches every role without an edit. `docs/agents/models.md` has every role and why it sits in its tier.
+Work is split between two tiers. Frontier is judgment and the code that gets merged; Supporting is exploration, fan-out and finding. Today both run Opus 5.5 (decision 20): Frontier roles at `xhigh` effort, Supporting roles at the effort their role sets, `medium` to `xhigh`. `factory918 install` writes `~/.claude/pstack-models.md` from the `default` preset in `machine/`; the sheet names Claude's rolling alias `opus`, so a new Opus release reaches every role without an edit. `docs/agents/models.md` has every role and why it sits in its tier.
 
 | Role | Tier |
 |---|---|
