@@ -34,7 +34,7 @@ People describe these steps without the command names. Match the meaning, then a
 | where does PR N stand, is it ready, is it safe to merge, review PR N for me | a merge read | read the checks, the comments and the Verification section; run `spec-review` if it has not run; answer with what changed, what proved it, what is unresolved, and a recommendation. Merging is theirs: never run `gh pr merge` |
 | we merged, bring my copy up to date, sync main, update the branches | after a merge | `git checkout main && git pull`; then rebase any open branch that was stacked on what merged |
 | add python, add a mobile app, react native, expo | a profile | `factory918 apply --profile python --name <pkg>` or `--profile react-native` |
-| which model does what, use Fable for this | the models sheet | edit `~/.claude/pstack-models.md`; `docs/agents/models.md` explains each role |
+| which model does what, use a stronger model for this, Frontier or Supporting tier | the models sheet | edit `~/.claude/pstack-models.md`; `docs/agents/models.md` explains each role |
 | the agent surprised me, note this for later, add that to the ledger | a ledger entry | append `YYYY-MM-DD \| model \| what it did \| what you wanted` to `docs/agents/ledger.md`; that is all, rules come later |
 | retro, what do we keep correcting, promote that to a rule, what did we learn this week | `/factory-retro` | name it; it reads the ledger and asks which rules to write |
 | what is pstack, poteto, grilling, a ticket, the ledger, a rung | vocabulary | `/knowledge <term>`, or `docs/factory918/GLOSSARY.md` |

@@ -142,7 +142,7 @@
 +
 +Do **not** merge or rerank findings across the two reports, because the two axes are deliberately separate (see _Why two axes_), and do not pick a single winner across axes: that's the reranking the separation exists to prevent. The judgment is a third section, not a rewrite of either report.
 +
-+You write only what goes above the script's output: the two plain sentences for a person. Nothing else in the comment is yours. They end with a signature, the model and harness: `Claude Fable 5.1 on Claude Code` when the comment is posted without the human's approval, and `Claude Fable 5.1 on Claude Code, approved by <name>` when the human approved it before posting; only an approved comment posted from the author's account counts as the author's words.
++You write only what goes above the script's output: the two plain sentences for a person. Nothing else in the comment is yours. They end with a signature, the model that did the work and the harness, for example `Claude Opus 5.5 on Claude Code` when the comment is posted without the human's approval, and `Claude Opus 5.5 on Claude Code, approved by <name>` when the human approved it before posting; only an approved comment posted from the author's account counts as the author's words.
 +
  ## Why two axes
  

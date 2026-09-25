@@ -6,9 +6,9 @@ The literal transcript of the conversation that produced this system is not avai
 | file | what | lines | read when |
 |---|---|---|---|
 | `core/PHILOSOPHY.md` | Factory918: philosophy | 63 | First. Whenever the spec is silent. |
-| `core/MANUAL.md` | Factory918: the manual | 176 | How to run the loop; what the human does at each point. |
-| `core/DECISIONS.md` | Factory918: decisions | 108 | Before overriding any vendored skill; these win. |
-| `core/GLOSSARY.md` | Factory918: glossary | 71 | A term in AGENTS.md, a playbook or a ticket is unclear. |
+| `core/MANUAL.md` | Factory918: the manual | 175 | How to run the loop; what the human does at each point. |
+| `core/DECISIONS.md` | Factory918: decisions | 109 | Before overriding any vendored skill; these win. |
+| `core/GLOSSARY.md` | Factory918: glossary | 73 | A term in AGENTS.md, a playbook or a ticket is unclear. |
 | `core/SCENARIO-TABLE.md` | Factory918: the scenario table | 88 | Designing or reviewing anything with state: a file, exit codes, more than one actor. |
 | `core/CONVERSATION-DIGEST.md` | How Factory918 was arrived at | 53 | Why something was chosen, historically; the corrections. |
 | `spec/FACTORY-SPEC-v2/01-preamble.md` | The Factory spec, v2 — (preamble) | 11 | Building or updating the factory itself. |

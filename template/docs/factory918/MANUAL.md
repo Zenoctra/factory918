@@ -45,7 +45,7 @@ If the project is not on Vite+ yet, run `vp migrate` first: `apply` merges Vite+
 
 **What you do.** Answer the decisions; let the agent find the facts. Confirm the test seams when `/to-spec` asks; those become the pre-agreed seams `tdd` uses in execution. Approve the ticket breakdown; push back on over-decomposition (the most-reported friction). Create nothing by hand on GitHub; the skills publish.
 
-**Model choice.** Grill on Opus 5 (long sessions). Switch to Fable 5.1 with `/model` for `/to-spec` and `/to-tickets`, then switch back: synthesis is short and high-value, and the context carries across the switch. In execution, run the interactive session on Fable whenever tickets or PR bodies are being written: that prose is the handoff, and no delegate writes it.
+**Model choice.** The session runs on the Frontier model (today Opus 5.5). Grill at `high` effort; switch to `xhigh` for `/to-spec` and `/to-tickets`: synthesis is short and high-value, and the context carries across the switch. In execution, use `xhigh` whenever tickets or PR bodies are being written: that prose is the handoff, and no delegate writes it.
 
 **Phase guard.** Typing a planning command sets the phase to planning; a hook prints "PHASE: planning" every turn and poteto-mode stays out. `/mode-build` or a ticket reference flips it back.
 
@@ -112,19 +112,18 @@ The default is one monorepo per product: `apps/web`, `apps/mobile`, `apps/admin`
 
 ## Models
 
-Decision 18: Fable writes the code. `factory918 install` writes `~/.claude/pstack-models.md` from the `fable` preset; when Fable's quota runs out a lane drops out and the orchestrator says so, and `factory918 models opus` switches to the Opus preset (`factory918 models fable` switches back). A machine that ran `install` before decision 18 keeps its old sheet until `factory918 models fable` is run once. One file, two presets:
+Work is split between two tiers. Frontier is judgment and the code that gets merged; Supporting is exploration, fan-out and finding. Today both run Opus 5.5: Frontier at `xhigh` effort, Supporting at `high` (decision 20). `factory918 install` writes `~/.claude/pstack-models.md` from the `default` preset in `machine/`; the sheet names Claude's rolling alias `opus`, so a new Opus release reaches every role without an edit. `docs/agents/models.md` has every role and why it sits in its tier.
 
-| Role | fable preset | opus preset |
-|---|---|---|
-| Your interactive session | Fable when tickets or PRs are being written; Opus for casual turns | Opus |
-| Writers: feature, refactoring, bug fix, perf, hillclimb | Fable 5.1 high | Opus 5 high |
-| Judgment and prose, hardest tasks | Fable 5.1 high | Opus 5 xhigh |
-| Panels: `how` critics, `architect`, `arena` runners | Fable + Opus | Opus high + Opus medium |
-| `interrogate` reviewers, `arena` cross-judge | Fable + Opus xhigh, Astra when wired | Opus xhigh + Opus high |
-| Juniors: `how` explorers, swarm workers, `standards reviewer` (the `spec-review` Standards axis) | Opus 5 medium | Opus 5 medium |
-| `spec reviewer` (the `spec-review` Spec axis; the orchestrator judges its findings) | Opus 5 high | Opus 5 high |
+| Role | Tier |
+|---|---|
+| Your interactive session | Frontier `xhigh` when specs, tickets or PRs are being written; `high` for casual turns |
+| Writers: feature, refactoring, bug fix, perf, hillclimb | Frontier |
+| Judgment and prose, hardest tasks | Frontier |
+| Panels: `how` critics, `architect`, `arena` runners, `interrogate` reviewers, `arena` cross-judge | one Frontier lane, one Supporting lane |
+| `how` explorers and explainer, swarm workers | Supporting |
+| `standards reviewer` and `spec reviewer` (the two `spec-review` axes; the orchestrator judges their findings) | Supporting |
 
-The tier (Execution, **Safe and eco.**) decides how many of these roles a ticket launches; the list is Ticket step 0, "The tier".
+A ticket's `safe` or `eco` tier (Execution, **Safe and eco.**), which is not a model tier, decides how many of these roles a ticket launches; the list is Ticket step 0, "The tier".
 
 ## Updating the factory
 

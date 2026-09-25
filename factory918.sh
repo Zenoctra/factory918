@@ -82,7 +82,7 @@ cmd_install() {
   case ":$PATH:" in *":$bin:"*) ;; *) echo "add to your shell rc: export PATH=\"\$HOME/.local/bin:\$PATH\"" ;; esac
   # The one user-level write the factory makes (spec §5.5): pstack's role sheet, from machine/.
   if [ ! -f "$HOME/.claude/pstack-models.md" ]; then
-    mkdir -p "$HOME/.claude"; cp "$F918_DIR/machine/pstack-models.fable.md" "$HOME/.claude/pstack-models.md"; echo "installed: ~/.claude/pstack-models.md (fable preset)"
+    mkdir -p "$HOME/.claude"; cp "$F918_DIR/machine/pstack-models.default.md" "$HOME/.claude/pstack-models.md"; echo "installed: ~/.claude/pstack-models.md (default preset)"
   fi
   grep -qx '@~/.claude/pstack-models.md' "$HOME/.claude/CLAUDE.md" 2>/dev/null || { printf '@~/.claude/pstack-models.md\n' >> "$HOME/.claude/CLAUDE.md"; echo "installed: include line in ~/.claude/CLAUDE.md"; }
   command -v vp >/dev/null || echo "next: install Vite+ with  curl -fsSL https://vite.plus -o /tmp/vp.sh && VP_VERSION=0.3.1 VP_NODE_MANAGER=yes bash /tmp/vp.sh"
@@ -96,7 +96,7 @@ presets() { local p; for p in "$F918_DIR"/machine/pstack-models.*.md; do p="${p#
 cmd_models() {
   local sheet="$HOME/.claude/pstack-models.md" preset="${1:-}" n
   if [ -z "$preset" ]; then
-    [ -f "$sheet" ] || { echo "no sheet at $sheet yet: factory918 install writes the fable preset"; return 0; }
+    [ -f "$sheet" ] || { echo "no sheet at $sheet yet: factory918 install writes the default preset"; return 0; }
     for n in $(presets); do cmp -s "$F918_DIR/machine/pstack-models.$n.md" "$sheet" && { echo "active: $n"; return 0; }; done
     echo "active: a sheet edited by hand (matches no preset in machine/)"; return 0
   fi
