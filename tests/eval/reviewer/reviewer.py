@@ -1170,9 +1170,9 @@ def given_lines(p: Prepared, d: Path, fx: Fixtures, env: Env) -> AbstractSet[str
             lines = set(save_tree(cache, tree, dir_lines(Path(tmp) / "x")))
     if (d / "given").is_dir():
         return lines | dir_lines(d / "given")
+    # A run with no given/ predates the frozen ticket's copy into the export, so it was not given that.
     brief_text = (brief.files / f"{p.run.brief.axis}-brief.md").read_text()
-    return lines | text_lines([settle(brief_text, p.run.brief.axis, list(p.settled)), (brief.files / "diff").read_text(),
-                               *(f.read_text() for f in frozen_inputs(brief).values())])
+    return lines | text_lines([settle(brief_text, p.run.brief.axis, list(p.settled)), (brief.files / "diff").read_text()])
 
 
 def launch_line(p: Prepared, brief: Brief, out: Path) -> str:
