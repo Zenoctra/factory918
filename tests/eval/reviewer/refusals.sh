@@ -359,7 +359,8 @@ lf="$(sed -n 3p <<<"$out")"
 co1="$(h checkout "$l1")"
 check "next: the lower tier agent" is "$(h get "$l1" agent.subagent_type)" review-lower-high
 check "next: Fable through model fable" is "$(h get "$lf" agent.subagent_type)/$(h get "$lf" agent.model)" review-fable-high/fable
-check "next: the prompt" is "$(h get "$l1" prompt)" "Read \`$co1/$reldir/standards-brief.md\` whole and follow it. You are working in \`$co1\`; every relative path in the brief is relative to it. The ticket as it stood at this commit is \`$co1/$reldir/ticket.md\`, and the PR's grounding is \`$co1/$reldir/blast-radius.md\`."
+check "next: the prompt" is "$(h get "$l1" prompt)" "Read \`$co1/$reldir/standards-brief.md\` whole and follow it. You are working in \`$co1\`; every relative path in the brief is relative to it. The ticket as it stood at this commit is \`$co1/$reldir/ticket.md\`, and the PR's grounding is \`$co1/$reldir/blast-radius.md\`. Your scratch folder for notes and any files you make is \`$co1/.scratch/work/\`."
+check "next: the export holds the scratch folder" test -d "$co1/.scratch/work"
 check "next: the export holds the frozen ticket, byte for byte" cmp -s "$co1/$reldir/ticket.md" "$fx/rounds/r1/inputs/ticket.md"
 check "next: and the frozen grounding" cmp -s "$co1/$reldir/blast-radius.md" "$fx/rounds/r1/inputs/blast-radius.md"
 check "next: the checkout holds the head" is "$(sed -n 2p "$co1/a.txt")" TWO
@@ -411,6 +412,7 @@ check "M2: G1 masked, G2 not (its fix is not all applied)" is "$(h field "$(rund
 check "M2: the tree is the folded commit" test "$(h field "$(rundir "$C" standards M2)/run.json" tree)" != "$head"
 check "M2: the brief briefs the folded tree" has "$(cat "$co_m2/$reldir/standards-brief.md")" "TWO fixed in the first commit"
 check "M2: not the other axis's brief" absent "$co_m2/$reldir/spec-brief.md"
+check "M2: the masked export holds the scratch folder" test -d "$co_m2/.scratch/work"
 check "M2: the masked export holds the frozen ticket" cmp -s "$co_m2/$reldir/ticket.md" "$fx/rounds/r1/inputs/ticket.md"
 check "M2 spec: G2 found, both patches applied" is "$(h field "$(rundir "$C" spec M2)/run.json" applied)" '["f1.patch", "f2.patch"]'
 check "M2 spec: G1 and G2 masked" is "$(h field "$(rundir "$C" spec M2)/run.json" masked)" '["G1", "G2"]'
@@ -625,6 +627,27 @@ GH_OFFLINE=1 run collect
 check "live: no cache and no network refuses" is "$code" 1
 check "live: naming the fetch" has "$err" "\`gh issue view 7 --repo Zenoctra/factory918 --json body,comments\` failed"
 check "live: and collects nothing" absent "$(rundir "$C" standards 1)/receipt.json"
+
+pad=/private/tmp/claude-501/-Users-x-proj/1111-2222/scratchpad
+for case in "Read|$pad/notes.md|contaminated|a scratchpad file another run wrote" \
+            "Bash|cat /tmp/claude-501/-Users-x-proj/1111-2222/scratchpad/notes.md|contaminated|the same file by its /tmp name, from Bash" \
+            "Grep|$pad/rv89|contaminated|a search of another run's scratchpad folder" \
+            "Read|$tmp/w/0123456789ab/factory918/a.txt|contaminated|another run's export" \
+            "Bash|ls $pad|complete|the bare scratchpad folder, which names no file"; do
+  IFS='|' read -r tool target want what <<<"$case"
+  fresh "cross-${what// /-}"
+  run next "$C" --limit 1
+  finish "$out" "$tmp/rep/hit.md" claude-opus-5 finished "$tool|$target"
+  run collect
+  check "cross-run: $what is $want" is "$(h field "$(rundir "$C" standards 1)/receipt.json" status)" "$want"
+  [ "$want" = complete ] || check "cross-run: named as a cross-run read ($what)" starts "$(h field "$(rundir "$C" standards 1)/receipt.json" detail)" "cross-run read at call 1: $tool "
+done
+fresh cross-own-work
+run next "$C" --limit 1
+co="$(h checkout "$out")"
+finish "$out" "$tmp/rep/hit.md" claude-opus-5 finished "Read|$co/.scratch/work/notes.md"
+run collect
+check "cross-run: a read inside its own .scratch/work is clean" is "$(h field "$(rundir "$C" standards 1)/receipt.json" status)" complete
 
 fresh record
 run next "$C" --limit 1
@@ -910,6 +933,20 @@ for rnd, grounding in (("pr94-r1", False), ("pr96-r1", True), ("pr99-r1", False)
         assert f"The ticket as it stood at this commit is `{here}/ticket.md`" in prompt, prompt
         assert (f"grounding is `{here}/blast-radius.md`." in prompt) == grounding, prompt
         assert not [w for w in r.BANNED if w in prompt.lower()], prompt'
+pycheck "cross-run: a scratchpad file this run wrote first is its own" '
+from pathlib import Path
+pad = "/private/tmp/claude-501/-Users-x/abcd/scratchpad"
+def use(i, name, **inp):
+    return {"type": "assistant", "timestamp": f"t{i}", "message": {"content": [{"type": "tool_use", "id": f"u{i}", "name": name, "input": inp}]}}
+export = Path("/w/nonce1/factory918")
+own = [use(1, "Write", file_path=f"{pad}/mine.md"), use(2, "Read", file_path=f"{pad}/mine.md"),
+       use(3, "Bash", command=f"S={pad}/rv89; rm -rf $S; mkdir -p $S && cp -R /w/nonce1/factory918 $S"),
+       use(4, "Bash", command=f"S={pad}/rv89; cd $S/factory918 && grep -n x a.md"),
+       use(5, "Bash", command=f"git diff > {pad}/d.txt"), use(6, "Read", file_path=f"{pad}/d.txt"),
+       use(7, "Bash", command="cat /w/nonce1/factory918/a.md")]
+assert r.cross_run_reads(own, export) == [], r.cross_run_reads(own, export)
+other = own + [use(8, "Bash", command=f"cat {pad}/theirs.md"), use(9, "Read", file_path="/w/nonce2/factory918/x.md")]
+assert [(c, p) for c, _, p, _ in r.cross_run_reads(other, export)] == [(8, pad.removeprefix("/private") + "/theirs.md"), (9, "/w/nonce2/factory918/x.md")], r.cross_run_reads(other, export)'
 pycheck "settle: no lines leaves the brief as it is" 'assert r.settle("x\n## Standards\n", "standards", []) == "x\n## Standards\n"'
 
 echo "all $n checks passed"

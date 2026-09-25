@@ -16,7 +16,7 @@ if [ ! -d "$corpus/runs" ]; then
 fi
 cache="${REVIEWER_CACHE:-$main/.scratch/eval/reviewer-corpus-cache}"
 python3 - "$here/tests/eval/reviewer/reviewer.py" "$here/tests/eval/reviewer/contamination-cases" "$corpus" "$here" "$cache" <<'EOF'
-import importlib.util, json, subprocess, sys
+import importlib.util, json, re, subprocess, sys
 from pathlib import Path
 
 script, cases, corpus, repo, cache = sys.argv[1:]
@@ -64,7 +64,9 @@ for raw in Path(cases).read_text().splitlines():
     future = {**r.live_lines(ticket, pr, frozen, cache), **r.future_lines(repo, head, cache)}
     given = set(r.tree_lines(repo, head, cache)) | r.text_lines(given_texts)
     lines = r.read_jsonl(transcript)
-    verdict = r.contamination(lines, future, given)
+    export = Path(next(m.group(1) for line in lines if line.get("type") == "user"
+                       for m in [re.search(r"You are working in `([^`]+)`", json.dumps(line))] if m))
+    verdict = r.contamination(lines, future, given, export)
     found = r.leaks(lines, future, given)
     got = "future" if verdict.detail else "clean"
     first_call = str(verdict.first["call"]) if verdict.first else "-"

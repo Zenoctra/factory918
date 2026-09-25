@@ -34,7 +34,8 @@ patch from its commits the same way.
         after its head, or its ticket and PR as GitHub holds them now, hold and that it was not given
         (its tree, brief and diff, and the round's frozen ticket and grounding, which each export
         holds beside the brief and the prompt names), or when it used a tool whose results cannot
-        be dated (Agent, WebFetch, WebSearch). The GitHub text is fetched once with gh and cached; the receipt also
+        be dated (Agent, WebFetch, WebSearch), or when it read the session's shared scratchpad or
+        another run's export at a path it had not written (`cross-run read`). The GitHub text is fetched once with gh and cached; the receipt also
         records the first contaminated tool call, each report item's earliest sighting of what it
         quotes, and the calls that named a path outside the export. --recheck first judges every
         collected run again from its transcript: one that turns contaminated is set aside by `next`,
@@ -615,16 +616,76 @@ class Verdict:
     first: Mapping[str, object] | None
 
 
-def contamination(lines: list[dict], future: Mapping[str, str], given: AbstractSet[str]) -> Verdict:
+# The session scratchpad the harness names to every lane, and the words of a Bash command that write.
+SCRATCHPAD = re.compile(r"(?:/private)?/tmp/claude-\d+/[^/\s'\"]+/[^/\s'\"]+/scratchpad(?=/|$|[\s'\"`;|&()<>])")
+PATH_TAIL = r"[^\s'\"`;|&()<>]*"
+WRITES = re.compile(r">|\b(?:tee|mkdir|cp|mv|touch|ln|rsync|unzip|tar|git init|git clone)\b")
+ASSIGNMENT = re.compile(r"\b([A-Za-z_]\w*)=(\"[^\"]*\"|'[^']*'|[^\s;&|]+)")
+
+
+def expand(command: str) -> str:
+    """The command with the values its own `NAME=value` assignments give substituted for $NAME and ${NAME}."""
+    for _ in range(3):
+        for name, value in ASSIGNMENT.findall(command):
+            command = re.sub(r"\$\{?" + name + r"\b\}?", lambda _, v=value.strip("\"'"): v, command)
+    return command
+
+
+def cross_run_reads(lines: list[dict], export: Path) -> list[tuple[int, str, str, str | None]]:
+    """Tool calls that read the shared scratchpad or another run's export at a path this run did not write.
+
+    A plain path match: a path under the session scratchpad, or under REVIEWER_WORK/<another nonce>, is
+    this run's own once a Write or Edit named it or a Bash command that writes (a redirect, tee, mkdir,
+    cp and the like) named it, and everything under it is too. The bare scratchpad or work directory
+    names no file and is skipped. `$NAME` set in the same command is expanded first.
+    """
+    work, nonce = str(export.parent.parent).removeprefix("/private"), export.parent.name
+    other_run = re.compile(r"(?:/private)?" + re.escape(work) + r"/(?!" + re.escape(nonce) + r"(?:/|$|[\s'\"`;|&()<>]))[^/\s'\"]+")
+
+    def shared(text: str) -> list[str]:
+        found = []
+        for pattern in (SCRATCHPAD, other_run):
+            for m in re.finditer(pattern.pattern + PATH_TAIL, text):
+                path = m.group(0).removeprefix("/private").rstrip("/")
+                if not re.fullmatch(SCRATCHPAD.pattern.removeprefix("(?:/private)?"), path) and path != work:
+                    found.append(path)
+        return found
+
+    owned: set[str] = set()
+    reads = []
+    for call, name, args, ts in tool_uses(lines):
+        if name in ("Write", "Edit", "NotebookEdit"):
+            owned.update(shared(args.get("file_path", "")))
+            continue
+        if name in ("Read", "Grep", "Glob"):
+            paths = shared(" ".join(str(args.get(k, "")) for k in ("file_path", "path", "pattern")))
+        elif name == "Bash":
+            command = expand(args.get("command", ""))
+            paths = shared(command)
+            if WRITES.search(command):
+                owned.update(paths)
+                continue
+        else:
+            continue
+        for path in dict.fromkeys(paths):
+            if not any(path == o or path.startswith(o + "/") for o in owned):
+                reads.append((call, name, path, ts))
+    return reads
+
+
+def contamination(lines: list[dict], future: Mapping[str, str], given: AbstractSet[str], export: Path) -> Verdict:
     """Why the run's transcript shows it saw what its reviewed commit could not, and where it first did."""
     undated = [(call, name, ts) for call, name, _, ts in tool_uses(lines) if name in UNDATED_TOOLS]
+    crossed = cross_run_reads(lines, export)
     found = leaks(lines, future, given)
     said = sorted({f"{name} ({UNDATED_TOOLS[name]})" for _, name, _ in undated})
+    said += [f"cross-run read at call {call}: {name} {path}" for call, name, path, _ in crossed[:3]]
     said += [f"{k.tool} returned a line first added by {k.commit[:7] if HEX.fullmatch(k.commit) else k.commit}: "
              f"{k.line[:100]}" for k in found[:3]]
     if len(found) > 3:
         said.append(f"and {len(found) - 3} more such lines")
-    firsts = [(call, ts) for call, _, ts in undated] + [(k.call, k.timestamp) for k in found]
+    firsts = [(call, ts) for call, _, ts in undated] + [(call, ts) for call, _, _, ts in crossed]
+    firsts += [(k.call, k.timestamp) for k in found]
     first = min(firsts, key=lambda f: f[0]) if firsts else None
     return Verdict("; ".join(said) or None, {"call": first[0], "timestamp": first[1]} if first else None)
 
@@ -701,7 +762,7 @@ def receipt_from_transcript(run: RunId, lines: list[dict], expect: re.Pattern[st
     tokens = Tokens(*(sum(u.get(k) or 0 for u in usage.values())
                       for k in ("input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens", "output_tokens")))
 
-    verdict = contamination(lines, future, given)
+    verdict = contamination(lines, future, given, export)
     status: Status = "contaminated" if verdict.detail else "complete"
     return Receipt(run, status, verdict.detail or "complete", models[-1], efforts[0], tokens, wall_ms, source,
                    outside_calls(lines, export), verdict.first)
@@ -983,6 +1044,9 @@ def state(d: Path) -> Literal["absent", "prepared", "collected", "broken"]:
     return "prepared" if (d / "run.json").is_file() else "broken"
 
 
+SCRATCH_DIR = ".scratch/work"
+
+
 def frozen_inputs(brief: Brief) -> dict[str, Path]:
     """The round's frozen ticket, and its blast-radius grounding where it has one, by the name the export gives them."""
     inputs = brief.files.parent / "inputs"
@@ -999,6 +1063,8 @@ def plan(run: RunId, brief: Brief, work: Path) -> Prepared:
     if "ticket.md" in frozen:
         prompt += f" The ticket as it stood at this commit is `{here}/ticket.md`"
         prompt += f", and the PR's grounding is `{here}/blast-radius.md`." if "blast-radius.md" in frozen else "."
+    # "test files" would put a BANNED word in the prompt.
+    prompt += f" Your scratch folder for notes and any files you make is `{checkout}/{SCRATCH_DIR}/`."
     seen = [w for w in BANNED if w in prompt.lower()]
     if seen:
         raise Refusal(f"the reviewer's prompt would carry {seen[0]!r} ({checkout}); set REVIEWER_WORK to a path without it")
@@ -1071,6 +1137,7 @@ def materialize(p: Prepared, brief: Brief, fx: Fixtures, env: Env) -> Prepared:
         bfile.write_text(settle(bfile.read_text(), run.brief.axis, list(settled)))
     for name, source in frozen_inputs(brief).items():
         shutil.copyfile(source, target / name)
+    (p.checkout / SCRATCH_DIR).mkdir(parents=True, exist_ok=True)
     # What the run was given, for the content check at collect and at every recheck.
     (d / "given").mkdir()
     for name in ("diff", f"{run.brief.axis}-brief.md", *frozen_inputs(brief)):
@@ -1315,7 +1382,7 @@ def recheck(fx: Fixtures, env: Env) -> None:
             continue
         p = prepared_at(d)
         lines = read_jsonl(receipt.source)
-        verdict = contamination(lines, round_future(env, fx.briefs[p.run.brief]), given_lines(p, d, fx, env))
+        verdict = contamination(lines, round_future(env, fx.briefs[p.run.brief]), given_lines(p, d, fx, env), p.checkout)
         detail = verdict.detail
         now: Status = "contaminated" if detail else "complete"
         aside = d.is_relative_to(out / "dropped")
