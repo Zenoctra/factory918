@@ -67,7 +67,7 @@ for raw in Path(cases).read_text().splitlines():
     export = Path(next(m.group(1) for line in lines if line.get("type") == "user"
                        for m in [re.search(r"You are working in `([^`]+)`", json.dumps(line))] if m))
     verdict = r.contamination(lines, future, given, export)
-    found = r.leaks(lines, future, given)
+    found = r.leaks(lines, future, given, export)
     got = "future" if verdict.detail else "clean"
     first_call = str(verdict.first["call"]) if verdict.first else "-"
     ok = got == label and call in ("-", first_call)

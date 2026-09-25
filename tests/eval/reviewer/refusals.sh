@@ -1211,7 +1211,6 @@ assert r.dated("## Testing decisions") is None and r.dated("### The scenario tab
 assert r.dated("# in place of the one it rebuilt") == "# in place of the one it rebuilt"'
 pycheck "settle: no lines leaves the brief as it is" 'assert r.settle("x\n## Standards\n", "standards", []) == "x\n## Standards\n"'
 
-echo "all $n checks passed"
 pycheck "codex: the real smoke session reads as two Bash calls with what the model saw" '
 from pathlib import Path
 lines = r.transcript(Path(sys.argv[1]).parent / "codex" / "smoke.jsonl")
@@ -1267,3 +1266,30 @@ assert first["type"] == "thread.started" and first["thread_id"] == meta["payload
 pycheck "retired: the table labels the model" '
 text = r.render_table("claude:opus-5", "spec", [], 0, r.RETIRED["claude:opus-5"])
 assert "This model is partial (pass 1 and some pass 2; retired 2026-09-24)." in text, text'
+pycheck "content: a run reading back its own report is not contaminated (the real S2 call of Sol pr94-r1)" '
+from pathlib import Path
+export = Path("/var/folders/94/x/T/review-work/ab851d73182e/factory918")
+def calls(*commands):
+    lines = []
+    for i, command in enumerate(commands):
+        lines.append({"type": "assistant", "message": {"content": [{"type": "tool_use", "id": f"c{i}", "name": "Bash", "input": {"command": command}}]}})
+        lines.append({"type": "user", "message": {"content": [{"type": "tool_result", "tool_use_id": f"c{i}", "content": "1. **An item.** Body.\n   spec: criterion 3\n"}]}})
+    return lines
+future = {"spec: criterion 3": "cc36280"}
+assert r.leaks(calls(f"cd {export} && cat .scratch/review/ab47eb9/standards-report.md",
+                     f"cd {export} && cat .scratch/review/ab47eb9/standards-report.md && wc -l .scratch/review/ab47eb9/standards-report.md",
+                     f"sed -n 1,40p {export}/.scratch/work/notes.md"), future, set(), export) == []'
+pycheck "content: the same later line read from any other file still contaminates" '
+from pathlib import Path
+export = Path("/var/folders/94/x/T/review-work/ab851d73182e/factory918")
+other = Path("/var/folders/94/x/T/review-work/000000000000/factory918")
+future = {"spec: criterion 3": "cc36280"}
+for command in (f"cd {export} && cat template/.agents/skills/spec-review/SKILL.md",
+                f"cd {export} && cat .scratch/review/ab47eb9/standards-report.md docs/x.md",
+                f"cat {other}/.scratch/review/ab47eb9/standards-report.md",
+                "cat .scratch/review/ab47eb9/standards-report.md",
+                f"cd {export} && cat .scratch/review/ab47eb9/standards-report.md > /tmp/x"):
+    lines = [{"type": "assistant", "message": {"content": [{"type": "tool_use", "id": "c", "name": "Bash", "input": {"command": command}}]}},
+             {"type": "user", "message": {"content": [{"type": "tool_result", "tool_use_id": "c", "content": "spec: criterion 3"}]}}]
+    assert [k.line for k in r.leaks(lines, future, set(), export)] == ["spec: criterion 3"], command'
+echo "all $n checks passed"

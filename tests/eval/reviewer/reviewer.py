@@ -81,6 +81,7 @@ import json
 import os
 import re
 import secrets
+import shlex
 import shutil
 import subprocess
 import sys
@@ -633,10 +634,53 @@ def tool_uses(lines: list[dict]) -> list[tuple[int, str, dict, str | None]]:
     return out
 
 
-def leaks(lines: list[dict], future: Mapping[str, str], given: AbstractSet[str]) -> list[Leak]:
-    """Every result line that only a later commit or live GitHub text holds, and the run was not given."""
+# A reviewer that proof-reads its own report reads back its own words, which a later commit may happen to
+# hold too ("spec: criterion 3"); the run's report and its .scratch/work/ are its own, not the future.
+OWN_FILE = re.compile(r"\.scratch/(?:review/[^/]+/(?:spec|standards)-report\.md|work/.+)")
+READERS = ("cat", "sed", "head", "tail", "grep", "wc", "nl")
+
+
+def own_read(name: str, args: dict, export: Path) -> bool:
+    """A call that only reads the run's own report or files in its own .scratch/work/: a Read of such a path, or
+    a Bash command of cd-to-the-export and cat, sed, head, tail, grep, wc or nl segments whose files are all such paths."""
+    root = str(export).removeprefix("/private").rstrip("/")
+
+    def own(path: str, relative_ok: bool) -> bool:
+        path = path.removeprefix("/private")
+        if path.startswith(root + "/"):
+            path = path[len(root) + 1:]
+        elif path.startswith("/") or not relative_ok:
+            return False
+        return ".." not in path.split("/") and OWN_FILE.fullmatch(path.removeprefix("./")) is not None
+
+    if name == "Read":
+        return own(str(args.get("file_path", "")), False)
+    if name != "Bash":
+        return False
+    try:
+        segments = [shlex.split(s) for s in re.split(r"&&|\|\||;|\|", str(args.get("command", "")))]
+    except ValueError:
+        return False
+    files, in_export = [], False
+    for words in segments:
+        if words[:1] == ["cd"] and len(words) == 2 and words[1].removeprefix("/private").rstrip("/") == root:
+            in_export = True
+            continue
+        if not words or words[0] not in READERS:
+            return False
+        rest = [w for w in words[1:] if not w.startswith("-") and not w.isdigit()]
+        # sed's script and grep's pattern come before the files.
+        files += [(f, in_export) for f in (rest[1:] if words[0] in ("sed", "grep") else rest)]
+    return bool(files) and all(own(f, ok) for f, ok in files)
+
+
+def leaks(lines: list[dict], future: Mapping[str, str], given: AbstractSet[str], export: Path) -> list[Leak]:
+    """Every result line that only a later commit or live GitHub text holds, and the run was not given, outside
+    the results of calls that only read the run's own report or scratch folder."""
     found = []
     for r in tool_results(lines):
+        if own_read(r.name, r.args, export):
+            continue
         for raw in r.body.splitlines():
             forms = readings(raw)
             if forms & given:
@@ -713,7 +757,7 @@ def contamination(lines: list[dict], future: Mapping[str, str], given: AbstractS
     """Why the run's transcript shows it saw what its reviewed commit could not, and where it first did."""
     undated = [(call, name, ts) for call, name, _, ts in tool_uses(lines) if name in UNDATED_TOOLS]
     crossed = cross_run_reads(lines, export)
-    found = leaks(lines, future, given)
+    found = leaks(lines, future, given, export)
     said = sorted({f"{name} ({UNDATED_TOOLS[name]})" for _, name, _ in undated})
     said += [f"cross-run read at call {call}: {name} {path}" for call, name, path, _ in crossed[:3]]
     said += [f"{k.tool} returned a line first added by {k.commit[:7] if HEX.fullmatch(k.commit) else k.commit}: "
