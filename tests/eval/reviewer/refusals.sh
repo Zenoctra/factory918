@@ -37,7 +37,8 @@ printf 'one\nTWO fixed in the first commit\nthree\n' > "$tmp/repo/a.txt"
 at 3 commit -q -am "Fix the second line"
 fix1="$(g rev-parse HEAD)"
 printf 'one\nTWO fixed again in the second commit\nthree\n' > "$tmp/repo/a.txt"
-printf '%s\n' "$later_line" "tiny line" "$head_line" "$read_rule" > "$tmp/repo/later.md"
+ticket_line="A ticket line a later commit also copies"
+printf '%s\n' "$later_line" "tiny line" "$head_line" "$read_rule" "$ticket_line" > "$tmp/repo/later.md"
 g add later.md
 at 4 commit -q -am "Fix the second line again"
 fix2="$(g rev-parse HEAD)"
@@ -47,7 +48,8 @@ fx="$tmp/fx"
 mkdir -p "$fx/rounds/r1/inputs" "$fx/rounds/r1/review" "$fx/agents" "$tmp/agents" "$tmp/rep"
 printf 'pr=1\nhead=%s\n' "$head" > "$fx/rounds/r1/round"
 printf 'script_at=%s\nfixed_point=%s\nticket=7\nround=1\npr=1\n' "$base" "${base:0:7}" > "$fx/rounds/r1/inputs/recipe"
-printf '## What to build\n\nChange the second line.\n' > "$fx/rounds/r1/inputs/ticket.md"
+printf '## What to build\n\nChange the second line.\n\n%s\n' "$ticket_line" > "$fx/rounds/r1/inputs/ticket.md"
+printf '## Risks\n\nThe grounding the author wrote.\n' > "$fx/rounds/r1/inputs/blast-radius.md"
 : > "$fx/rounds/r1/inputs/previous.txt"
 {
   printf '# round\tid\tanchors\tfix\twhere\tsources\ttitle\n'
@@ -256,7 +258,7 @@ cell() {
 }
 
 # rebuild.sh
-REBUILD_FIXTURES="$fx" REBUILD_REPO="$tmp/repo" bash "$rebuild" r1 > "$tmp/rb" 2>&1 && code=0 || code=$?
+REBUILD_FIXTURES="$fx" REBUILD_REPO="$tmp/repo" bash "$rebuild" r1 > "$tmp/rb" 2>/dev/null && code=0 || code=$?
 out="$(cat "$tmp/rb")"
 check "rebuild: the written briefs rebuild identical" is "$code:$out" "0:rebuild: r1: identical"
 REBUILD_FIXTURES="$fx" REBUILD_REPO="$tmp/repo" bash "$rebuild" r1 --export "$tmp/ex" f1.patch f2.patch > "$tmp/rb"
@@ -357,7 +359,9 @@ lf="$(sed -n 3p <<<"$out")"
 co1="$(h checkout "$l1")"
 check "next: the lower tier agent" is "$(h get "$l1" agent.subagent_type)" review-lower-high
 check "next: Fable through model fable" is "$(h get "$lf" agent.subagent_type)/$(h get "$lf" agent.model)" review-fable-high/fable
-check "next: the prompt" is "$(h get "$l1" prompt)" "Read \`$co1/$reldir/standards-brief.md\` whole and follow it. You are working in \`$co1\`; every relative path in the brief is relative to it."
+check "next: the prompt" is "$(h get "$l1" prompt)" "Read \`$co1/$reldir/standards-brief.md\` whole and follow it. You are working in \`$co1\`; every relative path in the brief is relative to it. The ticket as it stood at this commit is \`$co1/$reldir/ticket.md\`, and the PR's grounding is \`$co1/$reldir/blast-radius.md\`."
+check "next: the export holds the frozen ticket, byte for byte" cmp -s "$co1/$reldir/ticket.md" "$fx/rounds/r1/inputs/ticket.md"
+check "next: and the frozen grounding" cmp -s "$co1/$reldir/blast-radius.md" "$fx/rounds/r1/inputs/blast-radius.md"
 check "next: the checkout holds the head" is "$(sed -n 2p "$co1/a.txt")" TWO
 check "next: the brief unchanged" same "$co1/$reldir/standards-brief.md" "$fx/rounds/r1/review/standards-brief.md"
 check "next: the diff" exists "$co1/$reldir/diff"
@@ -407,6 +411,7 @@ check "M2: G1 masked, G2 not (its fix is not all applied)" is "$(h field "$(rund
 check "M2: the tree is the folded commit" test "$(h field "$(rundir "$C" standards M2)/run.json" tree)" != "$head"
 check "M2: the brief briefs the folded tree" has "$(cat "$co_m2/$reldir/standards-brief.md")" "TWO fixed in the first commit"
 check "M2: not the other axis's brief" absent "$co_m2/$reldir/spec-brief.md"
+check "M2: the masked export holds the frozen ticket" cmp -s "$co_m2/$reldir/ticket.md" "$fx/rounds/r1/inputs/ticket.md"
 check "M2 spec: G2 found, both patches applied" is "$(h field "$(rundir "$C" spec M2)/run.json" applied)" '["f1.patch", "f2.patch"]'
 check "M2 spec: G1 and G2 masked" is "$(h field "$(rundir "$C" spec M2)/run.json" masked)" '["G1", "G2"]'
 check "M2 spec: the tree holds both fixes" is "$(sed -n 2p "$co_spec_m2/a.txt")" "TWO fixed again in the second commit"
@@ -569,7 +574,7 @@ for result in "     1→$later_line" "     1	$later_line" "later.md:1:$later_lin
   check "content: a tool's line prefix is stripped: $result" is "$(h field "$(rundir "$C" standards 1)/receipt.json" status)" contaminated
 done
 for case in "tiny line|a later line under the floor" "$head_line|a later line the head already holds" \
-            "$read_rule|a later line the brief carries" "TWO fixed again in the second commit TWO|no line of the future, only part of one"; do
+            "$read_rule|a later line the brief carries" "$ticket_line|a later line the exported ticket holds" "TWO fixed again in the second commit TWO|no line of the future, only part of one"; do
   fresh "clean-${case#*|}"
   run next "$C" --limit 1
   RESULT="${case%%|*}" finish "$out" "$tmp/rep/hit.md" claude-opus-5 finished "Bash|cat later.md"
@@ -893,6 +898,18 @@ want = Path('$tmp/pos/$reldir/$axis-brief.md').read_text()
 assert '## Settled in earlier rounds' in want
 assert got == want"
 done
+pycheck "prompt: each kept round names its frozen ticket, and pr96-r1 its grounding" '
+from pathlib import Path
+fx = r.load_fixtures(Path(sys.argv[1]).parent)
+for rnd, grounding in (("pr94-r1", False), ("pr96-r1", True), ("pr99-r1", False)):
+    for axis in r.AXES:
+        brief = fx.briefs[r.BriefId(rnd, axis)]
+        prompt = r.plan(r.RunId("claude:opus-5", brief.id, "1"), brief, Path("/w")).prompt
+        nonce = prompt.split("/w/")[1].split("/")[0]
+        here = f"/w/{nonce}/factory918/{brief.report_relpath.parent}"
+        assert f"The ticket as it stood at this commit is `{here}/ticket.md`" in prompt, prompt
+        assert (f"grounding is `{here}/blast-radius.md`." in prompt) == grounding, prompt
+        assert not [w for w in r.BANNED if w in prompt.lower()], prompt'
 pycheck "settle: no lines leaves the brief as it is" 'assert r.settle("x\n## Standards\n", "standards", []) == "x\n## Standards\n"'
 
 echo "all $n checks passed"

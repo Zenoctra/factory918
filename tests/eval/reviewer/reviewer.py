@@ -32,8 +32,9 @@ patch from its commits the same way.
         Collect every finished run; list what is in flight, unlaunched or stuck. Safe to repeat.
         A run is contaminated when a tool result in its transcript holds a line that only commits
         after its head, or its ticket and PR as GitHub holds them now, hold and that it was not given
-        (its tree, brief and diff), or when it used a tool whose results cannot be dated (Agent,
-        WebFetch, WebSearch). The GitHub text is fetched once with gh and cached; the receipt also
+        (its tree, brief and diff, and the round's frozen ticket and grounding, which each export
+        holds beside the brief and the prompt names), or when it used a tool whose results cannot
+        be dated (Agent, WebFetch, WebSearch). The GitHub text is fetched once with gh and cached; the receipt also
         records the first contaminated tool call, each report item's earliest sighting of what it
         quotes, and the calls that named a path outside the export. --recheck first judges every
         collected run again from its transcript: one that turns contaminated is set aside by `next`,
@@ -982,11 +983,22 @@ def state(d: Path) -> Literal["absent", "prepared", "collected", "broken"]:
     return "prepared" if (d / "run.json").is_file() else "broken"
 
 
+def frozen_inputs(brief: Brief) -> dict[str, Path]:
+    """The round's frozen ticket, and its blast-radius grounding where it has one, by the name the export gives them."""
+    inputs = brief.files.parent / "inputs"
+    return {name: inputs / name for name in ("ticket.md", "blast-radius.md") if (inputs / name).is_file()}
+
+
 def plan(run: RunId, brief: Brief, work: Path) -> Prepared:
     nonce = secrets.token_hex(6)
     checkout = work / nonce / "factory918"
-    prompt = (f"Read `{checkout}/{brief.report_relpath.parent}/{run.brief.axis}-brief.md` whole and follow it. "
+    here = f"{checkout}/{brief.report_relpath.parent}"
+    prompt = (f"Read `{here}/{run.brief.axis}-brief.md` whole and follow it. "
               f"You are working in `{checkout}`; every relative path in the brief is relative to it.")
+    frozen = frozen_inputs(brief)
+    if "ticket.md" in frozen:
+        prompt += f" The ticket as it stood at this commit is `{here}/ticket.md`"
+        prompt += f", and the PR's grounding is `{here}/blast-radius.md`." if "blast-radius.md" in frozen else "."
     seen = [w for w in BANNED if w in prompt.lower()]
     if seen:
         raise Refusal(f"the reviewer's prompt would carry {seen[0]!r} ({checkout}); set REVIEWER_WORK to a path without it")
@@ -1057,9 +1069,11 @@ def materialize(p: Prepared, brief: Brief, fx: Fixtures, env: Env) -> Prepared:
         settled = tuple(f"{n}. [{tag}{i.n}] {i.raw}" for n, i in enumerate(hard, 1))
         bfile = target / f"{run.brief.axis}-brief.md"
         bfile.write_text(settle(bfile.read_text(), run.brief.axis, list(settled)))
+    for name, source in frozen_inputs(brief).items():
+        shutil.copyfile(source, target / name)
     # What the run was given, for the content check at collect and at every recheck.
     (d / "given").mkdir()
-    for name in ("diff", f"{run.brief.axis}-brief.md"):
+    for name in ("diff", f"{run.brief.axis}-brief.md", *frozen_inputs(brief)):
         shutil.copyfile(target / name, d / "given" / name)
     if applied:
         save_tree(env.out / "cache", tree, dir_lines(p.checkout))
@@ -1073,7 +1087,7 @@ def materialize(p: Prepared, brief: Brief, fx: Fixtures, env: Env) -> Prepared:
 
 
 def given_lines(p: Prepared, d: Path, fx: Fixtures, env: Env) -> AbstractSet[str]:
-    """What the run was given: its tree (the head, or the folded masked commit) and its review files.
+    """What the run was given: its tree (the head, or the folded masked commit), its review files and frozen inputs.
 
     A run prepared before `given/` was kept is rebuilt from the fixtures, a masked one through rebuild.sh.
     """
@@ -1088,7 +1102,8 @@ def given_lines(p: Prepared, d: Path, fx: Fixtures, env: Env) -> AbstractSet[str
     if (d / "given").is_dir():
         return lines | dir_lines(d / "given")
     brief_text = (brief.files / f"{p.run.brief.axis}-brief.md").read_text()
-    return lines | text_lines([settle(brief_text, p.run.brief.axis, list(p.settled)), (brief.files / "diff").read_text()])
+    return lines | text_lines([settle(brief_text, p.run.brief.axis, list(p.settled)), (brief.files / "diff").read_text(),
+                               *(f.read_text() for f in frozen_inputs(brief).values())])
 
 
 def launch_line(p: Prepared, brief: Brief, out: Path) -> str:
