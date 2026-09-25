@@ -28,8 +28,13 @@ patch from its commits the same way.
         the steps that need it. A model with a usage-limit receipt is paused: `next` prints one
         `paused` line for it and prepares nothing for it until `--resume` names it, which prepares
         its limited runs again first. Collects nothing.
-    python3 tests/eval/reviewer/reviewer.py collect
+    python3 tests/eval/reviewer/reviewer.py collect [--recheck]
         Collect every finished run; list what is in flight, unlaunched or stuck. Safe to repeat.
+        A run is contaminated when a tool result in its transcript holds a line that only commits
+        after its head hold and that it was not given (its tree, brief and diff), or when it used a
+        tool whose results cannot be dated (Agent, WebFetch, WebSearch). --recheck first judges every
+        collected run again from its transcript: one that turns contaminated is set aside by `next`,
+        and a set-aside one that is clean now comes back complete when its report is still there.
         A run served the wrong model or effort is refused after every other run is collected. A
         transcript whose last assistant line is stamped `end_turn` is finished; one whose last
         assistant line holds only text and is not stamped `end_turn` (a harness line included) is
@@ -53,21 +58,21 @@ stamped `end_turn` must sit untouched before it counts as finished).
 from __future__ import annotations
 
 import argparse
+import hashlib
 import itertools
 import json
 import os
 import re
 import secrets
-import shlex
 import shutil
 import subprocess
 import sys
 import tempfile
 import time
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from pathlib import Path, PurePosixPath
-from typing import Iterable, Literal, Mapping
+from typing import AbstractSet, Iterable, Literal, Mapping
 
 Axis = Literal["standards", "spec"]
 AXES: tuple[Axis, ...] = ("standards", "spec")
@@ -478,62 +483,96 @@ def usage_limited_transcript(lines: list[dict]) -> bool:
                for line in lines if line.get("type") == "assistant")
 
 
-# The tools whose reach receipt_from_transcript can judge, then the ones that read no file and no
-# network; any other tool call is contamination.
-CHECKED_TOOLS = ("Read", "Write", "Edit", "Grep", "Glob", "Bash", "TodoWrite", "ToolSearch")
-COMMAND_WORDS = ("gh", "git", "curl", "wget")
-# Words that stand before the command they run: wrappers, and the shell's own keywords.
-PREFIX_WORDS = ("env", "sudo", "command", "exec", "time", "nohup", "xargs", "builtin",
-                "if", "then", "do", "else", "elif", "while", "until", "{", "!")
-TRUSTED_BINS = ("/usr/", "/bin/", "/opt/homebrew/")
-SEGMENT_SPLIT = re.compile(r"&&|\|\||;|\||\$\(|`|\n|\(")
-# An awk or sed address: one segment between two slashes, then sed's letters, as in /^## / or
-# /foo.*bar/p, and that segment holds a regex character or a space. The shape alone would let
-# /tmp/, /etc/hosts or /srv/dip pass; a directory name rarely holds one of these.
-PATTERN = re.compile(r"^/([^/]*)/[A-Za-z]*$")
-PATTERN_BODY = re.compile(r"[\^$.*\[\]\\+?(){}| ]")
+# A line under FLOOR characters (after stripping) is too common to date. On the #103 corpus every
+# floor from 1 to 56 separates the ten runs that read later code from the 223 that did not; the
+# tightest case is one 57-character line, lost at 60. 12 keeps a wide margin under that while leaving
+# out short tool output (an exit code, a count, a shell keyword) that no corpus run happened to hit.
+# One hit is enough: that tightest case has exactly one.
+FLOOR = 12
+# Lines that date nothing: no letter or digit, a fence marker, a Markdown heading of one word.
+GENERIC_LINE = re.compile(r"^[^A-Za-z0-9]*$|^(`{3,}|~{3,})\S*$|^#+\s*\S+$")
+# What tools put before a file's line: Read's `12→` or `12<tab>`, cat -n's `12<tab>`, grep -n's
+# `12:` or `12-`, and grep's `path:12:` or `path-12-` over several files.
+TOOL_PREFIXES = (re.compile(r"^\s*\d+(?:→|\t|:|-)"), re.compile(r"^.*?[:-]\d+[:-]"))
+# Tools whose results the content check cannot see or date; every other tool, Bash and Skill
+# included, is judged by what its results hold.
+UNDATED_TOOLS: Mapping[str, str] = {
+    "Agent": "its reads land in another transcript",
+    "Task": "its reads land in another transcript",
+    "WebFetch": "it returns live network state git does not hold",
+    "WebSearch": "it returns live network state git does not hold",
+}
 
 
-def bash_reaches(command: str, root: str) -> list[str]:
-    """Why a reviewer's Bash command leaves the export, or nothing when it stays inside."""
-    why = []
-    if root not in command:
-        why.append("does not name the export")
-    words = []
-    for seg in SEGMENT_SPLIT.split(command):
-        toks = [t for t in seg.strip().split() if t]
-        while toks and (re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*=\S*", toks[0]) or toks[0] in PREFIX_WORDS):
-            toks.pop(0)
-        if toks:
-            words.append(toks[0].strip("'\""))
-    for w in words:
-        if os.path.basename(w) in COMMAND_WORDS:
-            why.append(f"runs {os.path.basename(w)}")
-    if re.search(r"(^|[\s/'\"=])\.\.(/|[\s'\";&|)<>]|$)", command):
-        why.append("has a .. path component")
-    inside = re.compile(re.escape(root) + r"(?=$|[/\s'\"`;|&()<>])[^\s'\"`;|&()<>]*")
-    for p in path_tokens(inside.sub(" ", command)):
-        if p == "/dev/null" or (p.startswith(TRUSTED_BINS) and p in words):
-            continue
-        if (m := PATTERN.match(p)) and PATTERN_BODY.search(m.group(1)):
-            continue
-        why.append(f"names {p}")
-    return why
+def dated(line: str) -> str | None:
+    """The line as the check compares it, or None when it is too short or too generic to date."""
+    s = line.strip()
+    return None if len(s) < FLOOR or GENERIC_LINE.match(s) else s
 
 
-def path_tokens(command: str) -> list[str]:
-    """The absolute, ~ and $HOME paths a command names, a quoted string being one token."""
-    try:
-        lex = shlex.shlex(command, posix=True, punctuation_chars=True)
-        lex.whitespace_split = True
-        tokens = list(lex)
-    except ValueError:
-        tokens = command.split()
-    return [part for t in tokens for part in re.split(r"[=:]", t) if part.startswith(("/", "~", "$HOME", "${HOME}"))]
+def readings(line: str) -> set[str]:
+    """The line as returned and with each tool prefix stripped, each kept only if it dates."""
+    forms = {line}
+    for prefix in TOOL_PREFIXES:
+        if m := prefix.match(line):
+            forms.add(line[m.end():])
+    return {d for f in forms if (d := dated(f))}
 
 
-def receipt_from_transcript(run: RunId, lines: list[dict], expect: re.Pattern[str], checkout: Path,
-                            transcripts: Path, source: Path) -> Receipt:
+def text_lines(texts: Iterable[str]) -> set[str]:
+    return {d for t in texts for line in t.splitlines() if (d := dated(line))}
+
+
+@dataclass(frozen=True)
+class Leak:
+    line: str
+    commit: str
+    tool: str
+
+
+def tool_results(lines: list[dict]) -> Iterable[tuple[str, dict, str]]:
+    """(tool name, its input, the text it returned) for every tool_result in the transcript."""
+    uses: dict[str, tuple[str, dict]] = {}
+    for line in lines:
+        content = (line.get("message") or {}).get("content")
+        for c in content if isinstance(content, list) else ():
+            if not isinstance(c, dict):
+                continue
+            if c.get("type") == "tool_use":
+                uses[c.get("id")] = (c.get("name") or "?", c.get("input") or {})
+            elif c.get("type") == "tool_result":
+                body = c.get("content")
+                if isinstance(body, list):
+                    body = "\n".join(str(b.get("text", "")) for b in body if isinstance(b, dict))
+                name, args = uses.get(c.get("tool_use_id"), ("?", {}))
+                yield name, args, body if isinstance(body, str) else ""
+
+
+def leaks(lines: list[dict], future: Mapping[str, str], given: AbstractSet[str]) -> list[Leak]:
+    """Every result line that only a commit after the head holds: in the future set, not in what the run was given."""
+    found = []
+    for name, args, body in tool_results(lines):
+        for raw in body.splitlines():
+            forms = readings(raw)
+            if forms & given:
+                continue
+            if hit := next((f for f in sorted(forms, key=len, reverse=True) if f in future), None):
+                found.append(Leak(hit, future[hit], f"{name} {json.dumps(args)[:80]}"))
+    return found
+
+
+def contamination(lines: list[dict], future: Mapping[str, str], given: AbstractSet[str]) -> str | None:
+    """Why the run's transcript shows it saw what its reviewed commit could not, or None."""
+    undated = sorted({f"{name} ({UNDATED_TOOLS[name]})" for name, _, _ in tool_results(lines) if name in UNDATED_TOOLS})
+    found = leaks(lines, future, given)
+    said = [f"{k.tool} returned a line first added by {k.commit[:7]}: {k.line[:100]}" for k in found[:3]]
+    if len(found) > 3:
+        said.append(f"and {len(found) - 3} more such lines")
+    return "; ".join(undated + said) or None
+
+
+def receipt_from_transcript(run: RunId, lines: list[dict], expect: re.Pattern[str], source: Path,
+                            future: Mapping[str, str], given: AbstractSet[str]) -> Receipt:
     assistant = [line for line in lines if line.get("type") == "assistant"]
     stamps = [stamp(line["timestamp"]) for line in lines if line.get("timestamp")]
     wall_ms = int((stamps[-1] - stamps[0]).total_seconds() * 1000) if stamps else None
@@ -566,42 +605,9 @@ def receipt_from_transcript(run: RunId, lines: list[dict], expect: re.Pattern[st
     tokens = Tokens(*(sum(u.get(k) or 0 for u in usage.values())
                       for k in ("input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens", "output_tokens")))
 
-    root = os.path.normpath(str(checkout))
-    troot = os.path.normpath(str(transcripts))
-
-    def inside(p: str) -> bool:
-        p = os.path.normpath(p)
-        return os.path.isabs(p) and (p == root or p.startswith(root + os.sep))
-
-    def overflow(p: str) -> bool:
-        p = os.path.normpath(p)
-        if not p.startswith(troot + os.sep):
-            return False
-        # The harness persists a large tool result of the reviewer's own and hands back its path.
-        parts = p[len(troot) + 1:].split(os.sep)
-        return len(parts) > 2 and parts[1] == "tool-results"
-
-    reaches = []
-    for line in assistant:
-        content = (line.get("message") or {}).get("content")
-        for c in content if isinstance(content, list) else ():
-            if not isinstance(c, dict) or c.get("type") != "tool_use":
-                continue
-            name, args = c.get("name"), c.get("input") or {}
-            if name == "Read" and overflow(args.get("file_path", "")):
-                continue
-            if name in ("Read", "Write", "Edit") and not inside(args.get("file_path", "")):
-                reaches.append(f"{name} {args.get('file_path', '')}")
-            elif name in ("Grep", "Glob") and not args.get("path"):
-                reaches.append(f"{name} with no path")
-            elif name in ("Grep", "Glob") and not inside(args["path"]):
-                reaches.append(f"{name} {args['path']}")
-            elif name == "Bash" and (why := bash_reaches(args.get("command", ""), root)):
-                reaches.append(f"Bash ({', '.join(why)}) {args.get('command', '')[:120]}")
-            elif name not in CHECKED_TOOLS:
-                reaches.append(f"{name} (unchecked tool)")
-    status: Status = "contaminated" if reaches else "complete"
-    return Receipt(run, status, "; ".join(reaches) or "complete", models[-1], efforts[0], tokens, wall_ms, source)
+    detail = contamination(lines, future, given)
+    status: Status = "contaminated" if detail else "complete"
+    return Receipt(run, status, detail or "complete", models[-1], efforts[0], tokens, wall_ms, source)
 
 
 def usage_limited(receipt: Receipt) -> bool:
@@ -718,6 +724,57 @@ class Env:
 
 def git(cwd: Path, *args: str) -> str:
     return subprocess.run(["git", "-C", str(cwd), *args], capture_output=True, text=True, check=True).stdout.strip()
+
+
+def future_lines(repo: Path, head: str, cache: Path) -> Mapping[str, str]:
+    """Every dated line a commit after the head added, with the first commit that added it.
+
+    The commits are those the keep refs and origin/main reach and the head does not, committed after
+    it. A PR rebased onto main after its review carries its later code on main, not above its head,
+    so descent alone would miss it. Cached under `cache`, keyed by the head and the commits read.
+    """
+    tips = git(repo, "for-each-ref", "--format=%(objectname)", "refs/keep/103", "refs/remotes/origin/main").split()
+    when = int(git(repo, "log", "-1", "--format=%ct", head))
+    listed = git(repo, "log", "--reverse", "--topo-order", "--format=%H %ct", *tips, f"^{head}").splitlines() if tips else []
+    commits = [c for c, ct in (entry.split() for entry in listed) if int(ct) > when]
+    path = cache / f"future-{head}-{hashlib.sha1(' '.join(commits).encode()).hexdigest()[:16]}.json"
+    if path.is_file():
+        return json.loads(path.read_text())
+    out: dict[str, str] = {}
+    for c in commits:
+        for line in git(repo, "show", "--format=", "--no-color", "--no-ext-diff", c).splitlines():
+            if line.startswith("+") and not line.startswith("+++") and (d := dated(line[1:])) and d not in out:
+                out[d] = c
+    cache.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(out))
+    return out
+
+
+def tree_lines(repo: Path, commit: str, cache: Path) -> AbstractSet[str]:
+    """The dated lines of every file in the commit's tree, cached under `cache` by the commit."""
+    path = cache / f"tree-{commit}.json"
+    if path.is_file():
+        return frozenset(json.loads(path.read_text()))
+    blobs = [entry.split()[2] for entry in git(repo, "ls-tree", "-r", commit).splitlines() if entry.split()[1] == "blob"]
+    batch = subprocess.run(["git", "-C", str(repo), "cat-file", "--batch"], input="\n".join(blobs).encode(),
+                           capture_output=True, check=True).stdout
+    texts, i = [], 0
+    while i < len(batch):
+        header_end = batch.index(b"\n", i)
+        size = int(batch[i:header_end].split()[2])
+        texts.append(batch[header_end + 1:header_end + 1 + size].decode("utf-8", "replace"))
+        i = header_end + 1 + size + 1
+    return save_tree(cache, commit, text_lines(texts))
+
+
+def save_tree(cache: Path, commit: str, lines: AbstractSet[str]) -> AbstractSet[str]:
+    cache.mkdir(parents=True, exist_ok=True)
+    (cache / f"tree-{commit}.json").write_text(json.dumps(sorted(lines)))
+    return frozenset(lines)
+
+
+def dir_lines(root: Path) -> set[str]:
+    return text_lines(f.read_text(errors="replace") for f in root.rglob("*") if f.is_file())
 
 
 def load_env() -> Env:
@@ -866,6 +923,12 @@ def materialize(p: Prepared, brief: Brief, fx: Fixtures, env: Env) -> Prepared:
         settled = tuple(f"{n}. [{tag}{i.n}] {i.raw}" for n, i in enumerate(hard, 1))
         bfile = target / f"{run.brief.axis}-brief.md"
         bfile.write_text(settle(bfile.read_text(), run.brief.axis, list(settled)))
+    # What the run was given, for the content check at collect and at every recheck.
+    (d / "given").mkdir()
+    for name in ("diff", f"{run.brief.axis}-brief.md"):
+        shutil.copyfile(target / name, d / "given" / name)
+    if applied:
+        save_tree(env.out / "cache", tree, dir_lines(p.checkout))
     done = Prepared(run, p.nonce, p.checkout, p.prompt, settled, applied, masked, tree)
     (d / "prompt.txt").write_text(p.prompt)
     write_json(d / "run.json", {"version": VERSION, "run": run.to_json(), "nonce": p.nonce, "checkout": str(p.checkout),
@@ -873,6 +936,25 @@ def materialize(p: Prepared, brief: Brief, fx: Fixtures, env: Env) -> Prepared:
                                 "applied": list(applied), "masked": list(masked),
                                 "plain_head": not applied})
     return done
+
+
+def given_lines(p: Prepared, d: Path, fx: Fixtures, env: Env) -> AbstractSet[str]:
+    """What the run was given: its tree (the head, or the folded masked commit) and its review files.
+
+    A run prepared before `given/` was kept is rebuilt from the fixtures, a masked one through rebuild.sh.
+    """
+    brief, cache = fx.briefs[p.run.brief], env.out / "cache"
+    tree = p.tree or brief.head
+    if (cache / f"tree-{tree}.json").is_file() or not p.applied:
+        lines = set(tree_lines(env.repo, tree, cache))
+    else:
+        with tempfile.TemporaryDirectory() as tmp:
+            export_masked(env, p.run.brief.round, Path(tmp) / "x", p.applied)
+            lines = set(save_tree(cache, tree, dir_lines(Path(tmp) / "x")))
+    if (d / "given").is_dir():
+        return lines | dir_lines(d / "given")
+    brief_text = (brief.files / f"{p.run.brief.axis}-brief.md").read_text()
+    return lines | text_lines([settle(brief_text, p.run.brief.axis, list(p.settled)), (brief.files / "diff").read_text()])
 
 
 def launch_line(p: Prepared, brief: Brief, out: Path) -> str:
@@ -1064,8 +1146,46 @@ def cmd_next(fx: Fixtures, env: Env, descriptors: list[str], limit: int, resume:
     return 0
 
 
-def cmd_collect(fx: Fixtures, env: Env) -> int:
+def recheck(fx: Fixtures, env: Env) -> None:
+    """Judge every collected complete or contaminated run again from its transcript; print each change."""
     out = env.out
+    for d in [*run_dirs(out), *sorted(d for d in out.glob("dropped/*/*/*/*/*") if d.is_dir())]:
+        receipt = receipt_at(d)
+        if not receipt or receipt.status not in ("complete", "contaminated"):
+            continue
+        if not receipt.source.is_file():
+            print(f"recheck {d}: its transcript {receipt.source} is gone; it stays {receipt.status}")
+            continue
+        p = prepared_at(d)
+        detail = contamination(read_jsonl(receipt.source),
+                               future_lines(env.repo, fx.briefs[p.run.brief].head, out / "cache"),
+                               given_lines(p, d, fx, env))
+        now: Status = "contaminated" if detail else "complete"
+        aside = d.is_relative_to(out / "dropped")
+        if now == receipt.status:
+            if detail and detail != receipt.detail:
+                write_json(d / "receipt.json", receipt_json(replace(receipt, detail=detail)))
+            continue
+        if now == "contaminated":
+            write_json(d / "receipt.json", receipt_json(replace(receipt, status=now, detail=detail)))
+            print(f"recheck {d}: complete -> contaminated: {detail}")
+        elif not (d / "report.md").is_file():
+            print(f"recheck {d}: clean now, but its report is gone; it stays {'set aside' if aside else 'contaminated'}")
+        elif aside and p.run.dir(out).exists():
+            print(f"recheck {d}: clean now, but {p.run.dir(out)} holds a later attempt; it stays set aside")
+        else:
+            home = p.run.dir(out)
+            if aside:
+                home.parent.mkdir(parents=True, exist_ok=True)
+                shutil.move(str(d), str(home))
+            write_json(home / "receipt.json", receipt_json(replace(receipt, status=now, detail="complete")))
+            print(f"recheck {d}: contaminated -> complete" + (f", back at {home}" if aside else ""))
+
+
+def cmd_collect(fx: Fixtures, env: Env, again: bool) -> int:
+    out = env.out
+    if again:
+        recheck(fx, env)
     collected, stuck = 0, []
     native: dict[RunId, Prepared] = {}
     for d in run_dirs(out):
@@ -1097,8 +1217,9 @@ def cmd_collect(fx: Fixtures, env: Env) -> int:
             continue
         # One run's refusal must not leave the others uncollected: it is raised after the rest.
         try:
-            receipt = receipt_from_transcript(run, lines, MODELS[run.descriptor].expect, p.checkout,
-                                              env.transcripts, path)
+            receipt = receipt_from_transcript(run, lines, MODELS[run.descriptor].expect, path,
+                                              future_lines(env.repo, fx.briefs[run.brief].head, env.out / "cache"),
+                                              given_lines(p, p.run.dir(out), fx, env))
         except Refusal as e:
             refused.append(e)
             continue
@@ -1157,7 +1278,7 @@ def main(argv: list[str] | None = None) -> int:
     nxt.add_argument("descriptors", nargs="*", choices=list(MODELS), metavar="descriptor")
     nxt.add_argument("--resume", action="append", choices=list(MODELS), default=[], metavar="descriptor")
     nxt.add_argument("--limit", type=at_least_one, default=8)
-    verbs.add_parser("collect")
+    verbs.add_parser("collect").add_argument("--recheck", action="store_true")
     verbs.add_parser("table")
     args = parser.parse_args(argv)
     if args.verb == "next" and not args.descriptors and not args.resume:
@@ -1168,7 +1289,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.verb == "check":
             return cmd_check(fx, env)
         if args.verb == "collect":
-            return cmd_collect(fx, env)
+            return cmd_collect(fx, env, args.recheck)
         if args.verb == "table":
             return cmd_table(fx, env)
         return cmd_next(fx, env, list(dict.fromkeys(args.descriptors + args.resume)), args.limit, args.resume)

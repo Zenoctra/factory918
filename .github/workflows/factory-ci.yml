@@ -31,6 +31,8 @@ jobs:
         run: bash tests/show-me-your-work/check-trail.sh
       - name: reviewer.py prints, collects, scores and refuses what the test says
         run: bash tests/eval/reviewer/refusals.sh
+      - name: The content check matches the labelled #103 runs (skips where they are absent)
+        run: bash tests/eval/reviewer/corpus.sh
       - name: No retired review wording under template/ or the core knowledge
         run: bash tests/spec-review/no-stale-wording.sh
       - name: The knowledge check refuses the Provisional ids the test says

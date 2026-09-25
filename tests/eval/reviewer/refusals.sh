@@ -16,23 +16,32 @@ trap 'rm -rf "$tmp"' EXIT
 C=claude:opus-5
 F=claude:fable-5.1
 g() { git -C "$tmp/repo" -c user.name=t -c user.email=t@example.com "$@"; }
+# The content check reads only commits made after the head, so each commit gets its own hour.
+at() { GIT_COMMITTER_DATE="2026-01-01T0$1:00:00Z" GIT_AUTHOR_DATE="2026-01-01T0$1:00:00Z" g "${@:2}"; }
+later_line="A line only the second fix commit holds"
+head_line="A line the reviewed head already holds"
+read_rule='You may open any file in the repository and run read-only commands, such as grep or the test suite.'
 
 git init -q -b main "$tmp/repo"
 mkdir -p "$tmp/repo/template/.agents/skills"
 cp -R "$here/template/.agents/skills/spec-review" "$tmp/repo/template/.agents/skills/"
 printf 'one\ntwo\nthree\n' > "$tmp/repo/a.txt"
+printf '%s\n' "$head_line" > "$tmp/repo/base.md"
 g add -A
-g commit -q -m base
+at 1 commit -q -m base
 base="$(g rev-parse HEAD)"
 printf 'one\nTWO\nthree\n' > "$tmp/repo/a.txt"
-g commit -q -am "Change the second line (#7)"
+at 2 commit -q -am "Change the second line (#7)"
 head="$(g rev-parse HEAD)"
-printf 'one\nTWO fixed\nthree\n' > "$tmp/repo/a.txt"
-g commit -q -am "Fix the second line"
+printf 'one\nTWO fixed in the first commit\nthree\n' > "$tmp/repo/a.txt"
+at 3 commit -q -am "Fix the second line"
 fix1="$(g rev-parse HEAD)"
-printf 'one\nTWO fixed twice\nthree\n' > "$tmp/repo/a.txt"
-g commit -q -am "Fix the second line again"
+printf 'one\nTWO fixed again in the second commit\nthree\n' > "$tmp/repo/a.txt"
+printf '%s\n' "$later_line" "tiny line" "$head_line" "$read_rule" > "$tmp/repo/later.md"
+g add later.md
+at 4 commit -q -am "Fix the second line again"
 fix2="$(g rev-parse HEAD)"
+g update-ref refs/keep/103/fix2 "$fix2"
 
 fx="$tmp/fx"
 mkdir -p "$fx/rounds/r1/inputs" "$fx/rounds/r1/review" "$fx/agents" "$tmp/agents" "$tmp/rep"
@@ -129,8 +138,8 @@ elif cmd == "finish":
         {"type": "user", "message": {"role": "user", "content": prompt}, "timestamp": at(0)},
         {"type": "assistant", "requestId": "r1", "timestamp": at(1), "effort": effort, "message": {
             "model": model, "stop_reason": "tool_use", "usage": usage(10, 100, 5, 20),
-            "content": [{"type": "tool_use", "name": tool, "input": tool_input}]}},
-        {"type": "user", "message": {"role": "user", "content": [{"type": "tool_result", "content": "ok"}]}, "timestamp": at(2)},
+            "content": [{"type": "tool_use", "id": "u1", "name": tool, "input": tool_input}]}},
+        {"type": "user", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "u1", "content": os.environ.get("RESULT", "ok")}]}, "timestamp": at(2)},
     ]
     def synthetic(text, **extra):
         return {"type": "assistant", "timestamp": at(3), **extra, "message": {
@@ -222,7 +231,7 @@ check "rebuild: the written briefs rebuild identical" is "$code:$out" "0:rebuild
 REBUILD_FIXTURES="$fx" REBUILD_REPO="$tmp/repo" bash "$rebuild" r1 --export "$tmp/ex" f1.patch f2.patch > "$tmp/rb"
 folded="$(cat "$tmp/rb")"
 check "rebuild --export: the fix commits are folded into the head" is "$(cat "$tmp/ex/a.txt")" "one
-TWO fixed twice
+TWO fixed again in the second commit
 three"
 check "rebuild --export: the commit list keeps the head's one line" is "$(sed -n '/^## Commits$/,/^## Changed files$/p' "$tmp/ex/$reldir/standards-brief.md" | grep -c 'Change the second line')" 1
 check "rebuild --export: no fix subject reaches the brief" lacks "$(cat "$tmp/ex/$reldir/standards-brief.md")" "Fix the second line"
@@ -361,15 +370,15 @@ These findings were raised in an earlier round and settled by the decision each 
 check "S2: the non-hard item is not settled" lacks "$settled" "missing ticket"
 check "S2: run.json records the settled line" is "$(h field "$(rundir "$C" standards S2)/run.json" settled.0)" "1. [S1] **An unmatched glob is dropped.** The gate exits 0 anyway. Documented step: the gate."
 check "S2 spec: every hard item of pass 1, in order, numbered with its P id" is "$(grep -E '^[0-9]+\. \[P[0-9]+\] ' <<<"$(sed -n '/^## Settled in earlier rounds$/,/^## The ticket/p' "$(h checkout "$spec_s2")/$reldir/spec-brief.md")" | cut -c1-8 | tr '\n' '|')" "1. [P1] |2. [P2] |"
-check "M2: G1's fix is applied" is "$(sed -n 2p "$co_m2/a.txt")" "TWO fixed"
+check "M2: G1's fix is applied" is "$(sed -n 2p "$co_m2/a.txt")" "TWO fixed in the first commit"
 check "M2: run.json applied" is "$(h field "$(rundir "$C" standards M2)/run.json" applied)" '["f1.patch"]'
 check "M2: G1 masked, G2 not (its fix is not all applied)" is "$(h field "$(rundir "$C" standards M2)/run.json" masked)" '["G1"]'
 check "M2: the tree is the folded commit" test "$(h field "$(rundir "$C" standards M2)/run.json" tree)" != "$head"
-check "M2: the brief briefs the folded tree" has "$(cat "$co_m2/$reldir/standards-brief.md")" "TWO fixed"
+check "M2: the brief briefs the folded tree" has "$(cat "$co_m2/$reldir/standards-brief.md")" "TWO fixed in the first commit"
 check "M2: not the other axis's brief" absent "$co_m2/$reldir/spec-brief.md"
 check "M2 spec: G2 found, both patches applied" is "$(h field "$(rundir "$C" spec M2)/run.json" applied)" '["f1.patch", "f2.patch"]'
 check "M2 spec: G1 and G2 masked" is "$(h field "$(rundir "$C" spec M2)/run.json" masked)" '["G1", "G2"]'
-check "M2 spec: the tree holds both fixes" is "$(sed -n 2p "$co_spec_m2/a.txt")" "TWO fixed twice"
+check "M2 spec: the tree holds both fixes" is "$(sed -n 2p "$co_spec_m2/a.txt")" "TWO fixed again in the second commit"
 finish "$std_m2" "$tmp/rep/both.md"
 finish "$std_s2" "$tmp/rep/none.md"
 finish "$std_i2" "$tmp/rep/hit.md"
@@ -378,7 +387,7 @@ run next "$C"
 check "next: the three standards pass-3 steps follow their pass 2" is "$(grep -c '/standards/[ISM]3"' <<<"$out")" 3
 co_m3="$(h checkout "$(line_for standards M3)")"
 check "M3: G1 from pass 1 and G2 from M2, both patches" is "$(h field "$(rundir "$C" standards M3)/run.json" applied)" '["f1.patch", "f2.patch"]'
-check "M3: the tree holds both fixes" is "$(sed -n 2p "$co_m3/a.txt")" "TWO fixed twice"
+check "M3: the tree holds both fixes" is "$(sed -n 2p "$co_m3/a.txt")" "TWO fixed again in the second commit"
 check "S3: nothing hard in S2, so pass 1's line alone" is "$(sed -n '/^## Settled in earlier rounds$/,/^## Standards$/p' "$(h checkout "$(line_for standards S3)")/$reldir/standards-brief.md" | grep -cE '^[0-9]+\. \[S[0-9]+\] ')" 1
 run table
 check "table: exit 0" is "$code" 0
@@ -512,19 +521,34 @@ check "usage limit: out of the metrics" is "$(cell chains I 1)" 1
 
 fresh contaminated
 run next "$C" --limit 1
-co="$(h checkout "$out")"
-finish "$out" "$tmp/rep/hit.md" claude-opus-5 finished "Bash|cd $co && gh issue view 7"
+RESULT="$later_line" finish "$out" "$tmp/rep/hit.md" claude-opus-5 finished "Bash|cat later.md"
 run collect
-check "contamination: cd <export> && gh is contaminated" is "$(h field "$(rundir "$C" standards 1)/receipt.json" status)" contaminated
-check "contamination: the detail says gh" has "$(h field "$(rundir "$C" standards 1)/receipt.json" detail)" "runs gh"
+check "content: a result line only a later commit holds is contamination" is "$(h field "$(rundir "$C" standards 1)/receipt.json" status)" contaminated
+check "content: the detail names the tool call, the commit and the line" is "$(h field "$(rundir "$C" standards 1)/receipt.json" detail)" "Bash {\"command\": \"cat later.md\"} returned a line first added by ${fix2:0:7}: $later_line"
 run next "$C" --limit 1
-check "contamination: prepared again" is "$(h get "$out" run)" "$(rundir "$C" standards 1)"
-check "contamination: the receipt is kept aside" exists "$REVIEWER_OUT/dropped/${C//:/-}/r1/standards/1/1/receipt.json"
+check "content: prepared again" is "$(h get "$out" run)" "$(rundir "$C" standards 1)"
+check "content: the receipt is kept aside" exists "$REVIEWER_OUT/dropped/${C//:/-}/r1/standards/1/1/receipt.json"
+i=0
+for result in "     1→$later_line" "     1	$later_line" "later.md:1:$later_line" "later.md-1-$later_line" "1:$later_line"; do
+  i=$((i + 1))
+  fresh "prefix$i"
+  run next "$C" --limit 1
+  RESULT="$result" finish "$out" "$tmp/rep/hit.md" claude-opus-5 finished "Read|/elsewhere/later.md"
+  run collect
+  check "content: a tool's line prefix is stripped: $result" is "$(h field "$(rundir "$C" standards 1)/receipt.json" status)" contaminated
+done
+for case in "tiny line|a later line under the floor" "$head_line|a later line the head already holds" \
+            "$read_rule|a later line the brief carries" "TWO fixed again in the second commit TWO|no line of the future, only part of one"; do
+  fresh "clean-${case#*|}"
+  run next "$C" --limit 1
+  RESULT="${case%%|*}" finish "$out" "$tmp/rep/hit.md" claude-opus-5 finished "Bash|cat later.md"
+  run collect
+  check "content: ${case#*|} is not contamination" is "$(h field "$(rundir "$C" standards 1)/receipt.json" status)" complete
+done
 fresh giveup
 run next "$C" --limit 1
 for attempt in 1 2 3; do
-  co="$(h checkout "$out")"
-  finish "$out" "$tmp/rep/hit.md" claude-opus-5 finished "Bash|cd $co && gh issue view 7"
+  RESULT="$later_line" finish "$out" "$tmp/rep/hit.md" claude-opus-5 finished "Bash|cat later.md"
   run collect
   run next "$C" --limit 1
   [ "$attempt" = 3 ] || check "give up: contamination $attempt is prepared again" is "$(h get "$out" run)" "$(rundir "$C" standards 1)"
@@ -541,36 +565,82 @@ check "give up: the other axis goes on to pass 2" has "$out" "/spec/I2\""
 run table
 check "give up: the table counts all three contaminations" is "$(cell contaminated I 1)" 3
 
-fresh contaminated-read
-run next "$C" --limit 1
-finish "$out" "$tmp/rep/hit.md" claude-opus-5 finished /etc/hosts
+fresh masked-given
+run next "$C" --limit 2
+finish "$(sed -n 1p <<<"$out")" "$tmp/rep/hit.md"
+finish "$(sed -n 2p <<<"$out")" "$tmp/rep/none.md"
 run collect
-check "contamination: a Read outside the export" has "$(h field "$(rundir "$C" standards 1)/receipt.json" detail)" "Read /etc/hosts"
-fresh overflow
-run next "$C" --limit 1
-finish "$out" "$tmp/rep/hit.md" claude-opus-5 finished "Read|$REVIEWER_TRANSCRIPTS/s/tool-results/b0gweyh98.txt"
+run next "$C" --limit 3
+RESULT="TWO fixed in the first commit" finish "$(line_for standards M2)" "$tmp/rep/none.md"
+RESULT="TWO fixed in the first commit" finish "$(line_for standards I2)" "$tmp/rep/none.md"
 run collect
-check "contamination: a Read of the harness's own overflow is not" is "$(h field "$(rundir "$C" standards 1)/receipt.json" status)" complete
-fresh unchecked
-run next "$C" --limit 1
-finish "$out" "$tmp/rep/hit.md" claude-opus-5 finished "WebFetch|https://example.com"
-run collect
-check "contamination: a tool outside the checked six is contaminated" is "$(h field "$(rundir "$C" standards 1)/receipt.json" status)" contaminated
-check "contamination: named as unchecked" is "$(h field "$(rundir "$C" standards 1)/receipt.json" detail)" "WebFetch (unchecked tool)"
-for tool in Skill Agent WebSearch; do
-  fresh "unchecked-$tool"
+check "content: a fix line the masked tree was given is not contamination" is "$(h field "$(rundir "$C" standards M2)/receipt.json" status)" complete
+check "content: the same line in an unmasked pass is" is "$(h field "$(rundir "$C" standards I2)/receipt.json" status)" contaminated
+check "content: the masked pass kept its brief and diff" exists "$(rundir "$C" standards M2)/given/standards-brief.md"
+
+for tool in Agent WebFetch WebSearch; do
+  fresh "undated-$tool"
   run next "$C" --limit 1
   finish "$out" "$tmp/rep/hit.md" claude-opus-5 finished "$tool|x"
   run collect
-  check "contamination: $tool is unchecked" is "$(h field "$(rundir "$C" standards 1)/receipt.json" detail)" "$tool (unchecked tool)"
+  check "content: $tool, whose results cannot be dated, is contamination" starts "$(h field "$(rundir "$C" standards 1)/receipt.json" detail)" "$tool ("
 done
-for tool in TodoWrite ToolSearch; do
-  fresh "passes-$tool"
+for tool in Skill ToolSearch TodoWrite Read Grep; do
+  fresh "dated-$tool"
   run next "$C" --limit 1
-  finish "$out" "$tmp/rep/hit.md" claude-opus-5 finished "$tool|x"
+  finish "$out" "$tmp/rep/hit.md" claude-opus-5 finished "$tool|/anywhere/at/all"
   run collect
-  check "contamination: $tool reads nothing and passes" is "$(h field "$(rundir "$C" standards 1)/receipt.json" status)" complete
+  check "content: $tool is judged by what it returned" is "$(h field "$(rundir "$C" standards 1)/receipt.json" status)" complete
 done
+
+fresh recheck
+run next "$C" --limit 2
+l1="$(sed -n 1p <<<"$out")"
+l2="$(sed -n 2p <<<"$out")"
+finish "$l1" "$tmp/rep/hit.md"
+t1="$transcript"
+finish "$l2" "$tmp/rep/hit.md"
+run collect
+RESULT="$later_line" finish "$l1" none claude-opus-5 finished "Bash|cat later.md"
+mv "$transcript" "$t1"
+python3 - "$(rundir "$C" spec 1)/receipt.json" <<'PY'
+import json, sys
+j = json.load(open(sys.argv[1]))
+j.update(status="contaminated", detail="Bash (runs gh) cd x && gh issue view 7")
+json.dump(j, open(sys.argv[1], "w"))
+PY
+run collect --recheck
+check "recheck: a complete run whose transcript shows later code turns contaminated" is "$(h field "$(rundir "$C" standards 1)/receipt.json" status)" contaminated
+check "recheck: and says so" has "$out" "recheck $(rundir "$C" standards 1): complete -> contaminated: Bash {\"command\": \"cat later.md\"} returned a line first added by ${fix2:0:7}"
+check "recheck: a run the old rule flagged, clean now, with its report, is complete" is "$(h field "$(rundir "$C" spec 1)/receipt.json" status)" complete
+check "recheck: and says so" has "$out" "recheck $(rundir "$C" spec 1): contaminated -> complete"
+run collect --recheck
+check "recheck: a second pass changes nothing" lacks "$out" "recheck "
+run next "$C" --limit 1
+check "recheck: next sets the contaminated run aside" exists "$REVIEWER_OUT/dropped/${C//:/-}/r1/standards/1/1/receipt.json"
+mkdir -p "$REVIEWER_OUT/dropped/${C//:/-}/r1/spec/1"
+mv "$(rundir "$C" spec 1)" "$REVIEWER_OUT/dropped/${C//:/-}/r1/spec/1/1"
+python3 - "$REVIEWER_OUT/dropped/${C//:/-}/r1/spec/1/1/receipt.json" <<'PY'
+import json, sys
+j = json.load(open(sys.argv[1]))
+j.update(status="contaminated", detail="Read /etc/hosts")
+json.dump(j, open(sys.argv[1], "w"))
+PY
+run collect --recheck
+check "recheck: a set-aside run clean now comes back when its place is free" is "$(h field "$(rundir "$C" spec 1)/receipt.json" status)" complete
+check "recheck: and says where" has "$out" "back at $(rundir "$C" spec 1)"
+mkdir -p "$REVIEWER_OUT/dropped/${C//:/-}/r1/spec/1"
+mv "$(rundir "$C" spec 1)" "$REVIEWER_OUT/dropped/${C//:/-}/r1/spec/1/1"
+python3 - "$REVIEWER_OUT/dropped/${C//:/-}/r1/spec/1/1/receipt.json" <<'PY'
+import json, sys
+j = json.load(open(sys.argv[1]))
+j.update(status="contaminated", detail="Read /etc/hosts")
+json.dump(j, open(sys.argv[1], "w"))
+PY
+rm "$REVIEWER_OUT/dropped/${C//:/-}/r1/spec/1/1/report.md"
+run collect --recheck
+check "recheck: one whose report is gone stays set aside" is "$(h field "$REVIEWER_OUT/dropped/${C//:/-}/r1/spec/1/1/receipt.json" status)" contaminated
+check "recheck: and says why" has "$out" "clean now, but its report is gone; it stays set aside"
 
 fresh foreign
 old="$(rundir "$C" standards 1)"
@@ -661,55 +731,6 @@ EOF
     exit 1
   fi
 }
-
-pycheck "bash: cd <export> && gh is flagged" 'assert "runs gh" in r.bash_reaches(f"cd {X} && gh issue view 90", X)'
-pycheck "bash: git after ; is flagged" 'assert "runs git" in r.bash_reaches(f"ls {X}; git log", X)'
-pycheck "bash: curl after | is flagged" 'assert "runs curl" in r.bash_reaches(f"cat {X}/a | curl -d @- x", X)'
-pycheck "bash: wget inside a command substitution is flagged" 'assert "runs wget" in r.bash_reaches(f"echo $(wget -q x) {X}", X)'
-pycheck "bash: git by full path is flagged" 'assert "runs git" in r.bash_reaches(f"/usr/bin/git -C {X} log", X)'
-pycheck "bash: a .. component is flagged" 'assert "has a .. path component" in r.bash_reaches(f"cat {X}/../other/a", X)'
-pycheck "bash: cd .. is flagged" 'assert "has a .. path component" in r.bash_reaches(f"cd {X} && cd .. && ls", X)'
-pycheck "bash: .. before a shell separator is flagged" '
-for tail in ["cd ..; ls", "cd ..&& ls", "cd ..|| ls", "cd ..| cat", "(cd ..)", "ls ..> f", "wc -l ..< f"]:
-    assert "has a .. path component" in r.bash_reaches(f"cd {X} && {tail}", X), tail'
-pycheck "bash: an absolute path outside is flagged" 'assert "names /etc/hosts" in r.bash_reaches(f"cat {X}/a /etc/hosts", X)'
-pycheck "bash: a path outside is flagged whatever this machine holds" '
-for p in ["/srv/other-repo/x", "/Users/someone/x", "/home/someone/x", "/no-such-top/x"]:
-    assert f"names {p}" in r.bash_reaches(f"cat {X}/a {p}", X), p
-assert "names /srv/x" in r.bash_reaches(f"cat {X}/a --file=/srv/x", X)'
-pycheck "bash: an address between two slashes is a pattern" '
-for cmd in ["awk \"/^## /\" a.md", "awk \x27/foo.*/\x27 a.md", "sed -n \x27/foo.*bar/p\x27 a.md",
-            "grep -E \x27/x[0-9]/\x27 a.md", "grep -E \x27/end$/\x27 a.md", "grep -E \x27/a|b/\x27 a.md",
-            "grep -E \x27/a+b/\x27 a.md", "grep -E \x27/a\\.b/\x27 a.md"]:
-    assert r.bash_reaches(f"cd {X} && {cmd}", X) == [], cmd'
-pycheck "bash: a directory with the address shape and no regex character is a path" '
-for p in ["/Users/", "/tmp/", "/etc/", "/home/", "/private/", "/tmp/p", "/srv/0", "/srv/dip", "/etc/hosts"]:
-    assert f"names {p}" in r.bash_reaches(f"cd {X} && ls {p}", X), p'
-pycheck "bash: a glob path outside the export is flagged" '
-for cmd in ["cat /Users/manuel/Desktop/Work/*/CLAUDE.md", "ls /Users/x/.claude/agents/*.md",
-            "cat /Users/manuel/a[1].md", "cat /srv/x/?.md", "cat /srv/{a,b}/x", "cat /srv/a+b/x",
-            "cat /Users/$USER/.claude/agents/x.md", "cat \"/srv/a|b/x\""]:
-    assert any(w.startswith("names /") for w in r.bash_reaches(f"cd {X} && {cmd}", X)), cmd'
-pycheck "bash: a path from the HOME variable is flagged" '
-for p in ["$HOME/.claude/agents/x.md", "${HOME}/.claude/CLAUDE.md"]:
-    assert f"names {p}" in r.bash_reaches(f"cd {X} && cat {p}", X), p'
-pycheck "bash: a ~ path is flagged" 'assert "names ~/.ssh/config" in r.bash_reaches(f"cat {X}/a ~/.ssh/config", X)'
-pycheck "bash: a sibling export is flagged" '
-why = r.bash_reaches(f"cd {X} && cat /tmp/w/def456/factory918/a.txt", X)
-assert "names /tmp/w/def456/factory918/a.txt" in why, why'
-pycheck "bash: a path that only starts like the export is flagged" 'assert r.bash_reaches(f"cat {X}-other/a", X)'
-pycheck "bash: a command without the export is flagged" 'assert "does not name the export" in r.bash_reaches("ls", X)'
-pycheck "bash: grep inside the export with 2>/dev/null is clean" 'assert r.bash_reaches(f"cd {X} && grep -rn foo . 2>/dev/null | head", X) == []'
-pycheck "bash: /usr/bin/python3 as the command word is clean" 'assert r.bash_reaches(f"/usr/bin/python3 {X}/x.py", X) == []'
-pycheck "bash: /usr/bin as an argument is flagged" 'assert r.bash_reaches(f"ls {X} /usr/bin", X)'
-pycheck "bash: an awk pattern is not a path" 'assert r.bash_reaches(f"awk \"/^## /\" {X}/a.md", X) == []'
-pycheck "bash: an env assignment before gh is still gh" 'assert "runs gh" in r.bash_reaches(f"cd {X} && GH_PAGER= gh pr view", X)'
-pycheck "bash: a command behind a shell keyword is still seen" '
-for cmd, word in [("if true; then gh issue view 90; fi", "gh"), ("for f in a b; do git log $f; done", "git"),
-                  ("{ curl -s https://x.com; }", "curl"), ("! gh issue view 90", "gh"),
-                  ("while read l; do gh api $l; done < f", "gh"), ("until false; do wget x; done", "wget"),
-                  ("if false; then :; elif true; then git log; else gh pr view; fi", "git")]:
-    assert f"runs {word}" in r.bash_reaches(f"cd {X} && {cmd}", X), cmd'
 
 pycheck "rule: one item claims one bug, the one with more anchors" '
 bugs = (G("G1", "glob", "exits"), G("G2", "glob", "exits", "unmatched"))
