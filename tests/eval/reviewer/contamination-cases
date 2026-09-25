@@ -1,44 +1,48 @@
-# The #103 runs the content check is proved against, labelled by reading each transcript's tool calls and
+# The #103 and #138 runs the content check is proved against, labelled by reading each transcript's tool calls and
 # results. future: a tool result held a line of code or text that exists only in commits after the run's
-# head; clean: it did not, whatever the old path rule said. Receipt paths are relative to the #103 output,
-# <main checkout>/.scratch/eval/reviewer; the heads and briefs are e710e99's rounds.
-# case	label	evidence
-runs/claude-opus-5/pr99-r1b/standards/3/receipt.json	future	`gh issue view 90 -R Zenoctra/factory918` returned the live ticket #90, whose criteria and tables its Standards brief did not carry and which later commits hold (the #103 ticket inputs)
-runs/claude-sonnet/pr101-r1/standards/2/receipt.json	future	sed of the worktree's review-brief.sh returned the round-four and round-five gate of 27c43af, which 7956c69 does not have
-runs/claude-sonnet/pr101-r1/standards/4/receipt.json	future	sed of the worktree's review-brief.sh returned 27c43af's `would-break fixed after <sha>` round lines, absent at 7956c69
-runs/claude-sonnet/pr101-r1/standards/5/receipt.json	future	grep and sed of the worktree's review-brief.sh returned the deciding-comment awk and round gate added by 27c43af
-runs/claude-sonnet/pr101-r1/standards/6/receipt.json	future	Read of the worktree's review-brief.sh returned lines 165-222, the fourth- and fifth-round gate added by 27c43af
-runs/claude-sonnet/pr102-r1/spec/2/receipt.json	future	sed of the worktree's review-brief.sh returned one line of fc75ac6's fix, the fixed-items awk `/fixed: [0-9a-f]+$/`, newer than 7b01fd6
-runs/claude-sonnet/pr96-r1/standards/1/receipt.json	future	Read of the worktree's template/.github/shellcheck.sh returned the later gate: 01e5386's per-glob refusal and a64c7e6's checksum comment
-runs/claude-sonnet/pr96-r2/standards/2/receipt.json	future	cat -n of the worktree's shellcheck.sh returned a64c7e6 and 070c1fa lines, later than 01e5386
-runs/claude-sonnet/pr96-r3/spec/1/receipt.json	future	cat -n of the worktree's shellcheck.sh returned 070c1fa's header comment, later than 1362b48; #103 scored it complete
-runs/claude-sonnet/pr99-r1/standards/1/receipt.json	future	grep and git show in the worktree returned review-brief.sh and SKILL.md lines of 27c43af and 32978fa and the subjects of later commits
-runs/claude-opus-5/pr102-r1/standards/2/receipt.json	clean	its only outside calls were awk probes on echoed strings (refused by the guard) and a `git log` that failed; it read nothing outside its export
-runs/claude-opus-5/pr102-r1/standards/4/receipt.json	clean	awk probes on a printf'd string in the worktree's directory; no file outside its export was read
-runs/claude-sonnet/pr102-r2/standards/1/receipt.json	clean	read outside its export (grep and Read of the worktree's review-comment.sh), but every line it got back is identical at fc75ac6
-runs/claude-sonnet/pr102-r2/standards/4/receipt.json	clean	read outside its export (sed of the worktree's review-brief.sh and review-comment.sh), but every line returned is identical at fc75ac6
-runs/claude-sonnet/pr94-r1/spec/2/receipt.json	clean	outside its export it only read its own tool-results overflow file, which the old Bash rule flagged
-runs/claude-sonnet/pr94-r1/standards/2/receipt.json	clean	read outside its export (grep, wc and `git show c83f166:<path>` in the worktree), but the files returned are the head's own; the only new lines are #103 commit subjects, not code
-runs/claude-sonnet/pr96-r2/spec/3/receipt.json	clean	wrote and ran a fake shellcheck under /tmp/scwork; read nothing outside its export
-runs/claude-sonnet/pr96-r2/spec/4/receipt.json	clean	read outside its export (sed of the worktree's CODING_STANDARDS.md and template copy), but every line returned is identical at 01e5386
-runs/claude-sonnet/pr99-r1/spec/1/receipt.json	clean	outside its export it only ran wc and Read on its own tool-results overflow file, which the old Bash rule flagged
-runs/claude-opus-5/pr102-r1/standards/5/receipt.json	clean	stayed in its export; its only outside reads were its own tool-results overflow file
-runs/claude-opus-5/pr102-r2/standards/2/receipt.json	clean	stayed in its export; its only outside reads were its own tool-results overflow file
-runs/claude-opus-5/pr99-r2/standards/1/receipt.json	clean	stayed in its export; its only outside reads were its own tool-results overflow file
-runs/claude-opus-5/pr99-r1b/standards/4/receipt.json	clean	stayed in its export; its only outside reads were its own tool-results overflow file
-runs/claude-opus-5/pr94-r1/spec/1/receipt.json	clean	stayed in its export; its only outside reads were its own tool-results overflow file
-runs/claude-opus-5/pr96-r3/spec/1/receipt.json	clean	stayed in its export; its only outside read was its own tool-results overflow file
-runs/claude-opus-5/pr101-r1/standards/1/receipt.json	clean	stayed in its export; its only outside reads were its own tool-results overflow file
-runs/claude-opus-5/pr96-r1/spec/2/receipt.json	clean	stayed in its export; its only outside read was its own tool-results overflow file
-runs/claude-opus-5.5/pr94-r1/standards/2/receipt.json	clean	stayed in its export; its only outside reads were its own tool-results overflow file
-runs/claude-opus-5.5/pr101-r1/standards/2/receipt.json	clean	stayed in its export; its only outside reads were its own tool-results overflow file
-runs/claude-opus-5.5/pr99-r2/spec/3/receipt.json	clean	stayed in its export; its only outside read was its own tool-results overflow file
-runs/claude-opus-5.5/pr96-r3/spec/2/receipt.json	clean	stayed in its export; its only outside read was its own tool-results overflow file
-runs/claude-opus-5.5/pr102-r1/spec/1/receipt.json	clean	stayed in its export; its only outside read was its own tool-results overflow file
-runs/claude-opus-5.5/pr96-r2/standards/2/receipt.json	clean	stayed in its export; its only outside read was its own tool-results overflow file
-runs/claude-sonnet/pr99-r2/standards/2/receipt.json	clean	stayed in its export; its only outside reads were its own tool-results overflow file
-runs/claude-sonnet/pr99-r1/standards/3/receipt.json	clean	stayed in its export; its only outside reads were its own tool-results overflow file
-runs/claude-sonnet/pr94-r1/spec/3/receipt.json	clean	stayed in its export; its only outside reads were its own tool-results overflow file
-runs/claude-sonnet/pr101-r1/spec/1/receipt.json	clean	stayed in its export; its only outside reads were its own tool-results overflow file
-runs/claude-sonnet/pr96-r1/spec/2/receipt.json	clean	stayed in its export; its only outside read was its own tool-results overflow file
-runs/claude-sonnet/pr99-r1b/spec/2/receipt.json	clean	never left its export
+# head, or live GitHub text written after the review; clean: it did not, whatever the old path rule said.
+# call: the ordinal of the first tool call whose result contaminated it (tool_use blocks counted from 1), or -
+# when the case does not pin it. A #103 case is its receipt path relative to <main checkout>/.scratch/eval/reviewer,
+# briefed from e710e99's rounds; a #138 case is `138 <round>/<axis> <transcript>`, the transcript relative to
+# ~/.claude/projects, briefed from this tree's rounds.
+# case	label	call	evidence
+runs/claude-opus-5/pr99-r1b/standards/3/receipt.json	future	-	`gh issue view 90 -R Zenoctra/factory918` returned the live ticket #90, whose criteria and tables its Standards brief did not carry and which later commits hold (the #103 ticket inputs)
+runs/claude-sonnet/pr101-r1/standards/2/receipt.json	future	-	sed of the worktree's review-brief.sh returned the round-four and round-five gate of 27c43af, which 7956c69 does not have
+runs/claude-sonnet/pr101-r1/standards/4/receipt.json	future	-	sed of the worktree's review-brief.sh returned 27c43af's `would-break fixed after <sha>` round lines, absent at 7956c69
+runs/claude-sonnet/pr101-r1/standards/5/receipt.json	future	-	grep and sed of the worktree's review-brief.sh returned the deciding-comment awk and round gate added by 27c43af
+runs/claude-sonnet/pr101-r1/standards/6/receipt.json	future	-	Read of the worktree's review-brief.sh returned lines 165-222, the fourth- and fifth-round gate added by 27c43af
+runs/claude-sonnet/pr102-r1/spec/2/receipt.json	future	-	sed of the worktree's review-brief.sh returned one line of fc75ac6's fix, the fixed-items awk `/fixed: [0-9a-f]+$/`, newer than 7b01fd6
+runs/claude-sonnet/pr96-r1/standards/1/receipt.json	future	-	Read of the worktree's template/.github/shellcheck.sh returned the later gate: 01e5386's per-glob refusal and a64c7e6's checksum comment
+runs/claude-sonnet/pr96-r2/standards/2/receipt.json	future	-	cat -n of the worktree's shellcheck.sh returned a64c7e6 and 070c1fa lines, later than 01e5386
+runs/claude-sonnet/pr96-r3/spec/1/receipt.json	future	-	cat -n of the worktree's shellcheck.sh returned 070c1fa's header comment, later than 1362b48; #103 scored it complete
+runs/claude-sonnet/pr99-r1/standards/1/receipt.json	future	-	grep and git show in the worktree returned review-brief.sh and SKILL.md lines of 27c43af and 32978fa and the subjects of later commits
+runs/claude-opus-5/pr102-r1/standards/2/receipt.json	clean	-	its only outside calls were awk probes on echoed strings (refused by the guard) and a `git log` that failed; it read nothing outside its export
+runs/claude-opus-5/pr102-r1/standards/4/receipt.json	clean	-	awk probes on a printf'd string in the worktree's directory; no file outside its export was read
+runs/claude-sonnet/pr102-r2/standards/1/receipt.json	clean	-	read outside its export (grep and Read of the worktree's review-comment.sh), but every line it got back is identical at fc75ac6
+runs/claude-sonnet/pr102-r2/standards/4/receipt.json	clean	-	read outside its export (sed of the worktree's review-brief.sh and review-comment.sh), but every line returned is identical at fc75ac6
+runs/claude-sonnet/pr94-r1/spec/2/receipt.json	clean	-	outside its export it only read its own tool-results overflow file, which the old Bash rule flagged
+runs/claude-sonnet/pr94-r1/standards/2/receipt.json	clean	-	read outside its export (grep, wc and `git show c83f166:<path>` in the worktree), but the files returned are the head's own; the only new lines are #103 commit subjects, not code
+runs/claude-sonnet/pr96-r2/spec/3/receipt.json	clean	-	wrote and ran a fake shellcheck under /tmp/scwork; read nothing outside its export
+runs/claude-sonnet/pr96-r2/spec/4/receipt.json	clean	-	read outside its export (sed of the worktree's CODING_STANDARDS.md and template copy), but every line returned is identical at 01e5386
+runs/claude-sonnet/pr99-r1/spec/1/receipt.json	clean	-	outside its export it only ran wc and Read on its own tool-results overflow file, which the old Bash rule flagged
+runs/claude-opus-5/pr102-r1/standards/5/receipt.json	clean	-	stayed in its export; its only outside reads were its own tool-results overflow file
+runs/claude-opus-5/pr102-r2/standards/2/receipt.json	clean	-	stayed in its export; its only outside reads were its own tool-results overflow file
+runs/claude-opus-5/pr99-r2/standards/1/receipt.json	clean	-	stayed in its export; its only outside reads were its own tool-results overflow file
+runs/claude-opus-5/pr99-r1b/standards/4/receipt.json	clean	-	stayed in its export; its only outside reads were its own tool-results overflow file
+runs/claude-opus-5/pr94-r1/spec/1/receipt.json	clean	-	stayed in its export; its only outside reads were its own tool-results overflow file
+runs/claude-opus-5/pr96-r3/spec/1/receipt.json	clean	-	stayed in its export; its only outside read was its own tool-results overflow file
+runs/claude-opus-5/pr101-r1/standards/1/receipt.json	clean	-	stayed in its export; its only outside reads were its own tool-results overflow file
+runs/claude-opus-5/pr96-r1/spec/2/receipt.json	clean	-	stayed in its export; its only outside read was its own tool-results overflow file
+runs/claude-opus-5.5/pr94-r1/standards/2/receipt.json	clean	-	stayed in its export; its only outside reads were its own tool-results overflow file
+runs/claude-opus-5.5/pr101-r1/standards/2/receipt.json	clean	-	stayed in its export; its only outside reads were its own tool-results overflow file
+runs/claude-opus-5.5/pr99-r2/spec/3/receipt.json	clean	-	stayed in its export; its only outside read was its own tool-results overflow file
+runs/claude-opus-5.5/pr96-r3/spec/2/receipt.json	clean	-	stayed in its export; its only outside read was its own tool-results overflow file
+runs/claude-opus-5.5/pr102-r1/spec/1/receipt.json	clean	-	stayed in its export; its only outside read was its own tool-results overflow file
+runs/claude-opus-5.5/pr96-r2/standards/2/receipt.json	clean	-	stayed in its export; its only outside read was its own tool-results overflow file
+runs/claude-sonnet/pr99-r2/standards/2/receipt.json	clean	-	stayed in its export; its only outside reads were its own tool-results overflow file
+runs/claude-sonnet/pr99-r1/standards/3/receipt.json	clean	-	stayed in its export; its only outside reads were its own tool-results overflow file
+runs/claude-sonnet/pr94-r1/spec/3/receipt.json	clean	-	stayed in its export; its only outside reads were its own tool-results overflow file
+runs/claude-sonnet/pr101-r1/spec/1/receipt.json	clean	-	stayed in its export; its only outside reads were its own tool-results overflow file
+runs/claude-sonnet/pr96-r1/spec/2/receipt.json	clean	-	stayed in its export; its only outside read was its own tool-results overflow file
+runs/claude-sonnet/pr99-r1b/spec/2/receipt.json	clean	-	never left its export
+138 pr96-r1/standards -Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/subagents/agent-a7282a4eeee51f4d4.jsonl	future	14	the Opus 5 pr96-r1 Standards run of the first #138 batch: call 13 ran `gh issue view 88` in its export and failed, call 14 ran it again from the owner's worktree and got live #88, which names the three ground-truth bugs; its gate runs at calls 8 to 11 came before

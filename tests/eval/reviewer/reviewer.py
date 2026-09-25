@@ -31,8 +31,11 @@ patch from its commits the same way.
     python3 tests/eval/reviewer/reviewer.py collect [--recheck]
         Collect every finished run; list what is in flight, unlaunched or stuck. Safe to repeat.
         A run is contaminated when a tool result in its transcript holds a line that only commits
-        after its head hold and that it was not given (its tree, brief and diff), or when it used a
-        tool whose results cannot be dated (Agent, WebFetch, WebSearch). --recheck first judges every
+        after its head, or its ticket and PR as GitHub holds them now, hold and that it was not given
+        (its tree, brief and diff), or when it used a tool whose results cannot be dated (Agent,
+        WebFetch, WebSearch). The GitHub text is fetched once with gh and cached; the receipt also
+        records the first contaminated tool call, each report item's earliest sighting of what it
+        quotes, and the calls that named a path outside the export. --recheck first judges every
         collected run again from its transcript: one that turns contaminated is set aside by `next`,
         and a set-aside one that is clean now comes back complete when its report is still there.
         A run served the wrong model or effort is refused after every other run is collected. A
@@ -79,6 +82,7 @@ AXES: tuple[Axis, ...] = ("standards", "spec")
 BANNED = ("eval", "test", "judge", "score", "benchmark", "candidate", "rubric", "experiment",
           "compare", "arena")
 HARD_HEADINGS = ("Would break", "Fails open")
+GITHUB_REPO = "Zenoctra/factory918"
 FETCH_KEEP_REFS = "git fetch origin 'refs/keep/103/*:refs/keep/103/*'"
 EFFORT = "high"
 COUNT_LINE = re.compile(r"hard findings: ([0-9]+)")
@@ -113,6 +117,8 @@ class Brief:
     head: str
     files: Path
     report_relpath: PurePosixPath
+    ticket: str | None = None
+    pr: str | None = None
 
 
 @dataclass(frozen=True)
@@ -228,6 +234,12 @@ class Receipt:
     tokens: Tokens | None
     wall_ms: int | None
     source: Path
+    # Tool calls that named a path outside the export: a record, not a verdict.
+    outside: tuple[str, ...] = ()
+    # The first tool call whose result contaminated the run, as {"call": ordinal, "timestamp": ...}.
+    first_contaminated: Mapping[str, object] | None = None
+    # Per report item, the earliest tool call whose result already held every line the item quotes.
+    sightings: tuple[Mapping[str, object], ...] = ()
 
 
 Failure = Literal["no-report", "no-count-line", "count-exceeds-items", "no-hard-headings"]
@@ -239,6 +251,7 @@ class Item:
     hard: bool
     text: str
     raw: str
+    quoted: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -280,10 +293,16 @@ def load_fixtures(root: Path) -> Fixtures:
         if not rfile.is_file():
             raise bad(rfile, 0, "missing")
         head = None
+        keys: dict[str, str] = {}
+        recipe = rdir / "inputs" / "recipe"
+        for line in recipe.read_text().splitlines() if recipe.is_file() else ():
+            key, _, value = line.partition("=")
+            keys[key.strip()] = value.strip()
         for i, line in enumerate(rfile.read_text().splitlines(), 1):
             key, sep, value = line.partition("=")
             if line.strip() and not sep:
                 raise bad(rfile, i, f"not key=value: {line}")
+            keys[key.strip()] = value.strip()
             if key.strip() == "head":
                 head = value.strip()
                 if not re.fullmatch(r"[0-9a-f]{40}", head):
@@ -306,7 +325,8 @@ def load_fixtures(root: Path) -> Fixtures:
                     name = name.rstrip(".")
                     if not name.endswith("-report.md") and not (review / name).is_file():
                         raise bad(bfile, i, f"names {review_dir}/{name}, which review/ lacks")
-            briefs[BriefId(rdir.name, axis)] = Brief(BriefId(rdir.name, axis), head, review, relpath)
+            briefs[BriefId(rdir.name, axis)] = Brief(BriefId(rdir.name, axis), head, review, relpath,
+                                                     keys.get("ticket"), keys.get("pr"))
 
     tfile = root / "truth"
     if not tfile.is_file():
@@ -359,14 +379,15 @@ def parse_report(text: str | None) -> list[Item] | Failure:
     hard_heading = False
     items: list[Item] = []
     heading = None
-    # An item's number, whether it is hard, all its lines, and its lines outside fenced blocks.
-    current: tuple[int, bool, list[str], list[str]] | None = None
+    # An item's number, whether it is hard, all its lines, its lines outside fenced blocks, and the
+    # lines it quotes inside them.
+    current: tuple[int, bool, list[str], list[str], list[str]] | None = None
     fence: str | None = None
 
     def close() -> None:
         if current:
             items.append(Item(current[0], current[1], normalize(" ".join(current[2])),
-                              " ".join(" ".join(current[3]).split())))
+                              " ".join(" ".join(current[3]).split()), tuple(current[4])))
 
     for line in text.splitlines():
         # A reviewer quotes numbered criteria and headings inside fences; they are not findings.
@@ -389,11 +410,13 @@ def parse_report(text: str | None) -> list[Item] | Failure:
         # `## Walk` lines are numbered steps, not findings.
         if m and not fenced and heading != "Walk":
             close()
-            current = (int(m.group(1)), heading in HARD_HEADINGS, [line[m.end():]], [line[m.end():]])
+            current = (int(m.group(1)), heading in HARD_HEADINGS, [line[m.end():]], [line[m.end():]], [])
         elif current and not count:
             current[2].append(line)
             if not fenced:
                 current[3].append(line)
+            elif not marker:
+                current[4].append(line)
     close()
     if not counts:
         return "no-count-line"
@@ -528,51 +551,123 @@ class Leak:
     line: str
     commit: str
     tool: str
+    call: int
+    timestamp: str | None
 
 
-def tool_results(lines: list[dict]) -> Iterable[tuple[str, dict, str]]:
-    """(tool name, its input, the text it returned) for every tool_result in the transcript."""
-    uses: dict[str, tuple[str, dict]] = {}
+@dataclass(frozen=True)
+class Result:
+    call: int
+    name: str
+    args: dict
+    body: str
+    timestamp: str | None
+
+
+def tool_results(lines: list[dict]) -> list[Result]:
+    """Every tool_result in the transcript, with the tool call that asked for it and its ordinal."""
+    uses: dict[str, tuple[int, str, dict]] = {}
+    out = []
     for line in lines:
         content = (line.get("message") or {}).get("content")
         for c in content if isinstance(content, list) else ():
             if not isinstance(c, dict):
                 continue
             if c.get("type") == "tool_use":
-                uses[c.get("id")] = (c.get("name") or "?", c.get("input") or {})
+                uses[c.get("id")] = (len(uses) + 1, c.get("name") or "?", c.get("input") or {})
             elif c.get("type") == "tool_result":
                 body = c.get("content")
                 if isinstance(body, list):
                     body = "\n".join(str(b.get("text", "")) for b in body if isinstance(b, dict))
-                name, args = uses.get(c.get("tool_use_id"), ("?", {}))
-                yield name, args, body if isinstance(body, str) else ""
+                call, name, args = uses.get(c.get("tool_use_id"), (0, "?", {}))
+                out.append(Result(call, name, args, body if isinstance(body, str) else "", line.get("timestamp")))
+    return out
+
+
+def tool_uses(lines: list[dict]) -> list[tuple[int, str, dict, str | None]]:
+    """(ordinal, name, input, timestamp) of every tool call, in transcript order."""
+    out = []
+    for line in lines:
+        content = (line.get("message") or {}).get("content")
+        for c in content if isinstance(content, list) else ():
+            if isinstance(c, dict) and c.get("type") == "tool_use":
+                out.append((len(out) + 1, c.get("name") or "?", c.get("input") or {}, line.get("timestamp")))
+    return out
 
 
 def leaks(lines: list[dict], future: Mapping[str, str], given: AbstractSet[str]) -> list[Leak]:
-    """Every result line that only a commit after the head holds: in the future set, not in what the run was given."""
+    """Every result line that only a later commit or live GitHub text holds, and the run was not given."""
     found = []
-    for name, args, body in tool_results(lines):
-        for raw in body.splitlines():
+    for r in tool_results(lines):
+        for raw in r.body.splitlines():
             forms = readings(raw)
             if forms & given:
                 continue
             if hit := next((f for f in sorted(forms, key=len, reverse=True) if f in future), None):
-                found.append(Leak(hit, future[hit], f"{name} {json.dumps(args)[:80]}"))
+                found.append(Leak(hit, future[hit], f"{r.name} {json.dumps(r.args)[:80]}", r.call, r.timestamp))
     return found
 
 
-def contamination(lines: list[dict], future: Mapping[str, str], given: AbstractSet[str]) -> str | None:
-    """Why the run's transcript shows it saw what its reviewed commit could not, or None."""
-    undated = sorted({f"{name} ({UNDATED_TOOLS[name]})" for name, _, _ in tool_results(lines) if name in UNDATED_TOOLS})
+@dataclass(frozen=True)
+class Verdict:
+    detail: str | None
+    first: Mapping[str, object] | None
+
+
+def contamination(lines: list[dict], future: Mapping[str, str], given: AbstractSet[str]) -> Verdict:
+    """Why the run's transcript shows it saw what its reviewed commit could not, and where it first did."""
+    undated = [(call, name, ts) for call, name, _, ts in tool_uses(lines) if name in UNDATED_TOOLS]
     found = leaks(lines, future, given)
-    said = [f"{k.tool} returned a line first added by {k.commit[:7]}: {k.line[:100]}" for k in found[:3]]
+    said = sorted({f"{name} ({UNDATED_TOOLS[name]})" for _, name, _ in undated})
+    said += [f"{k.tool} returned a line first added by {k.commit[:7] if HEX.fullmatch(k.commit) else k.commit}: "
+             f"{k.line[:100]}" for k in found[:3]]
     if len(found) > 3:
         said.append(f"and {len(found) - 3} more such lines")
-    return "; ".join(undated + said) or None
+    firsts = [(call, ts) for call, _, ts in undated] + [(k.call, k.timestamp) for k in found]
+    first = min(firsts, key=lambda f: f[0]) if firsts else None
+    return Verdict("; ".join(said) or None, {"call": first[0], "timestamp": first[1]} if first else None)
+
+
+HEX = re.compile(r"[0-9a-f]{40}")
+CD_TARGET = re.compile(r"(?:^|[;&|(]\s*)cd\s+(\"[^\"]+\"|'[^']+'|\S+)")
+
+
+def outside_calls(lines: list[dict], export: Path) -> tuple[str, ...]:
+    """Tool calls that named a path outside the export: a file tool's path, a Bash `cd` target or absolute argument."""
+    root = str(export).rstrip("/")
+
+    def out(path: str) -> bool:
+        return path.startswith(("/", "~")) and path != "/dev/null" and not (path == root or path.startswith(root + "/"))
+
+    record = []
+    for call, name, args, _ in tool_uses(lines):
+        if name in ("Read", "Edit", "Write"):
+            paths = [args.get("file_path", "")]
+        elif name in ("Grep", "Glob"):
+            paths = [args.get("path") or ""]
+        elif name == "Bash":
+            command = args.get("command", "")
+            paths = [m.group(1).strip("\"'") for m in CD_TARGET.finditer(command)]
+            paths += [w.strip("\"'") for w in command.split() if w.strip("\"'").startswith("/")]
+        else:
+            continue
+        record += [f"{call} {name} {p}" for p in dict.fromkeys(paths) if out(p)]
+    return tuple(record)
+
+
+def sightings(items: list[Item], lines: list[dict]) -> tuple[Mapping[str, object], ...]:
+    """Per report item, the earliest tool call whose result already held every line the item quotes, or None."""
+    results = [(r.call, {f for raw in r.body.splitlines() for f in readings(raw)}) for r in tool_results(lines)]
+    out = []
+    for item in items:
+        quoted = {d for line in item.quoted if (d := dated(line))}
+        call = next((c for c, seen in results if quoted and quoted <= seen), None)
+        out.append({"n": item.n, "hard": item.hard, "call": call})
+    return tuple(out)
 
 
 def receipt_from_transcript(run: RunId, lines: list[dict], expect: re.Pattern[str], source: Path,
-                            future: Mapping[str, str], given: AbstractSet[str]) -> Receipt:
+                            future: Mapping[str, str], given: AbstractSet[str], export: Path) -> Receipt:
     assistant = [line for line in lines if line.get("type") == "assistant"]
     stamps = [stamp(line["timestamp"]) for line in lines if line.get("timestamp")]
     wall_ms = int((stamps[-1] - stamps[0]).total_seconds() * 1000) if stamps else None
@@ -605,9 +700,10 @@ def receipt_from_transcript(run: RunId, lines: list[dict], expect: re.Pattern[st
     tokens = Tokens(*(sum(u.get(k) or 0 for u in usage.values())
                       for k in ("input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens", "output_tokens")))
 
-    detail = contamination(lines, future, given)
-    status: Status = "contaminated" if detail else "complete"
-    return Receipt(run, status, detail or "complete", models[-1], efforts[0], tokens, wall_ms, source)
+    verdict = contamination(lines, future, given)
+    status: Status = "contaminated" if verdict.detail else "complete"
+    return Receipt(run, status, verdict.detail or "complete", models[-1], efforts[0], tokens, wall_ms, source,
+                   outside_calls(lines, export), verdict.first)
 
 
 def usage_limited(receipt: Receipt) -> bool:
@@ -693,14 +789,15 @@ COLUMNS = ("arm", "pass", "chains", "new truth bugs", "cumulative", "demoted", "
            "no response")
 
 
-def render_table(descriptor: str, rows: list[Row]) -> str:
+def render_table(descriptor: str, rows: list[Row], excluded: int = 0) -> str:
     def f(x: float | None, places: int) -> str:
         return "n/a" if x is None else f"{x:.{places}f}"
 
     def cells(row: Iterable[str]) -> str:
         return "| " + " | ".join(row) + " |"
 
-    lines = [f"## {descriptor}", "", "Means per chain; a masked pass leaves out the bugs its tree has fixed.", "",
+    lines = [f"## {descriptor}", "", "Means per chain; a masked pass leaves out the bugs its tree has fixed.",
+             f"Contaminated runs excluded from recall: {excluded}.", "",
              cells(COLUMNS), cells("---" for _ in COLUMNS)]
     for r in rows:
         lines.append(cells([r.arm, str(r.pass_), str(r.chains), f(r.new, 2), f(r.cumulative, 2), f(r.demoted, 2),
@@ -748,6 +845,41 @@ def future_lines(repo: Path, head: str, cache: Path) -> Mapping[str, str]:
     cache.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(out))
     return out
+
+
+def live_lines(ticket: str | None, pr: str | None, frozen: Iterable[str], cache: Path) -> Mapping[str, str]:
+    """The round's ticket and PR as GitHub holds them now, less the frozen copies the round was briefed from.
+
+    What is left was written after the review, so a run that reads it read the future. The text is
+    fetched once with gh and cached under `cache`; without the cache and without gh the check refuses.
+    """
+    wanted = ([(f"live #{ticket}", ["issue", "view", ticket])] if ticket else []) + \
+             ([(f"live PR #{pr}", ["pr", "view", pr])] if pr else [])
+    path = cache / f"github-{ticket}-{pr}.json"
+    if path.is_file():
+        texts = json.loads(path.read_text())
+    else:
+        texts = {}
+        for label, args in wanted:
+            argv = ["gh", *args, "--repo", GITHUB_REPO, "--json", "body,comments"]
+            proc = subprocess.run(argv, capture_output=True, text=True)
+            if proc.returncode:
+                raise Refusal(f"the {label} text is not cached at {path} and `{' '.join(argv)}` failed "
+                              f"({proc.stderr.strip()[-200:]}); run it where gh reaches GitHub, or copy that cache file here")
+            j = json.loads(proc.stdout)
+            texts[label] = [j.get("body") or "", *(c.get("body") or "" for c in j.get("comments") or [])]
+        cache.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(texts))
+    old = text_lines(frozen)
+    return {d: label for label, bodies in texts.items() for d in text_lines(bodies) if d not in old}
+
+
+def round_future(env: Env, brief: Brief) -> Mapping[str, str]:
+    """Every line only the future holds for the brief's round: later commits, then live GitHub text."""
+    cache = env.out / "cache"
+    inputs = brief.files.parent / "inputs"
+    frozen = [f.read_text() for f in (inputs / n for n in ("ticket.md", "previous.txt", "blast-radius.md")) if f.is_file()]
+    return {**live_lines(brief.ticket, brief.pr, frozen, cache), **future_lines(env.repo, brief.head, cache)}
 
 
 def tree_lines(repo: Path, commit: str, cache: Path) -> AbstractSet[str]:
@@ -811,7 +943,8 @@ def read_jsonl(path: Path) -> list[dict]:
 def receipt_json(r: Receipt) -> dict:
     return {"version": VERSION, "run": r.run.to_json(), "status": r.status, "detail": r.detail,
             "reported_model": r.reported_model, "effort": r.effort,
-            "tokens": asdict(r.tokens) if r.tokens else None, "wall_ms": r.wall_ms, "source": str(r.source)}
+            "tokens": asdict(r.tokens) if r.tokens else None, "wall_ms": r.wall_ms, "source": str(r.source),
+            "outside": list(r.outside), "first_contaminated": r.first_contaminated, "sightings": list(r.sightings)}
 
 
 def ours(d: Path, j: dict, what: str) -> dict:
@@ -828,7 +961,8 @@ def receipt_at(d: Path) -> Receipt | None:
         return None
     j = ours(d, json.loads(path.read_text()), "receipt")
     return Receipt(RunId.from_json(j["run"]), j["status"], j["detail"], j["reported_model"], j["effort"],
-                   Tokens(**j["tokens"]) if j["tokens"] else None, j["wall_ms"], Path(j["source"]))
+                   Tokens(**j["tokens"]) if j["tokens"] else None, j["wall_ms"], Path(j["source"]),
+                   tuple(j.get("outside", ())), j.get("first_contaminated"), tuple(j.get("sightings", ())))
 
 
 def prepared_at(d: Path) -> Prepared | None:
@@ -968,6 +1102,7 @@ def collect_one(p: Prepared, receipt: Receipt, brief: Brief, fx: Fixtures, out: 
     report = p.checkout / brief.report_relpath
     if receipt.status != "dropout" and report.is_file():
         shutil.copyfile(report, d / "report.md")
+    receipt = with_sightings(receipt, d)
     write_json(d / "receipt.json", receipt_json(receipt))
     shutil.rmtree(p.checkout.parent, ignore_errors=True)
     if receipt.status == "dropout":
@@ -981,6 +1116,13 @@ def collect_one(p: Prepared, receipt: Receipt, brief: Brief, fx: Fixtures, out: 
     wall = f"{receipt.wall_ms / 1000:.0f}s" if receipt.wall_ms is not None else "n/a"
     return (f"{d} truth {','.join(sorted(s.hits)) or '-'} other {s.other} demoted {len(s.demoted)} "
             f"tokens in/out {t.input if t else 'n/a'}/{t.output if t else 'n/a'} wall {wall}")
+
+
+def with_sightings(receipt: Receipt, d: Path) -> Receipt:
+    parsed = parse_report((d / "report.md").read_text()) if (d / "report.md").is_file() else "no-report"
+    if isinstance(parsed, str) or not receipt.source.is_file():
+        return receipt
+    return replace(receipt, sightings=sightings(parsed, read_jsonl(receipt.source)))
 
 
 def first_user_text(path: Path) -> str:
@@ -1157,14 +1299,15 @@ def recheck(fx: Fixtures, env: Env) -> None:
             print(f"recheck {d}: its transcript {receipt.source} is gone; it stays {receipt.status}")
             continue
         p = prepared_at(d)
-        detail = contamination(read_jsonl(receipt.source),
-                               future_lines(env.repo, fx.briefs[p.run.brief].head, out / "cache"),
-                               given_lines(p, d, fx, env))
+        lines = read_jsonl(receipt.source)
+        verdict = contamination(lines, round_future(env, fx.briefs[p.run.brief]), given_lines(p, d, fx, env))
+        detail = verdict.detail
         now: Status = "contaminated" if detail else "complete"
         aside = d.is_relative_to(out / "dropped")
+        receipt = with_sightings(replace(receipt, outside=outside_calls(lines, p.checkout),
+                                         first_contaminated=verdict.first), d)
         if now == receipt.status:
-            if detail and detail != receipt.detail:
-                write_json(d / "receipt.json", receipt_json(replace(receipt, detail=detail)))
+            write_json(d / "receipt.json", receipt_json(replace(receipt, detail=detail or "complete")))
             continue
         if now == "contaminated":
             write_json(d / "receipt.json", receipt_json(replace(receipt, status=now, detail=detail)))
@@ -1218,8 +1361,8 @@ def cmd_collect(fx: Fixtures, env: Env, again: bool) -> int:
         # One run's refusal must not leave the others uncollected: it is raised after the rest.
         try:
             receipt = receipt_from_transcript(run, lines, MODELS[run.descriptor].expect, path,
-                                              future_lines(env.repo, fx.briefs[run.brief].head, env.out / "cache"),
-                                              given_lines(p, p.run.dir(out), fx, env))
+                                              round_future(env, fx.briefs[run.brief]),
+                                              given_lines(p, p.run.dir(out), fx, env), p.checkout)
         except Refusal as e:
             refused.append(e)
             continue
@@ -1256,7 +1399,9 @@ def cmd_table(fx: Fixtures, env: Env) -> int:
             t["input"], t["cache_read"], t["cache_write"], t["output"], "" if r.wall_ms is None else r.wall_ms))))
     (out / "scores.tsv").write_text("\n".join(rows) + "\n")
     names = [d for d in MODELS if any(r.run.descriptor == d for r in [*receipts, *dropped])]
-    table = "\n".join(render_table(d, rows_for(d, scores, complete, masked, dropped)) for d in names)
+    table = "\n".join(render_table(d, rows_for(d, scores, complete, masked, dropped),
+                                    sum(1 for r in dropped if r.run.descriptor == d and r.status == "contaminated"))
+                       for d in names)
     (out / "table.md").write_text(table)
     print(table, end="")
     return 0

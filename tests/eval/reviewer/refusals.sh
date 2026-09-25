@@ -96,6 +96,21 @@ cat > "$tmp/rep/both.md" <<'EOF'
 
 hard findings: 2
 EOF
+cat > "$tmp/rep/quoted.md" <<'EOF'
+## Would break
+
+1. **A later line.** It is quoted.
+
+```
+A line only the second fix commit holds
+```
+
+2. **An unquoted line.** Nothing fenced.
+
+## Fails open
+
+hard findings: 2
+EOF
 cat > "$tmp/rep/none.md" <<'EOF'
 ## Would break
 
@@ -168,6 +183,22 @@ elif cmd == "finish":
     print(path)
 EOF
 
+# A gh on PATH that serves ticket #7 and PR #1 as GitHub holds them "now", and nothing when GH_OFFLINE is set.
+mkdir -p "$tmp/bin"
+cat > "$tmp/bin/gh" <<'STUB'
+#!/usr/bin/env bash
+[ -z "${GH_OFFLINE:-}" ] || { echo "error connecting to api.github.com" >&2; exit 1; }
+case "$*" in
+  "issue view 7 --json body -q .body") printf '## What to build\n\nChange the second line.\n' ;;
+  "issue view 7 --json author,comments -q "*) : ;;
+  "issue view 7 --repo Zenoctra/factory918 --json body,comments")
+    printf '%s\n' '{"body": "## What to build\n\nChange the second line.\n\nA line written on the ticket after the review", "comments": [{"body": "A comment posted on the ticket later"}]}' ;;
+  "pr view 1 --repo Zenoctra/factory918 --json body,comments") printf '%s\n' '{"body": "The PR body as edited after the review", "comments": []}' ;;
+  *) exit 1 ;;
+esac
+STUB
+chmod +x "$tmp/bin/gh"
+export PATH="$tmp/bin:$PATH"
 export REVIEWER_REPO="$tmp/repo" REVIEWER_FIXTURES="$fx" REVIEWER_WORK="$tmp/w" REVIEWER_AGENTS="$tmp/agents"
 
 out=""
@@ -564,6 +595,48 @@ check "give up: no step that needs it is prepared" lacks "$(grep '^{' <<<"$out" 
 check "give up: the other axis goes on to pass 2" has "$out" "/spec/I2\""
 run table
 check "give up: the table counts all three contaminations" is "$(cell contaminated I 1)" 3
+check "give up: the model's excluded runs" has "$(cat "$REVIEWER_OUT/table.md")" "Contaminated runs excluded from recall: 3."
+
+for case in "A line written on the ticket after the review|live #7" "A comment posted on the ticket later|live #7" \
+            "The PR body as edited after the review|live PR #1"; do
+  fresh "live-${case#*|}"
+  run next "$C" --limit 1
+  RESULT="${case%%|*}" finish "$out" "$tmp/rep/hit.md" claude-opus-5 finished "Bash|gh issue view 7"
+  run collect
+  check "live: text GitHub holds now and the frozen inputs do not is contamination (${case#*|})" \
+    is "$(h field "$(rundir "$C" standards 1)/receipt.json" detail)" "Bash {\"command\": \"gh issue view 7\"} returned a line first added by ${case#*|}: ${case%%|*}"
+done
+fresh live-frozen
+run next "$C" --limit 1
+RESULT="Change the second line." finish "$out" "$tmp/rep/hit.md" claude-opus-5 finished "Bash|gh issue view 7"
+run collect
+check "live: a ticket line the frozen inputs hold is not" is "$(h field "$(rundir "$C" standards 1)/receipt.json" status)" complete
+GH_OFFLINE=1 run collect --recheck
+check "live: with the text cached, the check runs offline" is "$code" 0
+fresh live-offline
+run next "$C" --limit 1
+finish "$out" "$tmp/rep/hit.md"
+GH_OFFLINE=1 run collect
+check "live: no cache and no network refuses" is "$code" 1
+check "live: naming the fetch" has "$err" "\`gh issue view 7 --repo Zenoctra/factory918 --json body,comments\` failed"
+check "live: and collects nothing" absent "$(rundir "$C" standards 1)/receipt.json"
+
+fresh record
+run next "$C" --limit 1
+RESULT="$later_line" finish "$out" "$tmp/rep/quoted.md" claude-opus-5 finished "Bash|cd /elsewhere/repo && cat later.md"
+run collect
+check "record: the first contaminated call's ordinal" is "$(h field "$(rundir "$C" standards 1)/receipt.json" first_contaminated.call)" 1
+check "record: and its time" is "$(h field "$(rundir "$C" standards 1)/receipt.json" first_contaminated.timestamp)" "2026-09-23T10:00:02.000Z"
+check "record: an item's quote first seen at call 1" is "$(h field "$(rundir "$C" standards 1)/receipt.json" sightings.0.call)" 1
+check "record: an item that quotes nothing has no sighting" is "$(h field "$(rundir "$C" standards 1)/receipt.json" sightings.1.call)" null
+check "record: a cd outside the export is recorded" is "$(h field "$(rundir "$C" standards 1)/receipt.json" outside)" '["1 Bash /elsewhere/repo"]'
+fresh record-clean
+run next "$C" --limit 1
+finish "$out" "$tmp/rep/hit.md" claude-opus-5 finished "Read|/elsewhere/a.txt"
+run collect
+check "record: a Read outside the export is recorded" is "$(h field "$(rundir "$C" standards 1)/receipt.json" outside)" '["1 Read /elsewhere/a.txt"]'
+check "record: but does not exclude the run" is "$(h field "$(rundir "$C" standards 1)/receipt.json" status)" complete
+check "record: a clean run has no first contaminated call" is "$(h field "$(rundir "$C" standards 1)/receipt.json" first_contaminated)" null
 
 fresh masked-given
 run next "$C" --limit 2
@@ -804,16 +877,6 @@ except r.Refusal as e:
 # settled item from a previous comment, and insert the same line into the first.
 git clone -q "$tmp/repo" "$tmp/pos"
 git -C "$tmp/pos" checkout -q --detach "$head"
-mkdir -p "$tmp/bin"
-cat > "$tmp/bin/gh" <<'STUB'
-#!/usr/bin/env bash
-case "$*" in
-  "issue view 7 --json body -q .body") printf '## What to build\n\nChange the second line.\n' ;;
-  "issue view 7 --json author,comments -q "*) : ;;
-  *) exit 1 ;;
-esac
-STUB
-chmod +x "$tmp/bin/gh"
 item='1. [S1] **Hook in Python.** A port is a later ticket. cites: DECISIONS.md P17'
 printf '## Judgment\n\n## Noted\n\n%s\n\nround: 1 of 3\nact-on items: 0\n' "$item" > "$tmp/prev.md"
 : > "$tmp/empty.md"
