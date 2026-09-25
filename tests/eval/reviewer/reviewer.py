@@ -45,7 +45,10 @@ patch from its commits the same way.
         assistant line holds only text and is not stamped `end_turn` (a harness line included) is
         finished once it has sat untouched for REVIEWER_SETTLE_SECONDS.
     python3 tests/eval/reviewer/reviewer.py table
-        Rescore every collected report; write scores.tsv and table.md, one table per model.
+        Rescore every collected report; write scores.tsv and table.md, one table per model and axis.
+        A truth bug is filed hard when a report item under Would break or Fails open claims it, and
+        found when any item does; each item claims at most one bug (`claims`). The tables count
+        the key's hard and non-hard bugs apart (the truth file's class column).
 
 A launch line is {"run", "agent", "description", "prompt"}: pass `agent` (subagent_type, and model
 where it is given), `description` and `prompt` to the Agent tool in the background, then poll
@@ -125,9 +128,11 @@ class Brief:
 
 @dataclass(frozen=True)
 class Bug:
-    """One real bug in a round's head, from either axis; its `fix` patches remove it for the masked arm."""
+    """One real bug in a round's head, from either axis; its `fix` patches remove it for the masked arm.
+    `hard` is the key's class: whether the bug meets the brief's definition of a hard finding."""
     round: str
     id: str
+    hard: bool
     anchors: tuple[re.Pattern[str], ...]
     fix: tuple[str, ...]
     title: str
@@ -258,10 +263,11 @@ class Item:
 
 @dataclass(frozen=True)
 class Score:
+    """`hits`: the bugs a hard item claims (filed hard). `found`: the bugs any item claims, `hits` among them."""
     run: RunId
     failure: Failure | None
     hits: frozenset[str]
-    demoted: frozenset[str]
+    found: frozenset[str]
     other: int
     items: tuple[Item, ...] = ()
 
@@ -339,13 +345,15 @@ def load_fixtures(root: Path) -> Fixtures:
         if not line.strip() or line.startswith("#"):
             continue
         cols = line.split("\t")
-        if len(cols) != 7:
-            raise bad(tfile, i, f"{len(cols)} columns, want 7: round, id, anchors, fix, where, sources, title")
-        round_, bid, anchors_s, fix_s, where, sources, title = cols
+        if len(cols) != 8:
+            raise bad(tfile, i, f"{len(cols)} columns, want 8: round, id, class, anchors, fix, where, sources, title")
+        round_, bid, klass, anchors_s, fix_s, where, sources, title = cols
         if round_ not in names:
             raise bad(tfile, i, f"unknown round {round_}")
         if not re.fullmatch(r"G[1-9][0-9]*", bid):
             raise bad(tfile, i, f"id {bid} is not G<n>")
+        if klass not in ("hard", "nonhard"):
+            raise bad(tfile, i, f"class {klass!r} is not hard or nonhard")
         if any(b.id == bid for b in truth[round_]):
             raise bad(tfile, i, f"{round_} {bid} appears twice")
         parts = anchors_s.split(" && ")
@@ -366,7 +374,7 @@ def load_fixtures(root: Path) -> Fixtures:
         for name, value in (("where", where), ("sources", sources), ("title", title)):
             if not value.strip():
                 raise bad(tfile, i, f"{name} is empty")
-        truth[round_].append(Bug(round_, bid, tuple(compiled), fix, title))
+        truth[round_].append(Bug(round_, bid, klass == "hard", tuple(compiled), fix, title))
     return Fixtures(briefs, {r: tuple(v) for r, v in truth.items()})
 
 
@@ -429,12 +437,13 @@ def parse_report(text: str | None) -> list[Item] | Failure:
     return items
 
 
-def claims(hard: list[Item], bugs: tuple[Bug, ...]) -> dict[int, int]:
-    """Bug index -> hard item index, one to one, most anchors first, then item order, then bug order."""
-    pairs = sorted((-len(bug.anchors), ii, bi)
-                   for ii, item in enumerate(hard) for bi, bug in enumerate(bugs) if bug.matches(item.text))
+def claims(items: list[Item], bugs: tuple[Bug, ...]) -> dict[int, int]:
+    """Bug index -> item index, one to one: the bug with more anchors first, then a hard item before a
+    non-hard one, then item order, then bug order."""
+    pairs = sorted((-len(bug.anchors), not item.hard, ii, bi)
+                   for ii, item in enumerate(items) for bi, bug in enumerate(bugs) if bug.matches(item.text))
     by_bug: dict[int, int] = {}
-    for _, ii, bi in pairs:
+    for _, _, ii, bi in pairs:
         if bi not in by_bug and ii not in by_bug.values():
             by_bug[bi] = ii
     return by_bug
@@ -443,14 +452,12 @@ def claims(hard: list[Item], bugs: tuple[Bug, ...]) -> dict[int, int]:
 def score(run: RunId, parsed: list[Item] | Failure, bugs: tuple[Bug, ...]) -> Score:
     if isinstance(parsed, str):
         return Score(run, parsed, frozenset(), frozenset(), 0)
-    hard = [i for i in parsed if i.hard]
-    claimed = claims(hard, bugs)
-    hits = frozenset(bugs[bi].id for bi in claimed)
-    other = sum(1 for ii, item in enumerate(hard)
-                if ii not in claimed.values() and not any(bug.matches(item.text) for bug in bugs))
-    demoted = frozenset(bug.id for bug in bugs
-                        if bug.id not in hits and any(bug.matches(i.text) for i in parsed if not i.hard))
-    return Score(run, None, hits, demoted, other, tuple(parsed))
+    claimed = claims(parsed, bugs)
+    hits = frozenset(bugs[bi].id for bi, ii in claimed.items() if parsed[ii].hard)
+    found = frozenset(bugs[bi].id for bi in claimed)
+    other = sum(1 for ii, item in enumerate(parsed)
+                if item.hard and ii not in claimed.values() and not any(bug.matches(item.text) for bug in bugs))
+    return Score(run, None, hits, found, other, tuple(parsed))
 
 
 def fixes_for(found: Iterable[str], bugs: tuple[Bug, ...]) -> tuple[tuple[str, ...], tuple[str, ...]]:
@@ -790,13 +797,16 @@ def redo(receipt: Receipt) -> bool:
 
 @dataclass(frozen=True)
 class Row:
-    """One arm and pass of one model's table; means are per chain."""
+    """One arm and pass of one model's table on one axis; means are per chain, and the four truth counts
+    are over the chain's passes up to this one."""
     arm: Arm
     pass_: int
     chains: int
+    filed_hard: float | None
+    hard_found: float | None
+    nonhard_found: float | None
+    over_rated: float | None
     new: float | None
-    cumulative: float | None
-    demoted: float | None
     other: float | None
     failures: int
     output: float | None
@@ -811,63 +821,91 @@ def mean(xs: list[float]) -> float | None:
     return sum(xs) / len(xs) if xs else None
 
 
-def rows_for(descriptor: str, scores: Mapping[RunId, Score], receipts: Mapping[RunId, Receipt],
-             masked: Mapping[RunId, frozenset[str]], dropped: list[Receipt]) -> list[Row]:
-    briefs = sorted({r.brief for r in scores if r.descriptor == descriptor})
+def rows_for(descriptor: str, axis: Axis, scores: Mapping[RunId, Score], receipts: Mapping[RunId, Receipt],
+             masked: Mapping[RunId, frozenset[str]], dropped: list[Receipt],
+             truth: Mapping[str, tuple[Bug, ...]]) -> list[Row]:
+    briefs = sorted({r.brief for r in scores if r.descriptor == descriptor and r.brief.axis == axis})
     rows = []
     for arm in ARMS:
         steps = chain(arm)
         for p, step in enumerate(steps, 1):
-            new, cum, dem, oth, out, cache, wall = [], [], [], [], [], [], []
+            cols: dict[str, list[float]] = {k: [] for k in ("fh", "hf", "nf", "ov", "new", "oth", "out", "cache", "wall")}
             failures = 0
             for b in briefs:
                 runs = [RunId(descriptor, b, s) for s in steps[:p]]
                 if not all(r in scores for r in runs):
                     continue
+                hard = frozenset(bug.id for bug in truth[b.round] if bug.hard)
+                # A masked pass's tree has its masked bugs fixed: naming one there is not finding it.
+                filed = [scores[r].hits - masked.get(r, frozenset()) for r in runs]
+                found = [scores[r].found - masked.get(r, frozenset()) for r in runs]
+                all_filed, all_found = frozenset().union(*filed), frozenset().union(*found)
+                cols["fh"].append(len(all_filed & hard))
+                cols["hf"].append(len(all_found & hard))
+                cols["nf"].append(len(all_found - hard))
+                cols["ov"].append(len(all_filed - hard))
+                cols["new"].append(len(found[-1] - frozenset().union(*found[:-1])))
                 s = scores[runs[-1]]
-                gone = masked.get(runs[-1], frozenset())
-                earlier = frozenset().union(*(scores[r].hits for r in runs[:-1]))
-                found = s.hits - gone - earlier
-                new.append(len(found))
-                cum.append(len(earlier | found))
-                dem.append(len(s.demoted - gone - earlier))
-                oth.append(s.other)
+                cols["oth"].append(s.other)
                 failures += s.failure is not None
                 rc = receipts[runs[-1]]
                 if rc.tokens:
-                    out.append(rc.tokens.output)
-                    cache.append(rc.tokens.cache_read)
+                    cols["out"].append(rc.tokens.output)
+                    cols["cache"].append(rc.tokens.cache_read)
                 if rc.wall_ms is not None:
-                    wall.append(rc.wall_ms / 1000)
-            mine = [r for r in dropped if r.run.descriptor == descriptor and r.run.step == step]
-            rows.append(Row(arm, p, len(new), mean(new), mean(cum), mean(dem), mean(oth), failures,
-                            mean(out), mean(cache), mean(wall),
+                    cols["wall"].append(rc.wall_ms / 1000)
+            mine = [r for r in dropped if r.run.descriptor == descriptor and r.run.brief.axis == axis and r.run.step == step]
+            rows.append(Row(arm, p, len(cols["new"]), *(mean(cols[k]) for k in ("fh", "hf", "nf", "ov", "new", "oth")),
+                            failures, mean(cols["out"]), mean(cols["cache"]), mean(cols["wall"]),
                             sum(1 for r in mine if r.status == "contaminated"),
                             sum(1 for r in mine if usage_limited(r)),
                             sum(1 for r in mine if no_response(r))))
     return rows
 
 
-COLUMNS = ("arm", "pass", "chains", "new truth bugs", "cumulative", "demoted", "other hard items",
-           "context failures", "out tokens", "cache read", "wall s", "contaminated", "usage limit",
-           "no response")
+# The headline truth count leads: filed hard on the Spec axis, found at all on the Standards axis (#144).
+TRUTH_COLUMNS: Mapping[Axis, tuple[str, ...]] = {
+    "spec": ("hard bugs filed hard", "hard bugs found"),
+    "standards": ("hard bugs found", "hard bugs filed hard"),
+}
+COLUMNS_AFTER = ("non-hard bugs found", "non-hard filed hard", "new found", "other hard items", "context failures",
+                 "out tokens", "cache read", "wall s", "contaminated", "usage limit", "no response")
+STANDARDS_FOOTNOTE = (
+    "The Standards brief demands a `spec:` line citing the ticket but carries no part of it (#144, the key's "
+    "pr99-r1 G4), so a reviewer that will not invent a reference files a real bug non-hard. Filed hard and "
+    "non-hard filed hard are understated on this axis; found at all is its headline.")
 
 
-def render_table(descriptor: str, rows: list[Row], excluded: int = 0) -> str:
+def columns(axis: Axis) -> tuple[str, ...]:
+    return ("arm", "pass", "chains", *TRUTH_COLUMNS[axis], *COLUMNS_AFTER)
+
+
+def render_table(descriptor: str, axis: Axis, rows: list[Row], excluded: int = 0) -> str:
     def f(x: float | None, places: int) -> str:
         return "n/a" if x is None else f"{x:.{places}f}"
 
     def cells(row: Iterable[str]) -> str:
         return "| " + " | ".join(row) + " |"
 
-    lines = [f"## {descriptor}", "", "Means per chain; a masked pass leaves out the bugs its tree has fixed.",
+    lines = [f"## {descriptor}, {axis}", "",
+             "Means per chain. The four bug counts are over the chain's passes up to this one; new found counts "
+             "bugs the chain names for the first time at this pass. A masked pass leaves out the bugs its tree has fixed.",
              f"Contaminated runs excluded from recall: {excluded}.", "",
-             cells(COLUMNS), cells("---" for _ in COLUMNS)]
+             cells(columns(axis)), cells("---" for _ in columns(axis))]
     for r in rows:
-        lines.append(cells([r.arm, str(r.pass_), str(r.chains), f(r.new, 2), f(r.cumulative, 2), f(r.demoted, 2),
-                            f(r.other, 2), str(r.failures), f(r.output, 0), f(r.cache_read, 0), f(r.wall_s, 1),
+        truth = {"hard bugs filed hard": f(r.filed_hard, 2), "hard bugs found": f(r.hard_found, 2)}
+        lines.append(cells([r.arm, str(r.pass_), str(r.chains), *(truth[c] for c in TRUTH_COLUMNS[axis]),
+                            f(r.nonhard_found, 2), f(r.over_rated, 2), f(r.new, 2), f(r.other, 2), str(r.failures),
+                            f(r.output, 0), f(r.cache_read, 0), f(r.wall_s, 1),
                             str(r.contaminated), str(r.usage_limit), str(r.no_response)]))
+    if axis == "standards":
+        lines += ["", STANDARDS_FOOTNOTE]
     return "\n".join(lines) + "\n"
+
+
+def key_line(truth: Mapping[str, tuple[Bug, ...]]) -> str:
+    return "The key: " + "; ".join(
+        f"{r} {sum(b.hard for b in bugs)} hard, {sum(not b.hard for b in bugs)} non-hard" for r, bugs in truth.items()) + ".\n"
 
 
 # Everything below touches git, the filesystem or subprocesses.
@@ -1118,6 +1156,8 @@ def materialize(p: Prepared, brief: Brief, fx: Fixtures, env: Env) -> Prepared:
     masked: tuple[str, ...] = ()
     tree = brief.head
     if spec.arm == "M":
+        # The author fixes what the review filed hard, whatever the key's class of the bug: a non-hard
+        # bug filed hard is fixed, and a hard bug filed non-hard is not.
         applied, masked = fixes_for(frozenset().union(*(s.hits for s in earlier)), fx.truth[run.brief.round])
     if applied:
         tree = export_masked(env, run.brief.round, p.checkout, applied)
@@ -1198,7 +1238,7 @@ def collect_one(p: Prepared, receipt: Receipt, brief: Brief, fx: Fixtures, out: 
         return f"{d} context-failure {s.failure}"
     t = receipt.tokens
     wall = f"{receipt.wall_ms / 1000:.0f}s" if receipt.wall_ms is not None else "n/a"
-    return (f"{d} truth {','.join(sorted(s.hits)) or '-'} other {s.other} demoted {len(s.demoted)} "
+    return (f"{d} filed hard {','.join(sorted(s.hits)) or '-'} found {','.join(sorted(s.found)) or '-'} other {s.other} "
             f"tokens in/out {t.input if t else 'n/a'}/{t.output if t else 'n/a'} wall {wall}")
 
 
@@ -1472,20 +1512,21 @@ def cmd_table(fx: Fixtures, env: Env) -> int:
     complete = {r.run: r for r in receipts if r.status == "complete"}
     scores = {run: rescore(run, fx, out) for run in complete}
     masked = {run: frozenset(prepared_at(run.dir(out)).masked) for run in complete}
-    rows = ["\t".join(("descriptor", "brief", "step", "failure", "hit_ids", "masked", "demoted", "other",
+    rows = ["\t".join(("descriptor", "brief", "step", "failure", "filed_hard", "found", "masked", "other",
                        "input_tokens", "cache_read", "cache_write", "output_tokens", "wall_ms"))]
     for run, s in sorted(scores.items(), key=lambda kv: (kv[0].descriptor, kv[0].brief, list(STEPS).index(kv[0].step))):
         r = complete[run]
         t = asdict(r.tokens) if r.tokens else dict.fromkeys(("input", "cache_read", "cache_write", "output"), "")
         rows.append("\t".join(map(str, (
             run.descriptor, run.brief, run.step, s.failure or "", ",".join(sorted(s.hits)),
-            ",".join(sorted(masked[run])), ",".join(sorted(s.demoted)), s.other,
+            ",".join(sorted(s.found)), ",".join(sorted(masked[run])), s.other,
             t["input"], t["cache_read"], t["cache_write"], t["output"], "" if r.wall_ms is None else r.wall_ms))))
     (out / "scores.tsv").write_text("\n".join(rows) + "\n")
     names = [d for d in MODELS if any(r.run.descriptor == d for r in [*receipts, *dropped])]
-    table = "\n".join(render_table(d, rows_for(d, scores, complete, masked, dropped),
-                                    sum(1 for r in dropped if r.run.descriptor == d and r.status == "contaminated"))
-                       for d in names)
+    table = key_line(fx.truth) + "\n" + "\n".join(
+        render_table(d, axis, rows_for(d, axis, scores, complete, masked, dropped, fx.truth),
+                     sum(1 for r in dropped if r.run.descriptor == d and r.run.brief.axis == axis and r.status == "contaminated"))
+        for d in names for axis in ("spec", "standards"))
     (out / "table.md").write_text(table)
     print(table, end="")
     return 0

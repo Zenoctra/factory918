@@ -52,9 +52,9 @@ printf '## What to build\n\nChange the second line.\n\n%s\n' "$ticket_line" > "$
 printf '## Risks\n\nThe grounding the author wrote.\n' > "$fx/rounds/r1/inputs/blast-radius.md"
 : > "$fx/rounds/r1/inputs/previous.txt"
 {
-  printf '# round\tid\tanchors\tfix\twhere\tsources\ttitle\n'
-  printf 'r1\tG1\tunmatched glob && exits? 0\tf1.patch\ta.txt:2\tprobe\tAn unmatched glob is dropped\n'
-  printf 'r1\tG2\tmissing ticket && refus\tf1.patch,f2.patch\ta.txt:2\tprobe\tA missing ticket is refused silently\n'
+  printf '# round\tid\tclass\tanchors\tfix\twhere\tsources\ttitle\n'
+  printf 'r1\tG1\thard\tunmatched glob && exits? 0\tf1.patch\ta.txt:2\tprobe\tAn unmatched glob is dropped\n'
+  printf 'r1\tG2\tnonhard\tmissing ticket && refus\tf1.patch,f2.patch\ta.txt:2\tprobe\tA missing ticket is refused loudly\n'
 } > "$fx/truth"
 {
   printf '# round\tpatch\tgit\tpaths\n'
@@ -251,10 +251,12 @@ finish() {
   transcript="$(h finish "$1" "$2" "${3:-claude-opus-5}" "${4:-finished}" "${5:-}" "$REVIEWER_TRANSCRIPTS" "$t" "${6:-high}")"
 }
 line_for() { grep -F "/$1/$2\"" <<<"$out" || true; }
+# cell <column> <arm> <pass> [axis]: one cell of the axis's table (standards by default).
 cell() {
-  awk -F'|' -v c="$1" -v arm="$2" -v p="$3" '
-    /^\| arm/ { for (i = 2; i < NF; i++) { h = $i; gsub(/^ +| +$/, "", h); if (h == c) k = i } }
-    $2 == " " arm " " && $3 == " " p " " { v = $k; gsub(/ /, "", v); print v }' "$REVIEWER_OUT/table.md"
+  awk -F'|' -v c="$1" -v arm="$2" -v p="$3" -v axis=", ${4:-standards}" '
+    /^## / { on = substr($0, length($0) - length(axis) + 1) == axis }
+    on && /^\| arm/ { for (i = 2; i < NF; i++) { h = $i; gsub(/^ +| +$/, "", h); if (h == c) k = i } }
+    on && $2 == " " arm " " && $3 == " " p " " { v = $k; gsub(/ /, "", v); print v }' "$REVIEWER_OUT/table.md"
 }
 
 # rebuild.sh
@@ -304,7 +306,7 @@ check "check: the patches rebuild" has "$out" "ok patches: 2 rebuild identical f
 check "check: f1 alone briefs" has "$out" "ok masked r1: f1.patch"
 check "check: f1 and f2 brief" has "$out" "ok masked r1: f1.patch f2.patch"
 cp -R "$fx" "$tmp/fx-conflict"
-awk -F'\t' -v OFS='\t' '$2 == "G2" { $4 = "f2.patch" } 1' "$fx/truth" > "$tmp/fx-conflict/truth"
+awk -F'\t' -v OFS='\t' '$2 == "G2" { $5 = "f2.patch" } 1' "$fx/truth" > "$tmp/fx-conflict/truth"
 REVIEWER_FIXTURES="$tmp/fx-conflict" run check
 check "check: a subset that does not apply refuses" is "$code" 1
 check "check: naming the round and the patches" has "$err" "round r1: the patches f2.patch do not apply"
@@ -330,15 +332,16 @@ check "next: a head not in the objects refuses the same way" has "$err" "'refs/k
 
 # The truth loader refuses a malformed row with its file and line.
 i=0
-for row in $'r1\tG3\tglob && exits\t-\t?\tx' \
-           $'r9\tG3\tglob && exits\t-\t?\tx\tt' \
-           $'r1\tS3\tglob && exits\t-\t?\tx\tt' \
-           $'r1\tG1\tglob && exits\t-\t?\tx\tt' \
-           $'r1\tG3\tglob\t-\t?\tx\tt' \
-           $'r1\tG3\t(glob && exits\t-\t?\tx\tt' \
-           $'r1\tG3\tglob && exits\tHEAD\t?\tx\tt' \
-           $'r1\tG3\tglob && exits\t-\t?\tx\t ' \
-           $'r1\tG3\tglob && exits\tnope.patch\t?\tx\tt'; do
+for row in $'r1\tG3\thard\tglob && exits\t-\t?\tx' \
+           $'r9\tG3\thard\tglob && exits\t-\t?\tx\tt' \
+           $'r1\tS3\thard\tglob && exits\t-\t?\tx\tt' \
+           $'r1\tG1\thard\tglob && exits\t-\t?\tx\tt' \
+           $'r1\tG3\tsoft\tglob && exits\t-\t?\tx\tt' \
+           $'r1\tG3\thard\tglob\t-\t?\tx\tt' \
+           $'r1\tG3\thard\t(glob && exits\t-\t?\tx\tt' \
+           $'r1\tG3\thard\tglob && exits\tHEAD\t?\tx\tt' \
+           $'r1\tG3\thard\tglob && exits\t-\t?\tx\t ' \
+           $'r1\tG3\thard\tglob && exits\tnope.patch\t?\tx\tt'; do
   i=$((i + 1))
   cp -R "$fx" "$tmp/fx-bad$i"
   printf '%s\n' "$row" >> "$tmp/fx-bad$i/truth"
@@ -379,7 +382,7 @@ run next "$C"
 check "next: nothing while pass 1 is in flight" is "$code:$out" "0:"
 run collect
 check "collect: two collected" has "$out" "collected 2 ·"
-check "collect: the truth hit" has "$out" "$(rundir "$C" standards 1) truth G1 other 0 demoted 1"
+check "collect: G1 filed hard, G2 found under a non-hard heading" has "$out" "$(rundir "$C" standards 1) filed hard G1 found G1,G2 other 0"
 run next "$C" --limit 4
 check "next --limit 4: four pass-2 lines" lines "$out" 4
 check "next --limit 4: pass 2 only" lacks "$out" "3\""
@@ -429,14 +432,22 @@ check "M3: the tree holds both fixes" is "$(sed -n 2p "$co_m3/a.txt")" "TWO fixe
 check "S3: nothing hard in S2, so pass 1's line alone" is "$(sed -n '/^## Settled in earlier rounds$/,/^## Standards$/p' "$(h checkout "$(line_for standards S3)")/$reldir/standards-brief.md" | grep -cE '^[0-9]+\. \[S[0-9]+\] ')" 1
 run table
 check "table: exit 0" is "$code" 0
-check "table: one table for the model" has "$out" "## $C"
-check "table: I2 found nothing new" is "$(cell "new truth bugs" I 2)" 0.00
-check "table: M2 found G2, new" is "$(cell "new truth bugs" M 2)" 1.00
-check "table: M2 cumulative" is "$(cell cumulative M 2)" 2.00
-check "table: pass 1 demoted G2 on one of two briefs" is "$(cell demoted I 1)" 0.50
+check "table: one table per axis for the model" is "$(grep -c "^## $C, " <<<"$out")" 2
+check "table: the key's classes" has "$out" "The key: r1 1 hard, 1 non-hard."
+check "table: standards pass 1 filed hard G1" is "$(cell "hard bugs filed hard" I 1)" 1.00
+check "table: and found non-hard G2 under a non-hard heading" is "$(cell "non-hard bugs found" I 1):$(cell "non-hard filed hard" I 1)" 1.00:0.00
+check "table: pass 1 found both, new" is "$(cell "new found" I 1)" 2.00
+check "table: I2 found nothing new" is "$(cell "new found" I 2)" 0.00
+check "table: M2 filed G2 hard: over-rated over the chain" is "$(cell "non-hard filed hard" M 2)" 1.00
+check "table: but found nothing new" is "$(cell "new found" M 2)" 0.00
+check "table: M2 keeps pass 1's hard G1 though its tree masks it" is "$(cell "hard bugs filed hard" M 2)" 1.00
 check "table: M2's other hard item" is "$(cell "other hard items" M 2)" 1.00
 check "table: chains" is "$(cell chains S 2)" 1
-check "table: scores.tsv carries the hit ids" has "$(cat "$REVIEWER_OUT/scores.tsv")" "$(printf '%s\tr1/standards\tM2\t\tG2\tG1\t' "$C")"
+check "table: spec pass 1 over-rated G2 and filed nothing hard" is "$(cell "non-hard filed hard" I 1 spec):$(cell "hard bugs filed hard" I 1 spec)" 1.00:0.00
+check "table: the standards table leads with found at all" has "$out" "| arm | pass | chains | hard bugs found | hard bugs filed hard |"
+check "table: the spec table leads with filed hard" has "$out" "| arm | pass | chains | hard bugs filed hard | hard bugs found |"
+check "table: the standards footnote names #144" is "$(grep -c '(#144, ' <<<"$out")" 1
+check "table: scores.tsv carries the filed and found ids" has "$(cat "$REVIEWER_OUT/scores.tsv")" "$(printf '%s\tr1/standards\tM2\t\tG2\tG2\tG1\t' "$C")"
 
 # Receipts.
 fresh fx-effort
@@ -462,7 +473,7 @@ check "stopped: a pass 1 whose report fails to parse stops its chain" starts "$o
 check "stopped: none of the steps that need it is prepared" lacks "$(grep '^{' <<<"$out" || true)" "/standards/"
 check "stopped: the other axis goes on" has "$out" "/spec/S2\""
 run table
-check "stopped: the table's chains count shows it" is "$(cell chains S 1):$(cell "context failures" S 1)" "2:1"
+check "stopped: the table's chains count shows it" is "$(cell chains S 1):$(cell "context failures" S 1)" "1:1"
 
 fresh refused-one
 run next "$C" --limit 2
@@ -807,8 +818,14 @@ B = r.BriefId("r1", "standards")
 RUN = r.RunId("claude:opus-5", B, "1")
 X = "/tmp/w/abc123/factory918"
 
-def G(i, *anchors, fix=()):
-    return r.Bug("r1", i, tuple(re.compile(a) for a in anchors), tuple(fix), "t")
+def G(i, *anchors, fix=(), hard=True):
+    return r.Bug("r1", i, hard, tuple(re.compile(a) for a in anchors), tuple(fix), "t")
+
+def mis(name, round_):
+    import os
+    from pathlib import Path
+    text = Path(os.environ["MIS"], name + ".md").read_text() + "\n\n## Would break\n\nhard findings: 0\n"
+    return r.score(RUN, r.parse_report(text), r.load_fixtures(Path(sys.argv[1]).parent).truth[round_])
 
 def report(hard=(), soft=(), count=None):
     n, out = 0, ["## Would break", ""]
@@ -833,6 +850,87 @@ EOF
   fi
 }
 
+# Four items the answer-key audit (2026-09-24) found credited to the wrong bug, verbatim from the #138
+# reports; each is scored alone against this tree's truth.
+export MIS="$tmp/mis"
+mkdir -p "$MIS"
+cat > "$MIS/opus-5-pr94-r1-spec-1-4.md" <<'EOF'
+## Fails open
+
+4. **A stateful design whose playbook skipped `architect` still produces no artifact, and nothing sends it back.** The posting rule hangs off the architect step. Feature step 2 still allows `architect skipped: <reason>` for any diff that is not cross-cutting, and Bug fix 3, Refactoring 3 and Perf issue 3 run `architect` only when the change crosses a function boundary. So a one-file change that writes a state file or adds an exit code reaches implementation with no table, no stop and no record — the failure this ticket opens with. The intent outranks the criteria, so the gap belongs back in design, not on the PR.
+
+```
+The ticket had no Testing decisions because it was planned as prose, and nothing sent it back for them when the design added state.
+```
+
+Documented step: `template/.agents/skills/poteto-mode/playbooks/feature.md:6` (`architect skipped: <reason>`), `bug-fix.md:9`, `perf-issue.md:16`, `refactoring.md:9` ("If the target crosses a function boundary")
+Result: state ships with no design artifact and nothing refuses it; the reviewer has only the criteria to judge against, which is the pre-#89 state.
+spec: criterion 3
+EOF
+cat > "$MIS/opus-5-pr96-r1-standards-1-1.md" <<'EOF'
+## Fails open
+
+1. **The zero-argument gate passes over 6 of the factory's 20 files.** `template/.github/shellcheck.sh:35` defaults to a project's layout. At the factory root those globs resolve through `.claude/hooks`, a symlink into `template/`, so the run finds the five hooks and the gate itself, matches nothing for `.agents/skills/*/scripts/*.sh` (the factory has no `.agents/` at its root) and exits 0. The refusal at `:39-42` fires only when *every* argument matches nothing, so one glob matching nothing beside one that matches is silent. The same silence covers a glob that goes stale: the five globs in `AGENTS.md:38` and `.github/workflows/factory-ci.yml:19` are the only record of the factory's set, and a layout move shrinks that set with CI still green. Cheapest hardening is to refuse when any one argument matches no file and name it: at the factory root that refusal points at `.agents/skills/*/scripts/*.sh` and sends the lane to the `AGENTS.md:38` command. It would also refuse a project whose hooks were all deleted (the 6-file case the fixture grounding names), which is the judgement to make.
+Documented step: `template/.agents/skills/poteto-mode/playbooks/opening-a-pr.md:9`, "Run `bash .github/shellcheck.sh` on every shell file the diff changes before the PR opens; it is the gate CI runs" — the playbook this repository runs on itself (`AGENTS.md`, "The nesting rule"); `template/.github/shellcheck.sh:5` documents the zero-argument form as "this project's shell files" and `template/AGENTS.md:63` as "which is what CI runs". The standard breached is `CODING_STANDARDS.md:13`, "Test a command the way a user types it: absolute paths, from another directory, through the installed symlink".
+Result: at the factory root `bash .github/shellcheck.sh` prints `ShellCheck 0.11.0, files checked: 6` and exits 0. A lane that runs the gate through the new root symlink the way the playbook writes it gets a green pass over the five hooks and the gate script, while the fourteen other files CI checks — `factory918.sh`, the five scripts under `template/.agents/skills/*/scripts/`, the eight under `tests/` — are never read.
+spec: table zero-argument form/expected result (the `## Design` row `tests/shellcheck/gate.sh:5-6` names "the zero-argument form from a project's root" and asserts a project's count; no row covers the same command at the factory root).
+
+```sh
+# template/.github/shellcheck.sh:35-43
+if [ "$#" = 0 ]; then set -- '.claude/hooks/*.sh' '.agents/skills/*/scripts/*.sh' '.github/shellcheck.sh'; fi
+files=()
+for g in "$@"; do
+  for f in $g; do if [ -f "$f" ]; then files+=("$f"); fi; done
+done
+if [ "${#files[@]}" = 0 ]; then
+  echo "shellcheck.sh: no file matched $*; the gate checked nothing" >&2
+  exit 1
+fi
+```
+
+```
+$ bash .github/shellcheck.sh                 # at the factory root
+ShellCheck 0.11.0, files checked: 6
+EXIT=0
+$ bash .github/shellcheck.sh factory918.sh template/.github/shellcheck.sh \
+    'template/.claude/hooks/*.sh' 'template/.agents/skills/*/scripts/*.sh' 'tests/*/*.sh'
+ShellCheck 0.11.0, files checked: 20
+EXIT=0
+```
+EOF
+cat > "$MIS/opus-5-pr99-r1-standards-1-1.md" <<'EOF'
+## Would break
+
+1. **The Standards brief carries no ticket, so no counted Standards item can satisfy the new spec rule.** `report()` is shared by both reports, so the spec check runs on `standards-report.md`, and all three forms name a part of the ticket. The Standards brief is `common` + the standards files + the smell baseline + the report rules; the ticket body reaches only the Spec brief. Breaches CODING_STANDARDS.md, Bash: "Every doctor check carries its fix as the third argument. A `FAIL` with no fix is a bug" — this reviewer cannot perform the fix the refusal names. It bit this review: I could not ground a cell, signature or criterion for this item.
+Documented step: `template/.agents/skills/spec-review/SKILL.md:84`, "The same item carries a line `spec:` naming the artifact it rests on: `table <row>/<column>` for a cell of the ticket's scenario table, `design <signature>` ... or `criterion <k>` ..."; the brief's contents are `SKILL.md:86`.
+Result: a real breach is dropped, or filed with an invented reference that `review-comment.sh` then validates word for word against the invention once it is marked `hole:`.
+spec: design report <file> <heading>...
+
+```sh
+  line="$(stepless "$f" "^spec: $ref\$")"
+  [ -z "$line" ] || fail "$f item '$(title "${line#*: }")' under '## ${line%%: *}' has no 'spec:' line; a counted item names what it rests on ... Ask the reviewer for it"
+```
+EOF
+cat > "$MIS/fable-5.1-pr94-r1-standards-1-3.md" <<'EOF'
+## Fix alongside
+
+3. **Step order: the posting rule lives after the step that runs implementation.** Ticket step 5 says "run that playbook's steps verbatim from step 1", and Feature step 4 delegates with a brief that "carries the ticket's design artifact (Ticket step 6)"; a reader in step order reaches step 6 after step 5 has already delegated, and nothing checks that the brief carried an artifact. The runner prompt and P25 say "before implementation", so the intent is recoverable by cross-reference, not by reading down. A sentence in step 5 ("before the playbook's delegation step, do step 6") or moving the posting into the four playbooks' architect steps would close it. Judgement call; not filed hard because the Standards brief carries no ticket criteria to cite.
+   ```
+   +6. The spec's **Testing decisions** are the pre-agreed seams. ... The selected playbook's architect step adds the ticket's own: ... before implementation the synthesized table is appended to the ticket's body ...
+   ```
+EOF
+pycheck 'anchors: opus-5 pr94-r1/spec/1#4, a skipped architect step, is G6, not the failed post G5' '
+s = mis("opus-5-pr94-r1-spec-1-4", "pr94-r1")
+assert s.hits == frozenset({"G6"}) and s.found == frozenset({"G6"}), s'
+pycheck 'anchors: opus-5 pr96-r1/standards/1#1, the bare gate at the factory root, is G4, not G1' '
+s = mis("opus-5-pr96-r1-standards-1-1", "pr96-r1")
+assert s.hits == frozenset({"G4"}) and s.found == frozenset({"G4"}), s'
+pycheck 'anchors: opus-5 pr99-r1/standards/1#1, a Standards brief with no ticket in it, is G4, not G2' '
+s = mis("opus-5-pr99-r1-standards-1-1", "pr99-r1")
+assert s.hits == frozenset({"G4"}) and s.found == frozenset({"G4"}), s'
+pycheck 'anchors: fable-5.1 pr94-r1/standards/1#3, step order, is not G1: "close" is not "lose"' '
+s = mis("fable-5.1-pr94-r1-standards-1-3", "pr94-r1")
+assert s.hits == frozenset() and s.found == frozenset(), s'
 pycheck "rule: one item claims one bug, the one with more anchors" '
 bugs = (G("G1", "glob", "exits"), G("G2", "glob", "exits", "unmatched"))
 s = r.score(RUN, r.parse_report(report(["An unmatched glob; the gate exits 0."])), bugs)
@@ -852,9 +950,17 @@ assert r.parse_report(None) == "no-report"'
 pycheck "rule: ## Walk steps are not items" '
 items = r.parse_report("## Walk\n\n1. An unmatched glob exits 0.\n\n## Would break\n\n1. A missing ticket line.\n\n## Fails open\n\nhard findings: 1\n")
 assert [(i.n, i.hard) for i in items] == [(1, True)], items'
-pycheck "rule: a bug matched only outside the hard headings is demoted" '
+pycheck "rule: a bug matched only outside the hard headings is found, not filed hard" '
 s = r.score(RUN, r.parse_report(report(soft=["An unmatched glob; the gate exits 0."])), (G("G1", "unmatched glob", "exits? 0"),))
-assert s.hits == frozenset() and s.demoted == frozenset({"G1"}) and s.other == 0, s'
+assert s.hits == frozenset() and s.found == frozenset({"G1"}) and s.other == 0, s'
+pycheck "rule: a hard item claims a bug before a non-hard one, and a non-hard item claims one bug too" '
+bugs = (G("G1", "glob", "exits"), G("G2", "glob", "exits", "unmatched", hard=False))
+s = r.score(RUN, r.parse_report(report(["A glob; the gate exits 0."], ["An unmatched glob; the gate exits 0."])), bugs)
+assert s.hits == frozenset({"G1"}) and s.found == frozenset({"G1", "G2"}), s
+s = r.score(RUN, r.parse_report(report(soft=["An unmatched glob; the gate exits 0.", "A glob; the gate exits 0."])), bugs)
+assert s.hits == frozenset() and s.found == frozenset({"G1", "G2"}), s
+s = r.score(RUN, r.parse_report(report(["A glob; the gate exits 0."], ["Another glob; the gate exits 0."])), bugs[:1])
+assert s.hits == frozenset({"G1"}) and s.found == frozenset({"G1"}), s'
 pycheck "rule: a second item on a claimed bug is not other" '
 s = r.score(RUN, r.parse_report(report(["An unmatched glob exits 0.", "Another unmatched glob, it exits 0 too.", "A missing ticket line."])), (G("G1", "unmatched glob", "exits? 0"),))
 assert s.hits == frozenset({"G1"}) and s.other == 1, s'
@@ -870,28 +976,33 @@ assert sorted(r.arising(bugs)) == [("c1",), ("c1", "c2"), ("c2",)], r.arising(bu
 pycheck "rule: the step table" '
 assert r.chain("S") == ("1", "S2", "S3") and r.STEPS["M3"].needs == ("1", "M2") and r.STEPS["I2"].pass_ == 2
 assert {s.arm for s in r.STEPS.values()} == {None, "I", "S", "M"}'
-pycheck "rule: new bugs per pass leave out earlier passes and masked bugs" '
-def S(step, hits, demoted=(), other=0):
-    return r.Score(r.RunId("d", B, step), None, frozenset(hits), frozenset(demoted), other)
+pycheck "rule: the chain counts, by class, leave out masked bugs; new found leaves out earlier passes" '
+truth = {"r1": (G("G1", "a", "b"), G("G2", "a", "b"), G("G3", "a", "b", hard=False))}
+def S(step, hits, found=(), other=0):
+    return r.Score(r.RunId("d", B, step), None, frozenset(hits), frozenset(hits) | frozenset(found), other)
 def R(step):
     return r.Receipt(r.RunId("d", B, step), "complete", "complete", "m", "high", r.Tokens(1, 10, 0, 100), 2000, None)
-scores = {s.run: s for s in [S("1", {"G1"}), S("I2", {"G1", "G2"}), S("I3", {"G2"}), S("M2", {"G2"}, {"G1"}),
+scores = {s.run: s for s in [S("1", {"G1"}, {"G3"}), S("I2", {"G1", "G2"}), S("I3", {"G2"}), S("M2", {"G2"}, {"G1"}),
                                S("M3", {"G1", "G3"}, other=2), S("S2", set())]}
 masked = {r.RunId("d", B, "M2"): frozenset({"G1"}), r.RunId("d", B, "M3"): frozenset({"G1", "G2"})}
-rows = {(x.arm, x.pass_): x for x in r.rows_for("d", scores, {k: R(k.step) for k in scores}, masked, [])}
-assert rows[("I", 2)].new == 1 and rows[("I", 3)].new == 0 and rows[("I", 3)].cumulative == 2
-assert rows[("M", 2)].new == 1 and rows[("M", 2)].demoted == 0
-assert rows[("M", 3)].new == 1 and rows[("M", 3)].cumulative == 3 and rows[("M", 3)].other == 2
+rows = {(x.arm, x.pass_): x for x in r.rows_for("d", "standards", scores, {k: R(k.step) for k in scores}, masked, [], truth)}
+one = rows[("I", 1)]
+assert (one.filed_hard, one.hard_found, one.nonhard_found, one.over_rated, one.new) == (1, 1, 1, 0, 2), one
+assert rows[("I", 2)].new == 1 and rows[("I", 2)].filed_hard == 2 and rows[("I", 3)].new == 0
+assert rows[("M", 2)].new == 1 and rows[("M", 2)].filed_hard == 2 and rows[("M", 2)].nonhard_found == 1
+assert rows[("M", 3)].new == 0 and rows[("M", 3)].over_rated == 1 and rows[("M", 3)].other == 2
 assert rows[("S", 2)].new == 0 and rows[("S", 3)].chains == 0 and rows[("S", 3)].new is None
-assert rows[("I", 1)].output == 100 and rows[("I", 1)].wall_s == 2'
-pycheck "rule: a bug an earlier pass of the chain hard-found is not demoted" '
-def S(step, hits, demoted=()):
-    return r.Score(r.RunId("d", B, step), None, frozenset(hits), frozenset(demoted), 0)
+assert one.output == 100 and one.wall_s == 2
+assert not r.rows_for("d", "spec", scores, {k: R(k.step) for k in scores}, masked, [], truth)[0].chains'
+pycheck "rule: a bug found non-hard, then filed hard later in the chain, counts once as filed hard" '
+truth = {"r1": (G("G1", "a", "b"),)}
 def R(step):
     return r.Receipt(r.RunId("d", B, step), "complete", "complete", "m", "high", None, None, None)
-scores = {s.run: s for s in [S("1", {"G1"}), S("S2", set(), {"G1", "G2"})]}
-rows = {(x.arm, x.pass_): x for x in r.rows_for("d", scores, {k: R(k.step) for k in scores}, {}, [])}
-assert rows[("S", 2)].demoted == 1, rows[("S", 2)]'
+scores = {s.run: s for s in [r.Score(r.RunId("d", B, "1"), None, frozenset(), frozenset({"G1"}), 0),
+                             r.Score(r.RunId("d", B, "S2"), None, frozenset({"G1"}), frozenset({"G1"}), 0)]}
+rows = {(x.arm, x.pass_): x for x in r.rows_for("d", "standards", scores, {k: R(k.step) for k in scores}, {}, [], truth)}
+assert (rows[("S", 1)].filed_hard, rows[("S", 1)].hard_found) == (0, 1), rows[("S", 1)]
+assert (rows[("S", 2)].filed_hard, rows[("S", 2)].hard_found, rows[("S", 2)].new) == (1, 1, 0), rows[("S", 2)]'
 pycheck "rule: the prompt refuses a banned word in the work path" '
 from pathlib import Path, PurePosixPath
 brief = r.Brief(B, "0" * 40, Path("."), PurePosixPath(".scratch/review/x/standards-report.md"))

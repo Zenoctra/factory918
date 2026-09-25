@@ -1,6 +1,6 @@
 # Ground truth for pr94-r1, pr96-r1 and pr99-r1 (#138)
 
-`truth` has 14 bugs: 6 at pr94-r1, 4 at pr96-r1 and 4 at pr99-r1. Each bug below was read in the code at the head (`git show <head>:<file>`, extracted with `git archive` to a scratch copy). Each fix was applied with `patch -p1` to a copy of the head's files (`apply.log`, at the end). The anchors match every item credited to their bug and no item credited to another bug of the same head (`validate.out`, 0 failures). The only items that match two bugs are ones that describe both.
+`truth` has 14 bugs: 6 at pr94-r1, 4 at pr96-r1 and 4 at pr99-r1. Nine are hard and five are non-hard; "Classes" says why. Each bug below was read in the code at the head (`git show <head>:<file>`, extracted with `git archive` to a scratch copy). Each fix was applied with `patch -p1` to a copy of the head's files (`apply.log`, at the end). The anchors match every item credited to their bug and no item credited to another bug of the same head (`validate.out`, 0 failures). The only items that match two bugs are ones that describe both.
 
 The fix column of `truth` names patches under `rounds/<round>/fixes/`. The `fixes` file and `fixes.sh` build each one from the commits this page names, limited to the files that hold the bug. The masked arm applies them with `git apply --3way`.
 
@@ -19,6 +19,42 @@ The fix column names only commits whose change removes the bug. It lists them in
 - **pr96-r1 G2 and G3.** The `template/.github/shellcheck.sh` hunks of 72953c0 and a64c7e6 apply to 69bd412 alone. Their `tests/shellcheck/gate.sh` hunks do not. A whole-commit apply needs 01e5386, then 72953c0, then a64c7e6.
 - **pr96-r1 G4.** ae1b4b5 is a 30-file commit. Only its `opening-a-pr.md` hunk and that file's patch hunk apply to 69bd412; the rest depends on main after the rebase. 69bd412 is not an ancestor of ae1b4b5, because #96 was rebased onto main as d4331d8 and others. Apply that file's hunk only.
 - **pr99-r1 G1 and G2.** 0ff73f0 on main is the rebased 384bb43. This file uses the chain shas.
+
+## Classes
+
+2026-09-24: Manuel approved re-classing the key after the answer-key audit (`.scratch/program/answer-key-audit/report.md` in the main checkout, written by Opus 5.5 for the #138 owner). His words: "go ahead and fix the answer key".
+
+The class column follows the definition `review-brief.sh` gives the reviewer. A bug is hard when the documented path gives a wrong or silent result, or when an input outside the path proceeds silently. A refusal that says how to correct itself is not a finding. An unsupported edge case is not a flag.
+
+Non-hard:
+- **pr94-r1 G3.** Conflicting prose. `architect/SKILL.md` says usage first, but the runner prompt a runner works from asks for the table first, and Ticket step 6 posts it. No documented path gives a wrong result.
+- **pr94-r1 G4.** A stale count in a reading list. `/knowledge` still reaches the page, so criterion 6 holds. The repository's own rule on counts in prose makes it a Standards breach.
+- **pr94-r1 G5.** Designed behaviour: the loud refusal. A failed `gh issue edit` prints gh's own error and exits nonzero, which is what #89 asks of an input outside the path ("refused with the tool's own message"). It never earns hard credit; a hard filing of it counts as over-rating. The other reading is that the playbook goes on without its artifact, which fails open at the level of the process. I do not take it, because nothing in it is silent to the agent. No #138 report names this bug. Its one credit was an anchor mis-match ("Anchor edits").
+- **pr94-r1 G6.** A gap between #89's intent and the playbooks' trigger. Step 6's own trigger is a design that adds state, and a fix inside one function rarely adds any. No commit ever fixed it.
+- **pr96-r1 G3.** An unsupported edge case. The cache file exists only after a tarball whose checksum passed. The gate already trusts any `shellcheck` on PATH that reports the pin, so trusting the cache matches the design's trust. An interrupted `tar` fails loudly.
+
+Hard, with both readings of the three close calls:
+- **pr94-r1 G2.** Hard reading: a re-run of step 1 after the table is posted matches unrelated PRs, exits 1, and tells the reply to merge or stack them. That is a wrong result with a wrong remedy, and the definition says "wrong or silent". Non-hard reading, taken by Opus 5.5 and Fable 5.1 in #138: it is loud, it costs one human turn, and it happens only on a relaunch or a pickup, so by Manuel's "fail fast and loud" it is the mildest kind of failure. It stays hard by the letter of the definition.
+- **pr96-r1 G4.** Hard reading: taken literally, the playbook's command is the bare gate. In the factory that form lints only the hooks and the gate, so a changed `factory918.sh` or test script passes the lane check unread and silently, which defeats #88 criterion 3. Non-hard reading: "on every shell file" implies passing the files, the design's usage line shows the file form, CI is a loud backstop, and in a project the bare set equals CI's. It stays hard because the lane check is the step the criterion names, and it is silent there.
+- **pr99-r1 G1.** Hard reading: a Noted or Dismissed reason that says "hole:" is valid under the documented contract. It is refused with a message that names the wrong cause, so the refusal does not say how to correct itself. Non-hard reading, taken by Opus 5.5 and Fable 5.1 in #138: it is loud and costs one retry. It stays hard because the message misleads; 53ca502 fixed exactly that message.
+
+The masked arm follows the filing, not the class. A pass-2 or pass-3 tree gets a bug's fix when an earlier pass filed that bug hard, whatever its class. The arm stands for an author who fixes what the review said to act on: a non-hard bug filed hard is fixed, and a hard bug filed non-hard is not. The M2 and M3 runs collected before this change were prepared on the same rule, so they stay valid.
+
+## Anchor edits
+
+2026-09-24. The audit found four report items credited to the wrong bug. `refusals.sh` now scores each one from its text, copied word for word from the #138 report:
+- **opus-5 pr94-r1/spec/1#4** is a skipped architect step (G6). It matched G5 through "the failure this ticket opens with". G5's first anchor was `fail|error`. It now needs a failure of the post itself: "a failed post", "gh issue edit failing", a nonzero exit, auth or network.
+- **opus-5 pr96-r1/standards/1#1** is the bare gate at the factory root (G4), and it also describes G1's mechanism. G1 and G4 tied at three anchors, and the tie went to G1 by label order. G4 now has a fourth anchor, the files the bare gate leaves unread, so the narrower bug claims it. G4's second anchor no longer accepts a bare "default", which had matched "the default IFS" in Opus 5.5's word-split items (G2).
+- **opus-5 pr99-r1/standards/1#1** is a Standards brief that carries no ticket (G4). It matched G2 through "carries no ticket". G2's first anchor now needs a review or run with no ticket ("a review with no ticket", "without a ticket", "ticketless"), not a brief that carries none.
+- **fable-5.1 pr94-r1/standards/1#3** is about step order and names no bug of the key. It matched G1 because "close" contains "lose". G1's second anchor now takes `lost`, `lose`, `loses` and `losing` only as whole words.
+
+Over every report on the three rounds, meaning the six historical reports, the #103 runs and the #138 runs as they stood on 2026-09-24, these edits changed the matches of eight items and the claim of one more, opus-5 pr96-r1/standards/1#1. Every change agrees with the audit, and no labelled source lost its match. Three of the eight are named above; the other five:
+- opus-5 pr94-r1/spec/1#2 (overlap, G2) no longer also matches G1.
+- opus-5 pr94-r1/standards/1#3 (step order) no longer matches G1.
+- opus-5.5 pr94-r1/spec/I3#1 (a skipped architect step) no longer matches G1.
+- opus-5.5 pr96-r1/standards/1#1 and its set-aside second attempt (the word split, G2) no longer match G4.
+
+The claim rule changed with them. Every item, hard or not, claims at most one bug. The bug with more anchors claims first, and a hard item claims before a non-hard one. A bug is filed hard when a hard item claims it, and found when any item does. Before, a non-hard item counted toward every bug it matched ("demoted").
 
 ## pr94-r1 (head c83f166, ticket #89)
 
@@ -41,7 +77,7 @@ The fix column names only commits whose change removes the bug. It lists them in
 **G4: four project documents.**
 - Present: `docs/knowledge/core/MANUAL.md:165 @ c83f166` says "a project carries only the first four" and lists four. `tools/build_knowledge.py:8 @ c83f166` says the script "copies PHILOSOPHY, MANUAL, DECISIONS and GLOSSARY". `build_core` now copies SCENARIO-TABLE.md as well.
 - Fix: ca2c106 says five, adds the manual bullet and rewrites the docstring. It applies alone.
-- Of the six, this is the weakest hard bug: a stale count in a map a person reads. I keep it because it is a label, the historical Opus 5 filed it as Would break, and ticket criterion 6 is about reaching the page. Some runs filed it under Standards breaches.
+- A stale count in a map a person reads. It was the weakest hard bug until 2026-09-24 and is non-hard now ("Classes"). Some runs filed it under Standards breaches.
 
 **G5: a failed post does not stop the work.**
 - Present: `ticket.md:10 @ c83f166` has no clause for `gh issue edit` failing, while step 8 has "Exit 2: stop and report stderr".
@@ -139,7 +175,7 @@ Real but minor:
 
 ## Anchors that cannot fully separate
 
-- **pr99-r1 G2 and G4.** run claude-opus-5.5/pr99-r1/spec/1#1 describes both bugs in one item: "The Standards brief does not include the ticket" is G4, and "A review with no ticket at all ... can never finish" is G2. Both anchor sets match it. The 103 judge credited it to P1 (G2). G2 and G4 each have 3 anchors, and `reviewer.claims` resolves the tie by label order, so the scorer gives it to G2 (`claims.out`). G4 has no other item at pr99-r1. Its separating evidence is the pr99-r1b item (opus-5 pr99-r1b/standards/4#1), which matches G4 only.
+- **pr99-r1 G2 and G4.** run claude-opus-5.5/pr99-r1/spec/1#1 describes both bugs in one item: "The Standards brief does not include the ticket" is G4, and "A review with no ticket at all ... can never finish" is G2. Both anchor sets match it. The 103 judge credited it to P1 (G2). G2 and G4 each have 3 anchors, and `reviewer.claims` resolves the tie by label order, so the scorer gives it to G2 (`claims.out`). G4 had no other item at pr99-r1 before #138; opus-5 pr99-r1/standards/1#1 of #138 now matches G4 alone ("Anchor edits"). Its separating evidence is the pr99-r1b item (opus-5 pr99-r1b/standards/4#1), which matches G4 only.
 - **pr96-r1 G1 and G2.** Eight glob items also name the space split. Both anchor sets match each one, and the validator lists them as `both`:
   - hist pr96-r1/standards#1
   - run opus-5 spec/1#1 and standards/3#1
