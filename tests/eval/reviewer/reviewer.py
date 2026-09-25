@@ -17,7 +17,7 @@ patch from its commits the same way.
     python3 tests/eval/reviewer/reviewer.py check
         Validate the rounds, the fix patches, the truth file and the agent definitions, and prove
         that every set of patches a masked pass can need applies to its head and briefs.
-    python3 tests/eval/reviewer/reviewer.py next <descriptor>... [--resume <descriptor>]... [--limit N]
+    python3 tests/eval/reviewer/reviewer.py next <descriptor>... [--resume <descriptor>]... [--limit N] [--run]
         Print up to N (8) launch lines and prepare what it prints: first the prepared runs no
         transcript names yet, then new runs, pass 1 across every brief before pass 2 before pass 3.
         A step is prepared once its prerequisites are collected complete with a report that parses;
@@ -27,7 +27,12 @@ patch from its commits the same way.
         third such attempt gives it up: `next` prints `given up` for it and prepares neither it nor
         the steps that need it. A model with a usage-limit receipt is paused: `next` prints one
         `paused` line for it and prepares nothing for it until `--resume` names it, which prepares
-        its limited runs again first. Collects nothing.
+        its limited runs again first. Collects nothing, except with --run (below). A retired model
+        (RETIRED) is scheduled no more: naming it prints `retired`, and its prepared runs, which the
+        root stopped, are set aside as `retired: stopped by the root`; its collected runs stay.
+        --run, for Codex routes only: launch the runs it would print as `codex exec` subprocesses,
+        CODEX_AT_ONCE at a time, wait for them and collect each; after a usage-limit dropout it
+        launches nothing more.
     python3 tests/eval/reviewer/reviewer.py collect [--recheck]
         Collect every finished run; list what is in flight, unlaunched or stuck. Safe to repeat.
         A run is contaminated when a tool result in its transcript holds a line that only commits
@@ -50,6 +55,10 @@ patch from its commits the same way.
         found when any item does; each item claims at most one bug (`claims`). The tables count
         the key's hard and non-hard bugs apart (the truth file's class column).
 
+A Codex run is the same run as a Claude one (the same export, prompt, frozen inputs, scratch folder
+and report path); its launch line is {"run", "command"}, the `codex exec` argv, and its receipt is read
+from the session log the command's stdout names, whose path the receipt keeps as its source.
+
 A launch line is {"run", "agent", "description", "prompt"}: pass `agent` (subagent_type, and model
 where it is given), `description` and `prompt` to the Agent tool in the background, then poll
 `collect`.
@@ -60,7 +69,7 @@ refused), REVIEWER_WORK (${TMPDIR:-/tmp}/review-work),
 REVIEWER_TRANSCRIPTS (~/.claude/projects/<main checkout path, every character outside A-Za-z0-9
 as ->), REVIEWER_REPO (the repository holding the reviewed heads), REVIEWER_AGENTS (<main
 checkout>/.claude/agents, where the installed agent definitions must match agents/),
-REVIEWER_SETTLE_SECONDS (120; how long a transcript whose last assistant line is text only and not
+CODEX_HOME (~/.codex, where Codex writes its session logs), REVIEWER_SETTLE_SECONDS (120; how long a transcript whose last assistant line is text only and not
 stamped `end_turn` must sit untouched before it counts as finished).
 """
 from __future__ import annotations
@@ -153,12 +162,29 @@ class Native:
     expect: re.Pattern[str]
 
 
-MODELS: Mapping[str, Native] = {
+@dataclass(frozen=True)
+class Codex:
+    """A model reached through `codex exec`, which `next --run` launches and collects itself."""
+    slug: str
+    expect: re.Pattern[str]
+
+
+MODELS: Mapping[str, Native | Codex] = {
     "claude:opus-5": Native({"subagent_type": "review-lower-high"}, re.compile(r"^claude-opus-5$")),
     "claude:opus-5.5": Native({"subagent_type": "review-upper-high"}, re.compile(r"^claude-opus-5-5$")),
     "claude:fable-5.1": Native({"subagent_type": "review-fable-high", "model": "fable"},
                                re.compile(r"^claude-fable-5-1$")),
+    "codex:gpt-6-sol": Codex("gpt-6-sol", re.compile(r"^gpt-6-sol$")),
 }
+# A retired model keeps its collected runs in the table, labelled; `next` schedules nothing more for it
+# and sets aside its prepared runs, which the root stopped (Manuel, 2026-09-24).
+RETIRED: Mapping[str, str] = {"claude:opus-5": "partial (pass 1 and some pass 2; retired 2026-09-24)"}
+RETIRED_STOPPED = "retired: stopped by the root"
+CODEX_AT_ONCE = 4
+# workspace-write keeps the reviewer's writes inside its export (and the temp directories), as a Claude
+# lane's; network access lets it run the tests and gh the way a Claude lane can. Full access would also
+# let it write into another run's export.
+CODEX_SANDBOX = ("--sandbox", "workspace-write", "-c", "sandbox_workspace_write.network_access=true")
 AGENT_FILES = ("review-lower-high.md", "review-upper-high.md", "review-fable-high.md")
 
 Arm = Literal["I", "S", "M"]
@@ -226,6 +252,7 @@ class Tokens:
     cache_read: int
     cache_write: int
     output: int
+    reasoning: int | None = None  # Codex reports it, inside output; Claude does not
 
 
 Status = Literal["complete", "dropout", "contaminated"]
@@ -628,7 +655,7 @@ class Verdict:
 # The session scratchpad the harness names to every lane, and the words of a Bash command that write.
 SCRATCHPAD = re.compile(r"(?:/private)?/tmp/claude-\d+/[^/\s'\"]+/[^/\s'\"]+/scratchpad(?=/|$|[\s'\"`;|&()<>])")
 PATH_TAIL = r"[^\s'\"`;|&()<>]*"
-WRITES = re.compile(r">|\b(?:tee|mkdir|cp|mv|touch|ln|rsync|unzip|tar|git init|git clone)\b")
+WRITES = re.compile(r">|\b(?:tee|mkdir|cp|mv|touch|ln|rsync|unzip|tar|git init|git clone|apply_patch)\b")
 ASSIGNMENT = re.compile(r"\b([A-Za-z_]\w*)=(\"[^\"]*\"|'[^']*'|[^\s;&|]+)")
 
 
@@ -777,6 +804,128 @@ def receipt_from_transcript(run: RunId, lines: list[dict], expect: re.Pattern[st
                    outside_calls(lines, export), verdict.first)
 
 
+# A Codex session log (~/.codex/sessions/.../rollout-*.jsonl) is read in the shape of a Claude transcript,
+# so the content check, the cross-run check, sightings and the outside record run on it unchanged. Each
+# tool call the model made (a response_item function_call, custom_tool_call or web_search_call) becomes
+# one tool_use, and its output, what the model saw, its tool_result. The commands and file changes the
+# call ran, which Codex logs as item_completed events between the call and its output, become the call's
+# Bash command; a web search or fetch makes it WebSearch or WebFetch, which the check cannot date.
+CODEX_CALLS = ("function_call", "custom_tool_call", "local_shell_call", "web_search_call")
+CODEX_OUTPUTS = ("function_call_output", "custom_tool_call_output")
+PATCH_FILE = re.compile(r"^\*\*\* (?:Add|Update|Delete) File: (.+)$", re.M)
+
+
+def codex_output(output: object) -> str:
+    """What a call's output showed the model: its text, with exec's JSON result unwrapped to the command output."""
+    chunks = output if isinstance(output, list) else [output]
+    texts = []
+    for c in chunks:
+        text = c.get("text", "") if isinstance(c, dict) else str(c or "")
+        try:
+            j = json.loads(text)
+        except json.JSONDecodeError:
+            j = None
+        texts.append(str(j["output"]) if isinstance(j, dict) and "output" in j else text)
+    return "\n".join(texts)
+
+
+def codex_transcript(rollout: list[dict]) -> list[dict]:
+    lines: list[dict] = []
+    open_calls: dict[str, dict] = {}
+    ran: dict[str, list[str]] = {}
+    for line in rollout:
+        p, ts = line.get("payload") or {}, line.get("timestamp")
+        kind = p.get("type")
+        if line.get("type") == "response_item" and kind in CODEX_CALLS:
+            call_id = p.get("call_id") or p.get("id") or f"call {len(open_calls)}"
+            raw = p.get("arguments") or p.get("input") or json.dumps(p.get("action") or {})
+            name = "WebSearch" if kind == "web_search_call" else "Bash"
+            use = {"type": "tool_use", "id": call_id, "name": name, "input": {"command": str(raw)}}
+            if p.get("name") == "apply_patch":
+                use["input"] = {"command": " ".join(["apply_patch", *PATCH_FILE.findall(str(raw))])}
+            lines.append({"type": "assistant", "timestamp": ts, "message": {"content": [use]}})
+            open_calls[call_id], ran[call_id] = use, []
+        elif line.get("type") == "event_msg" and kind == "item_completed":
+            item = p.get("item") or {}
+            web = item.get("type") == "Extension" and str(item.get("kind", "")).startswith("web.")
+            if not open_calls:
+                # A web search the model ran outside any call it logged is still a tool use the check cannot date.
+                if web:
+                    lines.append({"type": "assistant", "timestamp": ts, "message": {"content": [
+                        {"type": "tool_use", "id": item.get("id"), "name": "WebSearch", "input": {"query": item.get("query")}}]}})
+                continue
+            use = list(open_calls.values())[-1]
+            ran_by = ran[use["id"]]
+            if item.get("type") == "CommandExecution":
+                command = item.get("command")
+                script = command[-1] if isinstance(command, list) and command else str(command or "")
+                cwd = str(item.get("cwd") or "").removeprefix("file://")
+                ran_by.append(f"cd {cwd} && {script}" if cwd else script)
+            elif item.get("type") == "FileChange":
+                ran_by.append(" ".join(["apply_patch", *(item.get("changes") or {})]))
+            elif web:
+                use["name"] = "WebFetch" if "fetch" in str(item.get("kind")) else "WebSearch"
+            elif "Agent" in str(item.get("type")) and item.get("type") != "AgentMessage":
+                use["name"] = "Agent"
+            if ran_by and use["name"] == "Bash":
+                use["input"] = {"command": "; ".join(ran_by)}
+        elif line.get("type") == "response_item" and kind in CODEX_OUTPUTS:
+            call_id = p.get("call_id")
+            open_calls.pop(call_id, None)
+            lines.append({"type": "user", "timestamp": ts, "message": {"content": [
+                {"type": "tool_result", "tool_use_id": call_id, "content": codex_output(p.get("output"))}]}})
+    return lines
+
+
+def is_codex(lines: list[dict]) -> bool:
+    return bool(lines) and lines[0].get("type") == "session_meta"
+
+
+def transcript(path: Path) -> list[dict]:
+    """A run's transcript as the checks read it, a Codex session log included."""
+    lines = read_jsonl(path)
+    return codex_transcript(lines) if is_codex(lines) else lines
+
+
+def receipt_from_codex(run: RunId, rollout: list[dict], stderr: str, expect: re.Pattern[str], source: Path,
+                       future: Mapping[str, str], given: AbstractSet[str], export: Path) -> Receipt:
+    stamps = [stamp(line["timestamp"]) for line in rollout if line.get("timestamp")]
+    wall_ms = int((stamps[-1] - stamps[0]).total_seconds() * 1000) if stamps else None
+    events = [line.get("payload") or {} for line in rollout if line.get("type") == "event_msg"]
+    said = " ".join(str(e.get("message") or e.get("reason") or "") for e in events
+                    if e.get("type") in ("error", "stream_error", "turn_aborted")) + " " + stderr
+    if USAGE_LIMIT_LINE.search(said):
+        return Receipt(run, "dropout", f"{USAGE_LIMIT}: the session log or stderr says the account hit its usage limit",
+                       None, None, None, wall_ms, source)
+    contexts = [line.get("payload") or {} for line in rollout if line.get("type") == "turn_context"]
+    models = sorted({str(c["model"]) for c in contexts if c.get("model")})
+    wrong = [m for m in models if not expect.search(m)]
+    if wrong:
+        raise Refusal(f"{run.descriptor} {run.brief} step {run.step} was served {', '.join(wrong)}; "
+                      f"{run.descriptor} pins {expect.pattern}; check the codex -m argument, "
+                      f"remove the run directory, run next again")
+    efforts = sorted({str(c.get("effort") or ((c.get("collaboration_mode") or {}).get("settings") or {})
+                          .get("reasoning_effort")) for c in contexts} - {"None"})
+    if efforts and efforts != [EFFORT]:
+        raise Refusal(f"{run.descriptor} {run.brief} step {run.step} ran at effort {', '.join(efforts)}; "
+                      f"every run is at effort {EFFORT}; check the codex model_reasoning_effort setting, "
+                      f"remove the run directory, run next again")
+    answered = any(e.get("type") == "task_complete" and e.get("last_agent_message") for e in events)
+    if not models or not answered:
+        return Receipt(run, "dropout", f"{NO_RESPONSE}: {' '.join(said.split())[:120]}", None, None, None,
+                       wall_ms, source)
+    usage = next((e["info"]["total_token_usage"] for e in reversed(events)
+                  if e.get("type") == "token_count" and (e.get("info") or {}).get("total_token_usage")), {})
+    cached = usage.get("cached_input_tokens") or 0
+    tokens = Tokens((usage.get("input_tokens") or 0) - cached, cached, usage.get("cache_write_input_tokens") or 0,
+                    usage.get("output_tokens") or 0, usage.get("reasoning_output_tokens"))
+    lines = codex_transcript(rollout)
+    verdict = contamination(lines, future, given, export)
+    status: Status = "contaminated" if verdict.detail else "complete"
+    return Receipt(run, status, verdict.detail or "complete", models[-1], efforts[0] if efforts else f"requested: {EFFORT}",
+                   tokens, wall_ms, source, outside_calls(lines, export), verdict.first)
+
+
 def usage_limited(receipt: Receipt) -> bool:
     return receipt.status == "dropout" and receipt.detail.startswith(USAGE_LIMIT)
 
@@ -880,14 +1029,14 @@ def columns(axis: Axis) -> tuple[str, ...]:
     return ("arm", "pass", "chains", *TRUTH_COLUMNS[axis], *COLUMNS_AFTER)
 
 
-def render_table(descriptor: str, axis: Axis, rows: list[Row], excluded: int = 0) -> str:
+def render_table(descriptor: str, axis: Axis, rows: list[Row], excluded: int = 0, label: str | None = None) -> str:
     def f(x: float | None, places: int) -> str:
         return "n/a" if x is None else f"{x:.{places}f}"
 
     def cells(row: Iterable[str]) -> str:
         return "| " + " | ".join(row) + " |"
 
-    lines = [f"## {descriptor}, {axis}", "",
+    lines = [f"## {descriptor}, {axis}", "", *([f"This model is {label}.", ""] if label else []),
              "Means per chain. The four bug counts are over the chain's passes up to this one; new found counts "
              "bugs the chain names for the first time at this pass. A masked pass leaves out the bugs its tree has fixed.",
              f"Contaminated runs excluded from recall: {excluded}.", "",
@@ -919,6 +1068,7 @@ class Env:
     repo: Path
     agents: Path
     settle: float
+    codex_home: Path
 
 
 def git(cwd: Path, *args: str) -> str:
@@ -1025,6 +1175,7 @@ def load_env() -> Env:
         repo=Path(os.environ.get("REVIEWER_REPO") or top),
         agents=Path(os.environ.get("REVIEWER_AGENTS") or main / ".claude" / "agents"),
         settle=float(os.environ.get("REVIEWER_SETTLE_SECONDS") or 120),
+        codex_home=Path(os.environ.get("CODEX_HOME") or Path.home() / ".codex"),
     )
 
 
@@ -1215,10 +1366,76 @@ def given_lines(p: Prepared, d: Path, fx: Fixtures, env: Env) -> AbstractSet[str
     return lines | text_lines([settle(brief_text, p.run.brief.axis, list(p.settled)), (brief.files / "diff").read_text()])
 
 
+def codex_argv(p: Prepared, route: Codex) -> list[str]:
+    # --skip-git-repo-check: the export is a git archive, with no .git.
+    return ["codex", "exec", "-m", route.slug, "-c", f'model_reasoning_effort="{EFFORT}"', *CODEX_SANDBOX,
+            "--skip-git-repo-check", "--cd", str(p.checkout), "--json", p.prompt]
+
+
 def launch_line(p: Prepared, brief: Brief, out: Path) -> str:
     route = MODELS[p.run.descriptor]
+    if isinstance(route, Codex):
+        return json.dumps({"run": str(p.run.dir(out)), "command": codex_argv(p, route)})
     return json.dumps({"run": str(p.run.dir(out)), "agent": dict(route.agent),
                        "description": f"Review {brief.head[:7]} {p.run.brief.axis}", "prompt": p.prompt})
+
+
+# `codex exec --json` writes its events here, in the run directory; the first names the session log.
+CODEX_STDOUT = "codex.jsonl"
+CODEX_STDERR = "codex-stderr.txt"
+CODEX_POLL_S = 0.5
+
+
+def launched(p: Prepared, out: Path) -> bool:
+    return (p.run.dir(out) / CODEX_STDOUT).is_file()
+
+
+def collect_codex(p: Prepared, fx: Fixtures, env: Env, exited: bool) -> str | None:
+    """Collect a launched Codex run once `codex exec` has exited or its stdout says the turn ended; else None."""
+    d, route, brief = p.run.dir(env.out), MODELS[p.run.descriptor], fx.briefs[p.run.brief]
+    assert isinstance(route, Codex)
+    events = read_jsonl(d / CODEX_STDOUT) if launched(p, env.out) else []
+    if not exited and not any(e.get("type") in ("turn.completed", "turn.failed") for e in events):
+        return None
+    thread = next((e.get("thread_id") for e in events if e.get("type") == "thread.started"), None)
+    logs = sorted(env.codex_home.glob(f"sessions/*/*/*/rollout-*-{thread}.jsonl")) if thread else []
+    said = " ".join(str(e.get("message") or (e.get("error") or {}).get("message") or "")
+                    for e in events if e.get("type") in ("error", "turn.failed"))
+    stderr = (d / CODEX_STDERR).read_text() if (d / CODEX_STDERR).is_file() else ""
+    source = logs[0] if logs else d / CODEX_STDERR
+    receipt = receipt_from_codex(p.run, read_jsonl(logs[0]) if logs else [], f"{said} {stderr}", route.expect, source,
+                                 round_future(env, brief), given_lines(p, d, fx, env), p.checkout)
+    return collect_one(p, receipt, brief, fx, env.out)
+
+
+def run_codex(ps: list[Prepared], fx: Fixtures, env: Env) -> None:
+    """Launch each run as `codex exec`, CODEX_AT_ONCE at a time, and collect each as it exits.
+
+    After a usage-limit dropout nothing more is launched; the runs not yet launched stay prepared.
+    """
+    queue, running, refused, limited = list(ps), [], [], False
+    while running or (queue and not limited):
+        while queue and not limited and len(running) < CODEX_AT_ONCE:
+            p = queue.pop(0)
+            route = MODELS[p.run.descriptor]
+            assert isinstance(route, Codex)
+            d = p.run.dir(env.out)
+            with open(d / CODEX_STDOUT, "w") as so, open(d / CODEX_STDERR, "w") as se:
+                proc = subprocess.Popen(codex_argv(p, route), cwd=p.checkout, stdin=subprocess.DEVNULL, stdout=so, stderr=se)
+            print(f"launched {d}", flush=True)
+            running.append((p, proc))
+        time.sleep(CODEX_POLL_S)
+        for p, proc in [r for r in running if r[1].poll() is not None]:
+            running.remove((p, proc))
+            try:
+                line = collect_codex(p, fx, env, exited=True)
+            except Refusal as e:
+                refused.append(e)
+                continue
+            print(line, flush=True)
+            limited = limited or (line or "").startswith("dropout") and f" {USAGE_LIMIT}" in (line or "")
+    if refused:
+        raise Refusal("; ".join(map(str, refused)))
 
 
 def collect_one(p: Prepared, receipt: Receipt, brief: Brief, fx: Fixtures, out: Path) -> str:
@@ -1246,7 +1463,7 @@ def with_sightings(receipt: Receipt, d: Path) -> Receipt:
     parsed = parse_report((d / "report.md").read_text()) if (d / "report.md").is_file() else "no-report"
     if isinstance(parsed, str) or not receipt.source.is_file():
         return receipt
-    return replace(receipt, sightings=sightings(parsed, read_jsonl(receipt.source)))
+    return replace(receipt, sightings=sightings(parsed, transcript(receipt.source)))
 
 
 def first_user_text(path: Path) -> str:
@@ -1352,8 +1569,29 @@ def cmd_check(fx: Fixtures, env: Env) -> int:
     return 0
 
 
-def cmd_next(fx: Fixtures, env: Env, descriptors: list[str], limit: int, resume: list[str]) -> int:
+def retire(descriptor: str, out: Path) -> None:
+    """Set aside every prepared run of a retired model: the root stopped them, and a report one left is no result."""
+    print(f"retired {descriptor}: retired from scheduling (Manuel, 2026-09-24); its collected runs stay in the table")
+    for d in run_dirs(out):
+        p = prepared_at(d) if state(d) == "prepared" else None
+        if p and p.run.descriptor == descriptor:
+            write_json(d / "receipt.json", receipt_json(Receipt(p.run, "dropout", RETIRED_STOPPED, None, None, None,
+                                                                None, Path("-"))))
+            set_aside(d, out)
+            print(f"set aside {d}: {RETIRED_STOPPED}")
+
+
+def cmd_next(fx: Fixtures, env: Env, descriptors: list[str], limit: int, resume: list[str], launch: bool = False) -> int:
     out = env.out
+    for desc in descriptors:
+        if desc in RETIRED:
+            retire(desc, out)
+    descriptors = [d for d in descriptors if d not in RETIRED]
+    native = [d for d in descriptors if isinstance(MODELS[d], Native)]
+    if launch and native:
+        raise Refusal(f"--run launches Codex routes only; {', '.join(native)} launch through the Agent tool")
+    if not descriptors:
+        return 0
     missing = sorted({b.head for b in fx.briefs.values()
                       if subprocess.run(["git", "-C", str(env.repo), "cat-file", "-e", f"{b.head}^{{commit}}"],
                                         capture_output=True).returncode})
@@ -1388,18 +1626,19 @@ def cmd_next(fx: Fixtures, env: Env, descriptors: list[str], limit: int, resume:
     stopped = {run: f for run in complete if run.step in needed and (f := rescore(run, fx, out).failure)}
     complete -= stopped.keys()
     prepared = {run: prepared_at(run.dir(out)) for run, st in states.items() if st == "prepared"}
-    transcripts = locate(prepared, env.transcripts, out) if prepared else {}
-    lines = [launch_line(p, fx.briefs[run.brief], out) for run, p in prepared.items() if transcripts[run] is None]
+    native_prepared = {run: p for run, p in prepared.items() if isinstance(MODELS[run.descriptor], Native)}
+    transcripts = locate(native_prepared, env.transcripts, out) if native_prepared else {}
+    unlaunched = [p for run, p in prepared.items()
+                  if (transcripts[run] is None if run in native_prepared else not launched(p, out))]
     ready = sorted((run for run, st in states.items()
                     if st == "absent" and all(run.at(s) in complete for s in STEPS[run.step].needs)),
                    key=lambda r: (r not in resumed, STEPS[r.step].pass_, descriptors.index(r.descriptor),
                                   natural(r.brief.round), AXES.index(r.brief.axis), list(STEPS).index(r.step)))
     for run in ready:
-        if len(lines) >= limit:
+        if len(unlaunched) >= limit:
             break
         brief = fx.briefs[run.brief]
-        p = materialize(plan(run, brief, env.work), brief, fx, env)
-        lines.append(launch_line(p, brief, out))
+        unlaunched.append(materialize(plan(run, brief, env.work), brief, fx, env))
     for d, how in given_up:
         print(f"given up {d}: {how} {GIVE_UP} times")
     for run, failure in sorted(stopped.items(), key=lambda kv: str(kv[0].dir(out))):
@@ -1407,8 +1646,11 @@ def cmd_next(fx: Fixtures, env: Env, descriptors: list[str], limit: int, resume:
     for desc, at in held.items():
         print(f"paused {desc}: usage limit at {datetime.fromtimestamp(at).isoformat(timespec='minutes')}; "
               f"after the reset run: python3 tests/eval/reviewer/reviewer.py next --resume {desc}")
-    if lines:
-        print("\n".join(lines[:limit]))
+    if launch:
+        run_codex(unlaunched[:limit], fx, env)
+    else:
+        for p in unlaunched[:limit]:
+            print(launch_line(p, fx.briefs[p.run.brief], out))
     return 0
 
 
@@ -1423,7 +1665,7 @@ def recheck(fx: Fixtures, env: Env) -> None:
             print(f"recheck {d}: its transcript {receipt.source} is gone; it stays {receipt.status}")
             continue
         p = prepared_at(d)
-        lines = read_jsonl(receipt.source)
+        lines = transcript(receipt.source)
         verdict = contamination(lines, round_future(env, fx.briefs[p.run.brief]), given_lines(p, d, fx, env), p.checkout)
         detail = verdict.detail
         now: Status = "contaminated" if detail else "complete"
@@ -1455,6 +1697,7 @@ def cmd_collect(fx: Fixtures, env: Env, again: bool) -> int:
         recheck(fx, env)
     collected, stuck = 0, []
     native: dict[RunId, Prepared] = {}
+    codex: list[Prepared] = []
     for d in run_dirs(out):
         st = state(d)
         try:
@@ -1465,14 +1708,32 @@ def cmd_collect(fx: Fixtures, env: Env, again: bool) -> int:
             continue
         if receipt:
             collected += 1
-        elif p and p.run.descriptor in MODELS and p.run.brief in fx.briefs:
+        elif p and p.run.descriptor in RETIRED:
+            # The root stopped it; whatever report it left is not a result.
+            print(f"retired {d}: not collected; set it aside with: next {p.run.descriptor}")
+        elif p and p.run.brief in fx.briefs and isinstance(MODELS.get(p.run.descriptor), Native):
             native[p.run] = p
+        elif p and p.run.brief in fx.briefs and isinstance(MODELS.get(p.run.descriptor), Codex):
+            codex.append(p)
         else:
             stuck.append(d)
     transcripts = locate(native, env.transcripts, out) if native else {}
     refused: list[Refusal] = []
     unlaunched: list[Prepared] = []
     in_flight = 0
+    for p in codex:
+        try:
+            line = collect_codex(p, fx, env, exited=False)
+        except Refusal as e:
+            refused.append(e)
+            continue
+        if line:
+            print(line)
+            collected += 1
+        elif launched(p, out):
+            in_flight += 1
+        else:
+            unlaunched.append(p)
     for run, p in native.items():
         path = transcripts[run]
         if path is None:
@@ -1525,7 +1786,8 @@ def cmd_table(fx: Fixtures, env: Env) -> int:
     names = [d for d in MODELS if any(r.run.descriptor == d for r in [*receipts, *dropped])]
     table = key_line(fx.truth) + "\n" + "\n".join(
         render_table(d, axis, rows_for(d, axis, scores, complete, masked, dropped, fx.truth),
-                     sum(1 for r in dropped if r.run.descriptor == d and r.run.brief.axis == axis and r.status == "contaminated"))
+                     sum(1 for r in dropped if r.run.descriptor == d and r.run.brief.axis == axis and r.status == "contaminated"),
+                     RETIRED.get(d))
         for d in names for axis in ("spec", "standards"))
     (out / "table.md").write_text(table)
     print(table, end="")
@@ -1548,6 +1810,7 @@ def main(argv: list[str] | None = None) -> int:
     nxt.add_argument("descriptors", nargs="*", choices=list(MODELS), metavar="descriptor")
     nxt.add_argument("--resume", action="append", choices=list(MODELS), default=[], metavar="descriptor")
     nxt.add_argument("--limit", type=at_least_one, default=8)
+    nxt.add_argument("--run", action="store_true", help="launch the Codex runs as codex exec and collect them")
     verbs.add_parser("collect").add_argument("--recheck", action="store_true")
     verbs.add_parser("table")
     args = parser.parse_args(argv)
@@ -1562,7 +1825,7 @@ def main(argv: list[str] | None = None) -> int:
             return cmd_collect(fx, env, args.recheck)
         if args.verb == "table":
             return cmd_table(fx, env)
-        return cmd_next(fx, env, list(dict.fromkeys(args.descriptors + args.resume)), args.limit, args.resume)
+        return cmd_next(fx, env, list(dict.fromkeys(args.descriptors + args.resume)), args.limit, args.resume, args.run)
     except Refusal as e:
         print(f"reviewer: {e}", file=sys.stderr)
         return 1

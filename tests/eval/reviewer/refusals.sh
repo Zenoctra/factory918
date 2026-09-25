@@ -13,7 +13,7 @@ rebuild="$here/tests/eval/reviewer/rebuild.sh"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
-C=claude:opus-5
+C=claude:opus-5.5
 F=claude:fable-5.1
 g() { git -C "$tmp/repo" -c user.name=t -c user.email=t@example.com "$@"; }
 # The content check reads only commits made after the head, so each commit gets its own hour.
@@ -248,7 +248,7 @@ transcript=""
 # finish <launch line> <report> [model] [state] [tool|target] [effort]
 finish() {
   t=$((t + 1))
-  transcript="$(h finish "$1" "$2" "${3:-claude-opus-5}" "${4:-finished}" "${5:-}" "$REVIEWER_TRANSCRIPTS" "$t" "${6:-high}")"
+  transcript="$(h finish "$1" "$2" "${3:-claude-opus-5-5}" "${4:-finished}" "${5:-}" "$REVIEWER_TRANSCRIPTS" "$t" "${6:-high}")"
 }
 line_for() { grep -F "/$1/$2\"" <<<"$out" || true; }
 # cell <column> <arm> <pass> [axis]: one cell of the axis's table (standards by default).
@@ -360,7 +360,7 @@ l1="$(sed -n 1p <<<"$out")"
 l2="$(sed -n 2p <<<"$out")"
 lf="$(sed -n 3p <<<"$out")"
 co1="$(h checkout "$l1")"
-check "next: the lower tier agent" is "$(h get "$l1" agent.subagent_type)" review-lower-high
+check "next: the upper tier agent" is "$(h get "$l1" agent.subagent_type)" review-upper-high
 check "next: Fable through model fable" is "$(h get "$lf" agent.subagent_type)/$(h get "$lf" agent.model)" review-fable-high/fable
 check "next: the prompt" is "$(h get "$l1" prompt)" "Read \`$co1/$reldir/standards-brief.md\` whole and follow it. You are working in \`$co1\`; every relative path in the brief is relative to it. The ticket as it stood at this commit is \`$co1/$reldir/ticket.md\`, and the PR's grounding is \`$co1/$reldir/blast-radius.md\`. Your scratch folder for notes and any files you make is \`$co1/.scratch/work/\`."
 check "next: the export holds the scratch folder" test -d "$co1/.scratch/work"
@@ -452,7 +452,7 @@ check "table: scores.tsv carries the filed and found ids" has "$(cat "$REVIEWER_
 # Receipts.
 fresh fx-effort
 run next "$C" --limit 1
-finish "$out" "$tmp/rep/hit.md" claude-opus-5 finished "" medium
+finish "$out" "$tmp/rep/hit.md" claude-opus-5-5 finished "" medium
 run collect
 check "effort: a medium transcript refuses" is "$code" 1
 check "effort: names the run and the effort" has "$err" "$C r1/standards step 1 ran at effort medium"
@@ -460,9 +460,9 @@ check "effort: says the fix" has "$err" "set \`effort: high\` in the agent defin
 check "effort: nothing collected" absent "$(rundir "$C" standards 1)/receipt.json"
 fresh fx-model
 run next "$C" --limit 1
-finish "$out" "$tmp/rep/hit.md" claude-opus-5-5
+finish "$out" "$tmp/rep/hit.md" claude-opus-5
 run collect
-check "model: a wrong served model refuses" has "$err" "was served claude-opus-5-5"
+check "model: a wrong served model refuses" has "$err" "was served claude-opus-5"
 fresh stopped
 run next "$C" --limit 2
 finish "$(sed -n 1p <<<"$out")" "$tmp/rep/nocount.md"
@@ -477,7 +477,7 @@ check "stopped: the table's chains count shows it" is "$(cell chains S 1):$(cell
 
 fresh refused-one
 run next "$C" --limit 2
-finish "$(sed -n 1p <<<"$out")" "$tmp/rep/hit.md" claude-opus-5-5
+finish "$(sed -n 1p <<<"$out")" "$tmp/rep/hit.md" claude-opus-5
 finish "$(sed -n 2p <<<"$out")" "$tmp/rep/hit.md"
 run collect
 check "collect: one run's refusal still exits 1" is "$code" 1
@@ -486,7 +486,7 @@ check "collect: the refused run has no receipt" absent "$(rundir "$C" standards 
 fresh dead
 run next "$C" --limit 1
 for attempt in 1 2 3; do
-  finish "$out" none claude-opus-5 dead
+  finish "$out" none claude-opus-5-5 dead
   REVIEWER_SETTLE_SECONDS=0 run collect
   [ "$attempt" != 1 ] || check "no response: a lane with no served model is a dropout" is "$(h field "$(rundir "$C" standards 1)/receipt.json" status)" dropout
   [ "$attempt" != 1 ] || check "no response: named with the text it left" is "$(h field "$(rundir "$C" standards 1)/receipt.json" detail)" "no-response: API Error: 500 Internal server error. $(printf 'x%.0s' $(seq 82))"
@@ -502,7 +502,7 @@ check "no response: not as a usage limit" is "$(cell "usage limit" I 1)" 0
 
 fresh late
 run next "$C" --limit 1
-finish "$out" none claude-opus-5 late
+finish "$out" none claude-opus-5-5 late
 REVIEWER_SETTLE_SECONDS=3600 run collect
 check "settle: a young <synthetic> last line stays in flight" has "$out" "in flight 1"
 REVIEWER_SETTLE_SECONDS=0 run collect
@@ -512,16 +512,16 @@ check "no response: it is prepared again, not stopped" is "$(h get "$out" run)" 
 
 fresh plain
 run next "$C" --limit 1
-finish "$out" none claude-opus-5 plain
+finish "$out" none claude-opus-5-5 plain
 REVIEWER_SETTLE_SECONDS=0 run collect
 check "settle: a synthetic last line whose content is a plain string settles" is "$(h field "$(rundir "$C" standards 1)/receipt.json" detail)" "no-response: API Error: 500 Internal server error"
 
 fresh late-drift
 run next "$C" --limit 2
-finish "$(sed -n 1p <<<"$out")" none claude-opus-5-5 late
-finish "$(sed -n 2p <<<"$out")" none claude-opus-5 late "" medium
+finish "$(sed -n 1p <<<"$out")" none claude-opus-5 late
+finish "$(sed -n 2p <<<"$out")" none claude-opus-5-5 late "" medium
 REVIEWER_SETTLE_SECONDS=0 run collect
-check "drift: a lane that died after a wrong model is refused, not retried" has "$err" "$C r1/standards step 1 was served claude-opus-5-5"
+check "drift: a lane that died after a wrong model is refused, not retried" has "$err" "$C r1/standards step 1 was served claude-opus-5"
 check "drift: a lane that died after effort medium is refused, not retried" has "$err" "$C r1/spec step 1 ran at effort medium"
 check "drift: the wrong model is not a dropout" absent "$(rundir "$C" standards 1)/receipt.json"
 check "drift: effort medium is not a dropout" absent "$(rundir "$C" spec 1)/receipt.json"
@@ -570,7 +570,7 @@ check "usage limit: out of the metrics" is "$(cell chains I 1)" 1
 
 fresh contaminated
 run next "$C" --limit 1
-RESULT="$later_line" finish "$out" "$tmp/rep/hit.md" claude-opus-5 finished "Bash|cat later.md"
+RESULT="$later_line" finish "$out" "$tmp/rep/hit.md" claude-opus-5-5 finished "Bash|cat later.md"
 run collect
 check "content: a result line only a later commit holds is contamination" is "$(h field "$(rundir "$C" standards 1)/receipt.json" status)" contaminated
 check "content: the detail names the tool call, the commit and the line" is "$(h field "$(rundir "$C" standards 1)/receipt.json" detail)" "Bash {\"command\": \"cat later.md\"} returned a line first added by ${fix2:0:7}: $later_line"
@@ -582,7 +582,7 @@ for result in "     1→$later_line" "     1	$later_line" "later.md:1:$later_lin
   i=$((i + 1))
   fresh "prefix$i"
   run next "$C" --limit 1
-  RESULT="$result" finish "$out" "$tmp/rep/hit.md" claude-opus-5 finished "Read|/elsewhere/later.md"
+  RESULT="$result" finish "$out" "$tmp/rep/hit.md" claude-opus-5-5 finished "Read|/elsewhere/later.md"
   run collect
   check "content: a tool's line prefix is stripped: $result" is "$(h field "$(rundir "$C" standards 1)/receipt.json" status)" contaminated
 done
@@ -590,14 +590,14 @@ for case in "tiny line|a later line under the floor" "$head_line|a later line th
             "$read_rule|a later line the brief carries" "$ticket_line|a later line the exported ticket holds" "TWO fixed again in the second commit TWO|no line of the future, only part of one"; do
   fresh "clean-${case#*|}"
   run next "$C" --limit 1
-  RESULT="${case%%|*}" finish "$out" "$tmp/rep/hit.md" claude-opus-5 finished "Bash|cat later.md"
+  RESULT="${case%%|*}" finish "$out" "$tmp/rep/hit.md" claude-opus-5-5 finished "Bash|cat later.md"
   run collect
   check "content: ${case#*|} is not contamination" is "$(h field "$(rundir "$C" standards 1)/receipt.json" status)" complete
 done
 fresh giveup
 run next "$C" --limit 1
 for attempt in 1 2 3; do
-  RESULT="$later_line" finish "$out" "$tmp/rep/hit.md" claude-opus-5 finished "Bash|cat later.md"
+  RESULT="$later_line" finish "$out" "$tmp/rep/hit.md" claude-opus-5-5 finished "Bash|cat later.md"
   run collect
   run next "$C" --limit 1
   [ "$attempt" = 3 ] || check "give up: contamination $attempt is prepared again" is "$(h get "$out" run)" "$(rundir "$C" standards 1)"
@@ -619,14 +619,14 @@ for case in "A line written on the ticket after the review|live #7" "A comment p
             "The PR body as edited after the review|live PR #1"; do
   fresh "live-${case#*|}"
   run next "$C" --limit 1
-  RESULT="${case%%|*}" finish "$out" "$tmp/rep/hit.md" claude-opus-5 finished "Bash|gh issue view 7"
+  RESULT="${case%%|*}" finish "$out" "$tmp/rep/hit.md" claude-opus-5-5 finished "Bash|gh issue view 7"
   run collect
   check "live: text GitHub holds now and the frozen inputs do not is contamination (${case#*|})" \
     is "$(h field "$(rundir "$C" standards 1)/receipt.json" detail)" "Bash {\"command\": \"gh issue view 7\"} returned a line first added by ${case#*|}: ${case%%|*}"
 done
 fresh live-frozen
 run next "$C" --limit 1
-RESULT="Change the second line." finish "$out" "$tmp/rep/hit.md" claude-opus-5 finished "Bash|gh issue view 7"
+RESULT="Change the second line." finish "$out" "$tmp/rep/hit.md" claude-opus-5-5 finished "Bash|gh issue view 7"
 run collect
 check "live: a ticket line the frozen inputs hold is not" is "$(h field "$(rundir "$C" standards 1)/receipt.json" status)" complete
 GH_OFFLINE=1 run collect --recheck
@@ -648,7 +648,7 @@ for case in "Read|$pad/notes.md|contaminated|a scratchpad file another run wrote
   IFS='|' read -r tool target want what <<<"$case"
   fresh "cross-${what// /-}"
   run next "$C" --limit 1
-  finish "$out" "$tmp/rep/hit.md" claude-opus-5 finished "$tool|$target"
+  finish "$out" "$tmp/rep/hit.md" claude-opus-5-5 finished "$tool|$target"
   run collect
   check "cross-run: $what is $want" is "$(h field "$(rundir "$C" standards 1)/receipt.json" status)" "$want"
   [ "$want" = complete ] || check "cross-run: named as a cross-run read ($what)" starts "$(h field "$(rundir "$C" standards 1)/receipt.json" detail)" "cross-run read at call 1: $tool "
@@ -656,13 +656,13 @@ done
 fresh cross-own-work
 run next "$C" --limit 1
 co="$(h checkout "$out")"
-finish "$out" "$tmp/rep/hit.md" claude-opus-5 finished "Read|$co/.scratch/work/notes.md"
+finish "$out" "$tmp/rep/hit.md" claude-opus-5-5 finished "Read|$co/.scratch/work/notes.md"
 run collect
 check "cross-run: a read inside its own .scratch/work is clean" is "$(h field "$(rundir "$C" standards 1)/receipt.json" status)" complete
 
 fresh record
 run next "$C" --limit 1
-RESULT="$later_line" finish "$out" "$tmp/rep/quoted.md" claude-opus-5 finished "Bash|cd /elsewhere/repo && cat later.md"
+RESULT="$later_line" finish "$out" "$tmp/rep/quoted.md" claude-opus-5-5 finished "Bash|cd /elsewhere/repo && cat later.md"
 run collect
 check "record: the first contaminated call's ordinal" is "$(h field "$(rundir "$C" standards 1)/receipt.json" first_contaminated.call)" 1
 check "record: and its time" is "$(h field "$(rundir "$C" standards 1)/receipt.json" first_contaminated.timestamp)" "2026-09-23T10:00:02.000Z"
@@ -671,7 +671,7 @@ check "record: an item that quotes nothing has no sighting" is "$(h field "$(run
 check "record: a cd outside the export is recorded" is "$(h field "$(rundir "$C" standards 1)/receipt.json" outside)" '["1 Bash /elsewhere/repo"]'
 fresh record-clean
 run next "$C" --limit 1
-finish "$out" "$tmp/rep/hit.md" claude-opus-5 finished "Read|/elsewhere/a.txt"
+finish "$out" "$tmp/rep/hit.md" claude-opus-5-5 finished "Read|/elsewhere/a.txt"
 run collect
 check "record: a Read outside the export is recorded" is "$(h field "$(rundir "$C" standards 1)/receipt.json" outside)" '["1 Read /elsewhere/a.txt"]'
 check "record: but does not exclude the run" is "$(h field "$(rundir "$C" standards 1)/receipt.json" status)" complete
@@ -693,14 +693,14 @@ check "content: the masked pass kept its brief and diff" exists "$(rundir "$C" s
 for tool in Agent WebFetch WebSearch; do
   fresh "undated-$tool"
   run next "$C" --limit 1
-  finish "$out" "$tmp/rep/hit.md" claude-opus-5 finished "$tool|x"
+  finish "$out" "$tmp/rep/hit.md" claude-opus-5-5 finished "$tool|x"
   run collect
   check "content: $tool, whose results cannot be dated, is contamination" starts "$(h field "$(rundir "$C" standards 1)/receipt.json" detail)" "$tool ("
 done
 for tool in Skill ToolSearch TodoWrite Read Grep; do
   fresh "dated-$tool"
   run next "$C" --limit 1
-  finish "$out" "$tmp/rep/hit.md" claude-opus-5 finished "$tool|/anywhere/at/all"
+  finish "$out" "$tmp/rep/hit.md" claude-opus-5-5 finished "$tool|/anywhere/at/all"
   run collect
   check "content: $tool is judged by what it returned" is "$(h field "$(rundir "$C" standards 1)/receipt.json" status)" complete
 done
@@ -713,7 +713,7 @@ finish "$l1" "$tmp/rep/hit.md"
 t1="$transcript"
 finish "$l2" "$tmp/rep/hit.md"
 run collect
-RESULT="$later_line" finish "$l1" none claude-opus-5 finished "Bash|cat later.md"
+RESULT="$later_line" finish "$l1" none claude-opus-5-5 finished "Bash|cat later.md"
 mv "$transcript" "$t1"
 python3 - "$(rundir "$C" spec 1)/receipt.json" <<'PY'
 import json, sys
@@ -757,7 +757,7 @@ check "recheck: and says why" has "$out" "clean now, but its report is gone; it 
 fresh foreign
 old="$(rundir "$C" standards 1)"
 mkdir -p "$old"
-printf '{"version": 1, "run": {"descriptor": "%s", "round": "r1", "axis": "standards", "k": 1}, "status": "complete", "detail": "complete", "reported_model": "claude-opus-5", "model_verified": true, "effort": "medium", "tokens": null, "wall_ms": 1, "source": "x"}\n' "$C" > "$old/receipt.json"
+printf '{"version": 1, "run": {"descriptor": "%s", "round": "r1", "axis": "standards", "k": 1}, "status": "complete", "detail": "complete", "reported_model": "claude-opus-5-5", "model_verified": true, "effort": "medium", "tokens": null, "wall_ms": 1, "source": "x"}\n' "$C" > "$old/receipt.json"
 run collect
 check "foreign: collect lists a #103 receipt as stuck" has "$out" "stuck $old"
 check "foreign: and does not count it collected" has "$out" "collected 0 ·"
@@ -796,7 +796,7 @@ run collect
 check "collect: no transcripts directory refuses naming it" has "$err" "$REVIEWER_TRANSCRIPTS"
 fresh settle
 run next "$C" --limit 1
-finish "$out" "$tmp/rep/hit.md" claude-opus-5 textnull
+finish "$out" "$tmp/rep/hit.md" claude-opus-5-5 textnull
 REVIEWER_SETTLE_SECONDS=3600 run collect
 check "collect: a young text-only last line stays in flight" has "$out" "in flight 1"
 REVIEWER_SETTLE_SECONDS=0 run collect
@@ -805,6 +805,154 @@ run next nope
 check "next: an unknown descriptor exits 2" is "$code" 2
 run next "$C" --limit 0
 check "next: --limit 0 exits 2" is "$code:$(has "$err" "must be at least 1" && echo y)" 2:y
+
+# Codex: a fake codex on PATH plays a session from the real smoke log (codex/smoke.jsonl) into CODEX_HOME,
+# with the model, effort, command and output the FAKE_CODEX_* knobs name, and writes the report named in
+# the brief.
+S=codex:gpt-6-sol
+cat > "$tmp/bin/codex" <<'STUB'
+#!/usr/bin/env python3
+import json, os, re, shutil, sys, time, uuid
+from pathlib import Path
+
+args = sys.argv[1:]
+with open(os.environ["FAKE_CODEX_LOG"], "a") as f:
+    f.write(json.dumps(args) + "\n")
+model, cwd, prompt = args[args.index("-m") + 1], args[args.index("--cd") + 1], args[-1]
+effort = next(a.split("=", 1)[1].strip('"') for a in args if a.startswith("model_reasoning_effort="))
+live = os.environ.get("FAKE_CODEX_LIVE")
+if live:
+    mark = Path(live, str(os.getpid()))
+    mark.touch()
+    with open(live + ".peak", "a") as f:
+        f.write(f"{len(os.listdir(live))}\n")
+    time.sleep(1)
+    mark.unlink()
+tid = str(uuid.uuid4())
+print(json.dumps({"type": "thread.started", "thread_id": tid}), flush=True)
+mode = os.environ.get("FAKE_CODEX", "ok")
+if mode == "crash":
+    print("codex: stream disconnected before completion", file=sys.stderr)
+    sys.exit(1)
+brief = re.search(r"Read `([^`]+)` whole", prompt).group(1)
+report = re.search(r"^Write your report to `([^`]+)`", Path(brief).read_text(), re.M).group(1)
+shutil.copyfile(os.environ["FAKE_CODEX_REPORT"], Path(cwd, report))
+lines = [json.loads(l) for l in Path(os.environ["FAKE_CODEX_TEMPLATE"]).read_text().replace("/tmp/codex-smoke", cwd).splitlines()]
+for line in lines:
+    p = line["payload"]
+    if line["type"] == "turn_context":
+        p["model"], p["effort"] = os.environ.get("FAKE_CODEX_MODEL", model), os.environ.get("FAKE_CODEX_EFFORT", effort)
+        p["collaboration_mode"]["settings"].update(model=p["model"], reasoning_effort=p["effort"])
+    elif p.get("type") == "item_completed" and p["item"]["type"] == "CommandExecution" and "FAKE_CODEX_CMD" in os.environ:
+        if p["item"]["command"][-1] == "cat hello.txt":
+            p["item"]["command"][-1] = os.environ["FAKE_CODEX_CMD"]
+    elif p.get("type") == "custom_tool_call_output" and "FAKE_CODEX_OUTPUT" in os.environ:
+        if "a line from the smoke file" in p["output"][1]["text"]:
+            p["output"][1]["text"] = json.dumps({"exit_code": 0, "output": os.environ["FAKE_CODEX_OUTPUT"] + "\n"})
+if mode == "limit":
+    said = "You've hit your usage limit. Upgrade to Pro or try again at 3:00 AM."
+    lines = [l for l in lines if l["payload"].get("type") != "task_complete"]
+    lines.append({"timestamp": lines[-1]["timestamp"], "type": "event_msg", "payload": {"type": "error", "message": said}})
+day = Path(os.environ["CODEX_HOME"], "sessions", "2026", "09", "24")
+day.mkdir(parents=True, exist_ok=True)
+(day / f"rollout-2026-09-24T20-51-15-{tid}.jsonl").write_text("".join(json.dumps(l) + "\n" for l in lines))
+if mode == "limit":
+    print(json.dumps({"type": "turn.failed", "error": {"message": said}}))
+    sys.exit(1)
+print(json.dumps({"type": "turn.completed", "usage": {}}))
+STUB
+chmod +x "$tmp/bin/codex"
+export FAKE_CODEX_TEMPLATE="$here/tests/eval/reviewer/codex/smoke.jsonl" FAKE_CODEX_REPORT="$tmp/rep/hit.md"
+sol() {
+  fresh "$1"
+  export CODEX_HOME="$tmp/codex/$1" FAKE_CODEX_LOG="$tmp/codex/$1.log"
+  mkdir -p "$CODEX_HOME"
+}
+srundir() { echo "$REVIEWER_OUT/runs/${S//:/-}/r1/$1/$2"; }
+
+sol sol-dry
+run next "$S"
+check "codex next: pass 1, both axes" lines "$out" 2
+l1="$(sed -n 1p <<<"$out")"
+co1="$(python3 -c 'import json, sys; c = json.loads(sys.argv[1])["command"]; print(c[c.index("--cd") + 1])' "$l1")"
+check "codex next: the command" is "$(h get "$l1" command | python3 -c 'import json, sys; print(" ".join(json.load(sys.stdin)[:14]))')" "codex exec -m gpt-6-sol -c model_reasoning_effort=\"high\" --sandbox workspace-write -c sandbox_workspace_write.network_access=true --skip-git-repo-check --cd $co1 --json"
+check "codex next: the same prompt as a Claude run" is "$(h get "$l1" command.14)" "Read \`$co1/$reldir/standards-brief.md\` whole and follow it. You are working in \`$co1\`; every relative path in the brief is relative to it. The ticket as it stood at this commit is \`$co1/$reldir/ticket.md\`, and the PR's grounding is \`$co1/$reldir/blast-radius.md\`. Your scratch folder for notes and any files you make is \`$co1/.scratch/work/\`."
+check "codex next: the export holds the frozen ticket and the scratch folder" test -f "$co1/$reldir/ticket.md" -a -d "$co1/.scratch/work"
+check "codex next: nothing launched" absent "$FAKE_CODEX_LOG"
+run next "$S" "$C" --run
+check "codex --run: a Claude descriptor refuses" has "$err" "--run launches Codex routes only; $C launch through the Agent tool"
+run next "$S" --run
+check "codex --run: exit 0" is "$code" 0
+check "codex --run: the two prepared runs launch" is "$(grep -c '^launched ' <<<"$out")" 2
+check "codex --run: and are collected" is "$(h field "$(srundir standards 1)/receipt.json" status):$(h field "$(srundir spec 1)/receipt.json" status)" complete:complete
+check "codex --run: codex ran in the export" has "$(python3 -c 'import json, sys; [print(a[a.index("--cd") + 1]) for a in map(json.loads, open(sys.argv[1]))]' "$FAKE_CODEX_LOG")" "$co1"
+check "codex receipt: the served model from the log" is "$(h field "$(srundir standards 1)/receipt.json" reported_model)" gpt-6-sol
+check "codex receipt: the effort from the log" is "$(h field "$(srundir standards 1)/receipt.json" effort)" high
+check "codex receipt: tokens from the log, cached apart from input" is "$(h field "$(srundir standards 1)/receipt.json" tokens)" '{"input": 3815, "cache_read": 43776, "cache_write": 0, "output": 200, "reasoning": 21}'
+check "codex receipt: wall clock from the log" is "$(h field "$(srundir standards 1)/receipt.json" wall_ms)" 11231
+check "codex receipt: its source is the session log" starts "$(h field "$(srundir standards 1)/receipt.json" source)" "$CODEX_HOME/sessions/2026/09/24/rollout-"
+check "codex receipt: the report is read from the export" same "$(srundir standards 1)/report.md" "$tmp/rep/hit.md"
+check "codex collect: the export is removed" absent "$co1"
+run table
+check "codex table: its own tables" is "$(grep -c "^## $S, " "$REVIEWER_OUT/table.md")" 2
+mkdir -p "$tmp/codex/live"
+FAKE_CODEX_LIVE="$tmp/codex/live" run next "$S" --run
+check "codex --run: the six pass-2 runs launch" is "$(grep -c '^launched ' <<<"$out")" 6
+check "codex --run: at most four at once" is "$(sort -n "$tmp/codex/live.peak" | tail -1)" 4
+check "codex --run: all six collected" is "$(find "$REVIEWER_OUT/runs/codex-gpt-6-sol/r1" -path '*2/receipt.json' | wc -l | tr -d ' ')" 6
+
+for knob in "FAKE_CODEX_EFFORT=medium|ran at effort medium" "FAKE_CODEX_MODEL=gpt-6-terra|was served gpt-6-terra"; do
+  sol "sol-${knob%%=*}"
+  run next "$S" --limit 1
+  env "${knob%%|*}" python3 "$script" next "$S" --run > "$tmp/o" 2> "$tmp/e" && code=0 || code=$?
+  check "codex receipt: ${knob%%|*} refuses" is "$code" 1
+  check "codex receipt: ${knob%%|*} says why" has "$(cat "$tmp/e")" "${knob#*|}"
+  check "codex receipt: ${knob%%|*} collects nothing" absent "$(srundir standards 1)/receipt.json"
+done
+
+sol sol-later
+FAKE_CODEX_OUTPUT="$later_line" run next "$S" --limit 1 --run
+check "codex content: a later line in an exec output contaminates" is "$(h field "$(srundir standards 1)/receipt.json" status)" contaminated
+check "codex content: naming the exec and the commit" has "$(h field "$(srundir standards 1)/receipt.json" detail)" "Bash {\"command\": \"cd "
+check "codex content: at call 1" is "$(h field "$(srundir standards 1)/receipt.json" first_contaminated.call)" 1
+
+sol sol-cross
+FAKE_CODEX_CMD="cat /tmp/claude-501/p/s/scratchpad/rv89/notes.md" run next "$S" --limit 1 --run
+check "codex cross-run: another run's scratchpad file" is "$(h field "$(srundir standards 1)/receipt.json" detail)" "cross-run read at call 1: Bash /tmp/claude-501/p/s/scratchpad/rv89/notes.md"
+
+sol sol-limit
+FAKE_CODEX=limit run next "$S" --limit 1 --run
+check "codex usage limit: a dropout" starts "$(h field "$(srundir standards 1)/receipt.json" detail)" "usage-limit: "
+run next "$S"
+check "codex usage limit: the model is paused" starts "$out" "paused $S: usage limit at "
+run next --resume "$S" --run
+check "codex usage limit: --resume launches it and the one left" is "$(grep -c '^launched ' <<<"$out")" 2
+check "codex usage limit: then it is complete" is "$(h field "$(srundir standards 1)/receipt.json" status)" complete
+
+sol sol-crash
+FAKE_CODEX=crash run next "$S" --limit 1 --run
+check "codex no response: a failure with no answer" starts "$(h field "$(srundir standards 1)/receipt.json" detail)" "no-response: "
+check "codex no response: with what stderr said" has "$(h field "$(srundir standards 1)/receipt.json" detail)" "stream disconnected"
+
+# Opus 5 is retired: a stopped run it left is set aside, never collected, and its complete runs stay.
+fresh retired
+O=claude:opus-5
+python3 "$script" next "$C" --limit 1 > "$tmp/o"
+mkdir -p "$REVIEWER_OUT/runs/claude-opus-5/r1/standards"
+mv "$(rundir "$C" standards 1)" "$REVIEWER_OUT/runs/claude-opus-5/r1/standards/I2"
+sed -i.bak "s/\"$C\"/\"$O\"/; s/\"step\": \"1\"/\"step\": \"I2\"/" "$REVIEWER_OUT/runs/claude-opus-5/r1/standards/I2/run.json"
+rm "$REVIEWER_OUT/runs/claude-opus-5/r1/standards/I2/run.json.bak"
+finish "$(cat "$tmp/o")" "$tmp/rep/hit.md" claude-opus-5
+run collect
+check "retired: collect never collects a stopped run" absent "$REVIEWER_OUT/runs/claude-opus-5/r1/standards/I2/receipt.json"
+check "retired: and says so" has "$out" "retired $REVIEWER_OUT/runs/claude-opus-5/r1/standards/I2: not collected; set it aside with: next $O"
+run next "$O"
+check "retired: next names the model retired" starts "$out" "retired $O: retired from scheduling (Manuel, 2026-09-24)"
+check "retired: next prepares nothing for it" lacks "$out" "{"
+check "retired: the stopped run is set aside" is "$(h field "$REVIEWER_OUT/dropped/claude-opus-5/r1/standards/I2/1/receipt.json" detail)" "retired: stopped by the root"
+check "retired: and says so" has "$out" "set aside $REVIEWER_OUT/runs/claude-opus-5/r1/standards/I2: retired: stopped by the root"
+run next "$O" "$C" --limit 1
+check "retired: named with another model, only the other is prepared" is "$(grep -c '^{' <<<"$out"):$(grep -c 'claude-opus-5/' <<<"$(grep '^{' <<<"$out")" || true)" 1:0
 
 pycheck() {
   local label=$1
@@ -1064,3 +1212,58 @@ assert r.dated("# in place of the one it rebuilt") == "# in place of the one it 
 pycheck "settle: no lines leaves the brief as it is" 'assert r.settle("x\n## Standards\n", "standards", []) == "x\n## Standards\n"'
 
 echo "all $n checks passed"
+pycheck "codex: the real smoke session reads as two Bash calls with what the model saw" '
+from pathlib import Path
+lines = r.transcript(Path(sys.argv[1]).parent / "codex" / "smoke.jsonl")
+uses = r.tool_uses(lines)
+assert [(c, n, a["command"]) for c, n, a, _ in uses] == [(1, "Bash", "cd /tmp/codex-smoke && cat hello.txt"),
+                                                          (2, "Bash", "cd /tmp/codex-smoke && printf '"'"'done\\n'"'"' > out.txt")], uses
+results = r.tool_results(lines)
+assert "a line from the smoke file" in results[0].body.splitlines() and results[0].call == 1, results'
+pycheck "codex: the real smoke session names model, effort, tokens and wall clock" '
+import re
+from pathlib import Path
+src = Path(sys.argv[1]).parent / "codex" / "smoke.jsonl"
+rc = r.receipt_from_codex(RUN, r.read_jsonl(src), "", re.compile("^gpt-6-sol$"), src, {}, set(), Path("/tmp/codex-smoke"))
+assert (rc.status, rc.reported_model, rc.effort, rc.wall_ms) == ("complete", "gpt-6-sol", "high", 11231), rc
+assert rc.tokens == r.Tokens(3815, 43776, 0, 200, 21), rc.tokens'
+pycheck "codex: a log that records no effort is recorded as requested, not guessed" '
+import json, re
+from pathlib import Path
+src = Path(sys.argv[1]).parent / "codex" / "smoke.jsonl"
+roll = r.read_jsonl(src)
+for line in roll:
+    if line["type"] == "turn_context":
+        line["payload"].pop("effort")
+        line["payload"]["collaboration_mode"]["settings"].pop("reasoning_effort")
+rc = r.receipt_from_codex(RUN, roll, "", re.compile("^gpt-6-sol$"), src, {}, set(), Path("/tmp/codex-smoke"))
+assert rc.effort == "requested: high", rc'
+pycheck "codex: a web search, in a call or on its own, is a tool the check cannot date" '
+from pathlib import Path
+roll = r.read_jsonl(Path(sys.argv[1]).parent / "codex" / "smoke.jsonl")
+web = {"type": "event_msg", "timestamp": "t", "payload": {"type": "item_completed", "item": {"type": "Extension", "kind": "web.search", "id": "w1", "query": "q"}}}
+v = r.contamination(r.codex_transcript(roll + [web]), {}, set(), Path("/tmp/codex-smoke"))
+assert v.detail and v.detail.startswith("WebSearch"), v
+call = next(i for i, l in enumerate(roll) if l["payload"].get("type") == "custom_tool_call")
+v = r.contamination(r.codex_transcript(roll[:call + 1] + [web] + roll[call + 1:]), {}, set(), Path("/tmp/codex-smoke"))
+assert v.detail.startswith("WebSearch") and v.first["call"] == 1, v'
+pycheck "codex: a file change it applied makes the path its own" '
+from pathlib import Path
+roll = r.read_jsonl(Path(sys.argv[1]).parent / "codex" / "smoke.jsonl")
+pad = "/tmp/claude-501/p/s/scratchpad/mine"
+change = {"type": "event_msg", "timestamp": "t", "payload": {"type": "item_completed", "item": {"type": "FileChange", "changes": {pad + "/n.md": {"type": "add"}}}}}
+out = {"type": "response_item", "timestamp": "t", "payload": {"type": "custom_tool_call_output", "call_id": "p1", "output": "ok"}}
+use = {"type": "response_item", "timestamp": "t", "payload": {"type": "custom_tool_call", "call_id": "p1", "name": "exec", "input": "patch"}}
+lines = r.codex_transcript([use, change, out] + roll)
+lines[2]["message"]["content"][0]["input"]["command"] = "cat " + pad + "/n.md"
+assert r.cross_run_reads(lines, Path("/w/abc/factory918")) == [], r.cross_run_reads(lines, Path("/w/abc/factory918"))'
+pycheck "codex: the real smoke run named its session log by the thread id on stdout" '
+import json
+from pathlib import Path
+here = Path(sys.argv[1]).parent / "codex"
+first = json.loads((here / "smoke-stdout.jsonl").read_text().splitlines()[0])
+meta = json.loads((here / "smoke.jsonl").read_text().splitlines()[0])
+assert first["type"] == "thread.started" and first["thread_id"] == meta["payload"]["session_id"], (first, meta)'
+pycheck "retired: the table labels the model" '
+text = r.render_table("claude:opus-5", "spec", [], 0, r.RETIRED["claude:opus-5"])
+assert "This model is partial (pass 1 and some pass 2; retired 2026-09-24)." in text, text'

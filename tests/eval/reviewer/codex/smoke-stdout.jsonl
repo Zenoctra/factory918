@@ -1,0 +1,9 @@
+{"type":"thread.started","thread_id":"01a0d642-781a-7f50-a53e-d892ab844def"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_0","type":"agent_message","text":"I’ll read `hello.txt`, write `done` to `out.txt`, then reply with the line I read."}}
+{"type":"item.started","item":{"id":"item_1","type":"command_execution","command":"/bin/zsh -lc 'cat hello.txt'","aggregated_output":"","exit_code":null,"status":"in_progress"}}
+{"type":"item.completed","item":{"id":"item_1","type":"command_execution","command":"/bin/zsh -lc 'cat hello.txt'","aggregated_output":"a line from the smoke file\n","exit_code":0,"status":"completed"}}
+{"type":"item.started","item":{"id":"item_2","type":"command_execution","command":"/bin/zsh -lc \"printf 'done\\\\n' > out.txt\"","aggregated_output":"","exit_code":null,"status":"in_progress"}}
+{"type":"item.completed","item":{"id":"item_2","type":"command_execution","command":"/bin/zsh -lc \"printf 'done\\\\n' > out.txt\"","aggregated_output":"","exit_code":0,"status":"completed"}}
+{"type":"item.completed","item":{"id":"item_3","type":"agent_message","text":"a line from the smoke file"}}
+{"type":"turn.completed","usage":{"input_tokens":47591,"cached_input_tokens":43776,"cache_write_input_tokens":0,"output_tokens":200,"reasoning_output_tokens":21}}
