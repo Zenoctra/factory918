@@ -76,7 +76,7 @@ From a pull request to a merge, in order. Every rung runs without asking you; yo
 3. **Rung 0, CI.** The `Check` job rejects committed evidence, runs `vp check` (format, lint including the project's own rules, types), `pnpm sg` (the cross-language rules) and the build; the `Test` job runs the whole suite; `pr-size.yml` labels the size. This is the only place everything runs, which is why local checks stay targeted. Green here proves the code is well-formed and the tests pass. It proves nothing about whether it is the right change.
 4. **Rung 1, `spec-review`.** The agent runs round one at the first push, while CI runs, in a fresh context so the reviewer is not the author (in `eco` the two reviewers are that fresh context and the owner judges their findings, P109). CI must be green before the PR is merge-ready, not before round one. Two axes: Standards, against `CODING_STANDARDS.md` (the taste the implementer was deliberately not loaded with, so that review imposes it rather than the writer); Spec, against the originating ticket and its parent spec, the only check that the change is what was asked for. Act-on items get fixed; the rest are recorded in the PR body.
 5. **Rung 2, an external review bot**, only if one is listed in the ladder file; none is by default. Findings are verified against the source and fixed, or dismissed with a written reason; the agent asks by default on security, auth, data, billing and migrations.
-6. **Rung 3, `interrogate`**, a multi-tier review across models, only when the design is contested or the diff touches an invariant named in `CONTEXT.md`. It is the expensive rung, so it is conditional.
+6. **Rung 3, `interrogate`**, a multi-tier review across models, only when the design is contested or the diff touches an invariant named in `CONTEXT.md`.
 7. **Babysit.** The agent polls checks and comments newer than its last push until everything is green on the latest commit, then stops at merge-ready.
 8. **Rung 4, you.** Read the conversation and the Verification section against its evidence. Reading every line is optional; reading the claims and their proof is not. Merge. The agent never merges.
 
@@ -110,9 +110,9 @@ Work you start without a ticket, on a cadence:
 
 The default is one monorepo per product: `apps/web`, `apps/mobile`, `apps/admin`, `packages/shared`, `scripts/`, `python/` as needed, one `vite.config.ts`, one CI, one deterministic layer. Vite+ manages the TypeScript surfaces; the React Native profile adds Expo/EAS for mobile builds and simulator verification; the Python profile adds `uv`, `ruff`, `pyright` and `pytest` for Python packages and maps `*.py` to `ruff format` in the same commit hook. Separate repos only when deployment or ownership forces it; then each repo gets the factory and a `system` repo holds the wayfinder maps and a `CONTEXT-MAP.md` pointing at each repo's `CONTEXT.md`.
 
-## Models and cost
+## Models
 
-You are on the $200 Claude plan; the limit is shared across models and Fable 5.1 spends it fastest. Decision 18: Fable writes the code. `factory918 install` writes `~/.claude/pstack-models.md` from the `fable` preset; when Fable's quota runs out a lane drops out and the orchestrator says so, and `factory918 models opus` switches to the Opus preset (`factory918 models fable` switches back). A machine that ran `install` before decision 18 keeps its old sheet until `factory918 models fable` is run once. One file, two presets:
+Decision 18: Fable writes the code. `factory918 install` writes `~/.claude/pstack-models.md` from the `fable` preset; when Fable's quota runs out a lane drops out and the orchestrator says so, and `factory918 models opus` switches to the Opus preset (`factory918 models fable` switches back). A machine that ran `install` before decision 18 keeps its old sheet until `factory918 models fable` is run once. One file, two presets:
 
 | Role | fable preset | opus preset |
 |---|---|---|
@@ -123,11 +123,8 @@ You are on the $200 Claude plan; the limit is shared across models and Fable 5.1
 | `interrogate` reviewers, `arena` cross-judge | Fable + Opus xhigh, Astra when wired | Opus xhigh + Opus high |
 | Juniors: `how` explorers, swarm workers, `standards reviewer` (the `spec-review` Standards axis) | Opus 5 medium | Opus 5 medium |
 | `spec reviewer` (the `spec-review` Spec axis; the orchestrator judges its findings) | Opus 5 high | Opus 5 high |
-| `arena` | off by default | off by default |
 
 The tier (Execution, **Safe and eco.**) decides how many of these roles a ticket launches; the list is Ticket step 0, "The tier".
-
-Rough cost order of the skills, highest first: `arena`, autopilot-stack (one owner per ticket plus a swarm per PR), `swarm`, `interrogate`, `how` in critique mode, `/wayfinder` with parallel research, `/to-tickets` on a large spec (one user reported 1.5M tokens for 14 tickets), then everything else. Check the usage page weekly; if Fable is over a third of spend, move a role down.
 
 ## Updating the factory
 
