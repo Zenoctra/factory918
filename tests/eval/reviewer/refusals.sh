@@ -947,6 +947,9 @@ own = [use(1, "Write", file_path=f"{pad}/mine.md"), use(2, "Read", file_path=f"{
 assert r.cross_run_reads(own, export) == [], r.cross_run_reads(own, export)
 other = own + [use(8, "Bash", command=f"cat {pad}/theirs.md"), use(9, "Read", file_path="/w/nonce2/factory918/x.md")]
 assert [(c, p) for c, _, p, _ in r.cross_run_reads(other, export)] == [(8, pad.removeprefix("/private") + "/theirs.md"), (9, "/w/nonce2/factory918/x.md")], r.cross_run_reads(other, export)'
+pycheck "content: a heading of up to three words dates nothing; a longer comment does" '
+assert r.dated("## Testing decisions") is None and r.dated("### The scenario table") is None, "short headings"
+assert r.dated("# in place of the one it rebuilt") == "# in place of the one it rebuilt"'
 pycheck "settle: no lines leaves the brief as it is" 'assert r.settle("x\n## Standards\n", "standards", []) == "x\n## Standards\n"'
 
 echo "all $n checks passed"

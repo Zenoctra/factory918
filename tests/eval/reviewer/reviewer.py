@@ -514,8 +514,10 @@ def usage_limited_transcript(lines: list[dict]) -> bool:
 # out short tool output (an exit code, a count, a shell keyword) that no corpus run happened to hit.
 # One hit is enough: that tightest case has exactly one.
 FLOOR = 12
-# Lines that date nothing: no letter or digit, a fence marker, a Markdown heading of one word.
-GENERIC_LINE = re.compile(r"^[^A-Za-z0-9]*$|^(`{3,}|~{3,})\S*$|^#+\s*\S+$")
+# Lines that date nothing: no letter or digit, a fence marker, a Markdown heading (or `#` comment) of up
+# to three words. Two-word headings such as `## Testing decisions` recur across tickets and docs; on
+# #138 they alone gave up three pr94-r1/spec/S2 attempts that had read ticket #42 as told.
+GENERIC_LINE = re.compile(r"^[^A-Za-z0-9]*$|^(`{3,}|~{3,})\S*$|^#+\s*\S+(?:\s+\S+){0,2}$")
 # What tools put before a file's line: Read's `12→` or `12<tab>`, cat -n's `12<tab>`, grep -n's
 # `12:` or `12-`, and grep's `path:12:` or `path-12-` over several files.
 TOOL_PREFIXES = (re.compile(r"^\s*\d+(?:→|\t|:|-)"), re.compile(r"^.*?[:-]\d+[:-]"))
