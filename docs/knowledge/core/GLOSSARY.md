@@ -1,4 +1,4 @@
-<!-- lines: 71 | source: core/GLOSSARY.md | part 1/1 | title: Factory918: glossary -->
+<!-- lines: 73 | source: core/GLOSSARY.md | part 1/1 | title: Factory918: glossary -->
 
 ## Contents (line numbers are for the Read tool's offset)
 
@@ -37,6 +37,8 @@ Terms as this system uses them. Where a term belongs to one of the four sources,
 **Map.** A `wayfinder:map` issue holding decision tickets for work bigger than one session. "Plan, don't do." (Matt)
 
 **Mode / phase.** `planning` or `execute`, stored in `.claude/state/mode`, printed every turn by the phase hook. Planning commands and `/mode-plan` set planning; a ticket reference, pstack commands and `/mode-build` set execute.
+
+**Model tier.** Which class of model a role runs on. **Frontier** is judgment and the code that gets merged; **Supporting** is exploration, fan-out and finding. Today both are Opus 5.5, Frontier at `xhigh` effort and Supporting at the effort its role sets; `docs/agents/models.md` places every role. Not the frontier of unblocked tickets (Blocked by), and not a ticket's `safe` or `eco` tier (Ticket step 0).
 
 **Playbook.** A task-shaped recipe inside `poteto-mode/playbooks/`; the router copies its steps verbatim into the todo list. Ours adds `ticket.md`. (pstack)
 

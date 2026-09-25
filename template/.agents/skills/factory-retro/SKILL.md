@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Factory918 retro
 
-The ledger is `docs/agents/ledger.md`: one line per time an agent surprised the human. A rule is earned by recurrence, never by one entry (`docs/factory918/PHILOSOPHY.md`, belief 11). This skill turns recurrences into rules. `reflect` is a different tool: it mines the current transcript for learnings and edits skills.
+The ledger is `docs/agents/ledger.md`: one line per time an agent surprised the human. A rule is earned by recurrence, never by one entry (`docs/factory918/PHILOSOPHY.md`, belief 10). This skill turns recurrences into rules. `reflect` is a different tool: it mines the current transcript for learnings and edits skills.
 
 ## 1. Read the ledger
 
