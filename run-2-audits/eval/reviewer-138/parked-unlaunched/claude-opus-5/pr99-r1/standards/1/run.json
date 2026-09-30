@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "claude:opus-5",
+    "round": "pr99-r1",
+    "axis": "standards",
+    "step": "1"
+  },
+  "nonce": "89f2d919ff79",
+  "checkout": "/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/89f2d919ff79/factory918",
+  "prompt": "Read `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/89f2d919ff79/factory918/.scratch/review/69bd412/standards-brief.md` whole and follow it. You are working in `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/89f2d919ff79/factory918`; every relative path in the brief is relative to it.",
+  "tree": "52ccd8eb509a2871260827a8514c3a1fcaac4d5d",
+  "settled": [],
+  "applied": [],
+  "masked": [],
+  "plain_head": true
+}

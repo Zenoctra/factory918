@@ -1,0 +1,61 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "claude:fable-5.1",
+    "round": "pr96-r1",
+    "axis": "standards",
+    "step": "I3"
+  },
+  "status": "complete",
+  "detail": "complete",
+  "reported_model": "claude-fable-5-1",
+  "effort": "high",
+  "tokens": {
+    "input": 386,
+    "cache_read": 1427767,
+    "cache_write": 123988,
+    "output": 29833,
+    "reasoning": null
+  },
+  "wall_ms": 412437,
+  "source": "/Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/subagents/agent-ae1eb976e41186048.jsonl",
+  "outside": [
+    "6 Read /Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/tool-results/bkknp5flx.txt",
+    "7 Read /Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/tool-results/bkknp5flx.txt",
+    "13 Bash /Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-af1a10e904a9448aa",
+    "13 Bash /Users/manuel/Desktop/Work/Under",
+    "14 Bash /Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-af1a10e904a9448aa",
+    "14 Bash /Users/manuel/Desktop/Work/Under",
+    "15 Bash /Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-af1a10e904a9448aa",
+    "15 Bash /Users/manuel/Desktop/Work/Under",
+    "15 Bash /",
+    "16 Bash /Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-af1a10e904a9448aa",
+    "16 Bash /Users/manuel/Desktop/Work/Under",
+    "17 Bash /Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-af1a10e904a9448aa",
+    "17 Bash /Users/manuel/Desktop/Work/Under",
+    "17 Bash /"
+  ],
+  "first_contaminated": null,
+  "sightings": [
+    {
+      "n": 1,
+      "hard": false,
+      "call": 6
+    },
+    {
+      "n": 2,
+      "hard": false,
+      "call": 7
+    },
+    {
+      "n": 3,
+      "hard": false,
+      "call": 6
+    },
+    {
+      "n": 4,
+      "hard": false,
+      "call": 6
+    }
+  ]
+}

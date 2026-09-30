@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "claude:opus-5",
+    "round": "pr94-r1",
+    "axis": "standards",
+    "step": "M2"
+  },
+  "status": "dropout",
+  "detail": "retired: stopped by the root",
+  "reported_model": null,
+  "effort": null,
+  "tokens": null,
+  "wall_ms": null,
+  "source": "-",
+  "outside": [],
+  "first_contaminated": null,
+  "sightings": []
+}

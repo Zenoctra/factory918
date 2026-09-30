@@ -1,0 +1,27 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "codex:gpt-6-sol",
+    "round": "pr99-r1",
+    "axis": "spec",
+    "step": "1"
+  },
+  "status": "complete",
+  "detail": "complete",
+  "reported_model": "gpt-6-sol",
+  "effort": "high",
+  "tokens": {
+    "input": 91222,
+    "cache_read": 1196544,
+    "cache_write": 0,
+    "output": 4549,
+    "reasoning": 2191
+  },
+  "wall_ms": 139234,
+  "source": "/Users/manuel/.codex/sessions/2026/09/24/rollout-2026-09-24T21-21-57-01a0d65e-921f-7071-8e3e-702a8352c463.jsonl",
+  "outside": [
+    "14 Bash /(writing-for-agents|technical-writing|unslop)/SKILL.md$"
+  ],
+  "first_contaminated": null,
+  "sightings": []
+}

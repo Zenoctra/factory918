@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "codex:gpt-6-sol",
+    "round": "pr96-r1",
+    "axis": "spec",
+    "step": "S2"
+  },
+  "status": "dropout",
+  "detail": "usage-limit: the session log or stderr says the account hit its usage limit",
+  "reported_model": null,
+  "effort": null,
+  "tokens": null,
+  "wall_ms": 278811,
+  "source": "/Users/manuel/.codex/sessions/2026/09/24/rollout-2026-09-24T21-31-56-01a0d667-b77a-71a2-ace2-d1f686061634.jsonl",
+  "outside": [],
+  "first_contaminated": null,
+  "sightings": []
+}

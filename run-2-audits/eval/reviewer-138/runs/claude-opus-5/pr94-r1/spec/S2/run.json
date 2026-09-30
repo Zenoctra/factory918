@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "claude:opus-5",
+    "round": "pr94-r1",
+    "axis": "spec",
+    "step": "S2"
+  },
+  "nonce": "443060083e1c",
+  "checkout": "/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/443060083e1c/factory918",
+  "prompt": "Read `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/443060083e1c/factory918/.scratch/review/ab47eb9/spec-brief.md` whole and follow it. You are working in `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/443060083e1c/factory918`; every relative path in the brief is relative to it.",
+  "tree": "c83f166578a35e61d0b686c1ae1ed652b051dba6",
+  "settled": [
+    "1. [P1] **The command the posting step names replaces the ticket body instead of appending to it.** `gh issue edit N --body-file F` sets the body to F's contents; there is no append form. An agent that follows step 6 literally (write the table, run the command) drops `## What to build`, `## Acceptance criteria` and `## Blocked by` \u2014 the spec `review-brief.sh` pastes and the criteria the falsifiability pass was built on. Nothing in `docs/agents/issue-tracker.md` gives a body-edit recipe, so the round trip (fetch the body, append, write the whole file back) is nowhere stated. One clause in step 6 and in `SCENARIO-TABLE.md:43` fixes it. Documented step: `template/.agents/skills/poteto-mode/playbooks/ticket.md:10` (\"the synthesized table is appended to the ticket's body under `## Testing decisions` with `gh issue edit N --body-file`\") Result: the body is overwritten with the table alone; the ticket's ask, criteria and blockers are gone and the next brief has no spec. spec: criterion 3",
+    "2. [P2] **A posted table's backticked paths become `overlap.sh` pathspecs.** Check mode reads every backticked whitespace-free token in the body and skips only a `## Diff` section (`overlap.sh:48-50`). After step 6 posts a table and contract, a later step-1 run on the same ticket \u2014 the case #42 itself went through after PR #87 was closed \u2014 matches any open PR touching a path the design merely names (`.claude/state/program`, `tests/poteto-mode/overlap.sh`) and stops at exit 1, or hits git's fatal at exit 2 on a token that is no path. #42's own table row 14 works around this by leaving tokens unbackticked; this diff makes posting a standing rule and carries no such instruction. Documented step: `template/.agents/skills/poteto-mode/playbooks/ticket.md:5` (step 1 runs `overlap.sh N`, \"the ticket body's backticked tokens as pathspecs\") Result: a re-run of a ticket that carries a posted design stops on its own design's paths; the human has to edit the ticket to start the work. spec: criterion 3",
+    "3. [P3] **The core-document sweep stopped at AGENTS.md and INDEX.md.** `MANUAL.md` still tells the reader a project carries \"only the first four\" and lists four; a project now carries five, since `build_core` copies every core document except the digest. `PHILOSOPHY.md:64`'s pointer list and `tools/build_knowledge.py:8` (\"copies PHILOSOPHY, MANUAL, DECISIONS and GLOSSARY \u2026 into template/docs/factory918/\") name four as well, in a file this diff edits. Documented step: `docs/knowledge/core/MANUAL.md:165` and `template/docs/factory918/MANUAL.md:146`, \"Where to read more\" Result: the reader-facing map of the core set is wrong by one and never names the new page; `/knowledge` finds it only through INDEX.md and the glossary. spec: criterion 6",
+    "4. [P4] **A stateful design whose playbook skipped `architect` still produces no artifact, and nothing sends it back.** The posting rule hangs off the architect step. Feature step 2 still allows `architect skipped: <reason>` for any diff that is not cross-cutting, and Bug fix 3, Refactoring 3 and Perf issue 3 run `architect` only when the change crosses a function boundary. So a one-file change that writes a state file or adds an exit code reaches implementation with no table, no stop and no record \u2014 the failure this ticket opens with. The intent outranks the criteria, so the gap belongs back in design, not on the PR. Documented step: `template/.agents/skills/poteto-mode/playbooks/feature.md:6` (`architect skipped: <reason>`), `bug-fix.md:9`, `perf-issue.md:16`, `refactoring.md:9` (\"If the target crosses a function boundary\") Result: state ships with no design artifact and nothing refuses it; the reviewer has only the criteria to judge against, which is the pre-#89 state. spec: criterion 3"
+  ],
+  "applied": [],
+  "masked": [],
+  "plain_head": true
+}

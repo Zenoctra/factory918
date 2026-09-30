@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "codex:gpt-6-sol",
+    "round": "pr99-r1",
+    "axis": "spec",
+    "step": "S3"
+  },
+  "nonce": "dd196ae2022e",
+  "checkout": "/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/dd196ae2022e/factory918",
+  "prompt": "Read `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/dd196ae2022e/factory918/.scratch/review/69bd412/spec-brief.md` whole and follow it. You are working in `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/dd196ae2022e/factory918`; every relative path in the brief is relative to it. The ticket as it stood at this commit is `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/dd196ae2022e/factory918/.scratch/review/69bd412/ticket.md`. Your scratch folder for notes and any files you make is `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/dd196ae2022e/factory918/.scratch/work/`.",
+  "tree": "52ccd8eb509a2871260827a8514c3a1fcaac4d5d",
+  "settled": [
+    "1. [P1] **Prose mentioning a hole is rejected as a mark.** `holed()` selects any judgment item containing `hole:`, even when that text is in the reason and no trailing field exists. A Noted item such as `1. [S1] **Breach.** The prose explains why a hole: reference is irrelevant here.` is refused as carrying a hole under Noted. The table says this is the no-mark case; only a field ending the line is a field. Documented step: Table B, row 5/A: a non-counted report item with no judgment mark proceeds as today. Result: `review-comment.sh` exits 1 before printing the comment, saying the Noted item carries a `hole:` field. spec: table 5/A"
+  ],
+  "applied": [],
+  "masked": [],
+  "plain_head": true
+}

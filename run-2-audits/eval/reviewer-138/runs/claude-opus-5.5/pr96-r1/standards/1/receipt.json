@@ -1,0 +1,49 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "claude:opus-5.5",
+    "round": "pr96-r1",
+    "axis": "standards",
+    "step": "1"
+  },
+  "status": "complete",
+  "detail": "complete",
+  "reported_model": "claude-opus-5-5",
+  "effort": "high",
+  "tokens": {
+    "input": 32,
+    "cache_read": 1617326,
+    "cache_write": 145673,
+    "output": 18658,
+    "reasoning": null
+  },
+  "wall_ms": 205106,
+  "source": "/Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/subagents/agent-adb9f6dde3279f336.jsonl",
+  "outside": [
+    "11 Bash /private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/scratchpad/with space",
+    "11 Bash /private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/scratchpad/with"
+  ],
+  "first_contaminated": null,
+  "sightings": [
+    {
+      "n": 1,
+      "hard": true,
+      "call": 7
+    },
+    {
+      "n": 2,
+      "hard": true,
+      "call": 7
+    },
+    {
+      "n": 3,
+      "hard": false,
+      "call": 7
+    },
+    {
+      "n": 4,
+      "hard": false,
+      "call": 7
+    }
+  ]
+}

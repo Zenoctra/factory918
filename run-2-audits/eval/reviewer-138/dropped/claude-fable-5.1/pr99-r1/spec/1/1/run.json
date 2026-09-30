@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "claude:fable-5.1",
+    "round": "pr99-r1",
+    "axis": "spec",
+    "step": "1"
+  },
+  "nonce": "79363f85674b",
+  "checkout": "/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/79363f85674b/factory918",
+  "prompt": "Read `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/79363f85674b/factory918/.scratch/review/69bd412/spec-brief.md` whole and follow it. You are working in `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/79363f85674b/factory918`; every relative path in the brief is relative to it.",
+  "tree": "52ccd8eb509a2871260827a8514c3a1fcaac4d5d",
+  "settled": [],
+  "applied": [],
+  "masked": [],
+  "plain_head": true
+}

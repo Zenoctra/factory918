@@ -1,0 +1,45 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "claude:fable-5.1",
+    "round": "pr99-r1",
+    "axis": "spec",
+    "step": "1"
+  },
+  "status": "contaminated",
+  "detail": "Bash {\"command\": \"cd \\\"/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/f returned a line first added by 35de22e: 69bd412 Record the ShellCheck pin, the gate decision and a lost lane; Bash {\"command\": \"set -e; S=\\\"/private/tmp/claude-501/-Users-manuel-Desktop-Work-Unde returned a line first added by 096954b: Standards: 1 would break, 0 fail open, of 1; Spec: no spec; judged: act on 1 (0 fixed, 0 with a tick",
+  "reported_model": "claude-fable-5-1",
+  "effort": "high",
+  "tokens": {
+    "input": 386,
+    "cache_read": 1534635,
+    "cache_write": 145384,
+    "output": 20539,
+    "reasoning": null
+  },
+  "wall_ms": 305345,
+  "source": "/Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/subagents/agent-a1bdd041b1a2b426a.jsonl",
+  "outside": [
+    "4 Read /Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/tool-results/bv1cof0a1.txt",
+    "5 Read /Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/tool-results/bv1cof0a1.txt",
+    "6 Read /Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/tool-results/bv1cof0a1.txt",
+    "13 Bash /tmp/sync-out.txt;",
+    "15 Bash /Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-af1a10e904a9448aa",
+    "15 Bash /Users/manuel/Desktop/Work/Under",
+    "16 Bash /Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-af1a10e904a9448aa",
+    "16 Bash /Users/manuel/Desktop/Work/Under",
+    "17 Bash /Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-af1a10e904a9448aa",
+    "17 Bash /Users/manuel/Desktop/Work/Under"
+  ],
+  "first_contaminated": {
+    "call": 15,
+    "timestamp": "2026-09-25T00:45:37.890Z"
+  },
+  "sightings": [
+    {
+      "n": 1,
+      "hard": true,
+      "call": null
+    }
+  ]
+}

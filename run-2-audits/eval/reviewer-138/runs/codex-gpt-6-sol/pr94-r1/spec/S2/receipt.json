@@ -1,0 +1,33 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "codex:gpt-6-sol",
+    "round": "pr94-r1",
+    "axis": "spec",
+    "step": "S2"
+  },
+  "status": "complete",
+  "detail": "complete",
+  "reported_model": "gpt-6-sol",
+  "effort": "high",
+  "tokens": {
+    "input": 101630,
+    "cache_read": 1593344,
+    "cache_write": 0,
+    "output": 7033,
+    "reasoning": 2938
+  },
+  "wall_ms": 162918,
+  "source": "/Users/manuel/.codex/sessions/2026/09/25/rollout-2026-09-25T01-56-08-01a0d759-988f-7cb3-a3b8-5b37248a3813.jsonl",
+  "outside": [
+    "14 Bash /private/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/0f4f523c691e/factory918/patches/mattpocock/to-spec/SKILL.md.patch;",
+    "14 Bash /private/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/0f4f523c691e/factory918/patches/pstack/architect/references/runner-prompt.md.patch;",
+    "15 Bash /private/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/0f4f523c691e/factory918/patches/pstack/poteto-mode/playbooks/bug-fix.md.patch;",
+    "15 Bash /private/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/0f4f523c691e/factory918/patches/pstack/poteto-mode/playbooks/feature.md.patch;",
+    "15 Bash /private/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/0f4f523c691e/factory918/patches/pstack/poteto-mode/playbooks/perf-issue.md.patch;",
+    "15 Bash /private/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/0f4f523c691e/factory918/patches/pstack/poteto-mode/playbooks/refactoring.md.patch",
+    "19 Bash /private/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/0f4f523c691e/factory918/.scratch/review/ab47eb9/spec-report.md\\n+##"
+  ],
+  "first_contaminated": null,
+  "sightings": []
+}

@@ -1,0 +1,41 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "codex:gpt-6-sol",
+    "round": "pr94-r1",
+    "axis": "standards",
+    "step": "I2"
+  },
+  "status": "contaminated",
+  "detail": "Bash {\"command\": \"cd /var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/126 returned a line first added by cc36280: spec: criterion 1; Bash {\"command\": \"cd /var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/126 returned a line first added by cc36280: spec: criterion 3",
+  "reported_model": "gpt-6-sol",
+  "effort": "high",
+  "tokens": {
+    "input": 101619,
+    "cache_read": 1151360,
+    "cache_write": 0,
+    "output": 7636,
+    "reasoning": 3310
+  },
+  "wall_ms": 194056,
+  "source": "/Users/manuel/.codex/sessions/2026/09/24/rollout-2026-09-24T21-22-34-01a0d65f-2478-7e03-b7d6-1d84c3205677.jsonl",
+  "outside": [
+    "13 Bash /(writing-for-agents|technical-writing|unslop)/SKILL.md$"
+  ],
+  "first_contaminated": {
+    "call": 16,
+    "timestamp": "2026-09-25T02:25:19.271Z"
+  },
+  "sightings": [
+    {
+      "n": 1,
+      "hard": true,
+      "call": null
+    },
+    {
+      "n": 2,
+      "hard": true,
+      "call": null
+    }
+  ]
+}

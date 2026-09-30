@@ -1,0 +1,52 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "claude:opus-5.5",
+    "round": "pr96-r1",
+    "axis": "standards",
+    "step": "M2"
+  },
+  "status": "complete",
+  "detail": "complete",
+  "reported_model": "claude-opus-5-5",
+  "effort": "high",
+  "tokens": {
+    "input": 24,
+    "cache_read": 1132794,
+    "cache_write": 106913,
+    "output": 14570,
+    "reasoning": null
+  },
+  "wall_ms": 155027,
+  "source": "/Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/subagents/agent-adc757287c258e8dd.jsonl",
+  "outside": [
+    "2 Read /Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/tool-results/bgs7qd00e.txt",
+    "3 Read /Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/tool-results/bgs7qd00e.txt",
+    "5 Read /Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/tool-results/b1xnsee0m.txt",
+    "9 Bash /private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/scratchpad/t.sh;",
+    "9 Bash /private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/scratchpad/t.sh"
+  ],
+  "first_contaminated": null,
+  "sightings": [
+    {
+      "n": 1,
+      "hard": false,
+      "call": 2
+    },
+    {
+      "n": 2,
+      "hard": false,
+      "call": null
+    },
+    {
+      "n": 3,
+      "hard": false,
+      "call": null
+    },
+    {
+      "n": 4,
+      "hard": false,
+      "call": 2
+    }
+  ]
+}

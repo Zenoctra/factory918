@@ -1,0 +1,56 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "claude:fable-5.1",
+    "round": "pr99-r1",
+    "axis": "standards",
+    "step": "I3"
+  },
+  "status": "complete",
+  "detail": "complete",
+  "reported_model": "claude-fable-5-1",
+  "effort": "high",
+  "tokens": {
+    "input": 482,
+    "cache_read": 2111291,
+    "cache_write": 140971,
+    "output": 18725,
+    "reasoning": null
+  },
+  "wall_ms": 273781,
+  "source": "/Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/subagents/agent-ae483279f916fb86a.jsonl",
+  "outside": [
+    "6 Read /Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/tool-results/b936943ac.txt",
+    "7 Read /Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/tool-results/bzki8v0ng.txt",
+    "8 Read /Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/tool-results/b936943ac.txt",
+    "20 Bash //')"
+  ],
+  "first_contaminated": null,
+  "sightings": [
+    {
+      "n": 1,
+      "hard": false,
+      "call": null
+    },
+    {
+      "n": 2,
+      "hard": false,
+      "call": 8
+    },
+    {
+      "n": 3,
+      "hard": false,
+      "call": 8
+    },
+    {
+      "n": 4,
+      "hard": false,
+      "call": null
+    },
+    {
+      "n": 5,
+      "hard": false,
+      "call": null
+    }
+  ]
+}

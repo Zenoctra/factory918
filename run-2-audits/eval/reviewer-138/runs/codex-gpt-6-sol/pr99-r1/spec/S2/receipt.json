@@ -1,0 +1,44 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "codex:gpt-6-sol",
+    "round": "pr99-r1",
+    "axis": "spec",
+    "step": "S2"
+  },
+  "status": "complete",
+  "detail": "complete",
+  "reported_model": "gpt-6-sol",
+  "effort": "high",
+  "tokens": {
+    "input": 92378,
+    "cache_read": 797824,
+    "cache_write": 0,
+    "output": 9330,
+    "reasoning": 6319
+  },
+  "wall_ms": 250371,
+  "source": "/Users/manuel/.codex/sessions/2026/09/25/rollout-2026-09-25T01-50-16-01a0d754-3a23-7493-aaf2-e9f4e41a5399.jsonl",
+  "outside": [
+    "3 Bash /private/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/69886fe593b3/factory918",
+    "4 Bash /private/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/69886fe593b3/factory918",
+    "5 Bash /private/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/69886fe593b3/factory918",
+    "6 Bash /private/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/69886fe593b3/factory918",
+    "7 Bash /private/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/69886fe593b3/factory918",
+    "8 Bash /private/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/69886fe593b3/factory918",
+    "9 Bash /private/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/69886fe593b3/factory918",
+    "10 Bash /private/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/69886fe593b3/factory918",
+    "11 Bash /private/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/69886fe593b3/factory918/template/.agents/skills/spec-review/scripts/review-comment.sh",
+    "12 Bash /private/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/69886fe593b3/factory918",
+    "13 Bash /private/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/69886fe593b3/factory918",
+    "13 Bash /"
+  ],
+  "first_contaminated": null,
+  "sightings": [
+    {
+      "n": 1,
+      "hard": true,
+      "call": null
+    }
+  ]
+}

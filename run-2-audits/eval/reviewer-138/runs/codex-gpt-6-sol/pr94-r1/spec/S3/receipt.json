@@ -1,0 +1,33 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "codex:gpt-6-sol",
+    "round": "pr94-r1",
+    "axis": "spec",
+    "step": "S3"
+  },
+  "status": "complete",
+  "detail": "complete",
+  "reported_model": "gpt-6-sol",
+  "effort": "high",
+  "tokens": {
+    "input": 87826,
+    "cache_read": 1397120,
+    "cache_write": 0,
+    "output": 7113,
+    "reasoning": 2907
+  },
+  "wall_ms": 184109,
+  "source": "/Users/manuel/.codex/sessions/2026/09/25/rollout-2026-09-25T07-00-04-01a0d86f-dbd9-74b0-90f7-191f70c1c92d.jsonl",
+  "outside": [
+    "12 Bash /to-spec/SKILL.md$|to-spec"
+  ],
+  "first_contaminated": null,
+  "sightings": [
+    {
+      "n": 1,
+      "hard": true,
+      "call": 5
+    }
+  ]
+}

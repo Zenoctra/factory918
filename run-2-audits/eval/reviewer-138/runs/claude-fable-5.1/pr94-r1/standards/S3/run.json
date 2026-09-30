@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "claude:fable-5.1",
+    "round": "pr94-r1",
+    "axis": "standards",
+    "step": "S3"
+  },
+  "nonce": "81c30dd8cd54",
+  "checkout": "/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/81c30dd8cd54/factory918",
+  "prompt": "Read `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/81c30dd8cd54/factory918/.scratch/review/ab47eb9/standards-brief.md` whole and follow it. You are working in `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/81c30dd8cd54/factory918`; every relative path in the brief is relative to it. The ticket as it stood at this commit is `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/81c30dd8cd54/factory918/.scratch/review/ab47eb9/ticket.md`. Your scratch folder for notes and any files you make is `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/81c30dd8cd54/factory918/.scratch/work/`.",
+  "tree": "c83f166578a35e61d0b686c1ae1ed652b051dba6",
+  "settled": [
+    "1. [S1] **A design with state that crosses no function boundary never reaches the table.** P25 and Ticket step 6 hang the table on \"the selected playbook's architect step\", but three of the four playbooks run `architect` only when the change \"crosses a function boundary\", and Feature still accepts `architect skipped: <reason>` for anything that is not cross-cutting. A change with state inside one function or one script (a new exit code, a state file read by an existing command) is exactly the #87 shape, and every playbook carries it to the delegation sentence, where \"the brief carries the ticket's design artifact\" has nothing to carry and says nothing about that case. Documented step: `template/.agents/skills/poteto-mode/playbooks/bug-fix.md:9`, `perf-issue.md:16`, `refactoring.md:9` (\"If it crosses a function boundary, `architect` first\") and `feature.md:6` (the skip clause), read with `ticket.md:10` (step 6), which fires only inside the playbook's architect step; `docs/knowledge/core/DECISIONS.md:93` (P25, \"For a design with state ... the architect step's first deliverable is a scenario table\"). Result: the writer is briefed and implements a stateful change with no table on the ticket and no stop; the Spec reviewer's brief has no `## Testing decisions` to check against, so the review is again a search, which is the failure #89 exists to close. Fix is one clause: state joins the cross-cutting diff as a case that never skips `architect` (Feature step 2) and that runs it even inside a function boundary (Bug fix 3, Perf issue 3, Refactoring 3), in the four patches and the four template copies. spec: criterion 3"
+  ],
+  "applied": [],
+  "masked": [],
+  "plain_head": true
+}

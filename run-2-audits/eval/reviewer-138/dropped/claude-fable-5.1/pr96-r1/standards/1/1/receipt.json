@@ -1,0 +1,65 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "claude:fable-5.1",
+    "round": "pr96-r1",
+    "axis": "standards",
+    "step": "1"
+  },
+  "status": "contaminated",
+  "detail": "Bash {\"command\": \"cd \\\"/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/f returned a line first added by 35de22e: Observed (agent): three of the ten hard findings across the three review rounds on PR #87 were shell; Bash {\"command\": \"cd \\\"/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/f returned a line first added by 35de22e: > user: ShellCheck sounds like a good ticket for sure. It sounds like something that agents could pr; Bash {\"command\": \"cd \\\"/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/f returned a line first added by 35de22e: > user: itd be nice if something like that could get caught before CI checks that kick us back at a ; and 25 more such lines",
+  "reported_model": "claude-fable-5-1",
+  "effort": "high",
+  "tokens": {
+    "input": 514,
+    "cache_read": 1943334,
+    "cache_write": 123135,
+    "output": 26381,
+    "reasoning": null
+  },
+  "wall_ms": 364425,
+  "source": "/Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/subagents/agent-a6610ce9cc5b446c2.jsonl",
+  "outside": [
+    "4 Read /Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/tool-results/bboy5g2ii.txt",
+    "8 Bash /Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-af1a10e904a9448aa",
+    "8 Bash /Users/manuel/Desktop/Work/Under",
+    "10 Bash /Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-af1a10e904a9448aa",
+    "10 Bash /Users/manuel/Desktop/Work/Under",
+    "11 Bash /private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/scratchpad/ab47eb9",
+    "12 Bash /usr/bin",
+    "12 Bash /usr/bin/shellcheck",
+    "12 Bash /bin/shellcheck",
+    "13 Bash /private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/scratchpad/probe"
+  ],
+  "first_contaminated": {
+    "call": 8,
+    "timestamp": "2026-09-25T00:34:09.924Z"
+  },
+  "sightings": [
+    {
+      "n": 1,
+      "hard": true,
+      "call": 4
+    },
+    {
+      "n": 2,
+      "hard": true,
+      "call": 4
+    },
+    {
+      "n": 3,
+      "hard": true,
+      "call": 4
+    },
+    {
+      "n": 4,
+      "hard": false,
+      "call": 4
+    },
+    {
+      "n": 5,
+      "hard": false,
+      "call": 4
+    }
+  ]
+}

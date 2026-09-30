@@ -1,0 +1,572 @@
+diff --git a/AGENTS.md b/AGENTS.md
+index ce4e413..9a62d76 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -6,7 +6,7 @@ This repository is the factory: a template and a CLI that put Manuel's agent-dri
+ 
+ - `template/` is what `factory918 apply` copies into a project. It is the product. Edit it directly.
+ - `profiles/`, `machine/`, `patches/` with `series`, and `factory918.sh`: edit directly.
+-- `docs/knowledge/core/*.md` are the five core documents. Edit directly, then run `python3 tools/build_knowledge.py`.
++- `docs/knowledge/core/*.md` are the six core documents. Edit directly, then run `python3 tools/build_knowledge.py`.
+ - `docs/knowledge/spec/`, `pages/`, `notes/` and `template/docs/factory918/` are generated. Edit the source and rebuild.
+ - `research/` is the read-only corpus and the pinned upstreams. `factory918 sync` re-vendors from here, never from the network.
+ - `tools/bootstrap/` is frozen provenance.
+diff --git a/SOURCES.md b/SOURCES.md
+index b462419..ef59d13 100644
+--- a/SOURCES.md
++++ b/SOURCES.md
+@@ -22,4 +22,6 @@ Upstream pins for everything vendored into `template/`. Pinned copies of each up
+ 10. `interrogate/SKILL.md` step 2: when a ticket exists, its What to build and Acceptance criteria are the intent verbatim; the author's PR description and commit messages are used only without one.
+ 9. Every remaining `/no-comments` reference removed from `poteto-mode/` (router step list, `playbooks/autopilot-full.md`, `playbooks/autopilot-stack.md`, `playbooks/multi-phase-plan.md`, `references/codex-tools.md`), since the skill is not vendored (decision 4).
+ 12. `babysit/SKILL.md` step 4: ready also requires the `spec-review` comment on the latest commit to read `act-on items: 0`. The review runs at most three rounds on one PR: a comment reading `round: 3 of 3` and `act-on items: 0` makes the PR review-ready even when the fix commits it names come after the reviewed commit, and an Ask item waits for the human, then is re-sorted and the comment rebuilt with `review-comment.sh <dir>` in the same round.
+-13. `playbooks/feature.md` step 2, `playbooks/bug-fix.md` step 3, `playbooks/refactoring.md` step 3 and `playbooks/perf-issue.md` step 3: the `architect` skip clause gains one sentence, that a cross-cutting diff (the Ticket playbook, step 5) never skips it.
++13. `playbooks/feature.md` step 2, `playbooks/bug-fix.md` step 3, `playbooks/refactoring.md` step 3 and `playbooks/perf-issue.md` step 3: the `architect` skip clause gains one sentence, that a cross-cutting diff (the Ticket playbook, step 5) never skips it. The delegation step of each (Feature step 4, Bug fix step 3, Refactoring step 5, Perf issue step 3) says the test is written from the scenario table before the implementation, one assertion per cell, and that a writer who cannot implement a cell as written stops and reports it (#89).
++14. `architect/references/runner-prompt.md`: the first deliverable is the scenario table, then the contract, then the test list for a design with state (a file it reads or writes, exit codes, rounds, more than one actor), else the usage and signature sketch; a cell for an input outside the intended path reads "refused with the tool's own message" and is cut only after the refusal was run and seen; the orchestrator posts the synthesized deliverable on the ticket (#89).
++15. `to-spec/SKILL.md` Testing Decisions: the scenario table is the shape for stateful work (#89).
+diff --git a/docs/M0-findings.md b/docs/M0-findings.md
+index 118184b..cc4df0c 100644
+--- a/docs/M0-findings.md
++++ b/docs/M0-findings.md
+@@ -175,3 +175,5 @@ Verified on Claude Code 2.1.271 inside the desktop app 2.110.0 (Agent SDK 0.3.27
+ - `gh auth login` and `/setup-pstack` are human steps; `/factory-start` is M4.
+ 
+ 2026-09-18. The factory checkout has no `.claude/agents/`, so the `pstack-<family>-<effort>` lanes named in `models.md` do not exist here; the Agent tool's `model` field (`fable`, `opus`) dispatched every lane of #76 and effort could not be set. A project made by `factory918 apply` gets the lanes from `template/.claude/agents/`.
++
++2026-09-22. A sixth core document costs one CORE_DOCS tuple in tools/build_knowledge.py and no other code: build_core copies every core document except CONVERSATION-DIGEST.md into template/docs/factory918/, apply copies that directory, doctor checks only PHILOSOPHY and MANUAL. factory918.sh sync (0.3.0) bumps no VERSION and touches no network, against what SOURCES.md line 3 says; the code is the truth (#89).
+diff --git a/docs/agents/issue-tracker.md b/docs/agents/issue-tracker.md
+index f2abcd4..da048e5 100644
+--- a/docs/agents/issue-tracker.md
++++ b/docs/agents/issue-tracker.md
+@@ -23,6 +23,8 @@ Every ticket has this shape, in this order. The Ticket playbook, `spec-review`,
+ - **`## Parent`**: the spec issue, for planned tickets. A quick ticket has none.
+ - **`## Blocked by`**: issue numbers that must be closed first, or `None`. GitHub's native issue dependencies are the canonical form where available (Wayfinding operations below says how); the line is the fallback.
+ 
++The architect step may append two more sections before implementation, after these: `## Testing decisions`, the scenario table, when the design has state; `## Design`, the usage and signature sketch, when it is code with no state that crosses a function boundary. Their first line is `Posted by the agent <date>` or `Approved by <name> <date>` (the Ticket playbook, step 6). The human edits them in place; `spec-review` reads them as spec because the body is pasted whole.
++
+ Anything an agent may pick up carries the label `ready-for-agent`.
+ 
+ ## Pull requests as a triage surface
+diff --git a/docs/agents/ledger.md b/docs/agents/ledger.md
+index b81207d..3febdff 100644
+--- a/docs/agents/ledger.md
++++ b/docs/agents/ledger.md
+@@ -22,3 +22,4 @@ One line per time an agent surprised you: `YYYY-MM-DD | model | what it did | wh
+ 2026-09-17 | fable | put the seven-re-reviews price on fixing low in a stack and used it to stack the seven independent tickets #16 to #22, which shared files but had no dependency; every review then covered all seven at once and a low fix rebased everything above | autopilot-stack step 7 re-verifies only the PRs whose patch-id changed, so a low fix costs one re-review; independent tickets that overlap in files are sequenced, one to merge-ready and then the next, and a stack is built only for coupled work on a go
+ 2026-09-21 | fable | briefed the writer lane with the script path .agents/skills/factory918/scripts/overlap.sh after its own design note said .claude/skills resolves in both the factory and a project; the wrong path shipped to the playbook and the router and the Spec reviewer found it in round two | the brief is checked against the design note before it is sent; a path an agent will type is tested the way it is typed
+ 2026-09-21 | fable | cut the detached-HEAD cell from the #42 scenario table on the judge's word that git would fail loudly on its own; git ran fine with an empty branch name and round two found the record step reporting the ticket's own PR | a cell cut as 'the tool refuses it' is cut only after the refusal was run and seen; an assumption about a tool's failure mode is a rung-1 claim until then
++2026-09-22 | fable | ended its turn while two explorer lanes were still reading, the harness removed its worktree, and both lanes died without a report | drain every lane before the turn ends; a lane with no worktree cannot report
+diff --git a/docs/knowledge/INDEX.md b/docs/knowledge/INDEX.md
+index 2b97449..16690b5 100644
+--- a/docs/knowledge/INDEX.md
++++ b/docs/knowledge/INDEX.md
+@@ -7,8 +7,9 @@ The literal transcript of the conversation that produced this system is not avai
+ |---|---|---|---|
+ | `core/PHILOSOPHY.md` | Factory918: philosophy | 64 | First. Whenever the spec is silent. |
+ | `core/MANUAL.md` | Factory918: the manual | 174 | How to run the loop; what the human does at each point. |
+-| `core/DECISIONS.md` | Factory918: decisions | 92 | Before overriding any vendored skill; these win. |
+-| `core/GLOSSARY.md` | Factory918: glossary | 69 | A term in AGENTS.md, a playbook or a ticket is unclear. |
++| `core/DECISIONS.md` | Factory918: decisions | 93 | Before overriding any vendored skill; these win. |
++| `core/GLOSSARY.md` | Factory918: glossary | 71 | A term in AGENTS.md, a playbook or a ticket is unclear. |
++| `core/SCENARIO-TABLE.md` | Factory918: the scenario table | 88 | Designing or reviewing anything with state: a file, exit codes, more than one actor. |
+ | `core/CONVERSATION-DIGEST.md` | How Factory918 was arrived at | 53 | Why something was chosen, historically; the corrections. |
+ | `spec/FACTORY-SPEC-v2/01-preamble.md` | The Factory spec, v2 — (preamble) | 11 | Building or updating the factory itself. |
+ | `spec/FACTORY-SPEC-v2/02-change-log-v1-v2.md` | The Factory spec, v2 — Change log, v1 → v2 | 20 | Building or updating the factory itself. |
+@@ -124,4 +125,4 @@ The literal transcript of the conversation that produced this system is not avai
+ | `notes/6-deterministic-layer/09-e-ras-mic-https-github-com-michaelshimeles-skill.md` | Research note: deterministic layer (verbatim config) — E. Ras Mic — `https://github.com/michaelshimeles/skills/blob/513f8a2/` | 63 | Exact CI YAML, lint rules, hook scripts from the four sources. |
+ | `notes/6-deterministic-layer/10-cross-system-table.md` | Research note: deterministic layer (verbatim config) — Cross-system table | 26 | Exact CI YAML, lint rules, hook scripts from the four sources. |
+ 
+-118 files. `core/` is hand-maintained; everything else here is generated. Regenerate with `python3 tools/build_knowledge.py` after editing a core document, the spec, or anything under `research/`.
++119 files. `core/` is hand-maintained; everything else here is generated. Regenerate with `python3 tools/build_knowledge.py` after editing a core document, the spec, or anything under `research/`.
+diff --git a/docs/knowledge/core/DECISIONS.md b/docs/knowledge/core/DECISIONS.md
+index b22d877..cfba5b8 100644
+--- a/docs/knowledge/core/DECISIONS.md
++++ b/docs/knowledge/core/DECISIONS.md
+@@ -1,4 +1,4 @@
+-<!-- lines: 92 | source: core/DECISIONS.md | part 1/1 | title: Factory918: decisions -->
++<!-- lines: 93 | source: core/DECISIONS.md | part 1/1 | title: Factory918: decisions -->
+ 
+ ## Contents (line numbers are for the Read tool's offset)
+ - L13: Settled (2026-09-09)
+@@ -90,3 +90,4 @@ Travels anywhere without change: the planning skills, the execution playbooks, `
+ | P22 | Who signs a comment | A comment the agent posts on a PR or a ticket ends with the model and harness (`Claude Fable 5.1 on Claude Code`), plus `approved by <name>` when the human approved it before posting; only an approved comment posted from the author's account is the author's words. `review-brief.sh` reads only the PR author's account for rounds and carry-forward | Manuel, 2026-09-18: a comment left by the orchestrator without human involvement is signed by the model on the harness; approved, it is signed by both; strangers' comments never reach a brief (#78 round 1). |
+ | P2 | Tool versions in CI | Pin every tool CI runs to an exact version, as a devDependency where the tool publishes one | `dlx` and `npx` resolve the latest version, so a rule engine or formatter can change under a project with no diff to show for it. Spec §0 rule 1 already says to pin what you install; this extends it to what CI fetches. First applied to `@ast-grep/cli` 0.45.3 in M0. |
+ | P24 | Overlap is not coupling; a go is a line that covers its own tickets | Two unblocked tickets relate three ways: dependent (`Blocked by`, off the frontier), disjoint in files (parallel branches off `main`), or overlapping in files (sequenced: one to merge-ready, the merge, then the next). Coupled work, a ticket that needs code an open PR introduces, stacks, and only on a go. Ticket step 1 runs `.claude/skills/poteto-mode/scripts/overlap.sh N` before branching: every open PR's head is fetched fresh and its own commits (its diff from the open PR it stacks on, else `origin/main`) are matched with the ticket body's backticked tokens as pathspecs (its `## Diff` section excluded), so a file, a directory, a glob or a file the PR creates all match; exit 0 prints `base: <ref>` to branch from, exit 1 stops and names the PR to merge first, exit 2 means the check could not run and stderr says why. A go is a line `<label>: #a #b ...` that `overlap.sh go "<label>" N...` appends to the gitignored `.claude/state/program`, written by the orchestrator when the human gives it (autopilot-stack step 3 runs it itself). A go covers a stack only when a line names the ticket and, for every overlapping PR, the ticket that PR closes; so a line a dead program left behind covers nothing outside its own tickets' open PRs and needs no removal. Under a cover the base is the overlapping PR's head, the lowest-numbered when siblings overlap, the containing one when one contains the other; step 8's `--diff` run records the shared paths as the PR body's `## Overlap` section | Ticket #42, Manuel: "working a ticket to completion before automatically moving on"; the #16 to #22 stack was built on a seven-re-reviews mis-estimate (ledger 2026-09-17). First run (PR #87, closed): three review rounds redesigned the matcher three times; the second run designed from a scenario table Manuel approved 2026-09-21 as the ticket's Testing decisions. Rejected: a ticket label as the go (outlives the program), a line pasted into each lane's brief (a forgotten paste blocks a lane), a `done` step (a crash skips it), the script under the factory918 skill (every later edit cross-cutting). |
++| P25 | The design artifact on the ticket | For a design with state (a file it reads or writes, exit codes, rounds, or more than one actor) the architect step's first deliverable is a scenario table, appended to the ticket under `## Testing decisions` before implementation, first line `Posted by the agent <date>` (or `Approved by <name> <date>` when the human approved it first); the usage and signature sketch goes under `## Design` for stateless code that crosses a function boundary; prose has its criteria. Posting is the record: the human edits the ticket if the table is wrong, and a stop is asked for only with `/architect with checkpoint`. The table is the test, one assertion per cell; a cell for an input outside the intended path reads "refused with the tool's own message" and is cut only after the refusal was run and seen. Choices made in #89: the rule lives in Ticket step 6 (no renumbering, since "Ticket step 5" is quoted in four patches and `review-brief.sh`); the page is a sixth core document so projects get it; the to-spec patch follows the README path | Ticket #89: the agent's "It is a general design tool, not a #42 thing" and Manuel's "I agree with your choice completely" on posting as the record. PR #87's three rounds redesigned the core three times; PR #92's found 2, 1, 2 items and no cell changed. 2026-09-22. |
+diff --git a/docs/knowledge/core/GLOSSARY.md b/docs/knowledge/core/GLOSSARY.md
+index 1b9e064..4b7e75d 100644
+--- a/docs/knowledge/core/GLOSSARY.md
++++ b/docs/knowledge/core/GLOSSARY.md
+@@ -1,4 +1,4 @@
+-<!-- lines: 69 | source: core/GLOSSARY.md | part 1/1 | title: Factory918: glossary -->
++<!-- lines: 71 | source: core/GLOSSARY.md | part 1/1 | title: Factory918: glossary -->
+ 
+ ## Contents (line numbers are for the Read tool's offset)
+ 
+@@ -48,6 +48,8 @@ Terms as this system uses them. Where a term belongs to one of the four sources,
+ 
+ **Router.** A skill that maps a situation to an entry point. Matt has `ask-matt`, pstack has `poteto-mode`; Factory918 has `/factory918` above both.
+ 
++**Scenario table.** The design artifact for anything with state: situations down the side, the input's shape across the top, every cell what is printed, the exit code and what the caller does next. Posted on the ticket under `## Testing decisions` before implementation; the test is one assertion per cell. The page is `SCENARIO-TABLE.md`. (Ticket #42, second run)
++
+ **Seam.** The public boundary you test at; the interface where you observe behaviour without reaching inside. Pre-agreed seams are the spec's Testing decisions. (Matt, from Michael Feathers)
+ 
+ **Smell.** A named pattern that usually indicates a design problem, never a hard violation; `spec-review` labels twelve of Fowler's. Comments are not one of ours.
+diff --git a/docs/knowledge/core/SCENARIO-TABLE.md b/docs/knowledge/core/SCENARIO-TABLE.md
+new file mode 100644
+index 0000000..2b98d52
+--- /dev/null
++++ b/docs/knowledge/core/SCENARIO-TABLE.md
+@@ -0,0 +1,88 @@
++<!-- lines: 88 | source: core/SCENARIO-TABLE.md | part 1/1 | title: Factory918: the scenario table -->
++
++## Contents (line numbers are for the Read tool's offset)
++- L14: What it is
++- L24: The shape
++- L41: Where it goes
++- L49: The #42 example
++- L80: Why
++
++# Factory918: the scenario table
++
++The scenario table is the design artifact Factory918 asks for before any code that has state: a file it reads or writes, exit codes, review rounds, or more than one actor. Situations go down the side, the shape of the input across the top, and every cell says what must happen. This page says what the table is, what shape it takes, where it goes, and why two runs of the same ticket made it a rule. It is for the person who opens a ticket and finds a table under `## Testing decisions`, and for the agent that has to write one.
++
++## What it is
++
++A design tool, not a fix for one ticket. On #42 Manuel asked whether the "stateful helper with a scenario table" was a solution specific to that issue or a more fundamental design tool. The agent answered:
++
++> It is a general design tool, not a #42 thing. For anything with state, a file, exit codes, or several actors, you write the inputs and states across the top and down the side, and every cell says what must happen. Before code. The table is then the test, row by row.
++
++The table forces the question a prose sketch lets you skip. A sketch can say "the script prints the base to branch from" and stop. A table has a cell for a stale ref, a cell for a missing remote, a cell for a body with no token, and each one is empty until someone decides what happens there. The empty cells are the design holes, and the table shows them before any code is written.
++
++Writing the table does not stop the work. The agent posts it on the ticket and goes on to implementation; the human reads it there and edits it when it is wrong. Manuel chose that over a mandatory pause: "I agree with your choice completely."
++
++## The shape
++
++The table has four parts and the test list follows from them.
++
++- **Situations down the side.** The states the world can be in. On #42: no go, a covering go, a stale ref, a failing tool, a body with no token.
++- **The shape of the input across the top.** On #42: no overlap, one PR, siblings, one containing the other, the caller's own.
++- **A cell.** What is printed, the exit code, and what the caller does next. Three facts, in that order, in every cell.
++- **A legend.** Defines the cell vocabulary once, above the table, so a cell can say `G`, `L(k)` or `B(x)` and stay short.
++
++The contract follows the table and defines every term the cells use: what counts as in flight, what a named path is, what a covering go is. A term the cells use and the contract does not define is a hole.
++
++The test list has one assertion per cell, in the order the cells are written, each naming the fixture state it needs. The table is the test. Nothing is asserted that no cell says, and no cell goes without an assertion.
++
++Two rules cover the inputs the tool is not for. A cell for an input outside the intended path reads "refused with the tool's own message" and costs no code. Manuel set that line on #81: an edge case outside the intended path being unsupported is not a flag, at most hardening to fail fast and loud. The second rule is stricter. Cut such a cell only after the refusal was run and seen. The ledger records why:
++
++> 2026-09-21 | fable | cut the detached-HEAD cell from the #42 scenario table on the judge's word that git would fail loudly on its own; git ran fine with an empty branch name and round two found the record step reporting the ticket's own PR | a cell cut as 'the tool refuses it' is cut only after the refusal was run and seen; an assumption about a tool's failure mode is a rung-1 claim until then
++
++## Where it goes
++
++On the ticket, before implementation. The Ticket playbook's step 6 appends the synthesized table to the ticket body under `## Testing decisions` with `gh issue edit N --body-file`. Its first line is `Posted by the agent <date>`, or `Approved by <name> <date>` when the human approved it first. Posting is the record. The human edits the ticket if the table is wrong, and a stop before implementation is asked for only with `/architect with checkpoint`.
++
++Code with no state that crosses a function boundary gets the other artifact `architect` already produces, the usage and signature sketch (the caller's usage first, then types and signatures), under `## Design` by the same rule. A prose change has its acceptance criteria and nothing else.
++
++The reviewer reads the table without any extra step, because `review-brief.sh` pastes the whole ticket body into the Spec brief. Whatever is under `## Testing decisions` is spec from then on. The writer gets the table in its brief and writes the test from it before the implementation, one assertion per cell in the table's order, so the commit order shows the test came first. A writer that cannot implement a cell as written stops and reports the cell, and never fills it in.
++
++## The #42 example
++
++The durable copy is the `## Testing decisions` section of ticket #42 and the description of PR #92. The legend and the table, verbatim:
++
++> Cell = prints / exit / what the agent does. `G` = first line `go: <label>` or `go: none`. `L(k)` = `#k <head>: <paths>`, the named paths k's own commits touch (its diff from `nearest`, the open-PR head under it, else `origin/main`), ascending by PR number. `B(x)` = last line `base: <x>`. Exit 0 always ends with a `base:` line; exit 1 prints `G` and the `L` lines and no base; exit 2 prints the tool's message on stderr and nothing decided. "Covered" = a line of `.claude/state/program` names #N and, for every printed PR, the ticket it closes (`closingIssuesReferences`).
++
++| Situation | A. no overlap | B. one PR k overlaps | C. siblings k1, k2 | D. k2 contains k1 | E. `--diff` at step 8 |
++|---|---|---|---|---|---|
++| 1. No go names N | `G none`, `B(origin/main)` / 0 / branch from main | `G none`, `L(k)` / 1 / stop; reply: merge #k or say `stack #N on #M` | `G none`, `L(k1)`, `L(k2)` / 1 / stop, names both | `G none`, `L(k1)`, `L(k2)` / 1 / stop | own PR skipped; nothing else: prints nothing / 0 / no section; another PR j overlaps: `G none`, `L(j)` / 1 / section written, reply names #j to merge first |
++| 2. Covered (go names N and every printed PR's ticket) | `G`, `B(origin/main)` / 0 | `G`, `L(k)`, `B(origin/<head k>)` / 0 / branch from k, report k as parent | `G`, `L(k1)`, `L(k2)`, `B(lowest number's head)` / 0 / branch, report both, root chains | `G`, `L(k1)`, `L(k2)`, `B(head k2)` / 0 / the head that contains the other | own PR skipped; parent's shared paths print with `G` / 0 / section verbatim |
++| 3. Go names N, a printed PR's ticket is not on any line (Q1) | as 2A | `G`, `L(k)` / 1 / stop; reply: merge #k or add its ticket to the go | / 1 / stop | / 1 / stop | as 1E |
++| 4. Program file present, no line names N | as 1A | as 1B (`G none`) | as 1C | as 1D | as 1E |
++| 5. Program died; its line left behind | rows 2 to 4 apply unchanged: a line covers only stacks among the tickets it names while their PRs are open; nothing to clean up | | | | |
++| 6. One-off go during a live program: `overlap.sh go "stack on #M" N` appends a line | rows 2 to 4 with that line; the program's lines untouched | | | | |
++| 7. Review ticket (sweep) or body with no token: tokens under `## Diff` ignored | `G`, `paths: none`, `B(origin/main)` / 0 / branch; step 8 is the check | cannot overlap | | | as 1E / 2E |
++| 8. Ticket names a file only PR k creates | pathspec matches the created file, on the creating PR's line only: as rows 1 to 4 | | | | |
++| 9. Stale or missing remote-tracking ref | every open PR head fetched with a forced refspec before any diff: as rows 1 to 4 with fresh tips | | | | |
++| 10. A PR head with no merge base against its base | git's `no merge base` on stderr / 2 / stop, report; the human closes or rebases that PR | | | | / 2 |
++| 11. gh fails or is absent | gh's message (or `command not found`) on stderr / 2 / stop, report | | | | / 2 |
++| 12. No origin remote | stderr `no origin remote; nothing in flight`, `G none`, `B(main)` / 0 / branch from main; gh not called | cannot overlap | | | prints nothing / 0 |
++| 13. Token that is no path (`gh`, `#9`, `set -e` never a token, `{a,b}`) | matches nothing: as rows 1 to 4 for the real tokens beside it | | | | n/a |
++| 14. Token outside the repository (a dot-dot path or an absolute path, unbackticked here so this ticket's own check does not trip on it) | git's own fatal on stderr / 2 / stop; the human fixes the body | | | | n/a |
++
++The contract opens by naming the three calls and the exit codes, then the named paths. Its first two paragraphs:
++
++> `.claude/skills/poteto-mode/scripts/overlap.sh N` (check, Ticket step 1); `overlap.sh N --diff` (record, Ticket step 8); `overlap.sh go "<label>" N...` (append `<label>: #a #b ...` to `.claude/state/program`, creating it; the only writer). `N` with or without `#`. Exit 0 decided (last line `base:`), 1 overlap without a covering go, 2 the check could not run (`trap 'exit 2' ERR` under `set -euo pipefail`; stderr carries the tool's message), 64 usage (no N; a flag other than `--diff`; a third argument).
++>
++> Named paths (check): every backticked token without whitespace outside a `## Diff` section, deduped, passed together as pathspecs to one `git diff --name-only "$(nearest origin/$head)...origin/$head" -- "${toks[@]}"` per open PR, where `nearest <ref>` is the open-PR head, other than the ref's own, that is an ancestor of the ref with the fewest commits between, else `origin/main`; a stacked PR's line carries only its own commits; its output is `L(k)`. No token: `paths: none` and no PR loop. `--diff`: own paths = `git diff --name-only $(nearest HEAD)...HEAD`, the own PR's head excluded; the per-PR diff runs with `GIT_LITERAL_PATHSPECS=1`; the PR whose head is the current branch is skipped.
++
++Read the table beside `tests/poteto-mode/overlap.sh`: its header says the cases run in the order of the table, and each case asserts the exit code and the output of one call.
++
++## Why
++
++Ticket #42 ran twice, and the two runs differ in one thing.
++
++The first run, PR #87, settled a script, a state file and two exit-code decisions in prose sketches. Nobody wrote out the situations with an expected outcome per cell. The three review rounds found the empty cells one at a time, 2, 4 and 4 hard findings, and each fix round redesigned the core of the matcher. The PR was closed.
++
++The second run, PR #92, wrote the table first and posted it on the ticket. The writer found the one design hole at the test, before any review: the contract diffed a stacked PR against `main`, which contradicted the table's "contains" column, and the contract was amended with a dated line. The three rounds then found 2, 1 and 2 items. None of them changed a cell.
++
++That is the whole case. A reviewer who reads a prose sketch has to imagine the situations and finds them one round at a time. A reviewer who reads a table checks cells, and a finding either changes a cell, which sends the work back to design, or leaves the table standing, which makes it an implementation bug fixed on the PR. The table turns the review from a search into a check.
+diff --git a/patches/mattpocock/to-spec/SKILL.md.patch b/patches/mattpocock/to-spec/SKILL.md.patch
+new file mode 100644
+index 0000000..31281f1
+--- /dev/null
++++ b/patches/mattpocock/to-spec/SKILL.md.patch
+@@ -0,0 +1,10 @@
++--- a/to-spec/SKILL.md
+++++ b/to-spec/SKILL.md
++@@ -63,6 +63,7 @@
++ - A description of what makes a good test (only test external behavior, not implementation details)
++ - Which modules will be tested
++ - Prior art for the tests (i.e. similar types of tests in the codebase)
+++- For stateful work (a file read or written, exit codes, more than one actor), the shape is the scenario table: situations down the side, the shape of the input across the top, and in every cell what is printed, the exit code and what the caller does next. The table is the test list, one assertion per cell. It is a decision, not a code snippet, so the rule above does not exclude it.
++ 
++ ## Out of Scope
++ 
+diff --git a/patches/pstack/architect/references/runner-prompt.md.patch b/patches/pstack/architect/references/runner-prompt.md.patch
+new file mode 100644
+index 0000000..e763eb8
+--- /dev/null
++++ b/patches/pstack/architect/references/runner-prompt.md.patch
+@@ -0,0 +1,17 @@
++--- a/architect/references/runner-prompt.md
+++++ b/architect/references/runner-prompt.md
++@@ -2,8 +2,13 @@
++ 
++ The orchestrator passes this file through to every parallel candidate runner during Phase B and fills in the variable inputs around it: the task, the Phase A grounding artifacts, the isolated working directory, and the path to write outputs. The working directory is a git worktree when available, otherwise a per-runner subdirectory under the sketch dir; what matters is independence between candidates.
++ 
++-You are producing one candidate design in architect's parallel exploration. Read the **architect** skill in full first; that's the workflow you're inside. Output a candidate design package: type sketch, function signatures, module map, and prose rationale shaped per [`rationale-template.md`](rationale-template.md).
+++You are producing one candidate design in architect's parallel exploration. Read the **architect** skill in full first; that's the workflow you're inside. Output a candidate design package. Its first deliverable depends on what the design has.
++ 
+++- With state (a file it reads or writes, exit codes, rounds, or more than one actor): a scenario table, then the contract derived from it, then the test list. Situations go down the side (the states the world can be in: no record, a stale ref, a failing tool, a body with no token), the shape of the input across the top (none, one, siblings, one containing the other, the caller's own), and every cell says what is printed, the exit code and what the caller does next. A legend defines the cell vocabulary once. The contract defines every term the cells use. The test list has one assertion per cell, in the order the cells are written, each naming the fixture state it needs. A cell for an input outside the intended path reads "refused with the tool's own message" and costs no code. Cut such a cell only after the refusal was run and seen; an assumption about a tool's failure mode is a claim until then.
+++- Without state, crossing a function boundary: the usage and signature sketch, the caller's usage first, then the types and signatures (the discipline below).
+++
+++Then the type sketch, function signatures, module map, and prose rationale shaped per [`rationale-template.md`](rationale-template.md). The orchestrator appends the synthesized first deliverable to the ticket before implementation, a table under `## Testing decisions`, a sketch under `## Design` (the Ticket playbook, step 6); the writer, the reviewer and the human read it there.
+++
++ Apply the following discipline. The orchestrator compares candidates on these axes to pick a base.
++ 
++ - Caller's usage first. Write the README-style usage and two or three real call sites before the types, then derive the type sketch from them. The usage is the spec; the two must agree, so reconcile the sketch to the usage, not the reverse.
+diff --git a/patches/pstack/poteto-mode/playbooks/bug-fix.md.patch b/patches/pstack/poteto-mode/playbooks/bug-fix.md.patch
+index eedf692..b3e8c7b 100644
+--- a/patches/pstack/poteto-mode/playbooks/bug-fix.md.patch
++++ b/patches/pstack/poteto-mode/playbooks/bug-fix.md.patch
+@@ -5,7 +5,7 @@
+  1. Reproduce it yourself on the matching surface via the driver skill (`run` for CLIs/TUIs, `verify` for UIs) (Non-negotiables). Don't hand the repro to the user. A debug or instrumentation protocol that says to ask the user does not override this; you drive the instrumented runtime. Ask the user only with a stated, specific reason the control surface cannot reach the target, and only after driving it as far as it goes. Won't reproduce directly, force it: synthesize the trigger, tighten conditions, or instrument until it fires. A bug you can't reproduce, you can't prove fixed.
+  2. Binary-search the cause. Form the candidate hypotheses, then rule them out until one survives. Seed them with `how` over the affected subsystem and the **why** skill for regression history. Each pass, take the split that cuts the most remaining problem space, get runtime evidence, eliminate. When program state is unclear, add instrumentation or logging and read it as the code runs. Don't guess. Drive a long or stubborn hunt with Claude Code's `loop` command. Confirm the surviving *mechanism* with runtime evidence before the step-3 architect/interrogate fan-out; a design grounded on a plausible-but-unconfirmed cause can be unanimously wrong while the real cause sits one subsystem over.
+ -3. Plan the fix. If it crosses a function boundary, `architect` first. Delegate implementation through provider dispatch using your configured bug-fix descriptor (default `codex:gpt-5.6-sol@max`) with `isolated-write`, a dedicated worktree, and a specific scope; review the diff.
+-+3. Plan the fix. If it crosses a function boundary, `architect` first; a cross-cutting diff (Ticket step 5) never skips it. Delegate implementation through provider dispatch using your configured bug-fix descriptor (default `codex:gpt-5.6-sol@max`) with `isolated-write`, a dedicated worktree, and a specific scope; review the diff.
+++3. Plan the fix. If it crosses a function boundary, `architect` first; a cross-cutting diff (Ticket step 5) never skips it. Delegate implementation through provider dispatch using your configured bug-fix descriptor (default `codex:gpt-5.6-sol@max`) with `isolated-write`, a dedicated worktree, and a specific scope; review the diff. The brief carries the ticket's design artifact (Ticket step 6). When it is a scenario table, the writer writes the test from the table before the implementation, one assertion per cell in the table's order, and the commit order shows it; a writer that cannot implement a cell as written stops and reports the cell, and never fills it in.
+  4. Verify on the same surface; the original repro now passes. "Inconclusive" or wrong-surface is not a pass; flag it. Unit tests show branch behavior, not bug absence.
+  5. Stage the commits so the failing repro lands before the fix in git history; the diff tells the story. See the **tdd** skill for the failing-test-first cadence when the bug has a cheap local test path; skip it when the test would be expensive, integration-heavy, or unclear.
+     This is the canonical **sequence-verifiable-units** principle skill, the failing test first and the fix on top.
+diff --git a/patches/pstack/poteto-mode/playbooks/feature.md.patch b/patches/pstack/poteto-mode/playbooks/feature.md.patch
+index 31a211f..f109530 100644
+--- a/patches/pstack/poteto-mode/playbooks/feature.md.patch
++++ b/patches/pstack/poteto-mode/playbooks/feature.md.patch
+@@ -1,6 +1,6 @@
+ --- a/poteto-mode/playbooks/feature.md
+ +++ b/poteto-mode/playbooks/feature.md
+-@@ -3,7 +3,7 @@
++@@ -3,13 +3,13 @@
+  **You own the design. Plan, review, verify.** Delegate implementation; stay in the lead.
+  
+  1. `how` over the affected subsystem.
+@@ -9,3 +9,10 @@
+  3. Write the throughput checkpoint as four todo items. A dimension that genuinely does not apply (single file, no fan-out) keeps its item with `n/a: <reason>` rather than being dropped:
+     - **Blocking first steps.** Gates run before fan-out.
+     - **Independent workstreams.** Disjoint files, services, or layers parallelize. Shared writes serialize.
++    - **Shared mutable state.** Default to splitting the target (the **separate-before-serializing-shared-state** principle skill). Serialize only for real invariants.
++    - **Smallest safe decomposition.** If one worker is best, name why.
++-4. Delegate code-writing through provider dispatch using your configured feature descriptor (default `grok:grok-4.6@xhigh`) with `isolated-write`, a dedicated worktree, and a specific scope (file paths, named data shape and its organizing structure per **principle-model-the-domain** — a state machine over scattered booleans, a table/registry over branching, a typed model over repeated shape assumptions, chosen before the delegate writes logic — and success criteria); review its diff yourself. When the implementation admits multiple valid shapes (error handling, abstraction layer, test structure), delegate via the **arena** skill instead so the runners surface the alternatives and the cross-judge guards the pick. Mandatory: no skip-with-reason escape, and Laziness Protocol does not override it (the gain is review separation, not lines saved). The delegate owns the diff directly and never waits on or launches a nested agent. Comments per **Comments**. Surgical edits, re-ground against the source for upstream-derived files. Port shared-primitive improvements to all consumers and verify each. Commit liberally.
+++4. Delegate code-writing through provider dispatch using your configured feature descriptor (default `grok:grok-4.6@xhigh`) with `isolated-write`, a dedicated worktree, and a specific scope (file paths, named data shape and its organizing structure per **principle-model-the-domain** — a state machine over scattered booleans, a table/registry over branching, a typed model over repeated shape assumptions, chosen before the delegate writes logic — and success criteria); review its diff yourself. The brief carries the ticket's design artifact (Ticket step 6). When it is a scenario table, the writer writes the test from the table before the implementation, one assertion per cell in the table's order, and the commit order shows it; a writer that cannot implement a cell as written stops and reports the cell, and never fills it in. When the implementation admits multiple valid shapes (error handling, abstraction layer, test structure), delegate via the **arena** skill instead so the runners surface the alternatives and the cross-judge guards the pick. Mandatory: no skip-with-reason escape, and Laziness Protocol does not override it (the gain is review separation, not lines saved). The delegate owns the diff directly and never waits on or launches a nested agent. Comments per **Comments**. Surgical edits, re-ground against the source for upstream-derived files. Port shared-primitive improvements to all consumers and verify each. Commit liberally.
++ 5. Verify on the matching surface. "Inconclusive" or wrong-surface is not a pass; flag it.
++ 6. Rebase into small, ordered commits; stack follow-ups.
++    Use the **sequence-verifiable-units** principle skill, building, verifying, and committing each small unit before the next.
+diff --git a/patches/pstack/poteto-mode/playbooks/perf-issue.md.patch b/patches/pstack/poteto-mode/playbooks/perf-issue.md.patch
+index 5591650..53cac20 100644
+--- a/patches/pstack/poteto-mode/playbooks/perf-issue.md.patch
++++ b/patches/pstack/poteto-mode/playbooks/perf-issue.md.patch
+@@ -5,7 +5,7 @@
+     - **Lazy evaluation.** Cost lands on results that are never used or not needed yet (eager init on the boot path, rendering offscreen items). Defer the work until first use.
+     - **Scheduling.** The work must happen, but not during the interactive moment. Move it to where nobody is waiting: idle callbacks, a background warmup after boot, precompute before the user arrives, cleanup after the frame commits. Distinct from Lazy (later-when-needed): Scheduling often runs the work *earlier* than the hot moment, or in its shadow. The win is perceived latency, so measure the interactive path, not total work done.
+ -3. Plan the fix from the trace. If it crosses a function boundary, `architect` first. Delegate implementation through provider dispatch using your configured perf-issue descriptor (default `codex:gpt-5.6-sol@max`) with `isolated-write` in a dedicated worktree; review the diff. Capture a post-fix trace.
+-+3. Plan the fix from the trace. If it crosses a function boundary, `architect` first; a cross-cutting diff (Ticket step 5) never skips it. Delegate implementation through provider dispatch using your configured perf-issue descriptor (default `codex:gpt-5.6-sol@max`) with `isolated-write` in a dedicated worktree; review the diff. Capture a post-fix trace.
+++3. Plan the fix from the trace. If it crosses a function boundary, `architect` first; a cross-cutting diff (Ticket step 5) never skips it. Delegate implementation through provider dispatch using your configured perf-issue descriptor (default `codex:gpt-5.6-sol@max`) with `isolated-write` in a dedicated worktree; review the diff. The brief carries the ticket's design artifact (Ticket step 6). When it is a scenario table, the writer writes the test from the table before the implementation, one assertion per cell in the table's order, and the commit order shows it; a writer that cannot implement a cell as written stops and reports the cell, and never fills it in. Capture a post-fix trace.
+     Apply the **sequence-verifiable-units** principle skill, verifying each attempt before trying the next.
+  4. Parse and compare the artifacts (JSON to sqlite, diff). "Inconclusive" or wrong-surface is not a pass; flag it.
+  5. Cite the measurement in the PR.
+diff --git a/patches/pstack/poteto-mode/playbooks/refactoring.md.patch b/patches/pstack/poteto-mode/playbooks/refactoring.md.patch
+index 6709bb5..4665997 100644
+--- a/patches/pstack/poteto-mode/playbooks/refactoring.md.patch
++++ b/patches/pstack/poteto-mode/playbooks/refactoring.md.patch
+@@ -1,11 +1,14 @@
+ --- a/poteto-mode/playbooks/refactoring.md
+ +++ b/poteto-mode/playbooks/refactoring.md
+-@@ -6,7 +6,7 @@
++@@ -6,9 +6,9 @@
+  
+  1. Pin the behavior contract first. Run the **how** skill over the affected subsystem to learn the contract, then write a characterization test, snapshot, or equivalence harness that captures current behavior before any structure moves. The harness makes "refactor" a checkable claim (**principle-prove-it-works**). If the area has no coverage, write the pin before touching structure. Type check and lint are not a pin.
+  2. Name the structure the code is missing per **principle-model-the-domain**: a state machine over scattered booleans, a table or registry over spread-out branching, a typed model over repeated shape assumptions, a reducer over ad hoc mutations. Boring code stays when the shape is already clear and local; the reshape must delete branches or invalid states, not add indirection.
+ -3. Name the target shape. State what the module layout, types, and call graph should be if built today (**principle-foundational-thinking**, **principle-redesign-from-first-principles**). If the target crosses a function boundary, run the **architect** skill for parallel design exploration of the shape before the move.
+ +3. Name the target shape. State what the module layout, types, and call graph should be if built today (**principle-foundational-thinking**, **principle-redesign-from-first-principles**). If the target crosses a function boundary, run the **architect** skill for parallel design exploration of the shape before the move; a cross-cutting diff (Ticket step 5) never skips it.
+  4. Subtract before you add. Delete dead weight, collapse one-caller wrappers, drop redundant validators, and remove orphan references before introducing the new shape (**principle-subtract-before-you-add**). The smallest change that reaches the target shape ships (**principle-laziness-protocol**). A speculative cleanup that "might help" gets reverted, not left to ride.
+- 5. Move in small behavior-preserving steps, each keeping the pin green. For API reshapes, migrate every caller and delete the old API in the same wave (**principle-migrate-callers-then-delete-legacy-apis**). No compatibility shims, no parallel old-and-new paths. Spot-check every rename against the actual files; renames silently miss usages in strings, prose, and back-references. Delegate the mechanical edits through provider dispatch using your configured refactoring descriptor (default `grok:grok-4.6@xhigh`) with `isolated-write`, a dedicated worktree, and a specific scope (file paths, the names being moved, the behavior to hold); review the diff yourself.
++-5. Move in small behavior-preserving steps, each keeping the pin green. For API reshapes, migrate every caller and delete the old API in the same wave (**principle-migrate-callers-then-delete-legacy-apis**). No compatibility shims, no parallel old-and-new paths. Spot-check every rename against the actual files; renames silently miss usages in strings, prose, and back-references. Delegate the mechanical edits through provider dispatch using your configured refactoring descriptor (default `grok:grok-4.6@xhigh`) with `isolated-write`, a dedicated worktree, and a specific scope (file paths, the names being moved, the behavior to hold); review the diff yourself.
+++5. Move in small behavior-preserving steps, each keeping the pin green. For API reshapes, migrate every caller and delete the old API in the same wave (**principle-migrate-callers-then-delete-legacy-apis**). No compatibility shims, no parallel old-and-new paths. Spot-check every rename against the actual files; renames silently miss usages in strings, prose, and back-references. Delegate the mechanical edits through provider dispatch using your configured refactoring descriptor (default `grok:grok-4.6@xhigh`) with `isolated-write`, a dedicated worktree, and a specific scope (file paths, the names being moved, the behavior to hold); review the diff yourself. The brief carries the ticket's design artifact (Ticket step 6). When it is a scenario table, the writer writes the test from the table before the implementation, one assertion per cell in the table's order, and the commit order shows it; a writer that cannot implement a cell as written stops and reports the cell, and never fills it in.
+  6. Prove behavior is unchanged on the real artifact, not "it compiles" (**principle-prove-it-works**). For larger reshapes, run an equivalence check: a script that diffs old-vs-new outputs, a recorded baseline replayed against the new code, or a smoke run on the matching surface via the relevant control skill. Own the verification yourself; do not trust a delegate's "looks good" summary.
++ 7. Confirm the change earns its place. The success measure is reduced reader load (**principle-minimize-reader-load**): fewer layers between question and answer, less hidden state, fewer indirections without a second consumer. If the diff does not lower reader load somewhere, revert it.
++ 8. Rebase into small ordered commits that tell the story. A subtraction commit, then the reshape, then any follow-on cleanup, so a single revert undoes one slice. Shape them with the **sequence-verifiable-units** principle skill, so each behavior-preserving slice stays green before the next. Run **Opening a PR**.
+diff --git a/patches/series b/patches/series
+index c5c3f28..6f2a29a 100644
+--- a/patches/series
++++ b/patches/series
+@@ -9,9 +9,11 @@ pstack/poteto-mode/playbooks/bug-fix.md.patch
+ pstack/poteto-mode/playbooks/feature.md.patch
+ pstack/poteto-mode/playbooks/perf-issue.md.patch
+ pstack/poteto-mode/playbooks/refactoring.md.patch
++pstack/architect/references/runner-prompt.md.patch
+ pstack/poteto-mode/references/codex-tools.md.patch
+ pstack/poteto-mode/scripts/runner/model-matrix.test.ts.patch
+ pstack/interrogate/SKILL.md.patch
+ pstack/setup-pstack/SKILL.md.patch
+ pstack/unslop/SKILL.md.patch
+ mattpocock/spec-review.SKILL.md.patch
++mattpocock/to-spec/SKILL.md.patch
+diff --git a/template/.agents/skills/architect/references/runner-prompt.md b/template/.agents/skills/architect/references/runner-prompt.md
+index d2daeee..c789bb5 100644
+--- a/template/.agents/skills/architect/references/runner-prompt.md
++++ b/template/.agents/skills/architect/references/runner-prompt.md
+@@ -2,7 +2,12 @@
+ 
+ The orchestrator passes this file through to every parallel candidate runner during Phase B and fills in the variable inputs around it: the task, the Phase A grounding artifacts, the isolated working directory, and the path to write outputs. The working directory is a git worktree when available, otherwise a per-runner subdirectory under the sketch dir; what matters is independence between candidates.
+ 
+-You are producing one candidate design in architect's parallel exploration. Read the **architect** skill in full first; that's the workflow you're inside. Output a candidate design package: type sketch, function signatures, module map, and prose rationale shaped per [`rationale-template.md`](rationale-template.md).
++You are producing one candidate design in architect's parallel exploration. Read the **architect** skill in full first; that's the workflow you're inside. Output a candidate design package. Its first deliverable depends on what the design has.
++
++- With state (a file it reads or writes, exit codes, rounds, or more than one actor): a scenario table, then the contract derived from it, then the test list. Situations go down the side (the states the world can be in: no record, a stale ref, a failing tool, a body with no token), the shape of the input across the top (none, one, siblings, one containing the other, the caller's own), and every cell says what is printed, the exit code and what the caller does next. A legend defines the cell vocabulary once. The contract defines every term the cells use. The test list has one assertion per cell, in the order the cells are written, each naming the fixture state it needs. A cell for an input outside the intended path reads "refused with the tool's own message" and costs no code. Cut such a cell only after the refusal was run and seen; an assumption about a tool's failure mode is a claim until then.
++- Without state, crossing a function boundary: the usage and signature sketch, the caller's usage first, then the types and signatures (the discipline below).
++
++Then the type sketch, function signatures, module map, and prose rationale shaped per [`rationale-template.md`](rationale-template.md). The orchestrator appends the synthesized first deliverable to the ticket before implementation, a table under `## Testing decisions`, a sketch under `## Design` (the Ticket playbook, step 6); the writer, the reviewer and the human read it there.
+ 
+ Apply the following discipline. The orchestrator compares candidates on these axes to pick a base.
+ 
+diff --git a/template/.agents/skills/knowledge/SKILL.md b/template/.agents/skills/knowledge/SKILL.md
+index 162eb09..bb4b8d6 100644
+--- a/template/.agents/skills/knowledge/SKILL.md
++++ b/template/.agents/skills/knowledge/SKILL.md
+@@ -10,7 +10,7 @@ The corpus is large (the four source systems, six research notes, three referenc
+ 
+ ## Where the corpus is
+ 
+-`$FACTORY918_HOME/docs/knowledge` if that variable is set; else `~/.factory918/docs/knowledge`; else this project's `docs/factory918` (slim: philosophy, manual, decisions and glossary only, with no header or mini-TOC, so take line numbers from grep and `wc -l`). Call it `$KB`.
++`$FACTORY918_HOME/docs/knowledge` if that variable is set; else `~/.factory918/docs/knowledge`; else this project's `docs/factory918` (slim: philosophy, manual, decisions, glossary and the scenario table only, with no header or mini-TOC, so take line numbers from grep and `wc -l`). Call it `$KB`.
+ 
+ ## Procedure
+ 
+diff --git a/template/.agents/skills/poteto-mode/playbooks/bug-fix.md b/template/.agents/skills/poteto-mode/playbooks/bug-fix.md
+index 721982e..9883670 100644
+--- a/template/.agents/skills/poteto-mode/playbooks/bug-fix.md
++++ b/template/.agents/skills/poteto-mode/playbooks/bug-fix.md
+@@ -6,7 +6,7 @@ Be scientific. Every shipped line traces to runtime evidence. Belt-and-suspender
+ 
+ 1. Reproduce it yourself on the matching surface via the driver skill (`run` for CLIs/TUIs, `verify` for UIs) (Non-negotiables). Don't hand the repro to the user. A debug or instrumentation protocol that says to ask the user does not override this; you drive the instrumented runtime. Ask the user only with a stated, specific reason the control surface cannot reach the target, and only after driving it as far as it goes. Won't reproduce directly, force it: synthesize the trigger, tighten conditions, or instrument until it fires. A bug you can't reproduce, you can't prove fixed.
+ 2. Binary-search the cause. Form the candidate hypotheses, then rule them out until one survives. Seed them with `how` over the affected subsystem and the **why** skill for regression history. Each pass, take the split that cuts the most remaining problem space, get runtime evidence, eliminate. When program state is unclear, add instrumentation or logging and read it as the code runs. Don't guess. Drive a long or stubborn hunt with Claude Code's `loop` command. Confirm the surviving *mechanism* with runtime evidence before the step-3 architect/interrogate fan-out; a design grounded on a plausible-but-unconfirmed cause can be unanimously wrong while the real cause sits one subsystem over.
+-3. Plan the fix. If it crosses a function boundary, `architect` first; a cross-cutting diff (Ticket step 5) never skips it. Delegate implementation through provider dispatch using your configured bug-fix descriptor (default `codex:gpt-5.6-sol@max`) with `isolated-write`, a dedicated worktree, and a specific scope; review the diff.
++3. Plan the fix. If it crosses a function boundary, `architect` first; a cross-cutting diff (Ticket step 5) never skips it. Delegate implementation through provider dispatch using your configured bug-fix descriptor (default `codex:gpt-5.6-sol@max`) with `isolated-write`, a dedicated worktree, and a specific scope; review the diff. The brief carries the ticket's design artifact (Ticket step 6). When it is a scenario table, the writer writes the test from the table before the implementation, one assertion per cell in the table's order, and the commit order shows it; a writer that cannot implement a cell as written stops and reports the cell, and never fills it in.
+ 4. Verify on the same surface; the original repro now passes. "Inconclusive" or wrong-surface is not a pass; flag it. Unit tests show branch behavior, not bug absence.
+ 5. Stage the commits so the failing repro lands before the fix in git history; the diff tells the story. See the **tdd** skill for the failing-test-first cadence when the bug has a cheap local test path; skip it when the test would be expensive, integration-heavy, or unclear.
+    This is the canonical **sequence-verifiable-units** principle skill, the failing test first and the fix on top.
+diff --git a/template/.agents/skills/poteto-mode/playbooks/feature.md b/template/.agents/skills/poteto-mode/playbooks/feature.md
+index 1e2d1a1..ef07521 100644
+--- a/template/.agents/skills/poteto-mode/playbooks/feature.md
++++ b/template/.agents/skills/poteto-mode/playbooks/feature.md
+@@ -9,7 +9,7 @@
+    - **Independent workstreams.** Disjoint files, services, or layers parallelize. Shared writes serialize.
+    - **Shared mutable state.** Default to splitting the target (the **separate-before-serializing-shared-state** principle skill). Serialize only for real invariants.
+    - **Smallest safe decomposition.** If one worker is best, name why.
+-4. Delegate code-writing through provider dispatch using your configured feature descriptor (default `grok:grok-4.6@xhigh`) with `isolated-write`, a dedicated worktree, and a specific scope (file paths, named data shape and its organizing structure per **principle-model-the-domain** — a state machine over scattered booleans, a table/registry over branching, a typed model over repeated shape assumptions, chosen before the delegate writes logic — and success criteria); review its diff yourself. When the implementation admits multiple valid shapes (error handling, abstraction layer, test structure), delegate via the **arena** skill instead so the runners surface the alternatives and the cross-judge guards the pick. Mandatory: no skip-with-reason escape, and Laziness Protocol does not override it (the gain is review separation, not lines saved). The delegate owns the diff directly and never waits on or launches a nested agent. Comments per **Comments**. Surgical edits, re-ground against the source for upstream-derived files. Port shared-primitive improvements to all consumers and verify each. Commit liberally.
++4. Delegate code-writing through provider dispatch using your configured feature descriptor (default `grok:grok-4.6@xhigh`) with `isolated-write`, a dedicated worktree, and a specific scope (file paths, named data shape and its organizing structure per **principle-model-the-domain** — a state machine over scattered booleans, a table/registry over branching, a typed model over repeated shape assumptions, chosen before the delegate writes logic — and success criteria); review its diff yourself. The brief carries the ticket's design artifact (Ticket step 6). When it is a scenario table, the writer writes the test from the table before the implementation, one assertion per cell in the table's order, and the commit order shows it; a writer that cannot implement a cell as written stops and reports the cell, and never fills it in. When the implementation admits multiple valid shapes (error handling, abstraction layer, test structure), delegate via the **arena** skill instead so the runners surface the alternatives and the cross-judge guards the pick. Mandatory: no skip-with-reason escape, and Laziness Protocol does not override it (the gain is review separation, not lines saved). The delegate owns the diff directly and never waits on or launches a nested agent. Comments per **Comments**. Surgical edits, re-ground against the source for upstream-derived files. Port shared-primitive improvements to all consumers and verify each. Commit liberally.
+ 5. Verify on the matching surface. "Inconclusive" or wrong-surface is not a pass; flag it.
+ 6. Rebase into small, ordered commits; stack follow-ups.
+    Use the **sequence-verifiable-units** principle skill, building, verifying, and committing each small unit before the next.
+diff --git a/template/.agents/skills/poteto-mode/playbooks/perf-issue.md b/template/.agents/skills/poteto-mode/playbooks/perf-issue.md
+index 5690de5..7c15609 100644
+--- a/template/.agents/skills/poteto-mode/playbooks/perf-issue.md
++++ b/template/.agents/skills/poteto-mode/playbooks/perf-issue.md
+@@ -13,7 +13,7 @@
+    - **Redundancy.** The wait hangs on one slow instance or attempt. Duplicate the work (replicas, hedged requests, speculative execution) and take the fastest result. This trades extra load for lower tail latency, so the trace has to show the wait dominates and the system has headroom; duplication without that tradeoff only adds load.
+    - **Lazy evaluation.** Cost lands on results that are never used or not needed yet (eager init on the boot path, rendering offscreen items). Defer the work until first use.
+    - **Scheduling.** The work must happen, but not during the interactive moment. Move it to where nobody is waiting: idle callbacks, a background warmup after boot, precompute before the user arrives, cleanup after the frame commits. Distinct from Lazy (later-when-needed): Scheduling often runs the work *earlier* than the hot moment, or in its shadow. The win is perceived latency, so measure the interactive path, not total work done.
+-3. Plan the fix from the trace. If it crosses a function boundary, `architect` first; a cross-cutting diff (Ticket step 5) never skips it. Delegate implementation through provider dispatch using your configured perf-issue descriptor (default `codex:gpt-5.6-sol@max`) with `isolated-write` in a dedicated worktree; review the diff. Capture a post-fix trace.
++3. Plan the fix from the trace. If it crosses a function boundary, `architect` first; a cross-cutting diff (Ticket step 5) never skips it. Delegate implementation through provider dispatch using your configured perf-issue descriptor (default `codex:gpt-5.6-sol@max`) with `isolated-write` in a dedicated worktree; review the diff. The brief carries the ticket's design artifact (Ticket step 6). When it is a scenario table, the writer writes the test from the table before the implementation, one assertion per cell in the table's order, and the commit order shows it; a writer that cannot implement a cell as written stops and reports the cell, and never fills it in. Capture a post-fix trace.
+    Apply the **sequence-verifiable-units** principle skill, verifying each attempt before trying the next.
+ 4. Parse and compare the artifacts (JSON to sqlite, diff). "Inconclusive" or wrong-surface is not a pass; flag it.
+ 5. Cite the measurement in the PR.
+diff --git a/template/.agents/skills/poteto-mode/playbooks/refactoring.md b/template/.agents/skills/poteto-mode/playbooks/refactoring.md
+index dcd15a6..7278ec5 100644
+--- a/template/.agents/skills/poteto-mode/playbooks/refactoring.md
++++ b/template/.agents/skills/poteto-mode/playbooks/refactoring.md
+@@ -8,7 +8,7 @@ A refactor that smuggles in a behavior change loses its safety net. If the clean
+ 2. Name the structure the code is missing per **principle-model-the-domain**: a state machine over scattered booleans, a table or registry over spread-out branching, a typed model over repeated shape assumptions, a reducer over ad hoc mutations. Boring code stays when the shape is already clear and local; the reshape must delete branches or invalid states, not add indirection.
+ 3. Name the target shape. State what the module layout, types, and call graph should be if built today (**principle-foundational-thinking**, **principle-redesign-from-first-principles**). If the target crosses a function boundary, run the **architect** skill for parallel design exploration of the shape before the move; a cross-cutting diff (Ticket step 5) never skips it.
+ 4. Subtract before you add. Delete dead weight, collapse one-caller wrappers, drop redundant validators, and remove orphan references before introducing the new shape (**principle-subtract-before-you-add**). The smallest change that reaches the target shape ships (**principle-laziness-protocol**). A speculative cleanup that "might help" gets reverted, not left to ride.
+-5. Move in small behavior-preserving steps, each keeping the pin green. For API reshapes, migrate every caller and delete the old API in the same wave (**principle-migrate-callers-then-delete-legacy-apis**). No compatibility shims, no parallel old-and-new paths. Spot-check every rename against the actual files; renames silently miss usages in strings, prose, and back-references. Delegate the mechanical edits through provider dispatch using your configured refactoring descriptor (default `grok:grok-4.6@xhigh`) with `isolated-write`, a dedicated worktree, and a specific scope (file paths, the names being moved, the behavior to hold); review the diff yourself.
++5. Move in small behavior-preserving steps, each keeping the pin green. For API reshapes, migrate every caller and delete the old API in the same wave (**principle-migrate-callers-then-delete-legacy-apis**). No compatibility shims, no parallel old-and-new paths. Spot-check every rename against the actual files; renames silently miss usages in strings, prose, and back-references. Delegate the mechanical edits through provider dispatch using your configured refactoring descriptor (default `grok:grok-4.6@xhigh`) with `isolated-write`, a dedicated worktree, and a specific scope (file paths, the names being moved, the behavior to hold); review the diff yourself. The brief carries the ticket's design artifact (Ticket step 6). When it is a scenario table, the writer writes the test from the table before the implementation, one assertion per cell in the table's order, and the commit order shows it; a writer that cannot implement a cell as written stops and reports the cell, and never fills it in.
+ 6. Prove behavior is unchanged on the real artifact, not "it compiles" (**principle-prove-it-works**). For larger reshapes, run an equivalence check: a script that diffs old-vs-new outputs, a recorded baseline replayed against the new code, or a smoke run on the matching surface via the relevant control skill. Own the verification yourself; do not trust a delegate's "looks good" summary.
+ 7. Confirm the change earns its place. The success measure is reduced reader load (**principle-minimize-reader-load**): fewer layers between question and answer, less hidden state, fewer indirections without a second consumer. If the diff does not lower reader load somewhere, revert it.
+ 8. Rebase into small ordered commits that tell the story. A subtraction commit, then the reshape, then any follow-on cleanup, so a single revert undoes one slice. Shape them with the **sequence-verifiable-units** principle skill, so each behavior-preserving slice stays green before the next. Run **Opening a PR**.
+diff --git a/template/.agents/skills/poteto-mode/playbooks/ticket.md b/template/.agents/skills/poteto-mode/playbooks/ticket.md
+index 3467a4f..9ba35a8 100644
+--- a/template/.agents/skills/poteto-mode/playbooks/ticket.md
++++ b/template/.agents/skills/poteto-mode/playbooks/ticket.md
+@@ -7,7 +7,7 @@
+ 3. Check **Blocked by**. Every listed issue must be closed. If one is open, stop and report which; do not start.
+ 4. Falsifiability pass. For each criterion name the command or observation that would fail it right now. A criterion that already passes at HEAD, that another ticket owns, or that only restates the request goes back to the human as a note before work starts. A ticket whose criteria span more than one concern goes back to the human to be split before work starts, because one ticket is one PR. Criteria the human confirms become the verification plan.
+ 5. Select by content and run that playbook's steps verbatim from step 1: new behavior → Feature; a defect → Bug fix; a behavior-preserving change → Refactoring; measured slowness → Perf issue. `how` and `why` over the affected subsystem come first in all of them. A change whose diff will touch a cross-cutting path, one under a `.claude/hooks/` directory, a `.claude/settings.json`, or a file of the `factory918` skill (`.agents/skills/factory918/`), at any depth (`spec-review`'s `review-brief.sh` holds the predicate), reaches every session and skill at once: after `how`, run `blast-radius` over it and write the result to `.scratch/<ticket>/blast-radius.md` in that skill's hand-back shape (what it does; the one fact it is safe because of and how far it was proven; risks; cleared; before you merge), with a risk for every session kind (the interactive session, a subagent, a hook's own invocation, `factory-start` at day zero, a review in progress) and every skill the change reaches, each with a `file:line`. Such a change never skips `architect`. The PR body's `## Blast Radius` section is that file verbatim, and `review-brief.sh` refuses to brief the diff without it.
+-6. The spec's **Testing decisions** are the pre-agreed seams. `tdd` there, and nowhere the spec did not agree unless a criterion needs it.
++6. The spec's **Testing decisions** are the pre-agreed seams. `tdd` there, and nowhere the spec did not agree unless a criterion needs it. The selected playbook's architect step adds the ticket's own: when the design adds state (a file it reads or writes, exit codes, rounds, or more than one actor), `architect`'s first deliverable is the scenario table (its runner prompt gives the shape), and before implementation the synthesized table is appended to the ticket's body under `## Testing decisions` with `gh issue edit N --body-file`, first line `Posted by the agent <date>`, or `Approved by <name> <date>` when the human approved it first. When the design is code with no state that crosses a function boundary, the usage and signature sketch goes under `## Design` the same way. A prose change has no artifact beyond its criteria. Posting is the record: the human edits the ticket if the table is wrong, and a stop before implementation is asked for only with `/architect with checkpoint`. The Spec brief carries the table because `review-brief.sh` pastes the ticket body.
+ 7. Verify on the matching surface per `docs/agents/evidence.md`; the primary agent runs the project's `verify-<app>` skill once after integrating.
+ 8. Run `.claude/skills/poteto-mode/scripts/overlap.sh N --diff`; its output, when there is any, is the PR body's `## Overlap` section verbatim, placed before `## Verification`; exit 1 means the reply names the printed PR as the one to merge first. Exit 2: stop and report stderr; do not open the PR until the check runs. Then run **Opening a PR**. The body's Verification section quotes each criterion with its evidence path. The last line before the attribution is `Closes #N`. Never close the issue by hand; the merge closes it.
+ 9. Babysit to merge-ready per `playbooks/babysit.md`. Never merge.
+diff --git a/template/.agents/skills/to-spec/SKILL.md b/template/.agents/skills/to-spec/SKILL.md
+index 3f52599..cb511f5 100644
+--- a/template/.agents/skills/to-spec/SKILL.md
++++ b/template/.agents/skills/to-spec/SKILL.md
+@@ -63,6 +63,7 @@ A list of testing decisions that were made. Include:
+ - A description of what makes a good test (only test external behavior, not implementation details)
+ - Which modules will be tested
+ - Prior art for the tests (i.e. similar types of tests in the codebase)
++- For stateful work (a file read or written, exit codes, more than one actor), the shape is the scenario table: situations down the side, the shape of the input across the top, and in every cell what is printed, the exit code and what the caller does next. The table is the test list, one assertion per cell. It is a decision, not a code snippet, so the rule above does not exclude it.
+ 
+ ## Out of Scope
+ 
+diff --git a/template/docs/agents/issue-tracker.md b/template/docs/agents/issue-tracker.md
+index f2abcd4..da048e5 100644
+--- a/template/docs/agents/issue-tracker.md
++++ b/template/docs/agents/issue-tracker.md
+@@ -23,6 +23,8 @@ Every ticket has this shape, in this order. The Ticket playbook, `spec-review`,
+ - **`## Parent`**: the spec issue, for planned tickets. A quick ticket has none.
+ - **`## Blocked by`**: issue numbers that must be closed first, or `None`. GitHub's native issue dependencies are the canonical form where available (Wayfinding operations below says how); the line is the fallback.
+ 
++The architect step may append two more sections before implementation, after these: `## Testing decisions`, the scenario table, when the design has state; `## Design`, the usage and signature sketch, when it is code with no state that crosses a function boundary. Their first line is `Posted by the agent <date>` or `Approved by <name> <date>` (the Ticket playbook, step 6). The human edits them in place; `spec-review` reads them as spec because the body is pasted whole.
++
+ Anything an agent may pick up carries the label `ready-for-agent`.
+ 
+ ## Pull requests as a triage surface
+diff --git a/template/docs/factory918/DECISIONS.md b/template/docs/factory918/DECISIONS.md
+index 8f73598..76e2c5c 100644
+--- a/template/docs/factory918/DECISIONS.md
++++ b/template/docs/factory918/DECISIONS.md
+@@ -82,3 +82,4 @@ Travels anywhere without change: the planning skills, the execution playbooks, `
+ | P22 | Who signs a comment | A comment the agent posts on a PR or a ticket ends with the model and harness (`Claude Fable 5.1 on Claude Code`), plus `approved by <name>` when the human approved it before posting; only an approved comment posted from the author's account is the author's words. `review-brief.sh` reads only the PR author's account for rounds and carry-forward | Manuel, 2026-09-18: a comment left by the orchestrator without human involvement is signed by the model on the harness; approved, it is signed by both; strangers' comments never reach a brief (#78 round 1). |
+ | P2 | Tool versions in CI | Pin every tool CI runs to an exact version, as a devDependency where the tool publishes one | `dlx` and `npx` resolve the latest version, so a rule engine or formatter can change under a project with no diff to show for it. Spec §0 rule 1 already says to pin what you install; this extends it to what CI fetches. First applied to `@ast-grep/cli` 0.45.3 in M0. |
+ | P24 | Overlap is not coupling; a go is a line that covers its own tickets | Two unblocked tickets relate three ways: dependent (`Blocked by`, off the frontier), disjoint in files (parallel branches off `main`), or overlapping in files (sequenced: one to merge-ready, the merge, then the next). Coupled work, a ticket that needs code an open PR introduces, stacks, and only on a go. Ticket step 1 runs `.claude/skills/poteto-mode/scripts/overlap.sh N` before branching: every open PR's head is fetched fresh and its own commits (its diff from the open PR it stacks on, else `origin/main`) are matched with the ticket body's backticked tokens as pathspecs (its `## Diff` section excluded), so a file, a directory, a glob or a file the PR creates all match; exit 0 prints `base: <ref>` to branch from, exit 1 stops and names the PR to merge first, exit 2 means the check could not run and stderr says why. A go is a line `<label>: #a #b ...` that `overlap.sh go "<label>" N...` appends to the gitignored `.claude/state/program`, written by the orchestrator when the human gives it (autopilot-stack step 3 runs it itself). A go covers a stack only when a line names the ticket and, for every overlapping PR, the ticket that PR closes; so a line a dead program left behind covers nothing outside its own tickets' open PRs and needs no removal. Under a cover the base is the overlapping PR's head, the lowest-numbered when siblings overlap, the containing one when one contains the other; step 8's `--diff` run records the shared paths as the PR body's `## Overlap` section | Ticket #42, Manuel: "working a ticket to completion before automatically moving on"; the #16 to #22 stack was built on a seven-re-reviews mis-estimate (ledger 2026-09-17). First run (PR #87, closed): three review rounds redesigned the matcher three times; the second run designed from a scenario table Manuel approved 2026-09-21 as the ticket's Testing decisions. Rejected: a ticket label as the go (outlives the program), a line pasted into each lane's brief (a forgotten paste blocks a lane), a `done` step (a crash skips it), the script under the factory918 skill (every later edit cross-cutting). |
++| P25 | The design artifact on the ticket | For a design with state (a file it reads or writes, exit codes, rounds, or more than one actor) the architect step's first deliverable is a scenario table, appended to the ticket under `## Testing decisions` before implementation, first line `Posted by the agent <date>` (or `Approved by <name> <date>` when the human approved it first); the usage and signature sketch goes under `## Design` for stateless code that crosses a function boundary; prose has its criteria. Posting is the record: the human edits the ticket if the table is wrong, and a stop is asked for only with `/architect with checkpoint`. The table is the test, one assertion per cell; a cell for an input outside the intended path reads "refused with the tool's own message" and is cut only after the refusal was run and seen. Choices made in #89: the rule lives in Ticket step 6 (no renumbering, since "Ticket step 5" is quoted in four patches and `review-brief.sh`); the page is a sixth core document so projects get it; the to-spec patch follows the README path | Ticket #89: the agent's "It is a general design tool, not a #42 thing" and Manuel's "I agree with your choice completely" on posting as the record. PR #87's three rounds redesigned the core three times; PR #92's found 2, 1, 2 items and no cell changed. 2026-09-22. |
+diff --git a/template/docs/factory918/GLOSSARY.md b/template/docs/factory918/GLOSSARY.md
+index 4b93296..b3ffc67 100644
+--- a/template/docs/factory918/GLOSSARY.md
++++ b/template/docs/factory918/GLOSSARY.md
+@@ -44,6 +44,8 @@ Terms as this system uses them. Where a term belongs to one of the four sources,
+ 
+ **Router.** A skill that maps a situation to an entry point. Matt has `ask-matt`, pstack has `poteto-mode`; Factory918 has `/factory918` above both.
+ 
++**Scenario table.** The design artifact for anything with state: situations down the side, the input's shape across the top, every cell what is printed, the exit code and what the caller does next. Posted on the ticket under `## Testing decisions` before implementation; the test is one assertion per cell. The page is `SCENARIO-TABLE.md`. (Ticket #42, second run)
++
+ **Seam.** The public boundary you test at; the interface where you observe behaviour without reaching inside. Pre-agreed seams are the spec's Testing decisions. (Matt, from Michael Feathers)
+ 
+ **Smell.** A named pattern that usually indicates a design problem, never a hard violation; `spec-review` labels twelve of Fowler's. Comments are not one of ours.
+diff --git a/template/docs/factory918/SCENARIO-TABLE.md b/template/docs/factory918/SCENARIO-TABLE.md
+new file mode 100644
+index 0000000..1fee899
+--- /dev/null
++++ b/template/docs/factory918/SCENARIO-TABLE.md
+@@ -0,0 +1,79 @@
++# Factory918: the scenario table
++
++The scenario table is the design artifact Factory918 asks for before any code that has state: a file it reads or writes, exit codes, review rounds, or more than one actor. Situations go down the side, the shape of the input across the top, and every cell says what must happen. This page says what the table is, what shape it takes, where it goes, and why two runs of the same ticket made it a rule. It is for the person who opens a ticket and finds a table under `## Testing decisions`, and for the agent that has to write one.
++
++## What it is
++
++A design tool, not a fix for one ticket. On #42 Manuel asked whether the "stateful helper with a scenario table" was a solution specific to that issue or a more fundamental design tool. The agent answered:
++
++> It is a general design tool, not a #42 thing. For anything with state, a file, exit codes, or several actors, you write the inputs and states across the top and down the side, and every cell says what must happen. Before code. The table is then the test, row by row.
++
++The table forces the question a prose sketch lets you skip. A sketch can say "the script prints the base to branch from" and stop. A table has a cell for a stale ref, a cell for a missing remote, a cell for a body with no token, and each one is empty until someone decides what happens there. The empty cells are the design holes, and the table shows them before any code is written.
++
++Writing the table does not stop the work. The agent posts it on the ticket and goes on to implementation; the human reads it there and edits it when it is wrong. Manuel chose that over a mandatory pause: "I agree with your choice completely."
++
++## The shape
++
++The table has four parts and the test list follows from them.
++
++- **Situations down the side.** The states the world can be in. On #42: no go, a covering go, a stale ref, a failing tool, a body with no token.
++- **The shape of the input across the top.** On #42: no overlap, one PR, siblings, one containing the other, the caller's own.
++- **A cell.** What is printed, the exit code, and what the caller does next. Three facts, in that order, in every cell.
++- **A legend.** Defines the cell vocabulary once, above the table, so a cell can say `G`, `L(k)` or `B(x)` and stay short.
++
++The contract follows the table and defines every term the cells use: what counts as in flight, what a named path is, what a covering go is. A term the cells use and the contract does not define is a hole.
++
++The test list has one assertion per cell, in the order the cells are written, each naming the fixture state it needs. The table is the test. Nothing is asserted that no cell says, and no cell goes without an assertion.
++
++Two rules cover the inputs the tool is not for. A cell for an input outside the intended path reads "refused with the tool's own message" and costs no code. Manuel set that line on #81: an edge case outside the intended path being unsupported is not a flag, at most hardening to fail fast and loud. The second rule is stricter. Cut such a cell only after the refusal was run and seen. The ledger records why:
++
++> 2026-09-21 | fable | cut the detached-HEAD cell from the #42 scenario table on the judge's word that git would fail loudly on its own; git ran fine with an empty branch name and round two found the record step reporting the ticket's own PR | a cell cut as 'the tool refuses it' is cut only after the refusal was run and seen; an assumption about a tool's failure mode is a rung-1 claim until then
++
++## Where it goes
++
++On the ticket, before implementation. The Ticket playbook's step 6 appends the synthesized table to the ticket body under `## Testing decisions` with `gh issue edit N --body-file`. Its first line is `Posted by the agent <date>`, or `Approved by <name> <date>` when the human approved it first. Posting is the record. The human edits the ticket if the table is wrong, and a stop before implementation is asked for only with `/architect with checkpoint`.
++
++Code with no state that crosses a function boundary gets the other artifact `architect` already produces, the usage and signature sketch (the caller's usage first, then types and signatures), under `## Design` by the same rule. A prose change has its acceptance criteria and nothing else.
++
++The reviewer reads the table without any extra step, because `review-brief.sh` pastes the whole ticket body into the Spec brief. Whatever is under `## Testing decisions` is spec from then on. The writer gets the table in its brief and writes the test from it before the implementation, one assertion per cell in the table's order, so the commit order shows the test came first. A writer that cannot implement a cell as written stops and reports the cell, and never fills it in.
++
++## The #42 example
++
++The durable copy is the `## Testing decisions` section of ticket #42 and the description of PR #92. The legend and the table, verbatim:
++
++> Cell = prints / exit / what the agent does. `G` = first line `go: <label>` or `go: none`. `L(k)` = `#k <head>: <paths>`, the named paths k's own commits touch (its diff from `nearest`, the open-PR head under it, else `origin/main`), ascending by PR number. `B(x)` = last line `base: <x>`. Exit 0 always ends with a `base:` line; exit 1 prints `G` and the `L` lines and no base; exit 2 prints the tool's message on stderr and nothing decided. "Covered" = a line of `.claude/state/program` names #N and, for every printed PR, the ticket it closes (`closingIssuesReferences`).
++
++| Situation | A. no overlap | B. one PR k overlaps | C. siblings k1, k2 | D. k2 contains k1 | E. `--diff` at step 8 |
++|---|---|---|---|---|---|
++| 1. No go names N | `G none`, `B(origin/main)` / 0 / branch from main | `G none`, `L(k)` / 1 / stop; reply: merge #k or say `stack #N on #M` | `G none`, `L(k1)`, `L(k2)` / 1 / stop, names both | `G none`, `L(k1)`, `L(k2)` / 1 / stop | own PR skipped; nothing else: prints nothing / 0 / no section; another PR j overlaps: `G none`, `L(j)` / 1 / section written, reply names #j to merge first |
++| 2. Covered (go names N and every printed PR's ticket) | `G`, `B(origin/main)` / 0 | `G`, `L(k)`, `B(origin/<head k>)` / 0 / branch from k, report k as parent | `G`, `L(k1)`, `L(k2)`, `B(lowest number's head)` / 0 / branch, report both, root chains | `G`, `L(k1)`, `L(k2)`, `B(head k2)` / 0 / the head that contains the other | own PR skipped; parent's shared paths print with `G` / 0 / section verbatim |
++| 3. Go names N, a printed PR's ticket is not on any line (Q1) | as 2A | `G`, `L(k)` / 1 / stop; reply: merge #k or add its ticket to the go | / 1 / stop | / 1 / stop | as 1E |
++| 4. Program file present, no line names N | as 1A | as 1B (`G none`) | as 1C | as 1D | as 1E |
++| 5. Program died; its line left behind | rows 2 to 4 apply unchanged: a line covers only stacks among the tickets it names while their PRs are open; nothing to clean up | | | | |
++| 6. One-off go during a live program: `overlap.sh go "stack on #M" N` appends a line | rows 2 to 4 with that line; the program's lines untouched | | | | |
++| 7. Review ticket (sweep) or body with no token: tokens under `## Diff` ignored | `G`, `paths: none`, `B(origin/main)` / 0 / branch; step 8 is the check | cannot overlap | | | as 1E / 2E |
++| 8. Ticket names a file only PR k creates | pathspec matches the created file, on the creating PR's line only: as rows 1 to 4 | | | | |
++| 9. Stale or missing remote-tracking ref | every open PR head fetched with a forced refspec before any diff: as rows 1 to 4 with fresh tips | | | | |
++| 10. A PR head with no merge base against its base | git's `no merge base` on stderr / 2 / stop, report; the human closes or rebases that PR | | | | / 2 |
++| 11. gh fails or is absent | gh's message (or `command not found`) on stderr / 2 / stop, report | | | | / 2 |
++| 12. No origin remote | stderr `no origin remote; nothing in flight`, `G none`, `B(main)` / 0 / branch from main; gh not called | cannot overlap | | | prints nothing / 0 |
++| 13. Token that is no path (`gh`, `#9`, `set -e` never a token, `{a,b}`) | matches nothing: as rows 1 to 4 for the real tokens beside it | | | | n/a |
++| 14. Token outside the repository (a dot-dot path or an absolute path, unbackticked here so this ticket's own check does not trip on it) | git's own fatal on stderr / 2 / stop; the human fixes the body | | | | n/a |
++
++The contract opens by naming the three calls and the exit codes, then the named paths. Its first two paragraphs:
++
++> `.claude/skills/poteto-mode/scripts/overlap.sh N` (check, Ticket step 1); `overlap.sh N --diff` (record, Ticket step 8); `overlap.sh go "<label>" N...` (append `<label>: #a #b ...` to `.claude/state/program`, creating it; the only writer). `N` with or without `#`. Exit 0 decided (last line `base:`), 1 overlap without a covering go, 2 the check could not run (`trap 'exit 2' ERR` under `set -euo pipefail`; stderr carries the tool's message), 64 usage (no N; a flag other than `--diff`; a third argument).
++>
++> Named paths (check): every backticked token without whitespace outside a `## Diff` section, deduped, passed together as pathspecs to one `git diff --name-only "$(nearest origin/$head)...origin/$head" -- "${toks[@]}"` per open PR, where `nearest <ref>` is the open-PR head, other than the ref's own, that is an ancestor of the ref with the fewest commits between, else `origin/main`; a stacked PR's line carries only its own commits; its output is `L(k)`. No token: `paths: none` and no PR loop. `--diff`: own paths = `git diff --name-only $(nearest HEAD)...HEAD`, the own PR's head excluded; the per-PR diff runs with `GIT_LITERAL_PATHSPECS=1`; the PR whose head is the current branch is skipped.
++
++Read the table beside `tests/poteto-mode/overlap.sh`: its header says the cases run in the order of the table, and each case asserts the exit code and the output of one call.
++
++## Why
++
++Ticket #42 ran twice, and the two runs differ in one thing.
++
++The first run, PR #87, settled a script, a state file and two exit-code decisions in prose sketches. Nobody wrote out the situations with an expected outcome per cell. The three review rounds found the empty cells one at a time, 2, 4 and 4 hard findings, and each fix round redesigned the core of the matcher. The PR was closed.
++
++The second run, PR #92, wrote the table first and posted it on the ticket. The writer found the one design hole at the test, before any review: the contract diffed a stacked PR against `main`, which contradicted the table's "contains" column, and the contract was amended with a dated line. The three rounds then found 2, 1 and 2 items. None of them changed a cell.
++
++That is the whole case. A reviewer who reads a prose sketch has to imagine the situations and finds them one round at a time. A reviewer who reads a table checks cells, and a finding either changes a cell, which sends the work back to design, or leaves the table standing, which makes it an implementation bug fixed on the PR. The table turns the review from a search into a check.
+diff --git a/tools/build_knowledge.py b/tools/build_knowledge.py
+index e6db716..d652c44 100644
+--- a/tools/build_knowledge.py
++++ b/tools/build_knowledge.py
+@@ -39,6 +39,7 @@ CORE_DOCS = [
+     ("core/MANUAL.md", "Factory918: the manual", "How to run the loop; what the human does at each point."),
+     ("core/DECISIONS.md", "Factory918: decisions", "Before overriding any vendored skill; these win."),
+     ("core/GLOSSARY.md", "Factory918: glossary", "A term in AGENTS.md, a playbook or a ticket is unclear."),
++    ("core/SCENARIO-TABLE.md", "Factory918: the scenario table", "Designing or reviewing anything with state: a file, exit codes, more than one actor."),
+     ("core/CONVERSATION-DIGEST.md", "How Factory918 was arrived at", "Why something was chosen, historically; the corrections."),
+ ]
+ SOURCES = [

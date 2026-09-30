@@ -1,0 +1,39 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "claude:fable-5.1",
+    "round": "pr94-r1",
+    "axis": "spec",
+    "step": "M3"
+  },
+  "status": "contaminated",
+  "detail": "Bash {\"command\": \"set -u; EX=\\\"/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/revie returned a line first added by ca2c106: | `core/MANUAL.md` | Factory918: the manual | 175 | How to run the loop; what the human does at each",
+  "reported_model": "claude-fable-5-1",
+  "effort": "high",
+  "tokens": {
+    "input": 258,
+    "cache_read": 971815,
+    "cache_write": 129888,
+    "output": 20277,
+    "reasoning": null
+  },
+  "wall_ms": 270764,
+  "source": "/Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/subagents/agent-a126efe40be1a1cf6.jsonl",
+  "outside": [],
+  "first_contaminated": {
+    "call": 16,
+    "timestamp": "2026-09-25T02:14:02.036Z"
+  },
+  "sightings": [
+    {
+      "n": 1,
+      "hard": true,
+      "call": null
+    },
+    {
+      "n": 2,
+      "hard": true,
+      "call": 2
+    }
+  ]
+}

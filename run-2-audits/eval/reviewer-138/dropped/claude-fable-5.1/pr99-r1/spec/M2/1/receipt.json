@@ -1,0 +1,30 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "claude:fable-5.1",
+    "round": "pr99-r1",
+    "axis": "spec",
+    "step": "M2"
+  },
+  "status": "contaminated",
+  "detail": "Bash {\"command\": \"W=\\\"/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/fa returned a line first added by 35de22e: 69bd412 Record the ShellCheck pin, the gate decision and a lost lane",
+  "reported_model": "claude-fable-5-1",
+  "effort": "high",
+  "tokens": {
+    "input": 354,
+    "cache_read": 1474330,
+    "cache_write": 145620,
+    "output": 22885,
+    "reasoning": null
+  },
+  "wall_ms": 347439,
+  "source": "/Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/subagents/agent-aee1c47ea2bd85d85.jsonl",
+  "outside": [
+    "11 Bash //')\";"
+  ],
+  "first_contaminated": {
+    "call": 21,
+    "timestamp": "2026-09-25T02:08:52.933Z"
+  },
+  "sightings": []
+}

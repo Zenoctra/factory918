@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "codex:gpt-6-sol",
+    "round": "pr96-r1",
+    "axis": "standards",
+    "step": "M3"
+  },
+  "nonce": "f224c3ae8b9e",
+  "checkout": "/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/f224c3ae8b9e/factory918",
+  "prompt": "Read `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/f224c3ae8b9e/factory918/.scratch/review/ab47eb9/standards-brief.md` whole and follow it. You are working in `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/f224c3ae8b9e/factory918`; every relative path in the brief is relative to it. The ticket as it stood at this commit is `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/f224c3ae8b9e/factory918/.scratch/review/ab47eb9/ticket.md`, and the PR's grounding is `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/f224c3ae8b9e/factory918/.scratch/review/ab47eb9/blast-radius.md`. Your scratch folder for notes and any files you make is `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/f224c3ae8b9e/factory918/.scratch/work/`.",
+  "tree": "d48fee1b6ac2f3d250cf0e9f514c83516ffe5a37",
+  "settled": [],
+  "applied": [
+    "unmatched-glob.patch",
+    "word-split.patch"
+  ],
+  "masked": [
+    "G1",
+    "G2"
+  ],
+  "plain_head": false
+}

@@ -1,0 +1,34 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "claude:fable-5.1",
+    "round": "pr96-r1",
+    "axis": "spec",
+    "step": "M3"
+  },
+  "status": "complete",
+  "detail": "counted by Manuel's ruling 2026-09-24: its only web fetches were public docs (actions/runner-images README and install-shellcheck.sh, the Arch shellcheck package page), nothing from this repository, its tickets or PRs; the check's verdict was: WebFetch (it returns live network state git does not hold)",
+  "reported_model": "claude-fable-5-1",
+  "effort": "high",
+  "tokens": {
+    "input": 258,
+    "cache_read": 936702,
+    "cache_write": 132167,
+    "output": 21268,
+    "reasoning": null
+  },
+  "wall_ms": 291152,
+  "source": "/Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/subagents/agent-a802ca5fbd57c1889.jsonl",
+  "outside": [
+    "7 Read /Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/tool-results/bpxvk4y4h.txt",
+    "10 Bash /tmp",
+    "11 Bash /tmp",
+    "11 Bash //p",
+    "11 Bash /tmp/sc"
+  ],
+  "first_contaminated": {
+    "call": 13,
+    "timestamp": "2026-09-25T02:13:34.994Z"
+  },
+  "sightings": []
+}

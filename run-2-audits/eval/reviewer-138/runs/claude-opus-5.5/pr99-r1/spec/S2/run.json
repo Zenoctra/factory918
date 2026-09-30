@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "claude:opus-5.5",
+    "round": "pr99-r1",
+    "axis": "spec",
+    "step": "S2"
+  },
+  "nonce": "a1685bab204e",
+  "checkout": "/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/a1685bab204e/factory918",
+  "prompt": "Read `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/a1685bab204e/factory918/.scratch/review/69bd412/spec-brief.md` whole and follow it. You are working in `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/a1685bab204e/factory918`; every relative path in the brief is relative to it. The ticket as it stood at this commit is `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/a1685bab204e/factory918/.scratch/review/69bd412/ticket.md`.",
+  "tree": "52ccd8eb509a2871260827a8514c3a1fcaac4d5d",
+  "settled": [
+    "1. [P1] **A report that ends inside an open fence hides the `restart` line.** `review-comment.sh` finds `hard findings:` with a grep that ignores fences, so it accepts a report whose last quoted block never closes. The fence then stays open in the posted comment through `## Judgment`, `restart` and `round:`. `review-brief.sh` reads that comment with the fence rule and sees no restart line and no round line. Reproduced: a Standards report whose last `Fix alongside` item opens a fence and never closes it, with a judgment item marked `hole: criterion 1`. `review-comment.sh` exits 0 and prints `restart`. Fed back through `--previous`, the next brief prints `round: 2 of 3` and no `restart:` line. A restart posted at round 3 gets the fourth-round refusal instead. The swallowed `round:` line predates this PR; the ignored restart is new. Documented step: `template/.agents/skills/spec-review/SKILL.md:25`, \"so the redesign's first review is round 1 with nothing carried\" Result: the redesign's review runs as round 2 (or is refused at round 4). Nothing is printed, and the hole's three fresh rounds are lost. spec: table 5/A"
+  ],
+  "applied": [],
+  "masked": [],
+  "plain_head": true
+}

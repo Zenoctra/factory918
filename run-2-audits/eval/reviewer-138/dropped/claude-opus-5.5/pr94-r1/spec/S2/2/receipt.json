@@ -1,0 +1,48 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "claude:opus-5.5",
+    "round": "pr94-r1",
+    "axis": "spec",
+    "step": "S2"
+  },
+  "status": "contaminated",
+  "detail": "Bash {\"command\": \"cd /private/tmp && gh issue view 42 -R Zenoctra/factory918 --json b returned a line first added by 35de22e: ## Testing decisions; Bash {\"command\": \"cd /private/tmp && gh issue view 42 -R Zenoctra/factory918 --json b returned a line first added by 35de22e: ## Scenario table; Bash {\"command\": \"P=/private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun- returned a line first added by 35de22e: ## Scenario table",
+  "reported_model": "claude-opus-5-5",
+  "effort": "high",
+  "tokens": {
+    "input": 44,
+    "cache_read": 2440927,
+    "cache_write": 120456,
+    "output": 17573
+  },
+  "wall_ms": 215508,
+  "source": "/Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/subagents/agent-accc4fbc1a5454840.jsonl",
+  "outside": [
+    "2 Read /Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/tool-results/bkg6x1xwg.txt",
+    "3 Read /Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/tool-results/bkg6x1xwg.txt",
+    "12 Bash /tmp/o.$$;",
+    "12 Bash /tmp/o.$$",
+    "15 Bash /private/tmp",
+    "15 Bash /private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/scratchpad/i42.md;",
+    "15 Bash /private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/scratchpad/i42.md",
+    "16 Bash /^|",
+    "17 Bash /^|"
+  ],
+  "first_contaminated": {
+    "call": 15,
+    "timestamp": "2026-09-25T01:04:13.937Z"
+  },
+  "sightings": [
+    {
+      "n": 1,
+      "hard": false,
+      "call": 6
+    },
+    {
+      "n": 2,
+      "hard": false,
+      "call": null
+    }
+  ]
+}

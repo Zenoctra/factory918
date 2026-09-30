@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "claude:opus-5.5",
+    "round": "pr99-r1",
+    "axis": "spec",
+    "step": "M3"
+  },
+  "nonce": "ac3bde048032",
+  "checkout": "/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/ac3bde048032/factory918",
+  "prompt": "Read `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/ac3bde048032/factory918/.scratch/review/69bd412/spec-brief.md` whole and follow it. You are working in `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/ac3bde048032/factory918`; every relative path in the brief is relative to it. The ticket as it stood at this commit is `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/ac3bde048032/factory918/.scratch/review/69bd412/ticket.md`.",
+  "tree": "b09835ef686fbdaf6cc9a3830d79d9ec3e32096c",
+  "settled": [],
+  "applied": [
+    "hole-field.patch"
+  ],
+  "masked": [
+    "G1",
+    "G2"
+  ],
+  "plain_head": false
+}

@@ -1,0 +1,33 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "claude:opus-5",
+    "round": "pr96-r1",
+    "axis": "spec",
+    "step": "I2"
+  },
+  "status": "complete",
+  "detail": "complete",
+  "reported_model": "claude-opus-5",
+  "effort": "high",
+  "tokens": {
+    "input": 48,
+    "cache_read": 2865596,
+    "cache_write": 122011,
+    "output": 24751,
+    "reasoning": null
+  },
+  "wall_ms": 455126,
+  "source": "/Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/subagents/agent-a9e2ba20a2862b21e.jsonl",
+  "outside": [
+    "15 Bash /tmp/out.$$",
+    "15 Bash /tmp/out.$$;",
+    "17 Bash /tmp/dtest.sh",
+    "17 Bash //p",
+    "17 Bash /tmp/dtest.sh;",
+    "22 Bash /etc/hosts",
+    "25 Bash /"
+  ],
+  "first_contaminated": null,
+  "sightings": []
+}

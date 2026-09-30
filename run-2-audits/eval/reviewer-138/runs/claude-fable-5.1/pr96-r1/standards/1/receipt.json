@@ -1,0 +1,67 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "claude:fable-5.1",
+    "round": "pr96-r1",
+    "axis": "standards",
+    "step": "1"
+  },
+  "status": "complete",
+  "detail": "complete",
+  "reported_model": "claude-fable-5-1",
+  "effort": "high",
+  "tokens": {
+    "input": 258,
+    "cache_read": 888293,
+    "cache_write": 151408,
+    "output": 29004,
+    "reasoning": null
+  },
+  "wall_ms": 375135,
+  "source": "/Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/subagents/agent-a515337de22495251.jsonl",
+  "outside": [
+    "8 Bash /usr/bin",
+    "8 Bash //p",
+    "8 Bash /usr/bin/shellcheck",
+    "9 Bash /var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/0896152daacc/factory918\";",
+    "10 Bash /var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/0896152daacc/factory918\";",
+    "11 Bash /Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-af1a10e904a9448aa",
+    "11 Bash /Users/manuel/Desktop/Work/Under",
+    "12 Bash /var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/0896152daacc/factory918\";",
+    "13 Bash /var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/0896152daacc/factory918\";",
+    "14 Bash /var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/0896152daacc/factory918\";"
+  ],
+  "first_contaminated": null,
+  "sightings": [
+    {
+      "n": 1,
+      "hard": true,
+      "call": 1
+    },
+    {
+      "n": 2,
+      "hard": true,
+      "call": 1
+    },
+    {
+      "n": 3,
+      "hard": false,
+      "call": 10
+    },
+    {
+      "n": 4,
+      "hard": false,
+      "call": 2
+    },
+    {
+      "n": 5,
+      "hard": false,
+      "call": 1
+    },
+    {
+      "n": 6,
+      "hard": false,
+      "call": 1
+    }
+  ]
+}

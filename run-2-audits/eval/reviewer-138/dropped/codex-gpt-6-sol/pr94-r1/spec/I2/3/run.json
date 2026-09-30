@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "codex:gpt-6-sol",
+    "round": "pr94-r1",
+    "axis": "spec",
+    "step": "I2"
+  },
+  "nonce": "34bbbd3cac4e",
+  "checkout": "/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/34bbbd3cac4e/factory918",
+  "prompt": "Read `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/34bbbd3cac4e/factory918/.scratch/review/ab47eb9/spec-brief.md` whole and follow it. You are working in `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/34bbbd3cac4e/factory918`; every relative path in the brief is relative to it. The ticket as it stood at this commit is `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/34bbbd3cac4e/factory918/.scratch/review/ab47eb9/ticket.md`. Your scratch folder for notes and any files you make is `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/34bbbd3cac4e/factory918/.scratch/work/`.",
+  "tree": "c83f166578a35e61d0b686c1ae1ed652b051dba6",
+  "settled": [],
+  "applied": [],
+  "masked": [],
+  "plain_head": true
+}

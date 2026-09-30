@@ -1,0 +1,21 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "codex:gpt-6-sol",
+    "round": "pr96-r1",
+    "axis": "standards",
+    "step": "S3"
+  },
+  "nonce": "4e04ab47de4f",
+  "checkout": "/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/4e04ab47de4f/factory918",
+  "prompt": "Read `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/4e04ab47de4f/factory918/.scratch/review/ab47eb9/standards-brief.md` whole and follow it. You are working in `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/4e04ab47de4f/factory918`; every relative path in the brief is relative to it. The ticket as it stood at this commit is `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/4e04ab47de4f/factory918/.scratch/review/ab47eb9/ticket.md`, and the PR's grounding is `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/4e04ab47de4f/factory918/.scratch/review/ab47eb9/blast-radius.md`. Your scratch folder for notes and any files you make is `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/4e04ab47de4f/factory918/.scratch/work/`.",
+  "tree": "69bd41230e0f62e0824403196243c013118fb302",
+  "settled": [
+    "1. [S1] **A quoted shell path with a space is skipped.** `CODING_STANDARDS.md`, Bash, requires quoted paths because paths here contain spaces, and requires testing commands as a user types them. The unquoted expansion splits an already quoted argument before globbing. With a valid file alongside it, the gate exits successfully without checking the file with a space. Documented step: Ticket `## Design`: \"`bash .github/shellcheck.sh '<glob>' ...` exactly these; quote a glob, the script expands it.\" Result: `bash .github/shellcheck.sh .scratch/work/shellcheck-probe/clean.sh '.scratch/work/shellcheck-probe/bad file.sh'` printed `ShellCheck 0.11.0, files checked: 1` and exited 0, although the second file contains SC2086. spec: design bash .github/shellcheck.sh '<glob>' ...",
+    "2. [S2] **An unmatched glob passes when another file matches.** `CODING_STANDARDS.md`, Bash, says a failure a gate depends on is printed before anything continues and must never be hidden. The gate tests only whether the aggregate file list is empty, so a mistyped glob is silently ignored when another argument contributes a file. Documented step: Ticket `## Design`, \"A glob matches no file\" row: print `shellcheck.sh: no file matched <globs>; the gate checked nothing` on stderr and exit 1. Result: `bash .github/shellcheck.sh .scratch/work/shellcheck-probe/clean.sh '.scratch/work/shellcheck-probe/missing/*.sh'` printed `ShellCheck 0.11.0, files checked: 1` and exited 0, with no refusal. spec: table A glob matches no file/Exit",
+    "3. [S1] **A run from another directory can check the wrong sourced file.** `CODING_STANDARDS.md:12-13` requires a gate to print failures before it continues and requires tests with absolute paths from another directory. The gate documents the repository root as required but does not check it. With an explicit absolute target, ShellCheck resolves `./helper.sh` from the caller's directory and can report a clean result for a file with a finding. Documented step: `template/.github/shellcheck.sh:7-8`: \"Run it from the repository root: --external-sources resolves a sourced file against the working directory.\" Result: In `.scratch/work/sc-cwd/a`, `main.sh` sources `./helper.sh` and references an unset `$x`; the gate reports SC2154 and exits 1. From sibling directory `b`, which has a `helper.sh` that sets `x`, invoking the same gate with the absolute path to `a/main.sh` prints `ShellCheck 0.11.0, files checked: 1` and exits 0. The wrong working directory proceeds without a refusal or a finding. spec: design shellcheck.sh [glob...]"
+  ],
+  "applied": [],
+  "masked": [],
+  "plain_head": true
+}

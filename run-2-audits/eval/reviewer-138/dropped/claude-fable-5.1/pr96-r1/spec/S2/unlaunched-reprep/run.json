@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "claude:fable-5.1",
+    "round": "pr96-r1",
+    "axis": "spec",
+    "step": "S2"
+  },
+  "nonce": "3ad4db461d49",
+  "checkout": "/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/3ad4db461d49/factory918",
+  "prompt": "Read `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/3ad4db461d49/factory918/.scratch/review/ab47eb9/spec-brief.md` whole and follow it. You are working in `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/3ad4db461d49/factory918`; every relative path in the brief is relative to it. The ticket as it stood at this commit is `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/3ad4db461d49/factory918/.scratch/review/ab47eb9/ticket.md`, and the PR's grounding is `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/3ad4db461d49/factory918/.scratch/review/ab47eb9/blast-radius.md`. Your scratch folder for notes and any files you make is `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/3ad4db461d49/factory918/.scratch/work/`.",
+  "tree": "69bd41230e0f62e0824403196243c013118fb302",
+  "settled": [
+    "1. [P1] **A glob or path that matches nothing passes when any other argument matches.** The gate refuses only when the union of every argument's expansion is empty (`template/.github/shellcheck.sh:35-41`); a single unmatched argument among matched ones is dropped without a word and the exit is 0. Run here: `bash .github/shellcheck.sh template/.claude/hooks/mode.sh template/.claude/hooks/typo.sh` prints `files checked: 1`, exit 0; `bash .github/shellcheck.sh 'template/.claude/hooks/*.sh' 'template/nowhere/*.sh'` prints `files checked: 5`, exit 0. The playbook sentence sends a lane to run the gate \"on every shell file the diff changes\"; a mistyped path in that list, or a CI glob whose directory was renamed, gets a green exit and only a lower count as the trace. The gate's own header says globs that match no file \"at all\" are a failure, but the design row is per glob. Documented step: ticket #88 `## Design` table, row \"A glob matches no file\"; `template/.github/shellcheck.sh:11` (\"Globs that match no file at all leave the gate checking nothing, which is a failure, not a pass\"). Result: the unmatched glob is skipped, the matched ones are checked, `files checked: N` is smaller than the caller expects, exit 0; nothing names the glob that matched nothing. spec: table \"A glob matches no file\"/Exit"
+  ],
+  "applied": [],
+  "masked": [],
+  "plain_head": true
+}

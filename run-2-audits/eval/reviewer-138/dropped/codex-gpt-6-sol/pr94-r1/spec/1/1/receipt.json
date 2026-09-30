@@ -1,0 +1,47 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "codex:gpt-6-sol",
+    "round": "pr94-r1",
+    "axis": "spec",
+    "step": "1"
+  },
+  "status": "contaminated",
+  "detail": "Bash {\"command\": \"cd /var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/3f3 returned a line first added by cc36280: spec: criterion 1",
+  "reported_model": "gpt-6-sol",
+  "effort": "high",
+  "tokens": {
+    "input": 91482,
+    "cache_read": 1151360,
+    "cache_write": 0,
+    "output": 5815,
+    "reasoning": 2177
+  },
+  "wall_ms": 227720,
+  "source": "/Users/manuel/.codex/sessions/2026/09/24/rollout-2026-09-24T21-19-42-01a0d65c-823e-73e1-a078-ddad4bd9c1a9.jsonl",
+  "outside": [
+    "11 Bash /private/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/3f37b28fb2ce/factory918/patches/pstack/architect/references/runner-prompt.md.patch;",
+    "11 Bash /private/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/3f37b28fb2ce/factory918/patches/mattpocock/to-spec/SKILL.md.patch;"
+  ],
+  "first_contaminated": {
+    "call": 14,
+    "timestamp": "2026-09-25T02:23:11.149Z"
+  },
+  "sightings": [
+    {
+      "n": 1,
+      "hard": true,
+      "call": 4
+    },
+    {
+      "n": 2,
+      "hard": true,
+      "call": 4
+    },
+    {
+      "n": 3,
+      "hard": true,
+      "call": 4
+    }
+  ]
+}

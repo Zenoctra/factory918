@@ -1,0 +1,34 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "codex:gpt-6-sol",
+    "round": "pr94-r1",
+    "axis": "standards",
+    "step": "M2"
+  },
+  "status": "contaminated",
+  "detail": "Bash {\"command\": \"cd /var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/6e0 returned a line first added by cc36280: spec: criterion 3",
+  "reported_model": "gpt-6-sol",
+  "effort": "high",
+  "tokens": {
+    "input": 104177,
+    "cache_read": 1211904,
+    "cache_write": 0,
+    "output": 5164,
+    "reasoning": 2621
+  },
+  "wall_ms": 170728,
+  "source": "/Users/manuel/.codex/sessions/2026/09/24/rollout-2026-09-24T21-23-32-01a0d660-0507-70d0-bc85-b58ad392b10b.jsonl",
+  "outside": [],
+  "first_contaminated": {
+    "call": 16,
+    "timestamp": "2026-09-25T02:25:48.745Z"
+  },
+  "sightings": [
+    {
+      "n": 1,
+      "hard": true,
+      "call": 9
+    }
+  ]
+}

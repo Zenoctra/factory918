@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "claude:opus-5.5",
+    "round": "pr99-r1",
+    "axis": "spec",
+    "step": "S3"
+  },
+  "nonce": "3dbe0e9273b7",
+  "checkout": "/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/3dbe0e9273b7/factory918",
+  "prompt": "Read `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/3dbe0e9273b7/factory918/.scratch/review/69bd412/spec-brief.md` whole and follow it. You are working in `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/3dbe0e9273b7/factory918`; every relative path in the brief is relative to it. The ticket as it stood at this commit is `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/3dbe0e9273b7/factory918/.scratch/review/69bd412/ticket.md`.",
+  "tree": "52ccd8eb509a2871260827a8514c3a1fcaac4d5d",
+  "settled": [
+    "1. [P1] **A report that ends inside an open fence hides the `restart` line.** `review-comment.sh` finds `hard findings:` with a grep that ignores fences, so it accepts a report whose last quoted block never closes. The fence then stays open in the posted comment through `## Judgment`, `restart` and `round:`. `review-brief.sh` reads that comment with the fence rule and sees no restart line and no round line. Reproduced: a Standards report whose last `Fix alongside` item opens a fence and never closes it, with a judgment item marked `hole: criterion 1`. `review-comment.sh` exits 0 and prints `restart`. Fed back through `--previous`, the next brief prints `round: 2 of 3` and no `restart:` line. A restart posted at round 3 gets the fourth-round refusal instead. The swallowed `round:` line predates this PR; the ignored restart is new. Documented step: `template/.agents/skills/spec-review/SKILL.md:25`, \"so the redesign's first review is round 1 with nothing carried\" Result: the redesign's review runs as round 2 (or is refused at round 4). Nothing is printed, and the hole's three fresh rounds are lost. spec: table 5/A",
+    "2. [P1] **The Standards reviewer must cite a ticket artifact that its brief never shows it.** `review-brief.sh` echoes `$spec_rule` into `standards-brief.md` (`review-brief.sh:360`). `common()` never includes the ticket, so that brief has no scenario table, no `## Design` sketch and no acceptance criteria. The brief also says \"Read nothing beyond this brief ... Run nothing.\" A Standards Would-break or Fails-open item rests on a documented standard, not on a ticket cell. The reviewer still has to write `spec: table \u2026`, `design \u2026` or `criterion k`, or `review-comment.sh` refuses the report. With no ticket at all (`no spec: Standards axis only`, `SKILL.md:38`), no valid reference exists. I reproduced this in a temp repo: `review-brief.sh HEAD~1 --previous <empty file>` wrote a Standards brief that carries the spec rule and has no ticket, criteria or Testing decisions section. Documented step: `template/.agents/skills/spec-review/SKILL.md:84`, \"Then the spec rule, word for word: \"The same item carries a line `spec:` naming the artifact it rests on \u2026\"\" Result: every counted Standards finding carries a reference the reviewer guessed. The refusal cannot tell a guess from a real reference, and the `hole:` check accepts it word for word. A hole on a Standards item then sends `architect` to an arbitrary cell or criterion. In a no-ticket review, the only other choice is a refusal loop the reviewer cannot satisfy. spec: criterion 2"
+  ],
+  "applied": [],
+  "masked": [],
+  "plain_head": true
+}

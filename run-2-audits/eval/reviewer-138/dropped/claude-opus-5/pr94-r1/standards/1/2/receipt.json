@@ -1,0 +1,62 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "claude:opus-5",
+    "round": "pr94-r1",
+    "axis": "standards",
+    "step": "1"
+  },
+  "status": "contaminated",
+  "detail": "Bash {\"command\": \"cd \\\"/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/f returned a line first added by 35de22e: Observed (agent): the first design for #42 (PR #87) settled a script, a state file and two exit-code; Bash {\"command\": \"cd \\\"/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/f returned a line first added by 35de22e: > user: Then there is your stateful helper with a scenario table. To be completely honest, In dont u; Bash {\"command\": \"cd \\\"/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/f returned a line first added by 35de22e: > agent: It is a general design tool, not a #42 thing. For anything with state, a file, exit codes, ; and 13 more such lines",
+  "reported_model": "claude-opus-5",
+  "effort": "high",
+  "tokens": {
+    "input": 66,
+    "cache_read": 3699802,
+    "cache_write": 165211,
+    "output": 31112,
+    "reasoning": null
+  },
+  "wall_ms": 473754,
+  "source": "/Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/subagents/agent-ad01ff9667399d882.jsonl",
+  "outside": [
+    "18 Bash /Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918",
+    "18 Bash /Users/manuel/Desktop/Work/Under",
+    "22 Bash /first",
+    "27 Bash /tmp/o;",
+    "27 Bash /##",
+    "28 Bash /",
+    "30 Bash /"
+  ],
+  "first_contaminated": {
+    "call": 18,
+    "timestamp": "2026-09-25T00:33:43.964Z"
+  },
+  "sightings": [
+    {
+      "n": 1,
+      "hard": true,
+      "call": null
+    },
+    {
+      "n": 2,
+      "hard": true,
+      "call": null
+    },
+    {
+      "n": 3,
+      "hard": false,
+      "call": 21
+    },
+    {
+      "n": 4,
+      "hard": false,
+      "call": null
+    },
+    {
+      "n": 5,
+      "hard": false,
+      "call": null
+    }
+  ]
+}

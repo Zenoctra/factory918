@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "codex:gpt-6-sol",
+    "round": "pr96-r1",
+    "axis": "spec",
+    "step": "S3"
+  },
+  "nonce": "972bc255bd31",
+  "checkout": "/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/972bc255bd31/factory918",
+  "prompt": "Read `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/972bc255bd31/factory918/.scratch/review/ab47eb9/spec-brief.md` whole and follow it. You are working in `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/972bc255bd31/factory918`; every relative path in the brief is relative to it. The ticket as it stood at this commit is `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/972bc255bd31/factory918/.scratch/review/ab47eb9/ticket.md`, and the PR's grounding is `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/972bc255bd31/factory918/.scratch/review/ab47eb9/blast-radius.md`. Your scratch folder for notes and any files you make is `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/972bc255bd31/factory918/.scratch/work/`.",
+  "tree": "69bd41230e0f62e0824403196243c013118fb302",
+  "settled": [
+    "1. [P1] **A quoted file path containing a space is rejected.** The documented explicit-argument form promises to check the files named by the caller. The gate splits each argument at spaces in `for f in $g`, even when the caller quoted it. Running it on a clean file named `a b.sh` printed `no file matched .../a b.sh; the gate checked nothing` and exited 1. The path can arise in a project where paths contain spaces. Documented step: `.scratch/review/ab47eb9/ticket.md:40`, the quoted explicit-glob usage. Result: The named clean file is skipped and the command refuses it instead of checking it. spec: design shellcheck.sh [glob...]",
+    "2. [P2] **One unmatched argument is silently dropped when another matches.** The gate checks whether the combined `files` array is empty, so it never reports which supplied glob failed to match. `bash .github/shellcheck.sh template/.github/shellcheck.sh 'missing/*.sh'` printed `files checked: 1` and exited 0. A typo in one of CI's explicit globs can therefore leave that class of files unchecked while the gate passes. Documented step: `.scratch/review/ab47eb9/ticket.md:40,52`, the multi-glob usage and unmatched-glob refusal. Result: The gate reports success and gives no correction for the unmatched argument. spec: design shellcheck.sh [glob...]"
+  ],
+  "applied": [],
+  "masked": [],
+  "plain_head": true
+}

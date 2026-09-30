@@ -1,0 +1,28 @@
+## Walk
+
+1. Criterion 1, the factory's CI: `factory-ci.yml:19-20` replaces the `bash -n` step with `bash .github/shellcheck.sh factory918.sh template/.github/shellcheck.sh 'template/.claude/hooks/*.sh' 'template/.agents/skills/*/scripts/*.sh' 'tests/*/*.sh'` through the root symlink. The set matches the ticket's list plus the gate and its test. Every `scripts/*.sh` under `template/.agents/skills/` is one level deep (5 files, `find`), so the glob covers them all. The version is pinned: the gate uses a local `shellcheck` only when `--version` prints exactly `version: 0.11.0`, and otherwise downloads the release by URL and checks its sha256. Run here with 0.11.0 on PATH: `files checked: 20`, exit 0.
+2. Criterion 2, the template's CI: `template/.github/workflows/ci.yml:17-18` runs `bash .github/shellcheck.sh` first in `check`. The zero-argument form expands `.claude/hooks/*.sh`, `.agents/skills/*/scripts/*.sh` and `.github/shellcheck.sh`. `cmd_apply` copies `template/.github/shellcheck.sh` with `cp -p` because the file is new to the project (`factory918.sh:137`). The fixture job runs the same command in `/tmp/fx` (`factory-ci.yml:54-56`). I simulated the fixture with a copy of `template/` plus the `.claude/skills` link: `files checked: 11`, exit 0. The download path was not run here. It is proven only on `ubuntu-latest`, as the M0 line says.
+3. Criterion 3, the playbook through its patch: `opening-a-pr.md.patch` adds the sentence to the `**PRs.**` paragraph, and `SOURCES.md` item 3 describes it. I applied the patch in `series` to the pinned upstream `opening-a-pr.md` and got the template copy byte for byte, so `sync` reproduces it.
+4. Criterion 4, the doctor: `factory918.sh:274-276` prints `PASS  shellcheck <version>` when a `shellcheck` answers. Otherwise it prints `NOTE  shellcheck` with the fix `brew install shellcheck (apt …, dnf …, winget …)`. I ran the three lines under `set -euo pipefail` with `PATH=/usr/bin:/bin`: NOTE, and the function continued. On the normal PATH: `PASS  shellcheck 0.11.0`. The line sits above `slots filled`, where `factory-start/SKILL.md:14` accepts PASS or NOTE.
+5. Criterion 5, the directive rule: every `# shellcheck disable=` in the 20 files carries a same-line `# reason`, 15 directives in all. The only other directives are two `source-path=` directives, which are not disables. `overlap.sh:49` now carries its reason. At `ab47eb9` it was bare, so the diff makes the ticket's "model" true. The root `CODING_STANDARDS.md` Bash section states the rule, and the Standards axis reads that file. P25 records that CI does not check the reason. `template/CODING_STANDARDS.md` "Suppressions" carries the project's copy of the rule.
+6. Criterion 6, the records: the root `AGENTS.md` Verifying section lists the CI command with "20 files", which matches the run, and `bash tests/shellcheck/gate.sh`. `docs/M0-findings.md` gains the dated section "ShellCheck (2026-09-22)", which names 0.11.0 and both checksums. `template/AGENTS.md` Verifying gains the project's `Shell:` line.
+7. Design usage row, "a lane before the PR opens, on every shell file the diff changes": a per-file run on `tests/spec-review/review-brief.sh`, `review-comment.sh`, `layout.sh` and `delegation.sh` exits 0 from the root. `spec-review/review-brief.sh` also exits 0 from `tests/`, through `source-path=SCRIPTDIR`, so the per-file result matches the whole-set result, as P25 claims.
+8. Design table rows. Clean: the count line, exit 0. Finding: the count line, then ShellCheck's report, exit 1. No match: the stderr line, exit 1, checked before ShellCheck runs. Unpinned platform: the stderr line, exit 1. `#!/bin/sh` keeps SC3030. `tests/shellcheck/gate.sh` asserts all five rows plus the zero-argument count and the mode bit: `ok 10 assertions` here. On a checksum mismatch, `sha256sum -c` or `shasum -c` fails inside the `then` or `else` body, and `set -e` with `pipefail` ends the run with the tool's message.
+9. Blast radius, Risks: the `### Risks` heading holds no items; every entry sits under `### Cleared`, so the walk has no risk lines.
+
+## Would break
+
+## Fails open
+
+1. **The cached binary is run without its checksum being checked in that run.** `template/.github/shellcheck.sh:27-33` checks the sha256 only on the download branch. When `${TMPDIR:-/tmp}/shellcheck-0.11.0/shellcheck-v0.11.0/shellcheck` already exists and is executable, `if [ ! -x "$bin" ]` skips the download and the checksum, and `exec "$bin"` runs whatever that file is. On a Linux machine where `TMPDIR` is unset, that path is under the shared `/tmp`, so another account can put a file there before this user's first run. The gate then runs that file and reports its output as the pinned ShellCheck's result, with no message. CI runners and macOS (a per-user `TMPDIR`) are not exposed. `mkdir -p` also succeeds silently on a directory another user owns.
+Documented step: ticket `## Design`, "otherwise downloads the pinned release for Linux x86_64 or macOS arm64 into `${TMPDIR:-/tmp}/shellcheck-0.11.0` once, checks its sha256, and runs that."
+Result: a pre-existing binary at the cache path is run although no sha256 check ever ran on it, and nothing is printed to show it. The fix could be a directory the user owns (for example, keyed by `id -u`), or a `--version` check of the cached binary, which catches a wrong build but not a malicious one.
+spec: design shellcheck.sh [glob...]
+
+```
+Signature: `shellcheck.sh [glob...]`. ... Uses the `shellcheck` on PATH when its version is the pin; otherwise downloads the pinned release for Linux x86_64 or macOS arm64 into `${TMPDIR:-/tmp}/shellcheck-0.11.0` once, checks its sha256, and runs that.
+```
+
+## Not asked for
+
+hard findings: 1

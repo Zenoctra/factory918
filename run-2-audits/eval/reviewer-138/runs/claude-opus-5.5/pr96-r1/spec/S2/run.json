@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "claude:opus-5.5",
+    "round": "pr96-r1",
+    "axis": "spec",
+    "step": "S2"
+  },
+  "nonce": "d1d7d0a0c715",
+  "checkout": "/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/d1d7d0a0c715/factory918",
+  "prompt": "Read `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/d1d7d0a0c715/factory918/.scratch/review/ab47eb9/spec-brief.md` whole and follow it. You are working in `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/d1d7d0a0c715/factory918`; every relative path in the brief is relative to it. The ticket as it stood at this commit is `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/d1d7d0a0c715/factory918/.scratch/review/ab47eb9/ticket.md`, and the PR's grounding is `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/d1d7d0a0c715/factory918/.scratch/review/ab47eb9/blast-radius.md`.",
+  "tree": "69bd41230e0f62e0824403196243c013118fb302",
+  "settled": [
+    "1. [P1] **An argument that matches no file is dropped whenever another argument matches.** `shellcheck.sh:36-43` (the loop at `:38`) refuses only when all arguments together yield zero files. An argument that matches nothing next to one that matches is skipped without a word. This covers a misspelled or renamed path, a CI glob whose directory moved, and a directory name. The unquoted `for f in $g` also splits a path that contains a space into pieces that match nothing, so that path is dropped too. Examples, all run from the repository root: - `bash .github/shellcheck.sh factory918.sh 'typo/*.sh' template/.claude/hooks/nosuch.sh` printed `files checked: 1` and exited 0. - `bash .github/shellcheck.sh tests factory918.sh` printed `files checked: 1` and exited 0. - An existing `\"a b/bad.sh\"` with a planted SC2086, passed next to a clean file, printed `files checked: 1` and exited 0. The lane's run on \"every shell file the diff changes\" then passes files it never checked. If a CI glob in `factory-ci.yml:19` stops matching after a rename, the factory's gate passes with fewer files and nobody hears of it. The fix stays inside the design's own refusal: refuse any single argument that matches no regular file, and name it. Documented step: ticket #88 `## Design`, usage line \"bash .github/shellcheck.sh .claude/hooks/mode.sh a lane before the PR opens, on every shell file the diff changes\", and the table row \"A glob matches no file\". Result: the unmatched argument is silently left out. The gate prints a smaller count and exits 0, so the lane or CI treats the missing file as checked. spec: table A glob matches no file/Prints"
+  ],
+  "applied": [],
+  "masked": [],
+  "plain_head": true
+}

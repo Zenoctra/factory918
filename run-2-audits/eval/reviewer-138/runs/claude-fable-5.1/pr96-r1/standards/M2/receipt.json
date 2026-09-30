@@ -1,0 +1,61 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "claude:fable-5.1",
+    "round": "pr96-r1",
+    "axis": "standards",
+    "step": "M2"
+  },
+  "status": "complete",
+  "detail": "complete",
+  "reported_model": "claude-fable-5-1",
+  "effort": "high",
+  "tokens": {
+    "input": 290,
+    "cache_read": 996172,
+    "cache_write": 114971,
+    "output": 11980,
+    "reasoning": null
+  },
+  "wall_ms": 288950,
+  "source": "/Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/subagents/agent-ab2a40d44168fdaed.jsonl",
+  "outside": [
+    "7 Read /Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/tool-results/bnoftv2de.txt",
+    "8 Read /Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/tool-results/bnoftv2de.txt",
+    "13 Bash /tmp",
+    "16 Bash /tmp"
+  ],
+  "first_contaminated": null,
+  "sightings": [
+    {
+      "n": 1,
+      "hard": true,
+      "call": 1
+    },
+    {
+      "n": 2,
+      "hard": false,
+      "call": 1
+    },
+    {
+      "n": 3,
+      "hard": false,
+      "call": 1
+    },
+    {
+      "n": 4,
+      "hard": false,
+      "call": 2
+    },
+    {
+      "n": 5,
+      "hard": false,
+      "call": null
+    },
+    {
+      "n": 6,
+      "hard": false,
+      "call": 1
+    }
+  ]
+}

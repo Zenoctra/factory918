@@ -1,0 +1,3 @@
+Reading additional input from stdin...
+2026-09-25T12:01:09.709499Z ERROR codex_core::tools::router: error=exec_command failed: CreateProcess { message: "Rejected(\"Failed to create unified exec process: No such file or directory (os error 2)\")" }
+2026-09-25T12:01:40.196171Z ERROR codex_core::tools::router: error=patch rejected: writing outside of the project; rejected by user approval settings

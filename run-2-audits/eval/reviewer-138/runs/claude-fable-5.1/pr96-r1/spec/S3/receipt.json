@@ -1,0 +1,44 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "claude:fable-5.1",
+    "round": "pr96-r1",
+    "axis": "spec",
+    "step": "S3"
+  },
+  "status": "complete",
+  "detail": "complete",
+  "reported_model": "claude-fable-5-1",
+  "effort": "high",
+  "tokens": {
+    "input": 258,
+    "cache_read": 935746,
+    "cache_write": 137538,
+    "output": 24106,
+    "reasoning": null
+  },
+  "wall_ms": 317264,
+  "source": "/Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/subagents/agent-a6ab7bea806bbb687.jsonl",
+  "outside": [
+    "4 Bash /^##",
+    "6 Read /Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/tool-results/bmdeptaaz.txt",
+    "7 Read /Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/tool-results/b35kz5kym.txt",
+    "10 Bash /",
+    "11 Bash /Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-af1a10e904a9448aa",
+    "11 Bash /Users/manuel/Desktop/Work/Under",
+    "12 Bash /",
+    "13 Bash //p",
+    "14 Bash /",
+    "15 Bash /",
+    "15 Bash /tmp/sc-probe.sh",
+    "15 Bash /tmp/sc-probe.sh);"
+  ],
+  "first_contaminated": null,
+  "sightings": [
+    {
+      "n": 1,
+      "hard": true,
+      "call": 2
+    }
+  ]
+}

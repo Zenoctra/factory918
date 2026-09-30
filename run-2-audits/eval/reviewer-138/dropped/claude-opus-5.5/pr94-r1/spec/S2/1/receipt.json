@@ -1,0 +1,77 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "claude:opus-5.5",
+    "round": "pr94-r1",
+    "axis": "spec",
+    "step": "S2"
+  },
+  "status": "contaminated",
+  "detail": "Bash {\"command\": \"cd \\\"/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/f returned a line first added by 35de22e: ## Testing decisions; Bash {\"command\": \"cd /private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun returned a line first added by 35de22e: ## Testing decisions; Bash {\"command\": \"cd /private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun returned a line first added by 35de22e: ## Scenario table",
+  "reported_model": "claude-opus-5-5",
+  "effort": "high",
+  "tokens": {
+    "input": 66,
+    "cache_read": 3787593,
+    "cache_write": 123257,
+    "output": 24256
+  },
+  "wall_ms": 289531,
+  "source": "/Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/subagents/agent-a8fccf18792dcf649.jsonl",
+  "outside": [
+    "24 Bash /private/tmp",
+    "24 Bash /private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/scratchpad/i42.md",
+    "25 Bash /private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/scratchpad/i42.md;",
+    "25 Bash /opt/homebrew/bin/gh",
+    "26 Bash /Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918",
+    "26 Bash /Users/manuel/Desktop/Work/Under",
+    "26 Bash /private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/scratchpad/i42.md",
+    "29 Bash /private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/scratchpad",
+    "29 Bash /^##",
+    "29 Bash /{p=($0",
+    "29 Bash /{skip=($0",
+    "30 Bash /private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/scratchpad",
+    "30 Bash /^##",
+    "33 Bash /private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/scratchpad/rv89",
+    "33 Bash /etc/passwd",
+    "33 Bash /",
+    "33 Bash /^##",
+    "33 Bash /{skip=($0"
+  ],
+  "first_contaminated": {
+    "call": 26,
+    "timestamp": "2026-09-25T00:59:54.051Z"
+  },
+  "sightings": [
+    {
+      "n": 1,
+      "hard": true,
+      "call": null
+    },
+    {
+      "n": 2,
+      "hard": true,
+      "call": null
+    },
+    {
+      "n": 3,
+      "hard": true,
+      "call": null
+    },
+    {
+      "n": 4,
+      "hard": false,
+      "call": null
+    },
+    {
+      "n": 5,
+      "hard": false,
+      "call": null
+    },
+    {
+      "n": 6,
+      "hard": false,
+      "call": null
+    }
+  ]
+}

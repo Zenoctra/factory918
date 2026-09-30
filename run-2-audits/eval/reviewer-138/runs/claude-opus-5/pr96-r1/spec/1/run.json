@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "claude:opus-5",
+    "round": "pr96-r1",
+    "axis": "spec",
+    "step": "1"
+  },
+  "nonce": "6f67a593d23b",
+  "checkout": "/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/6f67a593d23b/factory918",
+  "prompt": "Read `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/6f67a593d23b/factory918/.scratch/review/ab47eb9/spec-brief.md` whole and follow it. You are working in `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/6f67a593d23b/factory918`; every relative path in the brief is relative to it.",
+  "tree": "69bd41230e0f62e0824403196243c013118fb302",
+  "settled": [],
+  "applied": [],
+  "masked": [],
+  "plain_head": true
+}

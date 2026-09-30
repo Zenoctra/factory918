@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "claude:fable-5.1",
+    "round": "pr99-r1",
+    "axis": "spec",
+    "step": "S3"
+  },
+  "nonce": "7a1bbffd19ec",
+  "checkout": "/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/7a1bbffd19ec/factory918",
+  "prompt": "Read `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/7a1bbffd19ec/factory918/.scratch/review/69bd412/spec-brief.md` whole and follow it. You are working in `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/7a1bbffd19ec/factory918`; every relative path in the brief is relative to it. The ticket as it stood at this commit is `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/7a1bbffd19ec/factory918/.scratch/review/69bd412/ticket.md`. Your scratch folder for notes and any files you make is `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/7a1bbffd19ec/factory918/.scratch/work/`.",
+  "tree": "52ccd8eb509a2871260827a8514c3a1fcaac4d5d",
+  "settled": [
+    "1. [P1] **A Standards-only review cannot pass a hard finding.** The spec rule is written into the Standards brief unconditionally (`review-brief.sh:360`), and `review-comment.sh` refuses every counted Standards item without a `spec:` naming a cell, signature or criterion of \"the ticket\". On the documented no-ticket paths there is no ticket to name, so the review is stuck at the refusal or the reviewer invents a reference. Documented step: `template/.agents/skills/spec-review/SKILL.md:38`, \"If nothing is found, the **Spec** sub-agent skips and the report says, in these words, \"no spec: Standards axis only\"\", and `:29`, \"A sweep over units already on `main` ... is the same skill with the same state\" Result: with one Would-break Standards item and no ticket, `review-comment.sh` answers `has no 'spec:' line ... Ask the reviewer for it` on every rerun; no comment, no `act-on items:` line, babysit never sees the PR as reviewed. spec: criterion 2"
+  ],
+  "applied": [],
+  "masked": [],
+  "plain_head": true
+}

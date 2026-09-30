@@ -1,0 +1,63 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "claude:opus-5.5",
+    "round": "pr94-r1",
+    "axis": "spec",
+    "step": "I3"
+  },
+  "status": "contaminated",
+  "detail": "Bash {\"command\": \"cd \\\"/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/f returned a line first added by 35de22e: ## Testing decisions; Bash {\"command\": \"cd \\\"/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/f returned a line first added by 35de22e: ## Scenario table; Bash {\"command\": \"R=\\\"/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/11 returned a line first added by 35de22e: ## Testing decisions; and 1 more such lines",
+  "reported_model": "claude-opus-5-5",
+  "effort": "high",
+  "tokens": {
+    "input": 50,
+    "cache_read": 2702840,
+    "cache_write": 112673,
+    "output": 20099
+  },
+  "wall_ms": 231972,
+  "source": "/Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/subagents/agent-a1fe37bb296e0b6b0.jsonl",
+  "outside": [
+    "2 Read /Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/tool-results/buoa1tnff.txt",
+    "3 Read /Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/tool-results/buoa1tnff.txt",
+    "4 Bash /var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/11d661be2487/factory918\";",
+    "5 Bash /var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/11d661be2487/factory918\";",
+    "6 Bash /var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/11d661be2487/factory918\";",
+    "7 Bash /var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/11d661be2487/factory918\";",
+    "8 Bash /var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/11d661be2487/factory918\";",
+    "9 Bash /var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/11d661be2487/factory918\";",
+    "11 Bash /var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/11d661be2487/factory918\";",
+    "12 Bash /var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/11d661be2487/factory918\";",
+    "13 Bash /Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918",
+    "13 Bash /Users/manuel/Desktop/Work/Under",
+    "13 Bash /private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/scratchpad/rv89/i42.md;",
+    "13 Bash /private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/scratchpad/rv89/i42.md",
+    "14 Bash /Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918",
+    "14 Bash /Users/manuel/Desktop/Work/Under",
+    "23 Bash /",
+    "23 Bash /^##",
+    "23 Bash /{skip=($0"
+  ],
+  "first_contaminated": {
+    "call": 14,
+    "timestamp": "2026-09-25T01:14:54.119Z"
+  },
+  "sightings": [
+    {
+      "n": 1,
+      "hard": true,
+      "call": null
+    },
+    {
+      "n": 2,
+      "hard": false,
+      "call": null
+    },
+    {
+      "n": 3,
+      "hard": false,
+      "call": null
+    }
+  ]
+}

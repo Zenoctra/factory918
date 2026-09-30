@@ -1,0 +1,35 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "codex:gpt-6-sol",
+    "round": "pr99-r1",
+    "axis": "spec",
+    "step": "M3"
+  },
+  "status": "complete",
+  "detail": "complete",
+  "reported_model": "gpt-6-sol",
+  "effort": "high",
+  "tokens": {
+    "input": 79681,
+    "cache_read": 993024,
+    "cache_write": 0,
+    "output": 7186,
+    "reasoning": 3133
+  },
+  "wall_ms": 194832,
+  "source": "/Users/manuel/.codex/sessions/2026/09/25/rollout-2026-09-25T06-58-47-01a0d86e-aeea-7201-9722-d263b7bbd068.jsonl",
+  "outside": [
+    "10 Bash /private/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/9810b2b4e88a/factory918/template/.agents/skills/spec-review/scripts/review-comment.sh",
+    "12 Bash /private/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/9810b2b4e88a/factory918/template/.agents/skills/spec-review/scripts/review-comment.sh",
+    "13 Bash /private/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/9810b2b4e88a/factory918/.scratch/review/69bd412/spec-report.md\\n+##"
+  ],
+  "first_contaminated": null,
+  "sightings": [
+    {
+      "n": 1,
+      "hard": true,
+      "call": 15
+    }
+  ]
+}

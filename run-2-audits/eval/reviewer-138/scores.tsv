@@ -1,0 +1,136 @@
+descriptor	brief	step	failure	filed_hard	found	masked	other	input_tokens	cache_read	cache_write	output_tokens	wall_ms
+claude:fable-5.1	pr94-r1/spec	1		G3	G3		0	450	1539224	144863	16529	258336
+claude:fable-5.1	pr94-r1/spec	I2		G4,G6	G4,G6		0	226	778488	114193	12890	167058
+claude:fable-5.1	pr94-r1/spec	I3		G2,G4	G2,G4		0	386	1551382	155948	23944	316042
+claude:fable-5.1	pr94-r1/spec	S2		G4,G6	G4,G6		0	258	932972	123614	15054	228221
+claude:fable-5.1	pr94-r1/spec	S3		G2	G2		0	226	817232	127129	18638	260788
+claude:fable-5.1	pr94-r1/spec	M2		G3,G4,G6	G3,G4,G6	G3	0	386	1461550	129957	16642	218233
+claude:fable-5.1	pr94-r1/spec	M3		G3	G3	G3,G4	1	290	1058906	112193	11508	154847
+claude:fable-5.1	pr94-r1/standards	1			G2,G4		0	386	1250076	140368	16980	235291
+claude:fable-5.1	pr94-r1/standards	I2		G6	G4,G6		0	322	1173419	156095	19892	255086
+claude:fable-5.1	pr94-r1/standards	I3			G1,G4		0	322	1145162	110650	15743	207006
+claude:fable-5.1	pr94-r1/standards	S2		G6	G6		0	354	1228901	120753	16094	207826
+claude:fable-5.1	pr94-r1/standards	S3			G2		0	258	925066	116863	15404	208063
+claude:fable-5.1	pr94-r1/standards	M2			G2,G3		0	258	972397	133952	18367	245521
+claude:fable-5.1	pr94-r1/standards	M3			G2		0	258	916923	115882	16814	238841
+claude:fable-5.1	pr96-r1/spec	1		G1	G1		0	450	1611974	112972	19547	291864
+claude:fable-5.1	pr96-r1/spec	I2		G1	G1		1	226	801707	114178	18539	238537
+claude:fable-5.1	pr96-r1/spec	I3		G1	G1		1	514	1926454	121246	23621	346820
+claude:fable-5.1	pr96-r1/spec	S2					1	386	1564424	139689	29604	387128
+claude:fable-5.1	pr96-r1/spec	S3					1	258	935746	137538	24106	317264
+claude:fable-5.1	pr96-r1/spec	M2				G1	0	578	2133717	119451	25003	362897
+claude:fable-5.1	pr96-r1/spec	M3				G1	0	258	936702	132167	21268	291152
+claude:fable-5.1	pr96-r1/standards	1		G2,G3	G2,G3		0	258	888293	151408	29004	375135
+claude:fable-5.1	pr96-r1/standards	I2		G1	G1		0	258	864336	125949	18971	285765
+claude:fable-5.1	pr96-r1/standards	I3			G1,G2		0	386	1427767	123988	29833	412437
+claude:fable-5.1	pr96-r1/standards	S2					1	290	1100607	130109	27748	358770
+claude:fable-5.1	pr96-r1/standards	S3		G4	G4		0	258	953614	130124	30233	404769
+claude:fable-5.1	pr96-r1/standards	M2		G1	G1,G2	G2,G3	0	290	996172	114971	11980	288950
+claude:fable-5.1	pr96-r1/standards	M3			G3	G1,G2,G3	0	706	2782304	126304	25251	390338
+claude:fable-5.1	pr99-r1/spec	1					0	546	2251641	149372	16043	424638
+claude:fable-5.1	pr99-r1/spec	I2					0	386	1471156	126829	16925	245262
+claude:fable-5.1	pr99-r1/spec	I3		G1	G1		0	578	2471224	140495	22120	329092
+claude:fable-5.1	pr99-r1/spec	S2		G2	G2		0	450	1808113	137862	19231	298505
+claude:fable-5.1	pr99-r1/spec	S3			G1		0	354	1717498	179172	26685	373253
+claude:fable-5.1	pr99-r1/spec	M2					0	322	1289752	143080	23231	334817
+claude:fable-5.1	pr99-r1/spec	M3					0	674	2959256	144826	21493	331390
+claude:fable-5.1	pr99-r1/standards	1			G1,G3		0	578	2269739	128807	20434	307266
+claude:fable-5.1	pr99-r1/standards	I2			G1		0	642	3143604	157320	28977	403810
+claude:fable-5.1	pr99-r1/standards	I3			G1,G3		0	482	2111291	140971	18725	273781
+claude:fable-5.1	pr99-r1/standards	S2			G1		0	290	1168556	147060	17508	262958
+claude:fable-5.1	pr99-r1/standards	S3			G1		0	194	726849	128083	15099	230915
+claude:fable-5.1	pr99-r1/standards	M2			G1		0	322	1185428	135595	16334	244643
+claude:fable-5.1	pr99-r1/standards	M3					0	290	1143788	140378	17056	249006
+claude:opus-5	pr94-r1/spec	1		G1,G2,G4,G6	G1,G2,G4,G6		0	74	4835350	142419	36411	535070
+claude:opus-5	pr94-r1/spec	I2		G2,G3,G6	G2,G3,G6		0	58	3659018	139251	32788	491617
+claude:opus-5	pr94-r1/spec	S2		G3	G3		0	76	5055588	154427	31985	640937
+claude:opus-5	pr94-r1/standards	1		G1,G3	G1,G2,G3		2	56	3728137	186289	36976	583963
+claude:opus-5	pr96-r1/spec	1		G1	G1		0	62	3771086	132218	38526	568230
+claude:opus-5	pr96-r1/spec	I2	no-report				0	48	2865596	122011	24751	455126
+claude:opus-5	pr96-r1/standards	1		G4	G3,G4		0	54	3384719	138886	44485	623451
+claude:opus-5	pr96-r1/standards	I2		G1	G1		0	28	1541803	125287	27814	384581
+claude:opus-5	pr96-r1/standards	S2		G1	G1,G3		0	40	2376966	134364	36728	506821
+claude:opus-5	pr99-r1/spec	1					0	74	5312029	168918	44824	666810
+claude:opus-5	pr99-r1/standards	1		G4	G3,G4		0	38	2295477	140479	36599	534329
+claude:opus-5.5	pr94-r1/spec	1					0	48	2437270	139981	14977	190973
+claude:opus-5.5	pr94-r1/spec	I2		G6	G6		1	44	2370222	112926	15896	201699
+claude:opus-5.5	pr94-r1/spec	I3		G6	G6		0	40	2206466	117872	18258	216559
+claude:opus-5.5	pr94-r1/spec	S2		G2,G6	G2,G6		0	48	2443357	101058	16812	189986
+claude:opus-5.5	pr94-r1/spec	M2					0	34	1561711	90097	8742	131442
+claude:opus-5.5	pr94-r1/spec	M3		G1,G6	G1,G6		1	34	1606429	95107	14828	160779
+claude:opus-5.5	pr94-r1/standards	1			G2,G4		0	48	2338294	128442	15804	195582
+claude:opus-5.5	pr94-r1/standards	I2			G4		0	54	3164235	118782	15442	209878
+claude:opus-5.5	pr94-r1/standards	I3			G4		0	44	2362781	115201	14741	185369
+claude:opus-5.5	pr94-r1/standards	S2			G4		0	58	3483755	127487	20697	272627
+claude:opus-5.5	pr94-r1/standards	S3			G4		0	56	3116293	125833	18632	232548
+claude:opus-5.5	pr94-r1/standards	M2			G2,G4		0	58	3570540	129357	19299	232638
+claude:opus-5.5	pr94-r1/standards	M3			G4		0	62	3704055	123007	13787	192883
+claude:opus-5.5	pr96-r1/spec	1		G1	G1		0	40	2201395	110077	16316	200889
+claude:opus-5.5	pr96-r1/spec	I2		G1	G1		0	38	1937470	103128	15410	184677
+claude:opus-5.5	pr96-r1/spec	I3		G1	G1		0	32	1708150	117742	16435	197724
+claude:opus-5.5	pr96-r1/spec	S2					0	46	2696394	121482	17305	240232
+claude:opus-5.5	pr96-r1/spec	S3					0	40	2219244	118652	20890	271857
+claude:opus-5.5	pr96-r1/spec	M2		G3	G3	G1	0	36	2000539	116177	18939	214509
+claude:opus-5.5	pr96-r1/spec	M3				G1,G3	1	50	3014501	134572	24755	310311
+claude:opus-5.5	pr96-r1/standards	1		G1,G2	G1,G2		0	32	1617326	145673	18658	205106
+claude:opus-5.5	pr96-r1/standards	I2		G1	G1		0	26	1225175	105338	13171	148281
+claude:opus-5.5	pr96-r1/standards	I3		G1,G2	G1,G2		0	30	1525749	113082	17457	183596
+claude:opus-5.5	pr96-r1/standards	S2			G3		0	36	1938604	115033	16865	212323
+claude:opus-5.5	pr96-r1/standards	S3			G1		0	32	1728043	123305	18022	202606
+claude:opus-5.5	pr96-r1/standards	M2			G3	G1,G2	0	24	1132794	106913	14570	155027
+claude:opus-5.5	pr96-r1/standards	M3				G1,G2	0	30	1548108	108790	14230	158665
+claude:opus-5.5	pr99-r1/spec	1					1	38	2197266	123599	20018	255709
+claude:opus-5.5	pr99-r1/spec	I2		G2,G3	G2,G3		0	42	2591510	136856	16514	216840
+claude:opus-5.5	pr99-r1/spec	I3		G2	G2		0	36	2354998	151542	19202	238889
+claude:opus-5.5	pr99-r1/spec	S2		G2	G2		0	48	3088069	148817	21103	263380
+claude:opus-5.5	pr99-r1/spec	M2		G1,G2	G1,G2		0	44	3062425	160540	24428	298323
+claude:opus-5.5	pr99-r1/spec	M3				G1,G2	4	58	3508831	123040	17236	254268
+claude:opus-5.5	pr99-r1/standards	1			G1		0	20	926847	106374	8500	119882
+claude:opus-5.5	pr99-r1/standards	I2					0	24	1308006	127232	10705	147917
+claude:opus-5.5	pr99-r1/standards	I3					0	32	1837647	130919	12514	170252
+claude:opus-5.5	pr99-r1/standards	S2			G1		0	42	2552387	138070	17241	220708
+claude:opus-5.5	pr99-r1/standards	S3			G1		0	50	3109150	131323	14653	207495
+claude:opus-5.5	pr99-r1/standards	M2			G1		0	32	1856369	131245	12484	177277
+claude:opus-5.5	pr99-r1/standards	M3			G3		0	54	3732886	150824	19965	297544
+codex:gpt-6-sol	pr94-r1/spec	1		G6	G6		2	90029	893568	0	5719	144856
+codex:gpt-6-sol	pr94-r1/spec	I2					0	111216	1586176	0	8580	219536
+codex:gpt-6-sol	pr94-r1/spec	I3		G6	G6		1	95998	1405056	0	9350	237580
+codex:gpt-6-sol	pr94-r1/spec	S2					0	101630	1593344	0	7033	162918
+codex:gpt-6-sol	pr94-r1/spec	S3					1	87826	1397120	0	7113	184109
+codex:gpt-6-sol	pr94-r1/spec	M2					3	112908	1308672	0	9304	239192
+codex:gpt-6-sol	pr94-r1/spec	M3		G6	G6		2	93134	1313280	0	7586	214806
+codex:gpt-6-sol	pr94-r1/standards	1		G4	G4		0	90433	1359104	0	7772	203520
+codex:gpt-6-sol	pr94-r1/standards	I2					0	111840	1628672	0	7588	178478
+codex:gpt-6-sol	pr94-r1/standards	I3		G6	G6		0	99851	1018752	0	7291	163132
+codex:gpt-6-sol	pr94-r1/standards	S2		G6	G6		0	101957	1714688	0	8458	228722
+codex:gpt-6-sol	pr94-r1/standards	S3					0	107501	2169856	0	10089	233866
+codex:gpt-6-sol	pr94-r1/standards	M2		G6	G6	G4	1	100239	1455232	0	8566	229192
+codex:gpt-6-sol	pr94-r1/standards	M3		G6	G6	G4	1	99177	1920128	0	9083	230700
+codex:gpt-6-sol	pr96-r1/spec	1		G1,G2	G1,G2		0	81612	1393536	0	6238	171598
+codex:gpt-6-sol	pr96-r1/spec	I2		G1,G2	G1,G2		0	88086	1395072	0	9128	241865
+codex:gpt-6-sol	pr96-r1/spec	I3		G1,G2,G3	G1,G2,G3		0	94654	1094144	0	10745	265676
+codex:gpt-6-sol	pr96-r1/spec	S2					0	94707	1130496	0	6795	200960
+codex:gpt-6-sol	pr96-r1/spec	S3					0	86211	994176	0	5772	177274
+codex:gpt-6-sol	pr96-r1/spec	M2		G3	G3	G1,G2	0	91890	1487744	0	11574	260927
+codex:gpt-6-sol	pr96-r1/spec	M3				G1,G2,G3	0	79400	1134208	0	7228	199926
+codex:gpt-6-sol	pr96-r1/standards	1		G1,G2	G1,G2		0	72611	978304	0	6122	168929
+codex:gpt-6-sol	pr96-r1/standards	I2		G1,G2	G1,G2		0	89421	1210624	0	6394	166679
+codex:gpt-6-sol	pr96-r1/standards	I3		G1,G2,G3	G1,G2,G3		0	101187	922752	0	7142	182214
+codex:gpt-6-sol	pr96-r1/standards	S2					1	90323	1913344	0	10033	268663
+codex:gpt-6-sol	pr96-r1/standards	S3		G3	G3		0	99061	1312384	0	5377	161912
+codex:gpt-6-sol	pr96-r1/standards	M2				G1,G2	0	73569	876928	0	6232	184427
+codex:gpt-6-sol	pr96-r1/standards	M3				G1,G2	1	101832	1458176	0	9832	258810
+codex:gpt-6-sol	pr99-r1/spec	1					0	91222	1196544	0	4549	139234
+codex:gpt-6-sol	pr99-r1/spec	I2		G2	G2		1	114070	1246208	0	8532	211553
+codex:gpt-6-sol	pr99-r1/spec	I3		G2	G2		0	101350	882304	0	6051	163002
+codex:gpt-6-sol	pr99-r1/spec	S2		G1	G1		0	92378	797824	0	9330	250371
+codex:gpt-6-sol	pr99-r1/spec	S3					0	99959	1357056	0	5095	161648
+codex:gpt-6-sol	pr99-r1/spec	M2					0	117578	1234560	0	4712	154974
+codex:gpt-6-sol	pr99-r1/spec	M3					1	79681	993024	0	7186	194832
+codex:gpt-6-sol	pr99-r1/standards	1					0	92899	1124608	0	4389	133020
+codex:gpt-6-sol	pr99-r1/standards	I2					0	78047	733696	0	3288	109515
+codex:gpt-6-sol	pr99-r1/standards	I3					0	76829	758400	0	2397	100628
+codex:gpt-6-sol	pr99-r1/standards	S2					0	88032	1075456	0	4855	137883
+codex:gpt-6-sol	pr99-r1/standards	S3					0	94367	826496	0	5155	145533
+codex:gpt-6-sol	pr99-r1/standards	M2					0	99747	1055232	0	5250	144584
+codex:gpt-6-sol	pr99-r1/standards	M3					0	112517	1712768	0	6979	192033

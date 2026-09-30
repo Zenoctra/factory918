@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "codex:gpt-6-sol",
+    "round": "pr94-r1",
+    "axis": "standards",
+    "step": "S3"
+  },
+  "nonce": "b937db133b4d",
+  "checkout": "/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/b937db133b4d/factory918",
+  "prompt": "Read `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/b937db133b4d/factory918/.scratch/review/ab47eb9/standards-brief.md` whole and follow it. You are working in `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/b937db133b4d/factory918`; every relative path in the brief is relative to it. The ticket as it stood at this commit is `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/b937db133b4d/factory918/.scratch/review/ab47eb9/ticket.md`. Your scratch folder for notes and any files you make is `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/b937db133b4d/factory918/.scratch/work/`.",
+  "tree": "c83f166578a35e61d0b686c1ae1ed652b051dba6",
+  "settled": [
+    "1. [S1] **The slim knowledge lookup stops before reaching the new page.** `template/.agents/skills/knowledge/SKILL.md:13-17` documents the project copy as a fallback and requires `$KB/INDEX.md` as the first step. The project copy contains `SCENARIO-TABLE.md` but no `INDEX.md`, so that documented fallback cannot complete `/knowledge scenario table`. Documented step: Ticket acceptance criterion 6: \"The knowledge base has one page on the table (what it is, the shape, the #42 example), reachable through `/knowledge scenario table`.\" Result: With neither `$FACTORY918_HOME` nor `~/.factory918/docs/knowledge` available, the skill selects `docs/factory918` and its first required read fails on the missing `INDEX.md`. spec: criterion 6",
+    "2. [S1] **A stateful feature can skip the table.** `docs/knowledge/core/DECISIONS.md:93` (P25) requires a scenario table before implementation for any design with state. The changed Feature step bars skipping `architect` only for a cross-cutting diff. A single-file feature that writes a state file can still record `architect skipped: <reason>`. Ticket step 6 then has no synthesized table to post, and the writer's new table instruction does not apply. Documented step: Ticket acceptance criterion 3 says, \"when a design adds state, the table is appended to the ticket's body under `## Testing decisions` ... before implementation.\" Result: A stateful, non-cross-cutting feature can proceed to implementation without a table on the ticket. The same gap applies to a local Bug fix, Refactoring, or Perf issue whose design stays within one function. spec: criterion 3"
+  ],
+  "applied": [],
+  "masked": [],
+  "plain_head": true
+}

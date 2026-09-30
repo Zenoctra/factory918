@@ -1,0 +1,43 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "codex:gpt-6-sol",
+    "round": "pr96-r1",
+    "axis": "spec",
+    "step": "I3"
+  },
+  "status": "complete",
+  "detail": "complete",
+  "reported_model": "gpt-6-sol",
+  "effort": "high",
+  "tokens": {
+    "input": 94654,
+    "cache_read": 1094144,
+    "cache_write": 0,
+    "output": 10745,
+    "reasoning": 5364
+  },
+  "wall_ms": 265676,
+  "source": "/Users/manuel/.codex/sessions/2026/09/25/rollout-2026-09-25T02-03-19-01a0d760-2c01-7a71-b9a4-1813cc76dff8.jsonl",
+  "outside": [
+    "10 Bash /private/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/6e09e384a83f/factory918/template/.github/shellcheck.sh"
+  ],
+  "first_contaminated": null,
+  "sightings": [
+    {
+      "n": 1,
+      "hard": true,
+      "call": 1
+    },
+    {
+      "n": 2,
+      "hard": true,
+      "call": 1
+    },
+    {
+      "n": 3,
+      "hard": true,
+      "call": 1
+    }
+  ]
+}

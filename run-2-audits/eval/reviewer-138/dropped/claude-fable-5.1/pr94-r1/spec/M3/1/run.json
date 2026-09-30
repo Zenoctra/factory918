@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "claude:fable-5.1",
+    "round": "pr94-r1",
+    "axis": "spec",
+    "step": "M3"
+  },
+  "nonce": "c917e2fbe4b0",
+  "checkout": "/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/c917e2fbe4b0/factory918",
+  "prompt": "Read `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/c917e2fbe4b0/factory918/.scratch/review/ab47eb9/spec-brief.md` whole and follow it. You are working in `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/c917e2fbe4b0/factory918`; every relative path in the brief is relative to it. The ticket as it stood at this commit is `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/c917e2fbe4b0/factory918/.scratch/review/ab47eb9/ticket.md`. Your scratch folder for notes and any files you make is `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/c917e2fbe4b0/factory918/.scratch/work/`.",
+  "tree": "b35a568e2c1020a70cec76dc91bdf789609a13bc",
+  "settled": [],
+  "applied": [
+    "architect.patch",
+    "five-documents.patch"
+  ],
+  "masked": [
+    "G3",
+    "G4"
+  ],
+  "plain_head": false
+}

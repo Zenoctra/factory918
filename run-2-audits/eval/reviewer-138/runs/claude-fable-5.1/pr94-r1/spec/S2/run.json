@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "claude:fable-5.1",
+    "round": "pr94-r1",
+    "axis": "spec",
+    "step": "S2"
+  },
+  "nonce": "4624fb49cc1d",
+  "checkout": "/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/4624fb49cc1d/factory918",
+  "prompt": "Read `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/4624fb49cc1d/factory918/.scratch/review/ab47eb9/spec-brief.md` whole and follow it. You are working in `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/4624fb49cc1d/factory918`; every relative path in the brief is relative to it. The ticket as it stood at this commit is `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/4624fb49cc1d/factory918/.scratch/review/ab47eb9/ticket.md`. Your scratch folder for notes and any files you make is `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/4624fb49cc1d/factory918/.scratch/work/`.",
+  "tree": "c83f166578a35e61d0b686c1ae1ed652b051dba6",
+  "settled": [
+    "1. [P1] **The synthesized package has no slot for the table.** The runner prompt tells each candidate to put the table first, but `architect/SKILL.md:32` still says each candidate's package is \"shaped per `references/rationale-template.md`: the caller's usage written first, then the type sketch, function signatures, module map, and prose rationale\", `rationale-template.md` has sections Usage, Shape, Synthesis decision and no table, and Outputs (`SKILL.md:84`) lists usage, sketch and rationale. The orchestrator reads the skill, not the runner prompt it passes through; arena fills the template's sections when it synthesizes. So the one package Ticket step 6 appends is described, everywhere the orchestrator reads, without the artifact step 6 expects to find in it. Documented step: `template/.agents/skills/architect/SKILL.md:32` and `:84`; Ticket step 6, \"before implementation the synthesized table is appended to the ticket's body\". Result: the candidates carry a table and the synthesized package, shaped to a template with no place for it, can arrive at step 6 without one; the orchestrator then has nothing to append, or appends one candidate's table rather than the synthesis. spec: criterion 1"
+  ],
+  "applied": [],
+  "masked": [],
+  "plain_head": true
+}

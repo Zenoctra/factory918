@@ -1,0 +1,54 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "codex:gpt-6-sol",
+    "round": "pr94-r1",
+    "axis": "spec",
+    "step": "I2"
+  },
+  "status": "contaminated",
+  "detail": "Bash {\"command\": \"cd /var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/cd0 returned a line first added by 35de22e: hard findings: 4; Bash {\"command\": \"cd /var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/cd0 returned a line first added by 35de22e: hard findings: 4",
+  "reported_model": "gpt-6-sol",
+  "effort": "high",
+  "tokens": {
+    "input": 113281,
+    "cache_read": 1766656,
+    "cache_write": 0,
+    "output": 11488,
+    "reasoning": 5671
+  },
+  "wall_ms": 268364,
+  "source": "/Users/manuel/.codex/sessions/2026/09/25/rollout-2026-09-25T01-55-43-01a0d759-3899-76e3-a037-89b5d65a9ab4.jsonl",
+  "outside": [
+    "16 Bash /private/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/cd0fbb392c24/factory918/patches/pstack/architect/references/runner-prompt.md.patch;",
+    "16 Bash /private/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/cd0fbb392c24/factory918/patches/mattpocock/to-spec/SKILL.md.patch",
+    "18 Bash /^\\|",
+    "18 Bash /^[[:space:]]*$/)"
+  ],
+  "first_contaminated": {
+    "call": 21,
+    "timestamp": "2026-09-25T06:59:54.594Z"
+  },
+  "sightings": [
+    {
+      "n": 1,
+      "hard": true,
+      "call": 5
+    },
+    {
+      "n": 2,
+      "hard": true,
+      "call": 5
+    },
+    {
+      "n": 3,
+      "hard": true,
+      "call": 5
+    },
+    {
+      "n": 4,
+      "hard": true,
+      "call": 5
+    }
+  ]
+}

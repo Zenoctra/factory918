@@ -1,0 +1,55 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "claude:fable-5.1",
+    "round": "pr94-r1",
+    "axis": "standards",
+    "step": "S2"
+  },
+  "status": "complete",
+  "detail": "complete",
+  "reported_model": "claude-fable-5-1",
+  "effort": "high",
+  "tokens": {
+    "input": 354,
+    "cache_read": 1228901,
+    "cache_write": 120753,
+    "output": 16094,
+    "reasoning": null
+  },
+  "wall_ms": 207826,
+  "source": "/Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/subagents/agent-adc9803c887e96e0a.jsonl",
+  "outside": [
+    "9 Read /Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/tool-results/brnyg6lwq.txt",
+    "10 Read /Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/tool-results/bk3a376n4.txt",
+    "15 Bash /##"
+  ],
+  "first_contaminated": null,
+  "sightings": [
+    {
+      "n": 1,
+      "hard": true,
+      "call": null
+    },
+    {
+      "n": 2,
+      "hard": false,
+      "call": null
+    },
+    {
+      "n": 3,
+      "hard": false,
+      "call": null
+    },
+    {
+      "n": 4,
+      "hard": false,
+      "call": null
+    },
+    {
+      "n": 5,
+      "hard": false,
+      "call": null
+    }
+  ]
+}

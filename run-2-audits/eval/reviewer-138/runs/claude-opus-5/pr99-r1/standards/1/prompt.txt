@@ -1,0 +1,1 @@
+Read `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/65741cfc9a1f/factory918/.scratch/review/69bd412/standards-brief.md` whole and follow it. You are working in `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/65741cfc9a1f/factory918`; every relative path in the brief is relative to it.

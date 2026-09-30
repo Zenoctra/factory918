@@ -1,0 +1,60 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "claude:fable-5.1",
+    "round": "pr94-r1",
+    "axis": "standards",
+    "step": "M3"
+  },
+  "status": "complete",
+  "detail": "complete",
+  "reported_model": "claude-fable-5-1",
+  "effort": "high",
+  "tokens": {
+    "input": 258,
+    "cache_read": 916923,
+    "cache_write": 115882,
+    "output": 16814,
+    "reasoning": null
+  },
+  "wall_ms": 238841,
+  "source": "/Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/subagents/agent-a4094ef1b9f8fa4f4.jsonl",
+  "outside": [
+    "7 Bash /^##",
+    "15 Bash /tmp/sync.log;",
+    "15 Bash /tmp/t.log;"
+  ],
+  "first_contaminated": null,
+  "sightings": [
+    {
+      "n": 1,
+      "hard": false,
+      "call": null
+    },
+    {
+      "n": 2,
+      "hard": false,
+      "call": null
+    },
+    {
+      "n": 3,
+      "hard": false,
+      "call": null
+    },
+    {
+      "n": 4,
+      "hard": false,
+      "call": null
+    },
+    {
+      "n": 5,
+      "hard": false,
+      "call": null
+    },
+    {
+      "n": 6,
+      "hard": false,
+      "call": null
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "claude:fable-5.1",
+    "round": "pr94-r1",
+    "axis": "spec",
+    "step": "M3"
+  },
+  "status": "contaminated",
+  "detail": "Bash {\"command\": \"cd /private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun returned a line first added by 35de22e: index 16690b5..61fd07a 100644; Bash {\"command\": \"cd /private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun returned a line first added by 35de22e: @@ -6,7 +6,7 @@ The literal transcript of the conversation that produced this system is not avai; Bash {\"command\": \"cd /private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun returned a line first added by 35de22e: -| `core/MANUAL.md` | Factory918: the manual | 174 | How to run the loop; what the human does at eac; and 1 more such lines",
+  "reported_model": "claude-fable-5-1",
+  "effort": "high",
+  "tokens": {
+    "input": 450,
+    "cache_read": 1606107,
+    "cache_write": 114035,
+    "output": 10654,
+    "reasoning": null
+  },
+  "wall_ms": 151805,
+  "source": "/Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/subagents/agent-a008f318a8bd699b3.jsonl",
+  "outside": [
+    "4 Read /Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/tool-results/b0eixb6sj.txt",
+    "5 Read /Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/tool-results/b0eixb6sj.txt",
+    "11 Bash /private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/scratchpad/f918"
+  ],
+  "first_contaminated": {
+    "call": 11,
+    "timestamp": "2026-09-25T02:19:56.433Z"
+  },
+  "sightings": [
+    {
+      "n": 1,
+      "hard": true,
+      "call": null
+    },
+    {
+      "n": 2,
+      "hard": true,
+      "call": 2
+    }
+  ]
+}

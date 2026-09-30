@@ -1,0 +1,21 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "codex:gpt-6-sol",
+    "round": "pr94-r1",
+    "axis": "spec",
+    "step": "S3"
+  },
+  "nonce": "6800043e4ca1",
+  "checkout": "/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/6800043e4ca1/factory918",
+  "prompt": "Read `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/6800043e4ca1/factory918/.scratch/review/ab47eb9/spec-brief.md` whole and follow it. You are working in `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/6800043e4ca1/factory918`; every relative path in the brief is relative to it. The ticket as it stood at this commit is `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/6800043e4ca1/factory918/.scratch/review/ab47eb9/ticket.md`. Your scratch folder for notes and any files you make is `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/6800043e4ca1/factory918/.scratch/work/`.",
+  "tree": "c83f166578a35e61d0b686c1ae1ed652b051dba6",
+  "settled": [
+    "1. [P1] **Architect can implement before posting the table.** Ticket step 5 runs the selected playbook verbatim, which invokes Architect. Architect's unchanged Phase C proceeds directly to Phase D implementation; Ticket step 6 comes afterward. The runner prompt tells candidates that the orchestrator posts the artifact, but the calling workflow has no pause between synthesis and implementation. Documented step: ticket criterion 3, \u201cthe table is appended to the ticket's body under `## Testing decisions` ... before implementation.\u201d Result: Architect can write code before the artifact exists on the ticket, so the writer and reviewer do not inherit a preimplementation decision. spec: criterion 3",
+    "2. [P2] **Stateful changes can skip the table.** Bug fix, Perf issue, and Refactoring invoke Architect only for a function-boundary crossing or a cross-cutting diff. A stateful change confined to one function takes their implementation path without the Architect deliverable, while Ticket step 6 derives the table only from Architect. Documented step: ticket criterion 3, \u201cwhen a design adds state, the table is appended to the ticket's body ... before implementation.\u201d Result: a single-function stateful fix can be implemented and reviewed with no table or cell-based test. spec: criterion 3",
+    "3. [P3] **The worked table leaves cells undecided.** The page says every cell contains print, exit, and caller action and has an assertion, but its #42 table has empty cells in rows 5, 6, 8\u201311 and abbreviated cells such as ` / 2` in row 10E. The example therefore teaches a shape that cannot produce the promised one-assertion-per-cell test list. Documented step: `docs/knowledge/core/SCENARIO-TABLE.md:30-35`, \u201cThree facts ... in every cell\u201d and \u201cno cell goes without an assertion.\u201d Result: a reader copying the page's example leaves scenario outcomes and tests unspecified. spec: criterion 6"
+  ],
+  "applied": [],
+  "masked": [],
+  "plain_head": true
+}

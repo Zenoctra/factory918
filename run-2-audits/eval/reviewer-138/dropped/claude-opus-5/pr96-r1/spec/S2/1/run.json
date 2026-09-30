@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "run": {
+    "descriptor": "claude:opus-5",
+    "round": "pr96-r1",
+    "axis": "spec",
+    "step": "S2"
+  },
+  "nonce": "49403c4050ad",
+  "checkout": "/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/49403c4050ad/factory918",
+  "prompt": "Read `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/49403c4050ad/factory918/.scratch/review/ab47eb9/spec-brief.md` whole and follow it. You are working in `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/49403c4050ad/factory918`; every relative path in the brief is relative to it. The ticket as it stood at this commit is `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/49403c4050ad/factory918/.scratch/review/ab47eb9/ticket.md`, and the PR's grounding is `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/49403c4050ad/factory918/.scratch/review/ab47eb9/blast-radius.md`. Your scratch folder for notes and any files you make is `/var/folders/94/565lnnsj5vq_0rjn4ntgzq900000gn/T/review-work/49403c4050ad/factory918/.scratch/work/`.",
+  "tree": "69bd41230e0f62e0824403196243c013118fb302",
+  "settled": [
+    "1. [P1] **A glob that matches nothing is silent whenever another argument matches.** The refusal fires only when the whole run collected zero files (`template/.github/shellcheck.sh:40-43`), not per argument, so a stale glob or a mistyped path beside one good path is dropped without a word. Measured: `bash .github/shellcheck.sh factory918.sh 'template/.claude/hoks/*.sh' template/.claude/hooks/moed.sh` prints `ShellCheck 0.11.0, files checked: 1` and exits 0; neither miss is named. This lands on all three documented callers. The factory's CI step passes five globs, so if a hooks or scripts directory is ever renamed the step stays green over a smaller set, and the only signal is a count that nothing compares (`AGENTS.md:38` carries \"over 20 files\" as prose). A lane following \"run it on every shell file the diff changes\" gets a pass for a file it typo'd. And in a project the zero-argument form always matches `.github/shellcheck.sh` itself, so the refusal can never fire there: a directory holding only that file prints `files checked: 1`, exit 0, although both sets criterion 2 names were empty. The script's own header (\"Globs that match no file at all leave the gate checking nothing\") reads as the aggregate rule, so this is the code's intent; the table row a caller reads does not, and it is the caller's message that is missing. One loop over the arguments, refusing and naming each glob that matched nothing, closes it. Documented step: ticket #88, `## Design`, the scenario-table row above, whose caller column reads \"fixes the glob\", singular; and criterion 2, \"The template's CI runs `shellcheck` over a project's `.claude/hooks/*.sh` and `.agents/skills/*/scripts/*.sh`\". Result: the gate exits 0 having checked a subset, with no message naming what it skipped; in a project the \"checked nothing\" refusal is unreachable because the gate script always matches its own default glob. spec: table A glob matches no file/Prints"
+  ],
+  "applied": [],
+  "masked": [],
+  "plain_head": true
+}
