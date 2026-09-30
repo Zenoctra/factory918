@@ -1,0 +1,16 @@
+# Writer brief, ticket #106, design-hole redo (PR #125)
+
+Start: `git switch -c wt/106-writer-b caecbc448983e071d4289d252f515993c4978cbf` (PR #125's head). Read `AGENTS.md`.
+
+The ticket's `## Testing decisions` gained an amendment dated 2026-09-23 at its end (`gh issue view 106 --repo Zenoctra/factory918`; also at "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.scratch/program/106/amendment.md"). It redefines "fix lines", "quoted lines" and "inside the fix", adds `<dir>/fix-ranges`, replaces table B rows 2, 3, 5, 6, 7, 8 and adds rows 14 and 15, replaces `outside()` and review-brief.sh's edit 5, and lists test changes plus an assertion (or a written reason) for each table A cell the root listed. Implement the amendment exactly. The reproduction it answers: "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.scratch/program/verify/125-caecbc4/worker-audit.md" section 7.
+
+Commits, new ones on top (never amend or rebase the existing commits):
+1. Tests first: the amended and new assertions in `tests/spec-review/review-comment.sh` and `tests/spec-review/review-brief.sh`, each labeled with its cell; the point-2 cells too. At this commit the new cells (14B, the moved 6B, 15B, the moved ff helpers) fail.
+2. The scripts: `review-brief.sh` edit 5 replaced (fix-lines with uniqueness, fix-ranges) and its header clause; `review-comment.sh` `outside()` replaced and its header clause. All tests pass.
+3. Prose: `spec-review/SKILL.md` step 6 clause as the amendment's Prose paragraph says, through `patches/mattpocock/spec-review.SKILL.md.patch` (per `patches/README.md`), `SOURCES.md` item 6 if its text names the old rule. Do not edit `docs/knowledge/core/DECISIONS.md`; the owner updates P106.
+
+Rules: a cell you cannot implement as written, stop and report the cell. Round-one and round-two briefs stay byte for byte (criterion 1). Comments only for a non-obvious why. `/deslop` the diff. Commit titles plain sentences naming #106, ending with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`. Never push, never touch GitHub beyond reading. Do not write to the session scratchpad under /private/tmp (shared, gets overwritten): use your worktree.
+
+Verify and report each outcome: `bash tests/spec-review/review-brief.sh`, `review-comment.sh`, `no-stale-wording.sh`; `bash .github/shellcheck.sh factory918.sh template/.github/shellcheck.sh 'template/.claude/hooks/*.sh' 'template/.agents/skills/*/scripts/*.sh' 'tests/*/*.sh' 'tests/*/*/*.sh'`; `bash tests/shellcheck/gate.sh`; `bash tests/hooks/delegation.sh`; `bash tests/poteto-mode/overlap.sh`; `bash tests/eval/reviewer/refusals.sh`; `./factory918.sh sync` and `python3 tools/build_knowledge.py` leave `git status` clean; `python3 tools/check_knowledge.py`. Then rerun the audit's reproduction (section 7, both variants) against the new review-comment.sh and paste the tails.
+
+Report: an act-on list (each item "fix", "accepted: reason" or "ask"), `git log --oneline caecbc4..HEAD`, the verifications, any cell not implemented. Write it in your worktree, `cp` it to "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.scratch/program/106/writer-b-report.md", reply with only that path.

@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "run": {
+    "descriptor": "claude:sonnet",
+    "round": "pr96-r2",
+    "axis": "spec",
+    "k": 3
+  },
+  "route": "native",
+  "status": "contaminated",
+  "detail": "Bash mkdir -p /tmp/scwork && echo ok; Bash mkdir -p /tmp/scwork/shellcheck-0.11.0/shellcheck-v0.11.0; Write /tmp/scwork/shellcheck-0.11.0/shellcheck-v0.11.0/shellcheck; Bash chmod +x /tmp/scwork/shellcheck-0.11.0/shellcheck-v0.11.0/shellcheck",
+  "reported_model": "claude-sonnet-5",
+  "model_verified": true,
+  "effort": "medium",
+  "tokens": {
+    "input": 34,
+    "cache_read": 1137800,
+    "cache_write": 81429,
+    "output": 9500
+  },
+  "wall_ms": 140374,
+  "source": "/Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/subagents/agent-a5948202ae09c755a.jsonl"
+}

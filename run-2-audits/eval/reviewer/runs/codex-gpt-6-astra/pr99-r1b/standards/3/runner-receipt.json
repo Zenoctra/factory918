@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "parent": "claude",
+  "provider": "codex",
+  "model": "gpt-6-astra",
+  "effort": "medium",
+  "mode": "isolated-write",
+  "cwd": "/private/tmp/claude-501/review-work/3c9397071f86/factory918",
+  "promptPath": "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.scratch/eval/reviewer/runs/codex-gpt-6-astra/pr99-r1b/standards/3/prompt.txt",
+  "outputPath": "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.scratch/eval/reviewer/runs/codex-gpt-6-astra/pr99-r1b/standards/3/runner-output.md",
+  "startedAt": "2026-09-23T07:53:13.033Z",
+  "completedAt": "2026-09-23T07:53:15.847Z",
+  "elapsedMs": 2814,
+  "executable": "/opt/homebrew/bin/codex",
+  "preflight": {
+    "argv": [
+      "/opt/homebrew/bin/codex",
+      "login",
+      "status"
+    ],
+    "status": "passed",
+    "evidence": "authenticated"
+  },
+  "argv": [
+    "/opt/homebrew/bin/codex",
+    "exec",
+    "--model",
+    "gpt-6-astra",
+    "--config",
+    "model_reasoning_effort=\"medium\"",
+    "--sandbox",
+    "workspace-write",
+    "--cd",
+    "/private/tmp/claude-501/review-work/3c9397071f86/factory918",
+    "--skip-git-repo-check",
+    "--ephemeral",
+    "--disable",
+    "plugins",
+    "--disable",
+    "multi_agent",
+    "--disable",
+    "hooks",
+    "--disable",
+    "memories",
+    "--json",
+    "-"
+  ],
+  "exitCode": 1,
+  "signal": null,
+  "status": "child-failed",
+  "reportedModel": null,
+  "modelVerified": false,
+  "modelEvidence": null,
+  "sessionId": null,
+  "usage": null,
+  "costUsd": null,
+  "error": {
+    "message": "child exited with status 1",
+    "evidence": "{\"type\":\"thread.started\",\"thread_id\":\"01a0cd41-2285-7b11-800d-6843c9646809\"}\n{\"type\":\"turn.started\"}\n{\"type\":\"error\",\"message\":\"You've hit your usage limit. Upgrade to Pro (https://chatgpt.com/explore/pro), visit https://chatgpt.com/codex/settings/usage to purchase more credits or try again at 7:46 AM.\"}\n{\"type\":\"turn.failed\",\"error\":{\"message\":\"You've hit your usage limit. Upgrade to Pro (https://chatgpt.com/explore/pro), visit https://chatgpt.com/codex/settings/usage to purchase more credits or try again at 7:46 AM.\"}}"
+  }
+}

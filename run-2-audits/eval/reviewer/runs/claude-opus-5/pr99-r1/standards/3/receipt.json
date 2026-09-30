@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "run": {
+    "descriptor": "claude:opus-5",
+    "round": "pr99-r1",
+    "axis": "standards",
+    "k": 3
+  },
+  "route": "native",
+  "status": "complete",
+  "detail": "complete",
+  "reported_model": "claude-opus-5",
+  "model_verified": true,
+  "effort": "medium",
+  "tokens": {
+    "input": 18,
+    "cache_read": 733676,
+    "cache_write": 89353,
+    "output": 12849
+  },
+  "wall_ms": 165446,
+  "source": "/Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/subagents/agent-aeb7a704132cbac2b.jsonl"
+}

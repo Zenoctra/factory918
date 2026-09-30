@@ -1,0 +1,21 @@
+time	decision	why	evidence	result
+2026-09-23 06:08:40	branch from origin/feat/fix-only-from-round-two (0edf8c8)	overlap.sh 107 printed that base under the autopilot-stack go	overlap-step1.txt	parent #125
+2026-09-23 06:08:40	how done in-lane	one script, read whole; a lane would re-read the same 548 lines	review-brief.sh	draft design in architect/grounding.md
+2026-09-23 06:09:43	architect: two runners, tier-upper and tier-lower (requested effort high; sheet architect runners fable@high, opus@high)	Feature step 2; adversarial inputs asked of both	architect/upper.md, lower.md	pending
+2026-09-23 06:28:08	synthesis: bytes 8192/4096/65536, smallest first, separate reading-pack.sh, comment-led block, sweep carries no pack, no .gitattributes, read-nothing sentences unchanged	upper measured bytes and order on five real merges; lower measured comment-led blocks on both large shell files; a .gitattributes changes the GitHub PR view (not asked); an unbounded pack.md and a sentence rewrite widen scope	architect/upper.md, architect/lower.md	table posted on #107
+2026-09-23 06:28:08	posted Testing decisions on #107	Ticket step 6, before implementation	gh issue view 107	ok
+2026-09-23 06:55:22	accepted all nine writer flags, posted on #107	none changes a cell; each falls to a documented rung or is stricter than the cell	writer-report.md; #107 comment 5794299028	act-on list settled before round one
+2026-09-23 06:55:22	P107 Provisional row in the last commit	records the cutoffs and the rejected alternatives	e0e1130	pushed; draft PR #126 on feat/fix-only-from-round-two
+2026-09-23 06:55:22	round one at first push: two tier-lower reviewers (sheet: standards opus@medium, spec opus@high)	Ticket step 8; P103 is provisional and leaves the sheet unchanged	review dir origin_feat_fix-only-from-round-two	pending
+2026-09-23 06:55:22	CI run 35857124541 failed at (9W) on Linux; fix lane (tier-upper) on the SIGPIPE hypothesis	fence/notext helpers exit early under pipefail	gh run view --log-failed	pending
+2026-09-23 07:08:28	round 1: S1 act on (AGENTS.md count), S2 and S3 noted; 0 hard findings on either axis	S1 is a documented count breach; S2 is naming only; S3 copies are prose records, the live copies are test-guarded	PR #126 comment 5794486013	fixed in f58308b
+2026-09-23 07:08:28	fix1 confirmed SIGPIPE in fence()/notext() test helpers; fixed at 3fbc71b; pre-#107 pipelines left alone	writer stdio buffer, not kernel pipe; older pipelines read a few KB	fix1-report.md; CI run 35858370668 success at f58308b	CI green
+2026-09-23 07:08:28	records commit e0e1130 is not the last commit on the branch	the CI fix and the review fix landed after the records; rewriting pushed history is worse than the order	log of the branch	accepted
+2026-09-23 07:08:28	round 2 whole diff from origin/feat/fix-only-from-round-two, two tier-lower reviewers	Ticket step 8; the round-one comment owes round 2	review-brief.sh printed round: 2 of 3	pending
+2026-09-23 07:43:43	owner review of the writer diff	Feature step 4: reading-pack.sh read whole, the review-brief/SKILL/SOURCES/factory918.sh diffs read, the test diff spot-read; test rerun (ok 1294); pack run over origin/main	pack-origin-main.md; writer-report.md	no change asked; nine flags settled
+2026-09-23 07:43:43	network error stopped the round-2 Spec lane; relaunched fresh with the same brief	root note	spec-report.md missing	relaunched
+2026-09-23 07:43:43	trail review: amended #107 Testing decisions with a dated append for writer flags 2, 4, 5	the section's own rule wants the ticket to describe shipped behavior	trail-review.md flag 4; #107 body	appended
+2026-09-23 07:43:43	filed #127 for the three pre-#107 early-exit pipelines	a finding outside scope becomes a ticket	trail-review.md flag 6; fix1-report.md flag 3	#127
+2026-09-23 07:43:43	reran every Verifying line at head f58308b	the writer's runs predate the records and the count fix	this session	all pass; sync and build_knowledge leave the tree clean
+2026-09-23 07:43:43	left to Manuel: .gitattributes for generated paths; measuring the pack's payoff; how in-lane sign-off	each is his call or a new ticket	trail-review.md flags 1, 10, 11	in report Blocked
+2026-09-23 07:48:28	round 2: 0 hard findings, S1-S3 noted, act-on items 0; PR marked ready	whole diff reviewed at head; no fix owed	PR #126 comment 5795119512	STACK-READY at f58308b

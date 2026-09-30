@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "run": {
+    "descriptor": "claude:fable-5.1",
+    "round": "pr96-r3",
+    "axis": "standards",
+    "k": 1
+  },
+  "route": "withheld",
+  "status": "dropout",
+  "detail": "withheld: operator rule 2026-09-22, Fable is not launched",
+  "reported_model": null,
+  "model_verified": false,
+  "effort": null,
+  "tokens": null,
+  "wall_ms": null,
+  "source": "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.scratch/eval/reviewer/runs/claude-fable-5.1/pr96-r3/standards/1/receipt.json"
+}

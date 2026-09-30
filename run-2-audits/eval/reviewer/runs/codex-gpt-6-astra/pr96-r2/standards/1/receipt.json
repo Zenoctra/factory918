@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "run": {
+    "descriptor": "codex:gpt-6-astra",
+    "round": "pr96-r2",
+    "axis": "standards",
+    "k": 1
+  },
+  "route": "external",
+  "status": "complete",
+  "detail": "complete",
+  "reported_model": null,
+  "model_verified": false,
+  "effort": "medium",
+  "tokens": {
+    "input": 52799,
+    "cache_read": 125824,
+    "cache_write": 0,
+    "output": 1042
+  },
+  "wall_ms": 52044,
+  "source": "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.scratch/eval/reviewer/runs/codex-gpt-6-astra/pr96-r2/standards/1/runner-receipt.json"
+}

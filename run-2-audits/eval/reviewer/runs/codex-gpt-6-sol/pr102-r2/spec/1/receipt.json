@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "run": {
+    "descriptor": "codex:gpt-6-sol",
+    "round": "pr102-r2",
+    "axis": "spec",
+    "k": 1
+  },
+  "route": "external",
+  "status": "dropout",
+  "detail": "unavailable-model: {'message': 'child exited with status 1', 'evidence': '{\"type\":\"thread.started\",\"thread_id\":\"01a0cc4e-873a-7e71-95cd-95c925ce96a0\"}\\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_0\",\"type\":\"error\",\"message\":\"Model metadata for `gpt-6-sol` not found. Defaulting to fallback metadata; this can degrade performance and cause issues.\"}}\\n{\"type\":\"turn.started\"}\\n{\"type\":\"error\",\"message\":\"{\\\\\"type\\\\\":\\\\\"error\\\\\",\\\\\"status\\\\\":400,\\\\\"error\\\\\":{\\\\\"type\\\\\":\\\\\"invalid_request_error\\\\\",\\\\\"message\\\\\":\\\\\"The \\'gpt-6-sol\\' model is not supported when using Codex with a ChatGPT account.\\\\\"}}\"}\\n{\"type\":\"turn.failed\",\"error\":{\"message\":\"{\\\\\"type\\\\\":\\\\\"error\\\\\",\\\\\"status\\\\\":400,\\\\\"error\\\\\":{\\\\\"type\\\\\":\\\\\"invalid_request_error\\\\\",\\\\\"message\\\\\":\\\\\"The \\'gpt-6-sol\\' model is not supported when using Codex with a ChatGPT account.\\\\\"}}\"}}'}",
+  "reported_model": null,
+  "model_verified": false,
+  "effort": "high",
+  "tokens": null,
+  "wall_ms": 2688,
+  "source": "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.scratch/eval/reviewer/runs/codex-gpt-6-sol/pr102-r2/spec/1/runner-receipt.json"
+}

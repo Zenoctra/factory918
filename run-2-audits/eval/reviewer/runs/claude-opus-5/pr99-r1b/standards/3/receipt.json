@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "run": {
+    "descriptor": "claude:opus-5",
+    "round": "pr99-r1b",
+    "axis": "standards",
+    "k": 3
+  },
+  "route": "native",
+  "status": "contaminated",
+  "detail": "Bash grep -n \"Acceptance criteria\" -A 30 /Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-C; Bash sed -n '63,140p' /Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/",
+  "reported_model": "claude-opus-5",
+  "model_verified": true,
+  "effort": "medium",
+  "tokens": {
+    "input": 42,
+    "cache_read": 2278286,
+    "cache_write": 124559,
+    "output": 22052
+  },
+  "wall_ms": 278484,
+  "source": "/Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/subagents/agent-a1e6003bcb5109cb1.jsonl"
+}

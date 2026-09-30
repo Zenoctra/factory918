@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "run": {
+    "descriptor": "claude:sonnet",
+    "round": "pr101-r1",
+    "axis": "standards",
+    "k": 6
+  },
+  "route": "native",
+  "status": "contaminated",
+  "detail": "Read /Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a91d9f1cee64cb2f2/template/.agents/skills/spec-review/scripts/review-brief.sh; Read /Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a91d9f1cee64cb2f2/template/.agents/skills/spec-review/scripts/review-brief.sh; Read /Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a91d9f1cee64cb2f2/template/.agents/skills/spec-review/scripts/review-brief.sh",
+  "reported_model": "claude-sonnet-5",
+  "model_verified": true,
+  "effort": "medium",
+  "tokens": {
+    "input": 20,
+    "cache_read": 801172,
+    "cache_write": 78681,
+    "output": 8838
+  },
+  "wall_ms": 119272,
+  "source": "/Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/subagents/agent-a6da31c6eea46f2e4.jsonl"
+}

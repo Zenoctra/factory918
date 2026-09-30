@@ -1,0 +1,791 @@
+diff --git a/.github/workflows/factory-ci.yml b/.github/workflows/factory-ci.yml
+index cf19d0f..a44f65a 100644
+--- a/.github/workflows/factory-ci.yml
++++ b/.github/workflows/factory-ci.yml
+@@ -16,9 +16,13 @@ jobs:
+     steps:
+       - uses: actions/checkout@v4
+       - name: Shell syntax
+-        run: bash -n factory918.sh && for f in template/.claude/hooks/*.sh template/.agents/skills/spec-review/scripts/*.sh tests/hooks/*.sh; do bash -n "$f"; done
++        run: bash -n factory918.sh && for f in template/.claude/hooks/*.sh template/.agents/skills/spec-review/scripts/*.sh tests/*/*.sh; do bash -n "$f"; done
+       - name: The delegation hook blocks and passes what the test says
+         run: bash tests/hooks/delegation.sh
++      - name: review-comment.sh prints and refuses what the test says
++        run: bash tests/spec-review/review-comment.sh
++      - name: review-brief.sh writes the report shape into both briefs
++        run: bash tests/spec-review/review-brief.sh
+       - name: Knowledge base is consistent and built from its sources
+         run: python3 tools/check_knowledge.py && python3 tools/build_knowledge.py && git diff --exit-code
+       - name: Vendored skills equal the pins plus the patches
+diff --git a/SOURCES.md b/SOURCES.md
+index 9797d5e..450ef94 100644
+--- a/SOURCES.md
++++ b/SOURCES.md
+@@ -15,7 +15,7 @@ Upstream pins for everything vendored into `template/`. Pinned copies of each up
+ 3. `playbooks/opening-a-pr.md`: "Run `/no-comments` before review." replaced by keep-comments + spec-review + review-ladder; the subagent sentence drops `/no-comments`.
+ 4. `playbooks/babysit.md`: step 8 made conditional on an external bot being listed in `docs/agents/review-ladder.md`; step 6 adds `act-on items: 0` on the latest commit's `spec-review` comment to merge-ready, with a nonzero count or a missing review comment a blocker of the same class as a red check, fixed on this PR.
+ 5. `unslop/SKILL.md`: trigger-focused description so it fires on human-facing text.
+-6. `code-review` → `spec-review` (directory, `name:`, first heading). Step 2.4 no longer asks the author where the spec is: without a ticket, a passed path or a spec file, the Spec axis skips and says "no spec: Standards axis only". Step 5 ends the report with the line `act-on items: N`, counting hard findings on both axes, so babysit can read it. Steps 1 and 4 hand each reviewer content instead of commands: the commit list, the `--stat` list and the diff pasted in (a path to it past the paste limit), the standards sections that apply, the ticket body verbatim; each brief says to read nothing beyond it. The Standards axis dispatches through the factory's `standards reviewer` role; the Spec axis stays on the writer's lane. Step 1 runs `scripts/review-brief.sh`, ours, which writes the diff, the two briefs and the review state under `.claude/state/review/` that the delegation hook reads; step 5 runs `scripts/review-comment.sh`, ours, which builds the comment from the reviewers' report files and clears the state; the sweep form (`--paths`, `--commits`) is the same skill. Both scripts are in `sync`'s `keep_files`.
++6. `code-review` → `spec-review` (directory, `name:`, first heading). Step 2.4 no longer asks the author where the spec is: without a ticket, a passed path or a spec file, the Spec axis skips and says "no spec: Standards axis only". Step 6 ends the report with the line `act-on items: N` so babysit can read it. Steps 1 and 4 hand each reviewer content instead of commands: the commit list, the `--stat` list and the diff pasted in (a path to it past the paste limit), the standards sections that apply, the ticket body verbatim; each brief says to read nothing beyond it. The Standards axis dispatches through the factory's `standards reviewer` role and the Spec axis through its `spec reviewer` role. Each report sorts its findings under `## Would break` and two axis-specific headings, and its `hard findings: N` counts only the Would-break items; a new step 5, Judge, has the orchestrator sort every finding into Act on, Ask, Consider, Noted or Dismissed in `judgment.md`, with `act-on items` the Act on plus Ask count. Step 1 runs `scripts/review-brief.sh`, ours, which writes the diff, the two briefs and the review state under `.claude/state/review/` that the delegation hook reads; step 6 runs `scripts/review-comment.sh`, ours, which checks the reports and the judgment against those shapes, builds the comment from them and clears the state; the sweep form (`--paths`, `--commits`) is the same skill. Both scripts are in `sync`'s `keep_files`.
+ 7. Session mandate replaced by ours (`template/.claude/hooks/session-mandate.md`).
+ 8. `mobile-fingerprint-check.yml` copied into `profiles/react-native/` (T3 Code, MIT) with two edits: `runs-on: ubuntu-latest` instead of T3's Blacksmith runner, and the watched paths reduced to `apps/mobile/**`, `packages/shared/**` and the workspace files.
+ 11. `playbooks/autopilot-stack.md` step 1: when a unit is a ticket, its owner runs the Ticket playbook, so tickets close on merge and blockers are checked under a stack run.
+diff --git a/docs/knowledge/INDEX.md b/docs/knowledge/INDEX.md
+index e911ecb..2abb4de 100644
+--- a/docs/knowledge/INDEX.md
++++ b/docs/knowledge/INDEX.md
+@@ -6,8 +6,8 @@ The literal transcript of the conversation that produced this system is not avai
+ | file | what | lines | read when |
+ |---|---|---|---|
+ | `core/PHILOSOPHY.md` | Factory918: philosophy | 64 | First. Whenever the spec is silent. |
+-| `core/MANUAL.md` | Factory918: the manual | 171 | How to run the loop; what the human does at each point. |
+-| `core/DECISIONS.md` | Factory918: decisions | 84 | Before overriding any vendored skill; these win. |
++| `core/MANUAL.md` | Factory918: the manual | 172 | How to run the loop; what the human does at each point. |
++| `core/DECISIONS.md` | Factory918: decisions | 86 | Before overriding any vendored skill; these win. |
+ | `core/GLOSSARY.md` | Factory918: glossary | 69 | A term in AGENTS.md, a playbook or a ticket is unclear. |
+ | `core/CONVERSATION-DIGEST.md` | How Factory918 was arrived at | 53 | Why something was chosen, historically; the corrections. |
+ | `spec/FACTORY-SPEC-v2/01-preamble.md` | The Factory spec, v2 — (preamble) | 11 | Building or updating the factory itself. |
+diff --git a/docs/knowledge/core/DECISIONS.md b/docs/knowledge/core/DECISIONS.md
+index fcba387..6b6ac14 100644
+--- a/docs/knowledge/core/DECISIONS.md
++++ b/docs/knowledge/core/DECISIONS.md
+@@ -1,4 +1,4 @@
+-<!-- lines: 84 | source: core/DECISIONS.md | part 1/1 | title: Factory918: decisions -->
++<!-- lines: 86 | source: core/DECISIONS.md | part 1/1 | title: Factory918: decisions -->
+ 
+ ## Contents (line numbers are for the Read tool's offset)
+ - L13: Settled (2026-09-09)
+@@ -80,5 +80,7 @@ Travels anywhere without change: the planning skills, the execution playbooks, `
+ | P13 | The two lines for a person | Any agent-written comment or report longer than about forty lines opens with two plain sentences under the label `For a person:`; PR bodies are exempt, their problem-then-fix opening is that summary | The label and the threshold were the PR's choices when #19 landed; a line count is checkable where "a screen" is not. 2026-09-17. |
+ | P14 | Commit and PR titles in this repository | Plain sentences (`Fix the ast-grep layout and pin the rule engine`); the `type(scope):` form stays the rule for projects | Every commit here since day one is a sentence, and the factory's own letter said "conventional plain-language title" without the prefix; the two files now say the same thing. 2026-09-17. |
+ | P15 | Where a ticket starts | The Ticket playbook fetches, refuses a dirty checkout and branches from `origin/main` (or the parent PR's branch when stacking on purpose); `factory918 doctor` fetches `origin/main` on every run and opens with a branch line, so a fresh session sees where it is | A session inherits the branch the last one left, and PR #3 and the closing-PR shortcut both came from building on the wrong base. The fetch is the one network call the doctor did not already make through `gh`; offline it is skipped and the line compares against what is known. 2026-09-17. |
+-| P16 | The Standards axis of `spec-review` is junior work | `standards reviewer: claude:opus@medium` in both presets, a factory-owned role that `/setup-pstack` does not know; the Spec axis stays on the writer's lane | Matching a pasted diff against pasted rules needs less judgment than deciding whether the work matches the ask, and every sub-agent costs its context floor whichever model runs it (ticket #33). 2026-09-17. |
++| P16 | The Standards axis of `spec-review` is junior work | `standards reviewer: claude:opus@medium` in both presets, a factory-owned role that `/setup-pstack` does not know. Amended 2026-09-18 (#76): the Spec axis has its own row too, `spec reviewer: claude:opus@high`; both reviewers are finders, and the orchestrator judges what they find (P19) | Matching a pasted diff against pasted rules needs less judgment than deciding whether the work matches the ask, and every sub-agent costs its context floor whichever model runs it (ticket #33). 2026-09-17. Manuel, 2026-09-18: the reviewer's context matters more than its model. |
++| P18 | What a review counts | A hard finding is wrong behavior in normal use, listed under `## Would break`; standards breaches, latent and visibility items and scope creep sit under their own headings and never count; smells sit under `## Fix alongside` and are fixed only when a would-break fix already touches that code. `review-comment.sh` refuses a report whose count exceeds its Would-break items or whose headings are off the shape | On PR #75 five rounds produced fourteen findings of which four were would-break; the Standards reviewer counted smells as hard in two rounds and the script trusted its line (#76). 2026-09-18. |
++| P19 | The orchestrator judges before the count | After the reports, the orchestrator writes `<dir>/judgment.md` sorting every report item into Act on, Ask, Consider, Noted or Dismissed with a one-line reason and a `[S<n>]`/`[P<n>]` reference; `act-on items` is Act on plus Ask; the script refuses a judgment that misses, repeats or invents a reference. Ask holds the bugbot-triage ask-by-default categories and the agent never dismisses those | pstack has no review-until-zero loop; that gate was the factory's patch. pstack converges by a lead judge with the full context and a visible Dismissed list the human can overrule (`interrogate` step 5). The reference check is what keeps a dismissal visible rather than silent (#76). 2026-09-18. |
+ | P2 | Tool versions in CI | Pin every tool CI runs to an exact version, as a devDependency where the tool publishes one | `dlx` and `npx` resolve the latest version, so a rule engine or formatter can change under a project with no diff to show for it. Spec §0 rule 1 already says to pin what you install; this extends it to what CI fetches. First applied to `@ast-grep/cli` 0.45.3 in M0. |
+diff --git a/docs/knowledge/core/MANUAL.md b/docs/knowledge/core/MANUAL.md
+index 147c7ab..cb97f5f 100644
+--- a/docs/knowledge/core/MANUAL.md
++++ b/docs/knowledge/core/MANUAL.md
+@@ -1,4 +1,4 @@
+-<!-- lines: 171 | source: core/MANUAL.md | part 1/1 | title: Factory918: the manual -->
++<!-- lines: 172 | source: core/MANUAL.md | part 1/1 | title: Factory918: the manual -->
+ 
+ ## Contents (line numbers are for the Read tool's offset)
+ - L24: The loop in one screen
+@@ -13,9 +13,9 @@
+ - L112: Maintenance
+ - L124: Multi-surface products
+ - L128: Models and cost
+-- L144: Updating the factory
+-- L148: Troubleshooting
+-- L160: Where to read more
++- L145: Updating the factory
++- L149: Troubleshooting
++- L161: Where to read more
+ 
+ # Factory918: the manual
+ 
+@@ -137,6 +137,7 @@ You are on the $200 Claude plan; the limit is shared across models and Fable 5.1
+ | Panels: `how` critics, `architect`, `arena` runners | Fable + Opus | Opus high + Opus medium |
+ | `interrogate` reviewers, `arena` cross-judge | Fable + Opus xhigh, Astra when wired | Opus xhigh + Opus high |
+ | Juniors: `how` explorers, swarm workers, `standards reviewer` (the `spec-review` Standards axis) | Opus 5 medium | Opus 5 medium |
++| `spec reviewer` (the `spec-review` Spec axis; the orchestrator judges its findings) | Opus 5 high | Opus 5 high |
+ | `arena` | off by default | off by default |
+ 
+ Rough cost order of the skills, highest first: `arena`, autopilot-stack (one owner per ticket plus a swarm per PR), `swarm`, `interrogate`, `how` in critique mode, `/wayfinder` with parallel research, `/to-tickets` on a large spec (one user reported 1.5M tokens for 14 tickets), then everything else. Check the usage page weekly; if Fable is over a third of spend, move a role down.
+diff --git a/machine/pstack-models.fable.md b/machine/pstack-models.fable.md
+index f6a8c5b..3336dbc 100644
+--- a/machine/pstack-models.fable.md
++++ b/machine/pstack-models.fable.md
+@@ -17,5 +17,6 @@ arena runners: claude:fable@high, claude:opus@high
+ arena cross-judge pool: claude:opus@xhigh, claude:fable@high
+ swarm workers: claude:opus@medium
+ standards reviewer: claude:opus@medium
++spec reviewer: claude:opus@high
+ architect runners: claude:fable@high, claude:opus@high
+ interrogate reviewers: claude:fable@high, claude:opus@xhigh
+diff --git a/machine/pstack-models.opus.md b/machine/pstack-models.opus.md
+index d85111f..d67b6a3 100644
+--- a/machine/pstack-models.opus.md
++++ b/machine/pstack-models.opus.md
+@@ -17,5 +17,6 @@ arena runners: claude:opus@high, claude:opus@medium
+ arena cross-judge pool: claude:opus@xhigh, claude:opus@high
+ swarm workers: claude:opus@medium
+ standards reviewer: claude:opus@medium
++spec reviewer: claude:opus@high
+ architect runners: claude:opus@high, claude:opus@medium
+ interrogate reviewers: claude:opus@xhigh, claude:opus@high
+diff --git a/patches/mattpocock/spec-review.SKILL.md.patch b/patches/mattpocock/spec-review.SKILL.md.patch
+index 8c4f5eb..7b8a662 100644
+--- a/patches/mattpocock/spec-review.SKILL.md.patch
++++ b/patches/mattpocock/spec-review.SKILL.md.patch
+@@ -12,7 +12,7 @@
+  Whatever the user said is the fixed point (a commit SHA, branch name, tag, `main`, `HEAD~5`, etc.). If they didn't specify one, ask for it.
+  
+ -Capture the diff command once: `git diff <fixed-point>...HEAD` (three-dot, so the comparison is against the merge-base). Also note the list of commits via `git log <fixed-point>..HEAD --oneline`.
+-+Run `scripts/review-brief.sh <fixed-point>` (the script beside this skill; add `--ticket N` when the commits do not name the ticket, `--standards FILE ...` to review against files other than `CODING_STANDARDS.md`). It runs the diff once, `git diff <fixed-point>...HEAD` (three-dot, so the comparison is against the merge-base), plus `--stat` for the changed-file list with per-file line counts, and the list of commits via `git log <fixed-point>..HEAD --oneline`, and writes the three to `.scratch/review/<id>/` as `diff`, `stat` and `log`. It also writes the review state under `.claude/state/review/`: `fixed-point`, `files` (the changed paths, one per line) and `dir`. While that state exists the delegation hook blocks your reads of the changed files, and step 5 clears it. Do not read the diff yourself: the reviewers get it in their briefs, and you get their reports.
+++Run `scripts/review-brief.sh <fixed-point>` (the script beside this skill; add `--ticket N` when the commits do not name the ticket, `--standards FILE ...` to review against files other than `CODING_STANDARDS.md`). It runs the diff once, `git diff <fixed-point>...HEAD` (three-dot, so the comparison is against the merge-base), plus `--stat` for the changed-file list with per-file line counts, and the list of commits via `git log <fixed-point>..HEAD --oneline`, and writes the three to `.scratch/review/<id>/` as `diff`, `stat` and `log`. It also writes the review state under `.claude/state/review/`: `fixed-point`, `files` (the changed paths, one per line) and `dir`. While that state exists the delegation hook blocks your reads of the changed files, and step 6 clears it. Do not read the diff yourself: the reviewers get it in their briefs, and you get their reports.
+  
+ -Before going further, confirm the fixed point resolves (`git rev-parse <fixed-point>`) and the diff is non-empty. A bad ref or empty diff should fail here, not inside two parallel sub-agents.
+ +The script confirms the fixed point resolves and the diff is non-empty, and exits 1 with a message otherwise. A bad ref or empty diff fails here, not inside two parallel sub-agents.
+@@ -31,12 +31,12 @@
+  
+  ### 3. Identify the standards sources
+  
+-@@ -57,26 +59,36 @@
++@@ -57,26 +59,52 @@
+  
+  ### 4. Spawn both sub-agents in parallel
+  
+ -**Standards sub-agent prompt** should include:
+-+The briefs are the two files step 1 wrote, `<dir>/standards-brief.md` and `<dir>/spec-brief.md` (the script printed both paths). They carry content, not commands: the material from step 1 is computed once and the same text goes into both. Each sub-agent's prompt is its brief's path and the instruction to read it whole and follow it. Each reviewer writes its report to `<dir>/standards-report.md` or `<dir>/spec-report.md`, ending with the line `hard findings: N`, and replies with only that path; step 5 reads the files, not the replies.
+++The briefs are the two files step 1 wrote, `<dir>/standards-brief.md` and `<dir>/spec-brief.md` (the script printed both paths). They carry content, not commands: the material from step 1 is computed once and the same text goes into both. Each sub-agent's prompt is its brief's path and the instruction to read it whole and follow it. Each reviewer writes its report to `<dir>/standards-report.md` or `<dir>/spec-report.md`, ending with the line `hard findings: N`, and replies with only that path; step 6 reads the files, not the replies.
+  
+ -- The full diff command and commit list.
+ -- The list of standards-source files you found in step 3, **plus the smell baseline from step 3** pasted in full (the sub-agent has no other access to it).
+@@ -55,26 +55,43 @@
+  
+ -If the spec is missing, skip the Spec sub-agent and note this in the final report.
+ +- The standards files named by `--standards` (default `CODING_STANDARDS.md`), pasted whole, so pass only the files that apply to the changed files. **Plus the smell baseline from step 3** pasted in full (the sub-agent has no other access to it).
+-+- The brief: "Report, per file/hunk where relevant, (a) every place the diff violates a documented standard: cite the standard (file + the rule); and (b) any baseline smell you spot: name it and quote the hunk. Distinguish hard violations from judgement calls: documented-standard breaches can be hard, but baseline smells are always judgement calls, and a documented repo standard overrides the baseline. Skip anything tooling enforces. Read nothing beyond this brief unless a finding needs the code around a hunk, and then read that one function or section, not the file. Under 400 words."
+++- The report shape. The definition first, word for word as the script writes it: "A hard finding is wrong behavior in normal use: a command, hook, script or documented flow does something other than what the ticket or its own documentation says it does, on the path a user takes." Then exactly these `## ` headings, in this order, each holding numbered items or nothing: `## Would break` (a breach of a documented standard that produces wrong behavior in normal use), `## Standards breaches` (documented-standard breaches that do not change behavior), `## Fix alongside` (baseline smells and other judgement calls; they are fixed only when a would-break fix already touches that code; they never count). Each item opens with `1. **Title.** body`, cites the standard and quotes the hunk in a fenced block, numbered continuously across the headings. A documented repo standard overrides the baseline; skip anything tooling enforces; read nothing beyond the brief but the code around a hunk; under 400 words. The last line is `hard findings: N`, where N is the number of items under `## Would break` and nothing else.
+  
++-### 5. Aggregate
+ +**The Spec brief** adds:
+-+
+-+- The ticket body pasted in (What to build and Acceptance criteria, verbatim), and the relevant section of the parent spec when there is one. Not a `gh` command or an issue number: the sub-agent fetches nothing.
+-+- The brief: "Report: (a) requirements the spec asked for that are missing or partial; (b) behaviour in the diff that wasn't asked for (scope creep); (c) requirements that look implemented but where the implementation looks wrong. Quote the spec line for each finding. Read nothing beyond this brief unless a finding needs the code around a hunk, and then read that one function or section, not the file. Under 400 words."
+-+
+-+If the spec is missing, the script writes no Spec brief; skip the Spec sub-agent, and step 5 says so in the final report.
+-+
+-+The Standards sub-agent runs through the configured `standards reviewer` descriptor (`~/.claude/pstack-models.md`, default `claude:opus@medium`), resolved per [`provider-dispatch.md`](../poteto-mode/references/provider-dispatch.md), in `read-only` mode; a native lane is the matching `pstack-<family>-<effort>` subagent. The Spec sub-agent runs on the writer's lane, the `feature, refactoring` descriptor, because judging whether the work matches the ask is the senior's call. A sheet without the `standards reviewer` row uses that default. Without a models sheet, both run on the parent's subagent primitive at the parent's model.
+-+
+- ### 5. Aggregate
+  
+ -Present the two reports under `## Standards` and `## Spec` headings, verbatim or lightly cleaned. Do **not** merge or rerank findings, because the two axes are deliberately separate (see _Why two axes_).
+-+Run `scripts/review-comment.sh`. It prints the two reports under `## Standards` and `## Spec` headings, verbatim (or `no spec: Standards axis only` under Spec), a one-line summary with the count per axis, and the final line `act-on items: N`, then clears `.claude/state/review/`. It exits 1 when a report is missing or has no count line; wait for the reviewer, do not write the report yourself. Do **not** merge or rerank findings, because the two axes are deliberately separate (see _Why two axes_), and do not pick a single winner across axes: that's the reranking the separation exists to prevent.
+++- The ticket body pasted in (What to build and Acceptance criteria, verbatim), and the relevant section of the parent spec when there is one. Not a `gh` command or an issue number: the sub-agent fetches nothing.
+++- The report shape. The same definition, then exactly these `## ` headings, in this order: `## Would break` (a requirement missing, partial, or implemented so that normal use does something other than the ticket says), `## Latent` (edge cases, visibility, policy, wording; anything a user would not hit in normal use), `## Not asked for` (behaviour in the diff the ticket did not ask for). Each item opens with `1. **Title.** body` and quotes the spec line it rests on, numbered continuously across the headings; read nothing beyond the brief but the code around a hunk; under 400 words. The last line is `hard findings: N`, the number of items under `## Would break` and nothing else.
+  
+ -End with a one-line summary: total findings per axis, and the worst issue _within each axis_ (if any). Don't pick a single winner across axes: that's the reranking the separation exists to prevent.
+-+You write only what goes above the script's output: the two plain sentences for a person and the Disposition. Nothing else in the comment is yours.
+++If the spec is missing, the script writes no Spec brief; skip the Spec sub-agent, and step 6 says so in the final report.
+  
+-+N counts the hard findings on both axes, summed from the reports' own `hard findings:` lines: on Standards, documented-standard breaches (baseline smells and judgement calls don't count); on Spec, requirements missing or partial, implementations that look wrong, and behaviour that wasn't asked for. Zero is written as `act-on items: 0`. Babysit reads this line, so it is always present and always last.
+++The Standards sub-agent runs through the configured `standards reviewer` descriptor (`~/.claude/pstack-models.md`, default `claude:opus@medium`), resolved per [`provider-dispatch.md`](../poteto-mode/references/provider-dispatch.md), in `read-only` mode; a native lane is the matching `pstack-<family>-<effort>` subagent. The Spec sub-agent runs through the configured `spec reviewer` descriptor (default `claude:opus@high`), resolved the same way, read-only: the reviewer's context matters more than its model, since the brief carries everything it reads and the orchestrator judges what it finds in step 5. A sheet without a row uses that row's default. Without a models sheet, both run on the parent's subagent primitive at the parent's model.
+++
+++### 5. Judge
+++
+++Read the two reports and the ticket, never the code under review (the delegation hook enforces this while the review state exists), and write `<dir>/judgment.md`, following [`lead-judgment.md`](../interrogate/references/lead-judgment.md): a reviewer with nothing critical inflates nits, so a report that is all nits means the code is probably fine; more than five Act on items means you are not filtering; the Dismissed list is shown so the human can overrule you.
+++
+++Five `## ` headings, in this order, each holding numbered items or nothing:
+++
+++- `## Act on`: wrong behavior in normal use, or a breach worth fixing on this PR. Counted.
+++- `## Ask`: a finding in the ask-by-default categories of [`bugbot-triage.md`](../poteto-mode/references/bugbot-triage.md): security, privacy, auth, billing, data, migrations, concurrency, cross-system. You never dismiss one of these; it waits for the human. Counted.
+++- `## Consider`: a legitimate point you are not sure outweighs the cost of addressing it now.
+++- `## Noted`: valid but not actionable here.
+++- `## Dismissed`: wrong, nitpicky or missing context, and why.
+++
+++Each item is `1. [S2] **Title.** reason`: `[S2]` is the Standards report's second item and `[P1]` the Spec report's first, counted across every heading of that report in document order; the reason is one line. Every numbered item in both reports appears exactly once in the judgment; step 6 refuses a judgment that misses, repeats or invents a reference.
+++
+++### 6. Aggregate
+++
+++Run `scripts/review-comment.sh`. It prints the two reports under `## Standards` and `## Spec` (or `no spec: Standards axis only`), the judgment under `## Judgment`, all verbatim, a one-line summary, and the final line `act-on items: N`, where N is the number of items under `## Act on` plus the number under `## Ask`; then it clears `.claude/state/review/`. Zero is written as `act-on items: 0`. Babysit reads this line, so it is always present and always last.
+++
+++It exits 1, printing why and clearing nothing, when a report is missing or has no `hard findings:` line (wait for the reviewer; do not write the report yourself); when a report's `hard findings: N` is larger than its `## Would break` item count (ask the reviewer to re-sort); when a report's or the judgment's `## ` headings are not the shape above; when `judgment.md` is missing; when the judgment's item count differs from the reports'; or when a `[S<n>]` or `[P<n>]` reference is missing, repeated or points at no item.
+++
+++Do **not** merge or rerank findings across the two reports, because the two axes are deliberately separate (see _Why two axes_), and do not pick a single winner across axes: that's the reranking the separation exists to prevent. The judgment is a third section, not a rewrite of either report.
+++
+++You write only what goes above the script's output: the two plain sentences for a person. Nothing else in the comment is yours.
+ +
+  ## Why two axes
+  
+diff --git a/template/.agents/skills/spec-review/SKILL.md b/template/.agents/skills/spec-review/SKILL.md
+index b69560a..3af5b9b 100644
+--- a/template/.agents/skills/spec-review/SKILL.md
++++ b/template/.agents/skills/spec-review/SKILL.md
+@@ -18,7 +18,7 @@ The issue tracker should have been provided to you. If `docs/agents/issue-tracke
+ 
+ Whatever the user said is the fixed point (a commit SHA, branch name, tag, `main`, `HEAD~5`, etc.). If they didn't specify one, ask for it.
+ 
+-Run `scripts/review-brief.sh <fixed-point>` (the script beside this skill; add `--ticket N` when the commits do not name the ticket, `--standards FILE ...` to review against files other than `CODING_STANDARDS.md`). It runs the diff once, `git diff <fixed-point>...HEAD` (three-dot, so the comparison is against the merge-base), plus `--stat` for the changed-file list with per-file line counts, and the list of commits via `git log <fixed-point>..HEAD --oneline`, and writes the three to `.scratch/review/<id>/` as `diff`, `stat` and `log`. It also writes the review state under `.claude/state/review/`: `fixed-point`, `files` (the changed paths, one per line) and `dir`. While that state exists the delegation hook blocks your reads of the changed files, and step 5 clears it. Do not read the diff yourself: the reviewers get it in their briefs, and you get their reports.
++Run `scripts/review-brief.sh <fixed-point>` (the script beside this skill; add `--ticket N` when the commits do not name the ticket, `--standards FILE ...` to review against files other than `CODING_STANDARDS.md`). It runs the diff once, `git diff <fixed-point>...HEAD` (three-dot, so the comparison is against the merge-base), plus `--stat` for the changed-file list with per-file line counts, and the list of commits via `git log <fixed-point>..HEAD --oneline`, and writes the three to `.scratch/review/<id>/` as `diff`, `stat` and `log`. It also writes the review state under `.claude/state/review/`: `fixed-point`, `files` (the changed paths, one per line) and `dir`. While that state exists the delegation hook blocks your reads of the changed files, and step 6 clears it. Do not read the diff yourself: the reviewers get it in their briefs, and you get their reports.
+ 
+ The script confirms the fixed point resolves and the diff is non-empty, and exits 1 with a message otherwise. A bad ref or empty diff fails here, not inside two parallel sub-agents.
+ 
+@@ -59,7 +59,7 @@ Each smell reads *what it is* → *how to fix*; match it against the diff:
+ 
+ ### 4. Spawn both sub-agents in parallel
+ 
+-The briefs are the two files step 1 wrote, `<dir>/standards-brief.md` and `<dir>/spec-brief.md` (the script printed both paths). They carry content, not commands: the material from step 1 is computed once and the same text goes into both. Each sub-agent's prompt is its brief's path and the instruction to read it whole and follow it. Each reviewer writes its report to `<dir>/standards-report.md` or `<dir>/spec-report.md`, ending with the line `hard findings: N`, and replies with only that path; step 5 reads the files, not the replies.
++The briefs are the two files step 1 wrote, `<dir>/standards-brief.md` and `<dir>/spec-brief.md` (the script printed both paths). They carry content, not commands: the material from step 1 is computed once and the same text goes into both. Each sub-agent's prompt is its brief's path and the instruction to read it whole and follow it. Each reviewer writes its report to `<dir>/standards-report.md` or `<dir>/spec-report.md`, ending with the line `hard findings: N`, and replies with only that path; step 6 reads the files, not the replies.
+ 
+ **Both briefs** carry:
+ 
+@@ -70,24 +70,40 @@ The briefs are the two files step 1 wrote, `<dir>/standards-brief.md` and `<dir>
+ **The Standards brief** adds:
+ 
+ - The standards files named by `--standards` (default `CODING_STANDARDS.md`), pasted whole, so pass only the files that apply to the changed files. **Plus the smell baseline from step 3** pasted in full (the sub-agent has no other access to it).
+-- The brief: "Report, per file/hunk where relevant, (a) every place the diff violates a documented standard: cite the standard (file + the rule); and (b) any baseline smell you spot: name it and quote the hunk. Distinguish hard violations from judgement calls: documented-standard breaches can be hard, but baseline smells are always judgement calls, and a documented repo standard overrides the baseline. Skip anything tooling enforces. Read nothing beyond this brief unless a finding needs the code around a hunk, and then read that one function or section, not the file. Under 400 words."
++- The report shape. The definition first, word for word as the script writes it: "A hard finding is wrong behavior in normal use: a command, hook, script or documented flow does something other than what the ticket or its own documentation says it does, on the path a user takes." Then exactly these `## ` headings, in this order, each holding numbered items or nothing: `## Would break` (a breach of a documented standard that produces wrong behavior in normal use), `## Standards breaches` (documented-standard breaches that do not change behavior), `## Fix alongside` (baseline smells and other judgement calls; they are fixed only when a would-break fix already touches that code; they never count). Each item opens with `1. **Title.** body`, cites the standard and quotes the hunk in a fenced block, numbered continuously across the headings. A documented repo standard overrides the baseline; skip anything tooling enforces; read nothing beyond the brief but the code around a hunk; under 400 words. The last line is `hard findings: N`, where N is the number of items under `## Would break` and nothing else.
+ 
+ **The Spec brief** adds:
+ 
+ - The ticket body pasted in (What to build and Acceptance criteria, verbatim), and the relevant section of the parent spec when there is one. Not a `gh` command or an issue number: the sub-agent fetches nothing.
+-- The brief: "Report: (a) requirements the spec asked for that are missing or partial; (b) behaviour in the diff that wasn't asked for (scope creep); (c) requirements that look implemented but where the implementation looks wrong. Quote the spec line for each finding. Read nothing beyond this brief unless a finding needs the code around a hunk, and then read that one function or section, not the file. Under 400 words."
++- The report shape. The same definition, then exactly these `## ` headings, in this order: `## Would break` (a requirement missing, partial, or implemented so that normal use does something other than the ticket says), `## Latent` (edge cases, visibility, policy, wording; anything a user would not hit in normal use), `## Not asked for` (behaviour in the diff the ticket did not ask for). Each item opens with `1. **Title.** body` and quotes the spec line it rests on, numbered continuously across the headings; read nothing beyond the brief but the code around a hunk; under 400 words. The last line is `hard findings: N`, the number of items under `## Would break` and nothing else.
+ 
+-If the spec is missing, the script writes no Spec brief; skip the Spec sub-agent, and step 5 says so in the final report.
++If the spec is missing, the script writes no Spec brief; skip the Spec sub-agent, and step 6 says so in the final report.
+ 
+-The Standards sub-agent runs through the configured `standards reviewer` descriptor (`~/.claude/pstack-models.md`, default `claude:opus@medium`), resolved per [`provider-dispatch.md`](../poteto-mode/references/provider-dispatch.md), in `read-only` mode; a native lane is the matching `pstack-<family>-<effort>` subagent. The Spec sub-agent runs on the writer's lane, the `feature, refactoring` descriptor, because judging whether the work matches the ask is the senior's call. A sheet without the `standards reviewer` row uses that default. Without a models sheet, both run on the parent's subagent primitive at the parent's model.
++The Standards sub-agent runs through the configured `standards reviewer` descriptor (`~/.claude/pstack-models.md`, default `claude:opus@medium`), resolved per [`provider-dispatch.md`](../poteto-mode/references/provider-dispatch.md), in `read-only` mode; a native lane is the matching `pstack-<family>-<effort>` subagent. The Spec sub-agent runs through the configured `spec reviewer` descriptor (default `claude:opus@high`), resolved the same way, read-only: the reviewer's context matters more than its model, since the brief carries everything it reads and the orchestrator judges what it finds in step 5. A sheet without a row uses that row's default. Without a models sheet, both run on the parent's subagent primitive at the parent's model.
+ 
+-### 5. Aggregate
++### 5. Judge
+ 
+-Run `scripts/review-comment.sh`. It prints the two reports under `## Standards` and `## Spec` headings, verbatim (or `no spec: Standards axis only` under Spec), a one-line summary with the count per axis, and the final line `act-on items: N`, then clears `.claude/state/review/`. It exits 1 when a report is missing or has no count line; wait for the reviewer, do not write the report yourself. Do **not** merge or rerank findings, because the two axes are deliberately separate (see _Why two axes_), and do not pick a single winner across axes: that's the reranking the separation exists to prevent.
++Read the two reports and the ticket, never the code under review (the delegation hook enforces this while the review state exists), and write `<dir>/judgment.md`, following [`lead-judgment.md`](../interrogate/references/lead-judgment.md): a reviewer with nothing critical inflates nits, so a report that is all nits means the code is probably fine; more than five Act on items means you are not filtering; the Dismissed list is shown so the human can overrule you.
+ 
+-You write only what goes above the script's output: the two plain sentences for a person and the Disposition. Nothing else in the comment is yours.
++Five `## ` headings, in this order, each holding numbered items or nothing:
+ 
+-N counts the hard findings on both axes, summed from the reports' own `hard findings:` lines: on Standards, documented-standard breaches (baseline smells and judgement calls don't count); on Spec, requirements missing or partial, implementations that look wrong, and behaviour that wasn't asked for. Zero is written as `act-on items: 0`. Babysit reads this line, so it is always present and always last.
++- `## Act on`: wrong behavior in normal use, or a breach worth fixing on this PR. Counted.
++- `## Ask`: a finding in the ask-by-default categories of [`bugbot-triage.md`](../poteto-mode/references/bugbot-triage.md): security, privacy, auth, billing, data, migrations, concurrency, cross-system. You never dismiss one of these; it waits for the human. Counted.
++- `## Consider`: a legitimate point you are not sure outweighs the cost of addressing it now.
++- `## Noted`: valid but not actionable here.
++- `## Dismissed`: wrong, nitpicky or missing context, and why.
++
++Each item is `1. [S2] **Title.** reason`: `[S2]` is the Standards report's second item and `[P1]` the Spec report's first, counted across every heading of that report in document order; the reason is one line. Every numbered item in both reports appears exactly once in the judgment; step 6 refuses a judgment that misses, repeats or invents a reference.
++
++### 6. Aggregate
++
++Run `scripts/review-comment.sh`. It prints the two reports under `## Standards` and `## Spec` (or `no spec: Standards axis only`), the judgment under `## Judgment`, all verbatim, a one-line summary, and the final line `act-on items: N`, where N is the number of items under `## Act on` plus the number under `## Ask`; then it clears `.claude/state/review/`. Zero is written as `act-on items: 0`. Babysit reads this line, so it is always present and always last.
++
++It exits 1, printing why and clearing nothing, when a report is missing or has no `hard findings:` line (wait for the reviewer; do not write the report yourself); when a report's `hard findings: N` is larger than its `## Would break` item count (ask the reviewer to re-sort); when a report's or the judgment's `## ` headings are not the shape above; when `judgment.md` is missing; when the judgment's item count differs from the reports'; or when a `[S<n>]` or `[P<n>]` reference is missing, repeated or points at no item.
++
++Do **not** merge or rerank findings across the two reports, because the two axes are deliberately separate (see _Why two axes_), and do not pick a single winner across axes: that's the reranking the separation exists to prevent. The judgment is a third section, not a rewrite of either report.
++
++You write only what goes above the script's output: the two plain sentences for a person. Nothing else in the comment is yours.
+ 
+ ## Why two axes
+ 
+diff --git a/template/.agents/skills/spec-review/scripts/review-brief.sh b/template/.agents/skills/spec-review/scripts/review-brief.sh
+index dd8e247..739ff39 100755
+--- a/template/.agents/skills/spec-review/scripts/review-brief.sh
++++ b/template/.agents/skills/spec-review/scripts/review-brief.sh
+@@ -100,6 +100,9 @@ if [ -n "$ticket" ]; then
+   [ -n "$spec" ] || echo "review-brief: gh could not fetch #$ticket ($(printf '%s' "$err" | tr '\n' ' ')); no spec" >&2
+ fi
+ if [ ${#standards[@]} -eq 0 ] && [ -f CODING_STANDARDS.md ]; then standards=(CODING_STANDARDS.md); fi
++# The definition both reports rest on; SKILL.md step 4 carries it word for word (tests/spec-review/review-brief.sh holds them together).
++definition="A hard finding is wrong behavior in normal use: a command, hook, script or documented flow does something other than what the ticket or its own documentation says it does, on the path a user takes."
++count_rule='End the report with exactly one line `hard findings: N`, where N is the number of items under `## Would break` and nothing else.'
+ common() {
+   echo "Read nothing beyond this brief unless a finding needs the code around a hunk, and then read that one function or section, not the file. Run nothing."
+   echo
+@@ -147,10 +150,18 @@ common() {
+   echo
+   echo "## Report"
+   echo
+-  echo "Report, per file/hunk where relevant, (a) every place the diff violates a documented standard: cite the standard (file + the rule); and (b) any baseline smell you spot: name it and quote the hunk. Distinguish hard violations from judgement calls: documented-standard breaches can be hard, but baseline smells are always judgement calls, and a documented repo standard overrides the baseline. Skip anything tooling enforces. Read nothing beyond this brief unless a finding needs the code around a hunk, and then read that one function or section, not the file. Under 400 words."
++  echo "$definition"
++  echo
++  echo "Write the report as Markdown with exactly these \`## \` headings, in this order, each holding numbered items or nothing:"
++  echo
++  echo '- `## Would break`: a breach of a documented standard that produces wrong behavior in normal use. Cite the standard (file + the rule) and quote the hunk.'
++  echo '- `## Standards breaches`: documented-standard breaches that do not change behavior. Cite the standard and quote the hunk.'
++  echo '- `## Fix alongside`: baseline smells and other judgement calls. Name the smell and quote the hunk. They are fixed only when a would-break fix already touches that code; they never count.'
++  echo
++  echo 'Each item opens with a line of the form `1. **Title.** body`, with the quoted hunk in a fenced block under it; number the items continuously across the headings, so the judgment can name your third item as [S3]. A documented repo standard overrides the baseline. Skip anything tooling enforces. Read nothing beyond this brief unless a finding needs the code around a hunk, and then read that one function or section, not the file. Under 400 words.'
+   echo
+   echo "Write your report to \`$dir/standards-report.md\` and reply with only that path."
+-  echo "End the report with exactly one line \`hard findings: N\` counting your hard findings (documented-standard breaches; baseline smells and judgement calls do not count)."
++  echo "$count_rule"
+ } > "$dir/standards-brief.md"
+ if [ -n "$spec" ]; then
+   {
+@@ -163,10 +174,18 @@ if [ -n "$spec" ]; then
+     echo
+     echo "## Report"
+     echo
+-    echo "Report: (a) requirements the spec asked for that are missing or partial; (b) behaviour in the diff that wasn't asked for (scope creep); (c) requirements that look implemented but where the implementation looks wrong. Quote the spec line for each finding. Read nothing beyond this brief unless a finding needs the code around a hunk, and then read that one function or section, not the file. Under 400 words."
++    echo "$definition"
++    echo
++    echo "Write the report as Markdown with exactly these \`## \` headings, in this order, each holding numbered items or nothing:"
++    echo
++    echo '- `## Would break`: a requirement missing, partial, or implemented so that normal use does something other than the ticket says.'
++    echo '- `## Latent`: edge cases, visibility, policy, wording; anything a user would not hit in normal use.'
++    echo '- `## Not asked for`: behaviour in the diff the ticket did not ask for.'
++    echo
++    echo 'Each item opens with a line of the form `1. **Title.** body` and quotes the spec line it rests on; number the items continuously across the headings, so the judgment can name your third item as [P3]. Read nothing beyond this brief unless a finding needs the code around a hunk, and then read that one function or section, not the file. Under 400 words.'
+     echo
+     echo "Write your report to \`$dir/spec-report.md\` and reply with only that path."
+-    echo "End the report with exactly one line \`hard findings: N\` counting your hard findings (requirements missing or partial, implementations that look wrong, and behaviour that was not asked for)."
++    echo "$count_rule"
+   } > "$dir/spec-brief.md"
+   echo "$dir/standards-brief.md"
+   echo "$dir/spec-brief.md"
+diff --git a/template/.agents/skills/spec-review/scripts/review-comment.sh b/template/.agents/skills/spec-review/scripts/review-comment.sh
+index 61dee1a..2d859e4 100755
+--- a/template/.agents/skills/spec-review/scripts/review-comment.sh
++++ b/template/.agents/skills/spec-review/scripts/review-comment.sh
+@@ -1,26 +1,79 @@
+ #!/usr/bin/env bash
+-# spec-review step 5. Prints the review comment from the two report files, verbatim under their
+-# axis headings, with act-on items summed from the reports' own count lines, then clears the review
+-# state so the delegation hook stops blocking the reviewed files. No arguments: it reads
+-# .claude/state/review/dir. Exits 1 when a report is missing or has no count line.
++# spec-review step 6. Prints the review comment: the two reports and the orchestrator's judgment,
++# verbatim under their headings, then act-on items counted from the judgment's Act on and Ask
++# lists, and clears the review state so the delegation hook stops blocking the reviewed files.
++# No arguments: it reads .claude/state/review/dir. Exits 1, clearing nothing, when a file is
++# missing or off its shape: a count line above the Would-break items, a heading outside the
++# shape, or a judgment that does not name every report item exactly once.
+ set -euo pipefail
+ root="$(git rev-parse --show-toplevel)"
+ cd "$root"
+ state=.claude/state/review
+ [ -f "$state/dir" ] || { echo "review-comment: no review in progress ($state/dir is missing); run scripts/review-brief.sh first" >&2; exit 1; }
+ dir="$(cat "$state/dir")"
+-count() {
+-  local line
+-  line="$(grep -E '^hard findings: [0-9]+$' "$1" | tail -1)" || { echo "review-comment: $1 has no 'hard findings: N' line; ask the reviewer for it" >&2; return 1; }
+-  echo "${line#hard findings: }"
++fail() { echo "review-comment: $*" >&2; exit 1; }
++
++# The shape is `## ` headings holding numbered items; fenced code (the quoted hunks) is skipped.
++headings() { awk '/^```/ { fence = !fence; next } fence { next } /^## / { print substr($0, 4) }' "$1"; }
++# items <file> [heading]: the numbered items under one heading, or under every heading in document order.
++items() {
++  awk -v want="${2:-}" '
++    /^```/ { fence = !fence; next }
++    fence { next }
++    /^## / { h = substr($0, 4); next }
++    h != "" && /^[0-9]+\. / && (want == "" || h == want)
++  ' "$1"
+ }
+-[ -f "$dir/standards-report.md" ] || { echo "review-comment: $dir/standards-report.md is missing; wait for the Standards reviewer" >&2; exit 1; }
+-standards="$(count "$dir/standards-report.md")"
+-spec=""
++count() { items "$@" | wc -l | tr -d ' '; }
++# shape <file> <heading>...: the file's headings are exactly these, in this order.
++shape() {
++  local f="$1" want got; shift
++  want="$(printf '%s\n' "$@")"
++  got="$(headings "$f")"
++  [ "$got" = "$want" ] || fail "$f has the headings [$(printf '%s' "$got" | paste -sd '|' -)]; the shape is [$(printf '%s' "$want" | paste -sd '|' -)], in that order, each holding numbered items or nothing"
++}
++# report <file> <heading>...: the shape, then the count line, which may not exceed the Would-break items.
++report() {
++  local f="$1" line n wb
++  shape "$@"
++  line="$(grep -E '^hard findings: [0-9]+$' "$f" | tail -1)" || fail "$f has no 'hard findings: N' line; ask the reviewer for it"
++  n="${line#hard findings: }"
++  wb="$(count "$f" "Would break")"
++  [ "$n" -le "$wb" ] || fail "$f says 'hard findings: $n' but has $wb items under '## Would break'; only those count. Ask the reviewer to put each finding under the heading it belongs to and recount"
++}
++
++[ -f "$dir/standards-report.md" ] || fail "$dir/standards-report.md is missing; wait for the Standards reviewer"
++report "$dir/standards-report.md" "Would break" "Standards breaches" "Fix alongside"
++s_total="$(count "$dir/standards-report.md")"
++s_wb="$(count "$dir/standards-report.md" "Would break")"
++spec="" p_total=0 p_wb=0
+ if [ -f "$dir/spec-brief.md" ]; then
+-  [ -f "$dir/spec-report.md" ] || { echo "review-comment: $dir/spec-report.md is missing; wait for the Spec reviewer" >&2; exit 1; }
+-  spec="$(count "$dir/spec-report.md")"
++  [ -f "$dir/spec-report.md" ] || fail "$dir/spec-report.md is missing; wait for the Spec reviewer"
++  report "$dir/spec-report.md" "Would break" "Latent" "Not asked for"
++  p_total="$(count "$dir/spec-report.md")"
++  p_wb="$(count "$dir/spec-report.md" "Would break")"
++  spec="$p_wb would break of $p_total"
++fi
++
++[ -f "$dir/judgment.md" ] || fail "$dir/judgment.md is missing; sort every report item into Act on, Ask, Consider, Noted or Dismissed with a one-line reason (SKILL.md step 5), then rerun"
++shape "$dir/judgment.md" "Act on" "Ask" "Consider" "Noted" "Dismissed"
++j_total="$(count "$dir/judgment.md")"
++[ "$j_total" -eq $((s_total + p_total)) ] || fail "$dir/judgment.md has $j_total items; the reports have $((s_total + p_total)) (Standards $s_total, Spec $p_total). Every report item appears exactly once in the judgment"
++# Each judgment item opens with [S<n>] or [P<n>]; the set of references is exactly the set of report items.
++refs=""
++while IFS= read -r line; do
++  ref="$(printf '%s' "$line" | sed -nE 's/^[0-9]+\. \[([SP][0-9]+)\].*/\1/p')"
++  [ -n "$ref" ] || fail "$dir/judgment.md item '$line' does not open with [S<n>] or [P<n>], the report item it judges"
++  refs="$refs$ref"$'\n'
++done < <(items "$dir/judgment.md")
++want="$(awk -v s="$s_total" -v p="$p_total" 'BEGIN { for (i = 1; i <= s; i++) print "S" i; for (i = 1; i <= p; i++) print "P" i }' | sort)"
++got="$(printf '%s' "$refs" | sort)"
++if [ "$got" != "$want" ]; then
++  missing="$(comm -23 <(printf '%s\n' "$want") <(printf '%s\n' "$got") | sed '/^$/d' | paste -sd ' ' -)"
++  extra="$(comm -13 <(printf '%s\n' "$want") <(printf '%s\n' "$got") | sed '/^$/d' | paste -sd ' ' -)"
++  fail "$dir/judgment.md does not name every report item exactly once: missing [${missing:-none}], unknown or repeated [${extra:-none}]; the reports have $s_total Standards items and $p_total Spec items"
+ fi
++
+ echo "## Standards"
+ echo
+ cat "$dir/standards-report.md"
+@@ -29,6 +82,12 @@ echo "## Spec"
+ echo
+ if [ -n "$spec" ]; then cat "$dir/spec-report.md"; else echo "no spec: Standards axis only"; fi
+ echo
+-echo "Standards: $standards, Spec: ${spec:-no spec}; hard findings, fixed point $(cat "$state/fixed-point")."
+-echo "act-on items: $((standards + ${spec:-0}))"
++echo "## Judgment"
++echo
++cat "$dir/judgment.md"
++echo
++act="$(count "$dir/judgment.md" "Act on")"
++ask="$(count "$dir/judgment.md" "Ask")"
++echo "Standards: $s_wb would break of $s_total; Spec: ${spec:-no spec}; judged: act on $act, ask $ask, consider $(count "$dir/judgment.md" Consider), noted $(count "$dir/judgment.md" Noted), dismissed $(count "$dir/judgment.md" Dismissed); fixed point $(cat "$state/fixed-point")."
++echo "act-on items: $((act + ask))"
+ rm -rf "$state"
+diff --git a/template/docs/agents/models.md b/template/docs/agents/models.md
+index 71939ec..9bfe0b8 100644
+--- a/template/docs/agents/models.md
++++ b/template/docs/agents/models.md
+@@ -12,10 +12,11 @@ pstack's matrix has four families: `claude:fable`, `claude:opus`, `codex:gpt-5.6
+ | interrogate reviewers | `claude:fable@high, claude:opus@xhigh` | the contested path; model diversity is the point; Astra joins here (#29) |
+ | arena cross-judge pool | `claude:opus@xhigh, claude:fable@high` | a judge from a different lane than the base candidate |
+ | how explorer, swarm workers | `claude:opus@medium` | read-only bulk and mechanical fan-out: the junior |
+-| standards reviewer | `claude:opus@medium` | the Standards axis of `spec-review` matches a pasted diff against pasted rule sections, junior work; the Spec axis stays on the writer's lane because judging the work against the ask is the senior's call |
++| standards reviewer | `claude:opus@medium` | the Standards axis of `spec-review` matches a pasted diff against pasted rule sections, junior work |
++| spec reviewer | `claude:opus@high` | the Spec axis of `spec-review` is a finder: its context matters more than its model, a well-built brief carries everything it reads, and the orchestrator judges what it finds (step 5); so it runs cheaper than the writer's lane |
+ | how explainer | `claude:opus@high` | |
+ | why and reflect roles | `inherit-parent` | they need the parent session's MCP surface |
+ 
+-The `opus` preset puts the writers on `claude:opus@high` and the judgment on `claude:opus@xhigh`, for when Fable's quota is spent; it carries the same `standards reviewer` row. That role is the factory's own, not one of pstack's. `/setup-pstack` step 2 treats an unknown role row as inconsistent state, one more reason `/setup-pstack` is not used here (decision P5).
++The `opus` preset puts the writers on `claude:opus@high` and the judgment on `claude:opus@xhigh`, for when Fable's quota is spent; it carries the same `standards reviewer` and `spec reviewer` rows. Those two roles are the factory's own, not pstack's. `/setup-pstack` step 2 treats an unknown role row as inconsistent state, one more reason `/setup-pstack` is not used here (decision P5).
+ 
+ Interactive session: Fable 5.1 whenever tickets or PR bodies are being written, since that prose is the handoff and no delegate writes it; Opus 5 for casual turns and long grilling, switching to Fable for `/to-spec` and `/to-tickets`. Check the usage page weekly; if Fable is over a third of spend, move a role down.
+diff --git a/template/docs/factory918/DECISIONS.md b/template/docs/factory918/DECISIONS.md
+index dbacf66..1addbb1 100644
+--- a/template/docs/factory918/DECISIONS.md
++++ b/template/docs/factory918/DECISIONS.md
+@@ -72,5 +72,7 @@ Travels anywhere without change: the planning skills, the execution playbooks, `
+ | P13 | The two lines for a person | Any agent-written comment or report longer than about forty lines opens with two plain sentences under the label `For a person:`; PR bodies are exempt, their problem-then-fix opening is that summary | The label and the threshold were the PR's choices when #19 landed; a line count is checkable where "a screen" is not. 2026-09-17. |
+ | P14 | Commit and PR titles in this repository | Plain sentences (`Fix the ast-grep layout and pin the rule engine`); the `type(scope):` form stays the rule for projects | Every commit here since day one is a sentence, and the factory's own letter said "conventional plain-language title" without the prefix; the two files now say the same thing. 2026-09-17. |
+ | P15 | Where a ticket starts | The Ticket playbook fetches, refuses a dirty checkout and branches from `origin/main` (or the parent PR's branch when stacking on purpose); `factory918 doctor` fetches `origin/main` on every run and opens with a branch line, so a fresh session sees where it is | A session inherits the branch the last one left, and PR #3 and the closing-PR shortcut both came from building on the wrong base. The fetch is the one network call the doctor did not already make through `gh`; offline it is skipped and the line compares against what is known. 2026-09-17. |
+-| P16 | The Standards axis of `spec-review` is junior work | `standards reviewer: claude:opus@medium` in both presets, a factory-owned role that `/setup-pstack` does not know; the Spec axis stays on the writer's lane | Matching a pasted diff against pasted rules needs less judgment than deciding whether the work matches the ask, and every sub-agent costs its context floor whichever model runs it (ticket #33). 2026-09-17. |
++| P16 | The Standards axis of `spec-review` is junior work | `standards reviewer: claude:opus@medium` in both presets, a factory-owned role that `/setup-pstack` does not know. Amended 2026-09-18 (#76): the Spec axis has its own row too, `spec reviewer: claude:opus@high`; both reviewers are finders, and the orchestrator judges what they find (P19) | Matching a pasted diff against pasted rules needs less judgment than deciding whether the work matches the ask, and every sub-agent costs its context floor whichever model runs it (ticket #33). 2026-09-17. Manuel, 2026-09-18: the reviewer's context matters more than its model. |
++| P18 | What a review counts | A hard finding is wrong behavior in normal use, listed under `## Would break`; standards breaches, latent and visibility items and scope creep sit under their own headings and never count; smells sit under `## Fix alongside` and are fixed only when a would-break fix already touches that code. `review-comment.sh` refuses a report whose count exceeds its Would-break items or whose headings are off the shape | On PR #75 five rounds produced fourteen findings of which four were would-break; the Standards reviewer counted smells as hard in two rounds and the script trusted its line (#76). 2026-09-18. |
++| P19 | The orchestrator judges before the count | After the reports, the orchestrator writes `<dir>/judgment.md` sorting every report item into Act on, Ask, Consider, Noted or Dismissed with a one-line reason and a `[S<n>]`/`[P<n>]` reference; `act-on items` is Act on plus Ask; the script refuses a judgment that misses, repeats or invents a reference. Ask holds the bugbot-triage ask-by-default categories and the agent never dismisses those | pstack has no review-until-zero loop; that gate was the factory's patch. pstack converges by a lead judge with the full context and a visible Dismissed list the human can overrule (`interrogate` step 5). The reference check is what keeps a dismissal visible rather than silent (#76). 2026-09-18. |
+ | P2 | Tool versions in CI | Pin every tool CI runs to an exact version, as a devDependency where the tool publishes one | `dlx` and `npx` resolve the latest version, so a rule engine or formatter can change under a project with no diff to show for it. Spec §0 rule 1 already says to pin what you install; this extends it to what CI fetches. First applied to `@ast-grep/cli` 0.45.3 in M0. |
+diff --git a/template/docs/factory918/MANUAL.md b/template/docs/factory918/MANUAL.md
+index 42c9cd0..37d0345 100644
+--- a/template/docs/factory918/MANUAL.md
++++ b/template/docs/factory918/MANUAL.md
+@@ -118,6 +118,7 @@ You are on the $200 Claude plan; the limit is shared across models and Fable 5.1
+ | Panels: `how` critics, `architect`, `arena` runners | Fable + Opus | Opus high + Opus medium |
+ | `interrogate` reviewers, `arena` cross-judge | Fable + Opus xhigh, Astra when wired | Opus xhigh + Opus high |
+ | Juniors: `how` explorers, swarm workers, `standards reviewer` (the `spec-review` Standards axis) | Opus 5 medium | Opus 5 medium |
++| `spec reviewer` (the `spec-review` Spec axis; the orchestrator judges its findings) | Opus 5 high | Opus 5 high |
+ | `arena` | off by default | off by default |
+ 
+ Rough cost order of the skills, highest first: `arena`, autopilot-stack (one owner per ticket plus a swarm per PR), `swarm`, `interrogate`, `how` in critique mode, `/wayfinder` with parallel research, `/to-tickets` on a large spec (one user reported 1.5M tokens for 14 tickets), then everything else. Check the usage page weekly; if Fable is over a third of spend, move a role down.
+diff --git a/tests/spec-review/review-brief.sh b/tests/spec-review/review-brief.sh
+new file mode 100644
+index 0000000..1ecdcc7
+--- /dev/null
++++ b/tests/spec-review/review-brief.sh
+@@ -0,0 +1,64 @@
++#!/usr/bin/env bash
++# Runs template/.agents/skills/spec-review/scripts/review-brief.sh in a temp repo and asserts that
++# each brief carries the report shape review-comment.sh enforces: the definition sentence, every
++# heading name, the item format and the count rule. A fake gh on PATH supplies the ticket body so
++# the Spec brief is written too. SKILL.md step 4 must carry the definition word for word, so the
++# skill and the script cannot drift apart. Exits 1 on the first miss.
++set -euo pipefail
++here="$(cd "$(dirname "$0")/../.." && pwd -P)"
++skill="$here/template/.agents/skills/spec-review"
++fx="$(mktemp -d)"
++trap 'rm -rf "$fx"' EXIT
++cd "$fx"
++git init -q
++git config user.email test@factory918.invalid
++git config user.name test
++echo one > a.txt
++git add a.txt
++git commit -qm "first"
++echo two > a.txt
++git commit -qam "second, no ticket named"
++mkdir bin
++printf '#!/bin/sh\necho "What to build: the ticket body"\n' > bin/gh
++chmod +x bin/gh
++PATH="$fx/bin:$PATH"
++
++n=0
++# has <file> <text> <label>: the file contains the text as a fixed string.
++has() {
++  if ! grep -qF -- "$2" "$1"; then
++    echo "FAIL $3: $1 lacks: $2"
++    exit 1
++  fi
++  n=$((n + 1))
++}
++
++bash "$skill/scripts/review-brief.sh" HEAD~1 --ticket 7 > out.txt
++[ "$(cat out.txt)" = "ticket: #7
++.scratch/review/HEAD_1/standards-brief.md
++.scratch/review/HEAD_1/spec-brief.md" ] || { echo "FAIL: review-brief.sh printed"; cat out.txt; exit 1; }
++n=$((n + 1))
++std=.scratch/review/HEAD_1/standards-brief.md
++spec=.scratch/review/HEAD_1/spec-brief.md
++
++definition="A hard finding is wrong behavior in normal use: a command, hook, script or documented flow does something other than what the ticket or its own documentation says it does, on the path a user takes."
++count_rule='End the report with exactly one line `hard findings: N`, where N is the number of items under `## Would break` and nothing else.'
++has "$skill/SKILL.md" "$definition" "SKILL.md step 4 carries the definition"
++for f in "$std" "$spec"; do
++  has "$f" "$definition" "$f carries the definition"
++  has "$f" 'Write the report as Markdown with exactly these `## ` headings, in this order, each holding numbered items or nothing:' "$f names the shape"
++  has "$f" '`1. **Title.** body`' "$f carries the item format"
++  has "$f" "number the items continuously across the headings" "$f says how to number"
++  has "$f" "$count_rule" "$f carries the count rule"
++done
++has "$std" '- `## Would break`: a breach of a documented standard that produces wrong behavior in normal use.' "Standards: Would break"
++has "$std" '- `## Standards breaches`: documented-standard breaches that do not change behavior.' "Standards: Standards breaches"
++has "$std" '- `## Fix alongside`: baseline smells and other judgement calls. Name the smell and quote the hunk. They are fixed only when a would-break fix already touches that code; they never count.' "Standards: Fix alongside and the smell rule"
++has "$std" "Write your report to \`$(dirname "$std")/standards-report.md\` and reply with only that path." "Standards: the report path"
++has "$spec" '- `## Would break`: a requirement missing, partial, or implemented so that normal use does something other than the ticket says.' "Spec: Would break"
++has "$spec" '- `## Latent`: edge cases, visibility, policy, wording; anything a user would not hit in normal use.' "Spec: Latent"
++has "$spec" '- `## Not asked for`: behaviour in the diff the ticket did not ask for.' "Spec: Not asked for"
++has "$spec" "What to build: the ticket body" "Spec: the ticket body from gh"
++has "$spec" "Write your report to \`$(dirname "$spec")/spec-report.md\` and reply with only that path." "Spec: the report path"
++
++echo "ok $n assertions"
+diff --git a/tests/spec-review/review-comment.sh b/tests/spec-review/review-comment.sh
+new file mode 100644
+index 0000000..83152fd
+--- /dev/null
++++ b/tests/spec-review/review-comment.sh
+@@ -0,0 +1,229 @@
++#!/usr/bin/env bash
++# Runs template/.agents/skills/spec-review/scripts/review-comment.sh against fixture reports and
++# judgments in a temp repo and asserts the exact stdout of each accepted shape and the exact
++# refusal line of each rejected one. A refusal leaves the review state in place; an accepted
++# run clears it. Exits 1 on the first miss.
++set -euo pipefail
++here="$(cd "$(dirname "$0")/../.." && pwd -P)"
++script="$here/template/.agents/skills/spec-review/scripts/review-comment.sh"
++fx="$(mktemp -d)"
++trap 'rm -rf "$fx"' EXIT
++cd "$fx"
++git init -q
++git config user.email test@factory918.invalid
++git config user.name test
++git commit -q --allow-empty -m fixture
++dir=.scratch/review/x
++state=.claude/state/review
++
++n=0
++code=0
++out=""
++# reset: a fresh review with no reports and no spec brief.
++reset() {
++  rm -rf "$dir" "$state"
++  mkdir -p "$dir" "$state"
++  echo main > "$state/fixed-point"
++  echo a.sh > "$state/files"
++  echo "$dir" > "$state/dir"
++}
++run() {
++  set +e
++  out="$(bash "$script" 2>&1)"
++  code=$?
++  set -e
++}
++# refuse <message> <label>: exit 1, that one line on stderr, the state as it was (kept, or absent).
++refuse() {
++  local had=no
++  [ -f "$state/dir" ] && had=yes
++  run
++  if [ "$code" != 1 ] || [ "$out" != "review-comment: $1" ] || [ "$([ -f "$state/dir" ] && echo yes || echo no)" != "$had" ]; then
++    echo "FAIL $2: exit $code, wanted 1 and the state as it was"
++    echo "  got:    $out"
++    echo "  wanted: review-comment: $1"
++    exit 1
++  fi
++  n=$((n + 1))
++}
++# accept <stdout> <label>: exit 0, exactly that output, the state cleared.
++accept() {
++  run
++  if [ "$code" != 0 ] || [ "$out" != "$1" ] || [ -e "$state" ]; then
++    echo "FAIL $2: exit $code, wanted 0 and the state cleared"
++    echo "  got:"; printf '%s\n' "$out"
++    echo "  wanted:"; printf '%s\n' "$1"
++    exit 1
++  fi
++  n=$((n + 1))
++}
++empty_standards() { printf '## Would break\n\n## Standards breaches\n\n## Fix alongside\n\nhard findings: 0\n'; }
++empty_spec() { printf '## Would break\n\n## Latent\n\n## Not asked for\n\nhard findings: 0\n'; }
++empty_judgment() { printf '## Act on\n\n## Ask\n\n## Consider\n\n## Noted\n\n## Dismissed\n'; }
++
++refuse "no review in progress ($state/dir is missing); run scripts/review-brief.sh first" "no state"
++
++reset
++refuse "$dir/standards-report.md is missing; wait for the Standards reviewer" "no Standards report"
++
++printf '## Would break\n\n## Standards breaches\n\n## Fix alongside\n' > "$dir/standards-report.md"
++refuse "$dir/standards-report.md has no 'hard findings: N' line; ask the reviewer for it" "Standards report without the count line"
++
++printf '## Would break\n\n1. **One.** a\n\n## Standards breaches\n\n## Fix alongside\n\n1. **Smell.** b\n\nhard findings: 2\n' > "$dir/standards-report.md"
++refuse "$dir/standards-report.md says 'hard findings: 2' but has 1 items under '## Would break'; only those count. Ask the reviewer to put each finding under the heading it belongs to and recount" "count line above the Would-break items"
++
++printf '## Would Break\n\n## Standards breaches\n\nhard findings: 0\n' > "$dir/standards-report.md"
++refuse "$dir/standards-report.md has the headings [Would Break|Standards breaches]; the shape is [Would break|Standards breaches|Fix alongside], in that order, each holding numbered items or nothing" "Standards report off its shape"
++
++empty_standards > "$dir/standards-report.md"
++echo brief > "$dir/spec-brief.md"
++refuse "$dir/spec-report.md is missing; wait for the Spec reviewer" "Spec brief without a Spec report"
++
++printf '## Would break\n\n## Not asked for\n\n## Latent\n\nhard findings: 0\n' > "$dir/spec-report.md"
++refuse "$dir/spec-report.md has the headings [Would break|Not asked for|Latent]; the shape is [Would break|Latent|Not asked for], in that order, each holding numbered items or nothing" "Spec report headings out of order"
++
++empty_spec > "$dir/spec-report.md"
++refuse "$dir/judgment.md is missing; sort every report item into Act on, Ask, Consider, Noted or Dismissed with a one-line reason (SKILL.md step 5), then rerun" "no judgment"
++
++printf '## Act on\n\n## Consider\n\n## Noted\n\n## Dismissed\n' > "$dir/judgment.md"
++refuse "$dir/judgment.md has the headings [Act on|Consider|Noted|Dismissed]; the shape is [Act on|Ask|Consider|Noted|Dismissed], in that order, each holding numbered items or nothing" "judgment without Ask"
++
++printf '## Would break\n\n1. **One.** a\n\n## Standards breaches\n\n2. **Two.** b\n\n## Fix alongside\n\nhard findings: 1\n' > "$dir/standards-report.md"
++printf '## Would break\n\n## Latent\n\n1. **Edge.** c\n\n## Not asked for\n\nhard findings: 0\n' > "$dir/spec-report.md"
++printf '## Act on\n\n1. [S1] **One.** yes\n\n## Ask\n\n## Consider\n\n## Noted\n\n## Dismissed\n' > "$dir/judgment.md"
++refuse "$dir/judgment.md has 1 items; the reports have 3 (Standards 2, Spec 1). Every report item appears exactly once in the judgment" "judgment short of the reports"
++
++printf '## Act on\n\n1. [S1] **One.** yes\n\n## Ask\n\n## Consider\n\n## Noted\n\n1. [S4] **Two.** later\n\n## Dismissed\n\n1. [P1] **Edge.** no\n' > "$dir/judgment.md"
++refuse "$dir/judgment.md does not name every report item exactly once: missing [S2], unknown or repeated [S4]; the reports have 2 Standards items and 1 Spec items" "reference to an item that does not exist"
++
++printf '## Act on\n\n1. [S1] **One.** yes\n\n## Ask\n\n## Consider\n\n## Noted\n\n1. [S1] **One again.** twice\n\n## Dismissed\n\n1. [P1] **Edge.** no\n' > "$dir/judgment.md"
++refuse "$dir/judgment.md does not name every report item exactly once: missing [S2], unknown or repeated [S1]; the reports have 2 Standards items and 1 Spec items" "repeated reference"
++
++printf '## Act on\n\n1. [S1] **One.** yes\n\n## Ask\n\n## Consider\n\n## Noted\n\n1. **Two.** no reference\n\n## Dismissed\n\n1. [P1] **Edge.** no\n' > "$dir/judgment.md"
++refuse "$dir/judgment.md item '1. **Two.** no reference' does not open with [S<n>] or [P<n>], the report item it judges" "item without a reference"
++
++rm "$dir/spec-brief.md" "$dir/spec-report.md"
++printf '## Act on\n\n1. [S1] **One.** yes\n\n## Ask\n\n## Consider\n\n## Noted\n\n1. [P1] **Edge.** no\n\n## Dismissed\n' > "$dir/judgment.md"
++refuse "$dir/judgment.md does not name every report item exactly once: missing [S2], unknown or repeated [P1]; the reports have 2 Standards items and 0 Spec items" "Spec reference without a Spec axis"
++
++reset
++empty_standards > "$dir/standards-report.md"
++empty_judgment > "$dir/judgment.md"
++accept "## Standards
++
++## Would break
++
++## Standards breaches
++
++## Fix alongside
++
++hard findings: 0
++
++## Spec
++
++no spec: Standards axis only
++
++## Judgment
++
++## Act on
++
++## Ask
++
++## Consider
++
++## Noted
++
++## Dismissed
++
++Standards: 0 would break of 0; Spec: no spec; judged: act on 0, ask 0, consider 0, noted 0, dismissed 0; fixed point main.
++act-on items: 0" "nothing found, no spec"
++
++reset
++cat > "$dir/standards-report.md" <<'EOF'
++## Would break
++
++1. **Hook exits 0 on a miss.** The guard returns before blocking.
++
++```sh
++## Would break
++1. a numbered line inside a quoted hunk is not an item
++```
++
++## Standards breaches
++
++2. **Bare number.** P3 wants the constant named.
++
++## Fix alongside
++
++3. **Duplicated Code.** The two loops share a shape.
++
++hard findings: 1
++EOF
++echo brief > "$dir/spec-brief.md"
++cat > "$dir/spec-report.md" <<'EOF'
++## Would break
++
++1. **Sweep form ignores --ticket.** "add `--ticket N` when the commits do not name the ticket".
++
++## Latent
++
++2. **Token in the log.** The state file could carry a secret.
++
++## Not asked for
++
++hard findings: 1
++EOF
++cat > "$dir/judgment.md" <<'EOF'
++## Act on
++
++1. [S1] **Hook exits 0 on a miss.** The test proves it.
++2. [P1] **Sweep form ignores --ticket.** The commit list is empty there.
++
++## Ask
++
++1. [P2] **Token in the log.** Data retention is the human's call.
++
++## Consider
++
++## Noted
++
++1. [S3] **Duplicated Code.** Fixed alongside S1 if the loops are touched.
++
++## Dismissed
++
++1. [S2] **Bare number.** The constant is named two lines up.
++EOF
++accept "## Standards
++
++$(cat "$dir/standards-report.md")
++
++## Spec
++
++$(cat "$dir/spec-report.md")
++
++## Judgment
++
++$(cat "$dir/judgment.md")
++
++Standards: 1 would break of 3; Spec: 1 would break of 2; judged: act on 2, ask 1, consider 0, noted 1, dismissed 1; fixed point main.
++act-on items: 3" "two Act on and one Ask"
++
++reset
++printf '## Would break\n\n## Standards breaches\n\n## Fix alongside\n\n1. **Mysterious Name.** x\n2. **Middle Man.** y\n\nhard findings: 0\n' > "$dir/standards-report.md"
++printf '## Act on\n\n## Ask\n\n## Consider\n\n## Noted\n\n## Dismissed\n\n1. [S1] **Mysterious Name.** the name is the domain term\n2. [S2] **Middle Man.** one caller, kept inline\n' > "$dir/judgment.md"
++accept "## Standards
++
++$(cat "$dir/standards-report.md")
++
++## Spec
++
++no spec: Standards axis only
++
++## Judgment
++
++$(cat "$dir/judgment.md")
++
++Standards: 0 would break of 2; Spec: no spec; judged: act on 0, ask 0, consider 0, noted 0, dismissed 2; fixed point main.
++act-on items: 0" "Dismissed only"
++
++echo "ok $n assertions"

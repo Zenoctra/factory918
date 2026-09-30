@@ -1,0 +1,1 @@
+Read `/private/tmp/claude-501/review-work/ed9912ef867a/factory918/.scratch/review/69bd412/spec-brief.md` whole and follow it. You are working in `/private/tmp/claude-501/review-work/ed9912ef867a/factory918`; every relative path in the brief is relative to it.

@@ -1,0 +1,21 @@
+ SOURCES.md                                         |   6 +-
+ docs/agents/ledger.md                              |   2 +
+ docs/knowledge/INDEX.md                            |   2 +-
+ docs/knowledge/core/DECISIONS.md                   |   7 +-
+ docs/knowledge/core/MANUAL.md                      |   2 +-
+ patches/mattpocock/spec-review.SKILL.md.patch      |  17 +-
+ patches/pstack/babysit/SKILL.md.patch              |   3 +-
+ .../pstack/poteto-mode/playbooks/babysit.md.patch  |   6 +-
+ template/.agents/skills/babysit/SKILL.md           |   1 +
+ .../skills/poteto-mode/playbooks/babysit.md        |   2 +
+ .../.agents/skills/poteto-mode/playbooks/ticket.md |  13 +-
+ template/.agents/skills/spec-review/SKILL.md       |  15 +-
+ .../skills/spec-review/scripts/review-brief.sh     |  68 +++++--
+ .../skills/spec-review/scripts/review-comment.sh   | 113 ++++++++---
+ template/docs/agents/review-ladder.md              |   2 +-
+ template/docs/factory918/DECISIONS.md              |   5 +-
+ template/docs/factory918/MANUAL.md                 |   2 +-
+ tests/spec-review/no-stale-wording.sh              |  11 +-
+ tests/spec-review/review-brief.sh                  | 176 ++++++++++++++++-
+ tests/spec-review/review-comment.sh                | 215 ++++++++++++++++++++-
+ 20 files changed, 584 insertions(+), 84 deletions(-)

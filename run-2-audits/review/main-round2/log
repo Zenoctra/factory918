@@ -1,0 +1,7 @@
+a0b809a Make the spec-review tests executable
+3fe24a9 Point the doctor at step 6, list the two spec-review tests, and soften the spec reviewer row
+1ab072c Let review-comment.sh rerun on a finished review, and give Fix-alongside items a bucket
+41104d7 Record what a review counts and that the orchestrator judges before the count
+1a50d76 Add a spec reviewer row so the Spec axis runs cheaper than the writer
+8eb32c3 Give spec-review a Judge step between the reports and the count
+e730367 Count only what would break, and only after the orchestrator has judged it

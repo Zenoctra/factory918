@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "run": {
+    "descriptor": "claude:sonnet",
+    "round": "pr94-r3",
+    "axis": "spec",
+    "k": 1
+  },
+  "route": "native",
+  "status": "complete",
+  "detail": "complete",
+  "reported_model": "claude-sonnet-5",
+  "model_verified": true,
+  "effort": "medium",
+  "tokens": {
+    "input": 10,
+    "cache_read": 304394,
+    "cache_write": 43043,
+    "output": 10200
+  },
+  "wall_ms": 114903,
+  "source": "/Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/subagents/agent-a3468761588a8f05a.jsonl"
+}

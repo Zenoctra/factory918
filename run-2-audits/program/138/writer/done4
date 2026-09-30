@@ -1,0 +1,5 @@
+d03b9d654aeab2843daef73b59723e43b69bb58a
+95497a2 S2: a tool call outside the six checked tools marks the run contaminated
+64cadc4 S3 and P1: truth-notes.md committed; the truth header points at it and says what label, hist and U ids name
+4eb7a33 P2: next pauses a usage-limited model until --resume names it
+d03b9d6 P3: a run contaminated three times is given up

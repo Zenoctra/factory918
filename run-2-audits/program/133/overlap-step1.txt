@@ -1,0 +1,8 @@
+go: autopilot-stack
+#120 feat/speed-lessons: docs/knowledge/core/DECISIONS.md template/.agents/skills/poteto-mode/playbooks/babysit.md
+#121 feat/provisional-ticket-ids: docs/knowledge/core/DECISIONS.md template/.agents/skills/spec-review/scripts/review-brief.sh tests/spec-review/review-brief.sh
+#124 feat/reviewer-model-eval: docs/knowledge/core/DECISIONS.md
+#125 feat/fix-only-from-round-two: docs/knowledge/core/DECISIONS.md patches/mattpocock/spec-review.SKILL.md.patch template/.agents/skills/babysit/SKILL.md template/.agents/skills/poteto-mode/playbooks/babysit.md template/.agents/skills/spec-review/SKILL.md template/.agents/skills/spec-review/scripts/review-brief.sh template/.agents/skills/spec-review/scripts/review-comment.sh tests/spec-review/review-brief.sh tests/spec-review/review-comment.sh
+#126 feat/review-reading-pack: docs/knowledge/core/DECISIONS.md patches/mattpocock/spec-review.SKILL.md.patch template/.agents/skills/spec-review/SKILL.md template/.agents/skills/spec-review/scripts/review-brief.sh tests/spec-review/review-brief.sh
+#129 feat/trail-clock: docs/knowledge/core/DECISIONS.md
+base: origin/feat/trail-clock

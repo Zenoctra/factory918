@@ -1,0 +1,8 @@
+ts	phase	decision	why	evidence	result
+2026-09-23T18:43:48Z	setup	Branch feat/fix-only-no-hard-item from origin/feat/trail-clock (c183a36); intended parent #129	overlap.sh 133 printed base: origin/feat/trail-clock under the autopilot-stack go	.scratch/program/133/overlap-step1.txt	branched
+2026-09-23T18:43:50Z	setup	Selected playbook Feature	The ticket changes when round three is fix-only, so it is changed behavior, not behavior-preserving	ticket.md step 5	Feature steps copied to todo.md
+2026-09-23T18:46:19Z	design	architect skipped: the rule is fixed by the ticket (Manuel's approval) and the design is one predicate, s_wb+s_fo+p_wb+p_fo = 0 at round two; the table is #106's as amended	Ticket names the rule and the deletions; brief says the table is #106's as amended	#133 body Testing decisions	changed cells posted on #133
+2026-09-23T18:46:19Z	design	Delete the RV line too	Only reader is the fix-lines block in review-brief.sh; reading-pack.sh reads neither fix-lines nor RV (grep)	grep over template/.agents/skills/spec-review/scripts	RV deleted
+2026-09-23T18:46:19Z	design	Blast-radius lane skipped	Diff touches no .claude/hooks, settings.json or factory918 skill file, so not cross-cutting per Ticket step 5	file list in #133	skipped
+2026-09-23T18:46:19Z	design	Amended #106 with a dated append; added table B row 16 (no spec, stray spec report) to pin the Spec-only-with-spec clause	Criterion 3; closed-record rule of ticket.md	gh issue edit 106	posted
+2026-09-23T18:47:01Z	implement	Launched one tier-upper writer (requested effort high) in its own worktree on wt/133-writer	Scripts, tests and patches describe one rule; one writer, tests before scripts	writer brief in Agent prompt; result path .scratch/program/133/writer/result.md	running

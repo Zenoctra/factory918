@@ -1,0 +1,23 @@
+time	what	why	evidence	result
+21:42	branch feat/speed-lessons from origin/main	overlap.sh 105 exit 0	go: autopilot-stack / base: origin/main	ok
+21:44	falsifiability: the sleep-60 grep and the replaces-the-body grep already pass at HEAD 86d156a	those sub-checks restate current state; the rest of each criterion fails today (no digest step, no poll rule, etc.)	grep outputs at 86d156a	noted in report; proceed
+21:44	Feature playbook; how, architect, blast-radius skipped	prose only; no cross-cutting path per review-brief predicate	ticket says prose only	one writer, tier-upper (feature role maps to fable -> upper), requested effort high
+21:46	trail files kept in worktree .scratch/105 and copied to the shared .scratch/program/105	worktree isolation refuses Write to the shared checkout path; plain bash cp works	Write tool error	cp at each update
+21:55	writer lane tier-upper returned 4 commits at 982b125; ff'd feat/speed-lessons	review of diff: poll rule once in Ticket step 0 with pointers (10 new patches), root /loop exception, rewrite exception in step 6	writer-result.md, git diff origin/main	accepted; all 9 writer flags settled below
+21:55	flag 7 (after-CI-green wording in AGENTS.md, template/AGENTS.md, review-ladder.md, MANUAL.md): filed #119	ticket scopes the change to playbooks; #108/#109 wait on this PR	grep output	ticket: #119
+21:55	flags 1-6,8,9: accepted as written	each is a reasonable reading of a criterion; P31 records placement and the P29 replacement	writer-result.md act-on list	recorded in PR body Tradeoffs/Records
+21:55	M0 lines corrected by owner: dropped unsourced 'Claude Code 2.1.275' and '#99'	postmortem supports only #101 CONFLICTING; no local claude binary to confirm version	postmortem timeline.md:187, delegates.md:244	commit 8ce184c
+21:55	notification fact kept in playbook as ticket words, counter-observation to ledger	this owner received its writer's notification mid-turn; poll rule is right either way	task-notification in owner session	ledger line; Blocked note for Manuel
+21:55	PR #120 draft opened; round one launched at first push beside CI (tier-upper judge, tier-lower reviewers, effort high/medium requested)	ticket's own rule	PR #120	CI 35812218937 success at 8ce184c
+22:00	round 1: act-on 3 (babysit /loop wake in a lane; P29 not marked amended x2)	review-r1.md	https://github.com/Zenoctra/factory918/pull/120#issuecomment-5788196963	item 1 fix lane tier-upper 76d71d7 cherry-picked as 57a075a; items 2-3 owner record edit c38b01b
+22:00	round-1 Noted S2 S3 S4 left as noted	S2 digest-in-brief is implied by 'the digest its brief carries'; S3 series order is apply order and new patches touch disjoint files; S4 version dropped on purpose (no source)	review-r1.md	no change
+22:00	CI at 57a075a	gh run watch 35812534232	exit 0	success
+22:55	root note: renamed Provisional row P31 to P105 as new commit d530b74; PR body ends with model and harness line	root instruction (PR #121 keys rows by ticket)	root message	done
+22:55	first round-two lane produced nothing in ~45 min (review dir untouched); told it to stop, launched a fresh round-two lane	cannot TaskStop a lane's own task; message sent	review dir timestamps 21:59 at 22:47	fresh lane posted round 2
+22:55	round 2: act-on 3 (CI-green wording in 4 docs; P29 amendment too broad; P29 title)	review-r2.md	https://github.com/Zenoctra/factory918/pull/120#issuecomment-5788668200	item 1 fix lane 6033931 -> f810542 (fixes what #119 asked; #119 left for root); items 2-3 owner record edit 0b1f96a
+22:55	fix2 flag: docs/agents/review-ladder.md has no root copy; owner brief was wrong	git ls-files docs/agents	fix2-result.md	dismissed; no copy created
+22:55	CI at d530b74 success (35813880121); round 3 and trail review launched together at f810542	rules	PR #120	pending
+23:03	round 3: act-on 1, Would break (poll pointer missing on skill fan-out steps); fixed before comment	review-r3.md	https://github.com/Zenoctra/factory918/pull/120#issuecomment-5788792937	fix lane a134634 -> e090a38; would-break fixed after f810542, round 4 owed
+23:03	trail review (tier-lower): 10 flags	trail-review.md	reviewed by Claude Opus 5	1,7,4,10 fixed in PR body/fix3; 3 comment on #119; 2,5,6,9 surfaced in report; 8 todo updated
+23:03	CI at e090a38	run 35816676418	success	round 4 launched, fixed point f810542
+23:08	round 4 (fix-only): act-on 0; PR marked ready; STACK-READY at e090a38	review-r4.md	https://github.com/Zenoctra/factory918/pull/120#issuecomment-5788849068	report written

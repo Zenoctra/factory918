@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "run": {
+    "descriptor": "claude:opus-5",
+    "round": "pr102-r1",
+    "axis": "standards",
+    "k": 4
+  },
+  "route": "native",
+  "status": "contaminated",
+  "detail": "Bash cd /tmp && awk --version 2>/dev/null | head -2; echo \"---\"; echo \"1. [S1] x fixed: abc1234\" | awk '/fixed: [0-9a-f]{7,40; Bash cd \"/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a91d9f1cee64cb2f2\" &; Bash cd \"/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a91d9f1cee64cb2f2\" &",
+  "reported_model": "claude-opus-5",
+  "model_verified": true,
+  "effort": "medium",
+  "tokens": {
+    "input": 54,
+    "cache_read": 3241124,
+    "cache_write": 129961,
+    "output": 21686
+  },
+  "wall_ms": 297100,
+  "source": "/Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/subagents/agent-a05902f9782466391.jsonl"
+}

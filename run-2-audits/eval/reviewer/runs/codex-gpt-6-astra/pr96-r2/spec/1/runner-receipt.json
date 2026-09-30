@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "parent": "claude",
+  "provider": "codex",
+  "model": "gpt-6-astra",
+  "effort": "high",
+  "mode": "isolated-write",
+  "cwd": "/private/tmp/claude-501/review-work/bc23b79919f2/factory918",
+  "promptPath": "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.scratch/eval/reviewer/runs/codex-gpt-6-astra/pr96-r2/spec/1/prompt.txt",
+  "outputPath": "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.scratch/eval/reviewer/runs/codex-gpt-6-astra/pr96-r2/spec/1/runner-output.md",
+  "startedAt": "2026-09-23T07:52:59.161Z",
+  "completedAt": "2026-09-23T07:53:05.984Z",
+  "elapsedMs": 6823,
+  "executable": "/opt/homebrew/bin/codex",
+  "preflight": {
+    "argv": [
+      "/opt/homebrew/bin/codex",
+      "login",
+      "status"
+    ],
+    "status": "passed",
+    "evidence": "authenticated"
+  },
+  "argv": [
+    "/opt/homebrew/bin/codex",
+    "exec",
+    "--model",
+    "gpt-6-astra",
+    "--config",
+    "model_reasoning_effort=\"high\"",
+    "--sandbox",
+    "workspace-write",
+    "--cd",
+    "/private/tmp/claude-501/review-work/bc23b79919f2/factory918",
+    "--skip-git-repo-check",
+    "--ephemeral",
+    "--disable",
+    "plugins",
+    "--disable",
+    "multi_agent",
+    "--disable",
+    "hooks",
+    "--disable",
+    "memories",
+    "--json",
+    "-"
+  ],
+  "exitCode": 1,
+  "signal": null,
+  "status": "child-failed",
+  "reportedModel": null,
+  "modelVerified": false,
+  "modelEvidence": null,
+  "sessionId": null,
+  "usage": null,
+  "costUsd": null,
+  "error": {
+    "message": "child exited with status 1",
+    "evidence": "{\"type\":\"thread.started\",\"thread_id\":\"01a0cd40-ec54-7c62-8c3d-e963d8e1e1dc\"}\n{\"type\":\"turn.started\"}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_0\",\"type\":\"agent_message\",\"text\":\"I’ll read the full review brief, then follow its scope and review instructions.\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_1\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'cat .scratch/review/ab47eb9/spec-brief.md'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_1\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'cat .scratch/review/ab47eb9/spec-brief.md'\",\"aggregated_output\":\"# Spec review brief\\n\\nRead nothing beyond this brief unless a finding needs the code around a hunk, and then read that one function or section, not the file. Run nothing.\\n\\n## Commits\\n\\n01e5386 Refuse a glob that matches nothing even beside globs that match\\n69bd412 Record the ShellCheck pin, the gate decision and a lost lane\\nf156229 Name the shell gate in the playbook, the standards and both AGENTS.md\\n992ce94 Give the doctor a shellcheck line\\n741bc89 Resolve every ShellCheck finding on the factory's shell files\\n1208407 Add the shell gate, its test and the three CI steps that call it\\n\\n## Changed files\\n\\n .github/shellcheck.sh                              |  1 +\\n .github/workflows/factory-ci.yml                   |  9 ++-\\n AGENTS.md                                          |  3 +-\\n CODING_STANDARDS.md                                |  1 +\\n SOURCES.md                                         |  2 +-\\n docs/M0-findings.md                                |  4 ++\\n docs/agents/ledger.md                              |  1 +\\n docs/knowledge/INDEX.md                            |  2 +-\\n docs/knowledge/core/DECISIONS.md                   |  3 +-\\n factory918.sh                                      | 13 ++--\\n .../poteto-mode/playbooks/opening-a-pr.md.patch    |  2 +-\\n .../skills/poteto-mode/playbooks/opening-a-pr.md   |  2 +-\\n .../.agents/skills/poteto-mode/scripts/overlap.sh  |  2 +-\\n .../skills/spec-review/scripts/review-brief.sh     |  1 +\\n .../skills/spec-review/scripts/review-comment.sh   |  1 +\\n template/.claude/hooks/delegation.sh               |  4 ++\\n template/.github/shellcheck.sh                     | 47 ++++++++++++\\n template/.github/workflows/ci.yml                  |  2 +\\n template/AGENTS.md                                 |  1 +\\n template/CODING_STANDARDS.md                       |  2 +-\\n template/docs/factory918/DECISIONS.md              |  1 +\\n tests/poteto-mode/overlap.sh                       |  5 +-\\n tests/shellcheck/gate.sh                           | 84 ++++++++++++++++++++++\\n tests/spec-review/fake-gh.sh                       |  2 +-\\n tests/spec-review/layout.sh                        |  1 +\\n tests/spec-review/review-brief.sh                  |  2 +\\n tests/spec-review/review-comment.sh                |  3 +\\n 27 files changed, 183 insertions(+), 18 deletions(-)\\n\\n## Blast radius\\n\\nThe sessions and skills this change reaches, as the author grounded them before the review. Check the diff against each one; the grounding is the author's claim, not evidence.\\n\\n### What it does\\n\\nAdds one gate script, `template/.github/shellcheck.sh`, that runs ShellCheck 0.11.0 with `--external-sources` over the files its globs name and downloads the pinned build when the machine has none (`:18-33`). The factory reaches it through a root symlink. Three CI steps call it: the factory's 20 files in place of `bash -n` (`.github/workflows/factory-ci.yml:19`), the gate's test (`:21`), the zero-argument form inside the fixture (`:54-56`); a project's `ci.yml` gets it first in `check` (`template/.github/workflows/ci.yml:17-18`). The 57 findings at `ab47eb9` are resolved by five edits and directives. Not obvious from the diff: `delegation.sh` gains four comment lines and nothing else, the doctor gains a NOTE line above `slots filled`, and `cmd_sync`'s `rm -rf` now reads `${skills:?}`.\\n\\n### "
+  }
+}

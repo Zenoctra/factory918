@@ -1,0 +1,17 @@
+ .github/workflows/factory-ci.yml                   |   6 +-
+ SOURCES.md                                         |   2 +-
+ docs/knowledge/INDEX.md                            |   4 +-
+ docs/knowledge/core/DECISIONS.md                   |   6 +-
+ docs/knowledge/core/MANUAL.md                      |   9 +-
+ machine/pstack-models.fable.md                     |   1 +
+ machine/pstack-models.opus.md                      |   1 +
+ patches/mattpocock/spec-review.SKILL.md.patch      |  49 +++--
+ template/.agents/skills/spec-review/SKILL.md       |  36 +++-
+ .../skills/spec-review/scripts/review-brief.sh     |  27 ++-
+ .../skills/spec-review/scripts/review-comment.sh   |  89 ++++++--
+ template/docs/agents/models.md                     |   5 +-
+ template/docs/factory918/DECISIONS.md              |   4 +-
+ template/docs/factory918/MANUAL.md                 |   1 +
+ tests/spec-review/review-brief.sh                  |  64 ++++++
+ tests/spec-review/review-comment.sh                | 229 +++++++++++++++++++++
+ 16 files changed, 475 insertions(+), 58 deletions(-)

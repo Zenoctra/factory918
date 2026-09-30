@@ -1,0 +1,11 @@
+{
+  "run": {
+    "descriptor": "claude:opus-5.5",
+    "round": "pr102-r1",
+    "axis": "spec",
+    "k": 2
+  },
+  "nonce": "848136d11bae",
+  "checkout": "/private/tmp/claude-501/review-work/848136d11bae/factory918",
+  "prompt": "Read `/private/tmp/claude-501/review-work/848136d11bae/factory918/.scratch/review/d8e382ca37233bce98724c785ecdbb677abc4e2a/spec-brief.md` whole and follow it. You are working in `/private/tmp/claude-501/review-work/848136d11bae/factory918`; every relative path in the brief is relative to it."
+}

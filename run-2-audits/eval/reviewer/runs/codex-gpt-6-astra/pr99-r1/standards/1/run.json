@@ -1,0 +1,11 @@
+{
+  "run": {
+    "descriptor": "codex:gpt-6-astra",
+    "round": "pr99-r1",
+    "axis": "standards",
+    "k": 1
+  },
+  "nonce": "40a027516885",
+  "checkout": "/private/tmp/claude-501/review-work/40a027516885/factory918",
+  "prompt": "Read `/private/tmp/claude-501/review-work/40a027516885/factory918/.scratch/review/69bd412/standards-brief.md` whole and follow it. You are working in `/private/tmp/claude-501/review-work/40a027516885/factory918`; every relative path in the brief is relative to it."
+}

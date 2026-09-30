@@ -1,0 +1,4 @@
+5f270e09ea865b47847787520907ec0df66b686f
+5f270e0 each export holds the round's frozen ticket.md (and blast-radius.md on pr96-r1) beside the brief, the masked export too; the prompt adds "The ticket as it stood at this commit is `<dir>/ticket.md`[, and the PR's grounding is `<dir>/blast-radius.md`]."; they join the given set
+verify: refusals.sh 236/236 (new: exact prompt with both files, cmp of exported ticket.md and blast-radius.md against inputs/, cmp on the masked export, a later line the exported ticket holds is not a hit, real-fixture prompts: pr96-r1 names both, pr94-r1 and pr99-r1 ticket.md only, no BANNED word)
+verify: corpus.sh 40/40; check exit 0; rebuild.sh pr94-r1/pr96-r1/pr99-r1 identical; fixes.sh 10 identical; next dry run 6 lines, exports hold ticket.md (and blast-radius.md for pr96-r1); ShellCheck exit 0 over 28 files

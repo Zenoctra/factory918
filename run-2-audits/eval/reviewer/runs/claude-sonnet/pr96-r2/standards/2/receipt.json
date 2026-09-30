@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "run": {
+    "descriptor": "claude:sonnet",
+    "round": "pr96-r2",
+    "axis": "standards",
+    "k": 2
+  },
+  "route": "native",
+  "status": "contaminated",
+  "detail": "Bash cat -n \"/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a91d9f1cee64cb2f; Bash cd \"/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a91d9f1cee64cb2f2\" &; Bash cd \"/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a91d9f1cee64cb2f2\" &; Bash grep -n \"\" /Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857f; Bash cd /tmp && mkdir -p sctest/a && touch sctest/a/x.sh sctest/a/y.sh\ncat > sctest/test.sh <<'EOF'\n#!/usr/bin/env bash\nset -; Bash cd \"/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a91d9f1cee64cb2f2\" &; Bash cd \"/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a91d9f1cee64cb2f2\" &; Bash cd \"/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a91d9f1cee64cb2f2\" &",
+  "reported_model": "claude-sonnet-5",
+  "model_verified": true,
+  "effort": "medium",
+  "tokens": {
+    "input": 26,
+    "cache_read": 1153121,
+    "cache_write": 80210,
+    "output": 21611
+  },
+  "wall_ms": 260896,
+  "source": "/Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/subagents/agent-ab0c708679c72ca57.jsonl"
+}

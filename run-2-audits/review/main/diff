@@ -1,0 +1,1130 @@
+diff --git a/.github/workflows/factory-ci.yml b/.github/workflows/factory-ci.yml
+index a44f65a..417e46e 100644
+--- a/.github/workflows/factory-ci.yml
++++ b/.github/workflows/factory-ci.yml
+@@ -23,6 +23,8 @@ jobs:
+         run: bash tests/spec-review/review-comment.sh
+       - name: review-brief.sh writes the report shape into both briefs
+         run: bash tests/spec-review/review-brief.sh
++      - name: No retired review wording under template/ or the core knowledge
++        run: bash tests/spec-review/no-stale-wording.sh
+       - name: Knowledge base is consistent and built from its sources
+         run: python3 tools/check_knowledge.py && python3 tools/build_knowledge.py && git diff --exit-code
+       - name: Vendored skills equal the pins plus the patches
+@@ -43,7 +45,25 @@ jobs:
+         run: |
+           git config --global user.name ci && git config --global user.email ci@factory918.invalid
+           (cd /tmp && vp create vite:monorepo --directory fx --no-interactive --git --hooks --no-agent)
++          git -C /tmp/fx add -A && git -C /tmp/fx commit -qm "chore: initial commit"
+           ./factory918.sh apply /tmp/fx --scaffold --profile python --name demo | tail -30
++      - name: review-brief.sh briefs the apply diff inside the project
++        working-directory: /tmp/fx
++        run: |
++          git add -A && git commit -qm "factory918 apply"
++          mkdir -p /tmp/fake-gh && cp "$GITHUB_WORKSPACE/tests/spec-review/fake-gh.sh" /tmp/fake-gh/gh && chmod +x /tmp/fake-gh/gh
++          printf -- '- **What it does.** Applies the factory.\n- **Risks.** Every hook under `.claude/hooks/` is new here.\n' > /tmp/blast.md
++          PATH="/tmp/fake-gh:$PATH" .agents/skills/spec-review/scripts/review-brief.sh HEAD~1 --ticket 1 --blast-radius /tmp/blast.md
++          d=.scratch/review/HEAD_1
++          test -s "$d/standards-brief.md" && test -s "$d/spec-brief.md"
++          for f in "$d/standards-brief.md" "$d/spec-brief.md"; do
++            grep -qF 'A hard finding is one of two things: the documented path gives a wrong or silent result, or an input outside it proceeds silently (fails open). An input outside the documented path that is refused with a message saying how to correct it is not a finding; it is the design. Zero items is the expected result for a clean change.' "$f"
++            grep -qF '`## Fails open`' "$f"
++            if grep -qF '## Latent' "$f"; then echo "$f carries ## Latent" && exit 1; fi
++          done
++          grep -qF '`## Walk`' "$d/spec-brief.md"
++          if grep -qF '`## Walk`' "$d/standards-brief.md"; then echo "the Standards brief carries a walk" && exit 1; fi
++          rm -rf .claude/state/review
+       - name: The gates a project runs
+         working-directory: /tmp/fx
+         run: vp check && vp test run && pnpm sg:test && pnpm sg
+diff --git a/docs/knowledge/INDEX.md b/docs/knowledge/INDEX.md
+index 13b294d..51e6c7f 100644
+--- a/docs/knowledge/INDEX.md
++++ b/docs/knowledge/INDEX.md
+@@ -7,7 +7,7 @@ The literal transcript of the conversation that produced this system is not avai
+ |---|---|---|---|
+ | `core/PHILOSOPHY.md` | Factory918: philosophy | 64 | First. Whenever the spec is silent. |
+ | `core/MANUAL.md` | Factory918: the manual | 172 | How to run the loop; what the human does at each point. |
+-| `core/DECISIONS.md` | Factory918: decisions | 90 | Before overriding any vendored skill; these win. |
++| `core/DECISIONS.md` | Factory918: decisions | 91 | Before overriding any vendored skill; these win. |
+ | `core/GLOSSARY.md` | Factory918: glossary | 69 | A term in AGENTS.md, a playbook or a ticket is unclear. |
+ | `core/CONVERSATION-DIGEST.md` | How Factory918 was arrived at | 53 | Why something was chosen, historically; the corrections. |
+ | `spec/FACTORY-SPEC-v2/01-preamble.md` | The Factory spec, v2 — (preamble) | 11 | Building or updating the factory itself. |
+diff --git a/docs/knowledge/core/DECISIONS.md b/docs/knowledge/core/DECISIONS.md
+index ca312f7..a14a2fb 100644
+--- a/docs/knowledge/core/DECISIONS.md
++++ b/docs/knowledge/core/DECISIONS.md
+@@ -1,4 +1,4 @@
+-<!-- lines: 90 | source: core/DECISIONS.md | part 1/1 | title: Factory918: decisions -->
++<!-- lines: 91 | source: core/DECISIONS.md | part 1/1 | title: Factory918: decisions -->
+ 
+ ## Contents (line numbers are for the Read tool's offset)
+ - L13: Settled (2026-09-09)
+@@ -82,9 +82,10 @@ Travels anywhere without change: the planning skills, the execution playbooks, `
+ | P15 | Where a ticket starts | The Ticket playbook fetches, refuses a dirty checkout and branches from `origin/main` (or the parent PR's branch when stacking on purpose); `factory918 doctor` fetches `origin/main` on every run and opens with a branch line, so a fresh session sees where it is | A session inherits the branch the last one left, and PR #3 and the closing-PR shortcut both came from building on the wrong base. The fetch is the one network call the doctor did not already make through `gh`; offline it is skipped and the line compares against what is known. 2026-09-17. |
+ | P16 | The Standards axis of `spec-review` is junior work | `standards reviewer: claude:opus@medium` in both presets, a factory-owned role that `/setup-pstack` does not know. Amended 2026-09-18 (#76): the Spec axis has its own row too, `spec reviewer: claude:opus@high`; both reviewers are finders, and the orchestrator judges what they find (P19) | Matching a pasted diff against pasted rules needs less judgment than deciding whether the work matches the ask, and every sub-agent costs its context floor whichever model runs it (ticket #33). 2026-09-17. Manuel, 2026-09-18: the reviewer's context matters more than its model. |
+ | P17 | (promoted) | Became settled decision 19 on 2026-09-18: the delegation hooks guard the execute phase | The number stays retired so earlier references to P17 keep their meaning. |
+-| P18 | What a review counts | A hard finding is wrong behavior in normal use, listed under `## Would break`; standards breaches, latent and visibility items and scope creep sit under their own headings and never count; smells sit under `## Fix alongside` and are fixed only when a would-break fix already touches that code. `review-comment.sh` refuses a report whose count exceeds its Would-break items or whose headings are off the shape | On PR #75 five rounds produced fourteen findings of which four were would-break; the Standards reviewer counted smells as hard in two rounds and the script trusted its line (#76). 2026-09-18. |
++| P18 | What a review counts | A hard finding is one of two things: the documented path gives a wrong or silent result, or an input outside it proceeds silently (fails open). An input outside the documented path that is refused with a message saying how to correct it is not a finding; it is the design. Zero items is the expected result for a clean change. The first kind is listed under `## Would break` and the second under `## Fails open`, each item with a `Documented step:` line quoting the ticket line or the `file:line` the user follows and a `Result:` line saying what happens instead; standards breaches, scope creep and the Spec report's walk sit under their own headings and never count; smells sit under `## Fix alongside` and are fixed only when a would-break fix already touches that code. `review-comment.sh` refuses a report whose count exceeds its Would-break and Fails-open items, whose headings are off the shape, or whose counted item has no `Documented step:` line. The briefs quote Manuel's five sentences on the happy path after the definition | On PR #75 five rounds produced fourteen findings of which four were would-break; the Standards reviewer counted smells as hard in two rounds and the script trusted its line (#76). 2026-09-18. Amended 2026-09-21 (#81): the earlier definition rested on "normal use" and reviewers read "normal" generously; across #75, #77 and #78 about one finding in six was the intended path giving a wrong or silent result, and most of the rest were inputs outside it that already fail loud. Manuel: "there are an infinite amount of unhappy paths and only 1 happy one". |
+ | P19 | The orchestrator judges before the count | After the reports, the orchestrator writes `<dir>/judgment.md` sorting every report item into Act on, Ask, Consider, Noted or Dismissed with a one-line reason and a `[S<n>]`/`[P<n>]` reference; `act-on items` is Act on plus Ask (amended 2026-09-18, PR B: an Act on item marked `ticket: #N` is filed as its own ticket and not counted); the script refuses a judgment that misses, repeats or invents a reference. Ask holds the bugbot-triage ask-by-default categories and the agent never dismisses those | pstack has no review-until-zero loop; that gate was the factory's patch. pstack converges by a lead judge with the full context and a visible Dismissed list the human can overrule (`interrogate` step 5). The reference check is what keeps a dismissal visible rather than silent (#76). 2026-09-18. |
+ | P20 | Three review rounds at most | `review-brief.sh` counts the PR's earlier review comments and refuses a fourth round before writing any state; the comment prints `round: N of 3`; the third round's Act on items are fixed on the PR by a fix lane, marked `fixed: <sha>`, not counted and not reviewed again; `ticket: #N` is for a finding outside the PR's scope at any round; Ask items wait for the human; `act-on items: 0` with `round: 3 of 3` makes the PR review-ready even when the fix commits follow the reviewed one. The cap is per PR, and a ticket is one PR (Ticket step 4 sends a multi-concern ticket back to be split) | Manuel: after three passes, find the rest the hard way. Amended 2026-09-18 after #77: the cap is on reviews, not fixes; ticketing the last round's findings was ticket churn (#79, closed). 2026-09-18. |
+ | P21 | What carries into the next round | Only a Noted or Dismissed judgment item ending in `cites: user: "..." on #N`, `cites: DECISIONS.md <row>` or `cites: #N comment <date>` is pasted into the next briefs, under a fixed paragraph that says they are settled and nothing about what to find. A ticket's spec is its body plus the comments posted by the ticket's author; nobody else's comments and none of the PR's own | Manuel: no leading the witness, no non-falsifiable expectations ("I typed x=5, check that the script says x=5"); and the comment he had written on #74 settled two choices no reviewer saw (#76). 2026-09-18. |
++| P23 | The Spec report opens with a walk | `## Walk` is the Spec report's first heading: one numbered line per documented step of the path the change touches (the ticket's criteria and the documentation the diff changes), each saying what the code does at that step. Its lines are numbered 1..K on their own, are not findings and are not judged; `review-comment.sh` leaves them out of the item count, the numbering check and the `[P<n>]` set, so the findings start at 1 under `## Would break` | A finding starts from a documented step, so the reviewer walks the path before looking for what breaks on it; counted as items, a walk of nine steps would push every finding's number and break the judgment's references (#81). 2026-09-21. |
+ | P22 | Who signs a comment | A comment the agent posts on a PR or a ticket ends with the model and harness (`Claude Fable 5.1 on Claude Code`), plus `approved by <name>` when the human approved it before posting; only an approved comment posted from the author's account is the author's words. `review-brief.sh` reads only the PR author's account for rounds and carry-forward | Manuel, 2026-09-18: a comment left by the orchestrator without human involvement is signed by the model on the harness; approved, it is signed by both; strangers' comments never reach a brief (#78 round 1). |
+ | P2 | Tool versions in CI | Pin every tool CI runs to an exact version, as a devDependency where the tool publishes one | `dlx` and `npx` resolve the latest version, so a rule engine or formatter can change under a project with no diff to show for it. Spec §0 rule 1 already says to pin what you install; this extends it to what CI fetches. First applied to `@ast-grep/cli` 0.45.3 in M0. |
+diff --git a/patches/mattpocock/spec-review.SKILL.md.patch b/patches/mattpocock/spec-review.SKILL.md.patch
+index 40dd51d..cdd7f77 100644
+--- a/patches/mattpocock/spec-review.SKILL.md.patch
++++ b/patches/mattpocock/spec-review.SKILL.md.patch
+@@ -38,7 +38,7 @@
+  ### 3. Identify the standards sources
+  
+  Anything in the repo that documents how code should be written, such as `CODING_STANDARDS.md` or `CONTRIBUTING.md`.
+-@@ -57,26 +65,76 @@
++@@ -57,26 +65,86 @@
+  
+  ### 4. Spawn both sub-agents in parallel
+  
+@@ -56,33 +56,43 @@
+ +- `## Blast radius`, for a cross-cutting diff (step 1), placed before the diff: the author's grounding verbatim, under exactly this paragraph: "The sessions and skills this change reaches, as the author grounded them before the review. Check the diff against each one; the grounding is the author's claim, not evidence." Absent for any other diff.
+ +- The diff itself, when it's under about 500 lines. Over that, the brief hands the path `<dir>/diff`, so a reviewer reads one file and runs nothing.
+ +- `## Settled in earlier rounds`, from round two on: the Noted and Dismissed items that carry a `cites:` field (step 5) from every earlier round's comment, verbatim, in comment order and each line once, under exactly this paragraph: "These findings were raised in an earlier round and settled by the decision each one cites. Do not raise them again. Nothing in this section says what you should find or confirm." An item without a citation is dropped (the script prints how many it carried and dropped), and when nothing carries the section is absent. The section tells a reviewer what is closed, never what to find: a brief that named an expected result would be leading the witness.
+++- `## Report`, last. The definition, word for word as the script writes it: "A hard finding is one of two things: the documented path gives a wrong or silent result, or an input outside it proceeds silently (fails open). An input outside the documented path that is refused with a message saying how to correct it is not a finding; it is the design. Zero items is the expected result for a clean change." Then the five sentences of Manuel's the definition follows, attributed, as the script writes them:
+++  - Manuel: "there are an infinite amount of unhappy paths and only 1 happy one"
+++  - Manuel: "AT MOST hardening to fail fast and loud if we move outside of that"
+++  - Manuel: "we notice the variable is unexpected and flag that without having to diagnose every reason the variable might be wrong for the user"
+++  - Manuel: "An edge case outside the intended path being unsupported is not a flag."
+++  - Manuel: "Primary focus must be the happy path, then unhappy paths that error in a way the user can correct."
+  
+ -- The diff command and commit list.
+ -- The path or fetched contents of the spec.
+ -- The brief: "Report: (a) requirements the spec asked for that are missing or partial; (b) behaviour in the diff that wasn't asked for (scope creep); (c) requirements that look implemented but where the implementation looks wrong. Quote the spec line for each finding. Under 400 words."
+-+**The Standards brief** adds:
+++  Then the axis's headings and item form (below), then the step rule, word for word: "Every item under `## Would break` or `## Fails open` carries a line `Documented step:` quoting the ticket line or the `file:line` of the documentation the user follows, and a line `Result:` saying what happens instead; an item without its `Documented step:` line is sent back." Then the report path and the count rule, word for word: "End the report with exactly one line `hard findings: N`, where N is the number of items under `## Would break` and `## Fails open` and nothing else."
+  
+ -If the spec is missing, skip the Spec sub-agent and note this in the final report.
+++**The Standards brief** adds:
++ 
++-### 5. Aggregate
+ +- The standards files named by `--standards` (default `CODING_STANDARDS.md`), pasted whole, so pass only the files that apply to the changed files. **Plus the smell baseline from step 3** pasted in full (the sub-agent has no other access to it).
+-+- The report shape. The definition first, word for word as the script writes it: "A hard finding is wrong behavior in normal use: a command, hook, script or documented flow does something other than what the ticket or its own documentation says it does, on the path a user takes." Then exactly these `## ` headings, in this order, each holding numbered items or nothing, word for word as the script writes them:
+-+  - `## Would break`: a breach of a documented standard that produces wrong behavior in normal use. Cite the standard (file + the rule) and quote the hunk.
+++- The report's headings, exactly these `## ` headings, in this order, each holding numbered items or nothing, word for word as the script writes them:
+++  - `## Would break`: a breach of a documented standard that makes the documented path give a wrong or silent result. Cite the standard (file + the rule) and quote the hunk.
+++  - `## Fails open`: a breach of a documented standard that lets an input outside the documented path proceed silently. Cite the standard (file + the rule) and quote the hunk.
+ +  - `## Standards breaches`: documented-standard breaches that do not change behavior. Cite the standard and quote the hunk.
+ +  - `## Fix alongside`: baseline smells and other judgement calls. Name the smell and quote the hunk. They are fixed only when a would-break fix already touches that code; they never count.
+  
+--### 5. Aggregate
+-+  Each item opens with `1. **Title.** body`, with the quoted hunk in a fenced block under it, numbered continuously across the headings. A documented repo standard overrides the baseline; skip anything tooling enforces; read nothing beyond the brief but the code around a hunk; under 400 words. The last line is `hard findings: N`, where N is the number of items under `## Would break` and nothing else.
+- 
+ -Present the two reports under `## Standards` and `## Spec` headings, verbatim or lightly cleaned. Do **not** merge or rerank findings, because the two axes are deliberately separate (see _Why two axes_).
+-+**The Spec brief** adds:
+++  Each item opens with `1. **Title.** body`, with the quoted hunk in a fenced block under it, numbered continuously across the headings. A documented repo standard overrides the baseline; skip anything tooling enforces; read nothing beyond the brief but the code around a hunk; under 400 words.
+  
+ -End with a one-line summary: total findings per axis, and the worst issue _within each axis_ (if any). Don't pick a single winner across axes: that's the reranking the separation exists to prevent.
+++**The Spec brief** adds:
++ 
+ +- The ticket body pasted in (What to build and Acceptance criteria, verbatim), then the ticket author's comments under `## Comments by the ticket's author (#N)`, each under `### <YYYY-MM-DD>` (absent when there are none), and the relevant section of the parent spec when there is one. Not a `gh` command or an issue number: the sub-agent fetches nothing.
+-+- The report shape. The same definition, then exactly these `## ` headings, in this order, each holding numbered items or nothing, word for word as the script writes them:
+-+  - `## Would break`: a requirement missing, partial, or implemented so that normal use does something other than the ticket says.
+-+  - `## Latent`: edge cases, visibility, policy, wording; anything a user would not hit in normal use.
+++- The report's headings, exactly these `## ` headings, in this order, each holding numbered items or nothing, word for word as the script writes them:
+++  - `## Walk`: one numbered line per documented step of the path the change touches (the ticket's criteria and the documentation the diff changes), each saying what the code does at that step. A walk, not findings: its lines are numbered 1..K on their own and count nothing.
+++  - `## Would break`: a requirement missing, partial, or implemented so that the documented path gives a wrong or silent result.
+++  - `## Fails open`: an input outside the documented path that proceeds silently instead of being refused with a message saying how to correct it.
+ +  - `## Not asked for`: behaviour in the diff the ticket did not ask for.
+- 
+-+  Each item opens with `1. **Title.** body` and quotes the spec line it rests on in a fenced block (a criterion can carry `## ` or `1. ` lines, and only fenced text is exempt from the report shape), numbered continuously across the headings; read nothing beyond the brief but the code around a hunk; under 400 words. The last line is `hard findings: N`, the number of items under `## Would break` and nothing else.
+++
+++  Each item opens with `1. **Title.** body` and quotes the spec line it rests on in a fenced block (a criterion can carry `## ` or `1. ` lines, and only fenced text is exempt from the report shape), numbered continuously across the headings from `## Would break` on; the walk's lines are numbered 1..K on their own and are not items; read nothing beyond the brief but the code around a hunk; under 400 words.
+ +
+ +If the spec is missing, the script writes no Spec brief; skip the Spec sub-agent, and step 6 says so in the final report.
+ +
+@@ -94,13 +104,13 @@
+ +
+ +Five `## ` headings, in this order, each holding numbered items or nothing:
+ +
+-+- `## Act on`: wrong behavior in normal use, or a breach worth fixing on this PR. Counted.
+++- `## Act on`: the documented path gives a wrong or silent result, or an input outside it proceeds silently (fails open), or a breach worth fixing on this PR. Counted.
+ +- `## Ask`: a finding in the ask-by-default categories of [`bugbot-triage.md`](../poteto-mode/references/bugbot-triage.md): security, privacy, auth, billing, data, migrations, concurrency, cross-system. You never dismiss one of these; it waits for the human. Counted.
+ +- `## Consider`: a legitimate point you are not sure outweighs the cost of addressing it now.
+ +- `## Noted`: valid but not actionable here.
+ +- `## Dismissed`: wrong, nitpicky or missing context, and why.
+ +
+-+Each item is `1. [S2] **Title.** reason`: `[S2]` is the Standards report's second item and `[P1]` the Spec report's first, counted across every heading of that report in document order; the reason is one line. Number the judgment's items the same way, 1..N continuously across the five headings; step 6 refuses a numbering that restarts under a heading. Every numbered item in both reports appears exactly once in the judgment; step 6 refuses a judgment that misses, repeats or invents a reference.
+++Each item is `1. [S2] **Title.** reason`: `[S2]` is the Standards report's second item and `[P1]` the Spec report's first, counted across every heading of that report in document order, the Spec report's `## Walk` lines being steps and not items; the reason is one line. Number the judgment's items the same way, 1..N continuously across the five headings; step 6 refuses a numbering that restarts under a heading. Every numbered item in both reports appears exactly once in the judgment; step 6 refuses a judgment that misses, repeats or invents a reference.
+ +
+ +A `## Fix alongside` item from the Standards report goes under Act on when an Act on item's fix touches the same code, otherwise under Noted.
+ +
+@@ -116,7 +126,7 @@
+ +
+ +Run `scripts/review-comment.sh`. It prints the two reports under `## Standards` and `## Spec` (or `no spec: Standards axis only`), the judgment under `## Judgment`, all verbatim, a one-line summary, the line `round: N of 3` from `<dir>/round` (1 when the file is missing), and the final line `act-on items: N`, where N is the number of items under `## Act on` without a `fixed:` or `ticket:` field plus the number under `## Ask`; then it clears `.claude/state/review/`. Zero is written as `act-on items: 0`. Babysit reads this line, so it is always present and always last.
+ +
+-+It exits 1, printing why and clearing nothing, when a report is missing or has no `hard findings:` line (wait for the reviewer; do not write the report yourself); when a report's `hard findings: N` is larger than its `## Would break` item count (ask the reviewer to re-sort); when a report's or the judgment's `## ` headings are not the shape above; when a report's or the judgment's items are not numbered 1..N continuously across its headings, in document order; when `judgment.md` is missing; when the judgment's item count differs from the reports'; when a `[S<n>]` or `[P<n>]` reference is missing, repeated or points at no item; or when `<dir>/round` holds no number (rerun `review-brief.sh`). An off-shape report goes back to its reviewer with the refusal text; a new round is not started for it.
+++It exits 1, printing why and clearing nothing, when a report is missing or has no `hard findings:` line (wait for the reviewer; do not write the report yourself); when a report's `hard findings: N` is larger than its `## Would break` and `## Fails open` item count (ask the reviewer to re-sort); when a `## Would break` or `## Fails open` item has no `Documented step:` line (ask the reviewer for the step and the result); when a report's or the judgment's `## ` headings are not the shape above; when a report's or the judgment's items are not numbered 1..N continuously across its headings, in document order; when `judgment.md` is missing; when the judgment's item count differs from the reports'; when a `[S<n>]` or `[P<n>]` reference is missing, repeated or points at no item; or when `<dir>/round` holds no number (rerun `review-brief.sh`). An off-shape report goes back to its reviewer with the refusal text; a new round is not started for it.
+ +
+ +With the review dir as its argument, `scripts/review-comment.sh .scratch/review/<id>`, it reruns on the same reports after the state is gone: an Ask item the human answered, or a report sent back and rewritten. Same round; the `round:` line comes from the dir.
+ +
+diff --git a/template/.agents/skills/spec-review/SKILL.md b/template/.agents/skills/spec-review/SKILL.md
+index b40ace7..083e234 100644
+--- a/template/.agents/skills/spec-review/SKILL.md
++++ b/template/.agents/skills/spec-review/SKILL.md
+@@ -74,26 +74,36 @@ The briefs are the two files step 1 wrote, `<dir>/standards-brief.md` and `<dir>
+ - `## Blast radius`, for a cross-cutting diff (step 1), placed before the diff: the author's grounding verbatim, under exactly this paragraph: "The sessions and skills this change reaches, as the author grounded them before the review. Check the diff against each one; the grounding is the author's claim, not evidence." Absent for any other diff.
+ - The diff itself, when it's under about 500 lines. Over that, the brief hands the path `<dir>/diff`, so a reviewer reads one file and runs nothing.
+ - `## Settled in earlier rounds`, from round two on: the Noted and Dismissed items that carry a `cites:` field (step 5) from every earlier round's comment, verbatim, in comment order and each line once, under exactly this paragraph: "These findings were raised in an earlier round and settled by the decision each one cites. Do not raise them again. Nothing in this section says what you should find or confirm." An item without a citation is dropped (the script prints how many it carried and dropped), and when nothing carries the section is absent. The section tells a reviewer what is closed, never what to find: a brief that named an expected result would be leading the witness.
++- `## Report`, last. The definition, word for word as the script writes it: "A hard finding is one of two things: the documented path gives a wrong or silent result, or an input outside it proceeds silently (fails open). An input outside the documented path that is refused with a message saying how to correct it is not a finding; it is the design. Zero items is the expected result for a clean change." Then the five sentences of Manuel's the definition follows, attributed, as the script writes them:
++  - Manuel: "there are an infinite amount of unhappy paths and only 1 happy one"
++  - Manuel: "AT MOST hardening to fail fast and loud if we move outside of that"
++  - Manuel: "we notice the variable is unexpected and flag that without having to diagnose every reason the variable might be wrong for the user"
++  - Manuel: "An edge case outside the intended path being unsupported is not a flag."
++  - Manuel: "Primary focus must be the happy path, then unhappy paths that error in a way the user can correct."
++
++  Then the axis's headings and item form (below), then the step rule, word for word: "Every item under `## Would break` or `## Fails open` carries a line `Documented step:` quoting the ticket line or the `file:line` of the documentation the user follows, and a line `Result:` saying what happens instead; an item without its `Documented step:` line is sent back." Then the report path and the count rule, word for word: "End the report with exactly one line `hard findings: N`, where N is the number of items under `## Would break` and `## Fails open` and nothing else."
+ 
+ **The Standards brief** adds:
+ 
+ - The standards files named by `--standards` (default `CODING_STANDARDS.md`), pasted whole, so pass only the files that apply to the changed files. **Plus the smell baseline from step 3** pasted in full (the sub-agent has no other access to it).
+-- The report shape. The definition first, word for word as the script writes it: "A hard finding is wrong behavior in normal use: a command, hook, script or documented flow does something other than what the ticket or its own documentation says it does, on the path a user takes." Then exactly these `## ` headings, in this order, each holding numbered items or nothing, word for word as the script writes them:
+-  - `## Would break`: a breach of a documented standard that produces wrong behavior in normal use. Cite the standard (file + the rule) and quote the hunk.
++- The report's headings, exactly these `## ` headings, in this order, each holding numbered items or nothing, word for word as the script writes them:
++  - `## Would break`: a breach of a documented standard that makes the documented path give a wrong or silent result. Cite the standard (file + the rule) and quote the hunk.
++  - `## Fails open`: a breach of a documented standard that lets an input outside the documented path proceed silently. Cite the standard (file + the rule) and quote the hunk.
+   - `## Standards breaches`: documented-standard breaches that do not change behavior. Cite the standard and quote the hunk.
+   - `## Fix alongside`: baseline smells and other judgement calls. Name the smell and quote the hunk. They are fixed only when a would-break fix already touches that code; they never count.
+ 
+-  Each item opens with `1. **Title.** body`, with the quoted hunk in a fenced block under it, numbered continuously across the headings. A documented repo standard overrides the baseline; skip anything tooling enforces; read nothing beyond the brief but the code around a hunk; under 400 words. The last line is `hard findings: N`, where N is the number of items under `## Would break` and nothing else.
++  Each item opens with `1. **Title.** body`, with the quoted hunk in a fenced block under it, numbered continuously across the headings. A documented repo standard overrides the baseline; skip anything tooling enforces; read nothing beyond the brief but the code around a hunk; under 400 words.
+ 
+ **The Spec brief** adds:
+ 
+ - The ticket body pasted in (What to build and Acceptance criteria, verbatim), then the ticket author's comments under `## Comments by the ticket's author (#N)`, each under `### <YYYY-MM-DD>` (absent when there are none), and the relevant section of the parent spec when there is one. Not a `gh` command or an issue number: the sub-agent fetches nothing.
+-- The report shape. The same definition, then exactly these `## ` headings, in this order, each holding numbered items or nothing, word for word as the script writes them:
+-  - `## Would break`: a requirement missing, partial, or implemented so that normal use does something other than the ticket says.
+-  - `## Latent`: edge cases, visibility, policy, wording; anything a user would not hit in normal use.
++- The report's headings, exactly these `## ` headings, in this order, each holding numbered items or nothing, word for word as the script writes them:
++  - `## Walk`: one numbered line per documented step of the path the change touches (the ticket's criteria and the documentation the diff changes), each saying what the code does at that step. A walk, not findings: its lines are numbered 1..K on their own and count nothing.
++  - `## Would break`: a requirement missing, partial, or implemented so that the documented path gives a wrong or silent result.
++  - `## Fails open`: an input outside the documented path that proceeds silently instead of being refused with a message saying how to correct it.
+   - `## Not asked for`: behaviour in the diff the ticket did not ask for.
+ 
+-  Each item opens with `1. **Title.** body` and quotes the spec line it rests on in a fenced block (a criterion can carry `## ` or `1. ` lines, and only fenced text is exempt from the report shape), numbered continuously across the headings; read nothing beyond the brief but the code around a hunk; under 400 words. The last line is `hard findings: N`, the number of items under `## Would break` and nothing else.
++  Each item opens with `1. **Title.** body` and quotes the spec line it rests on in a fenced block (a criterion can carry `## ` or `1. ` lines, and only fenced text is exempt from the report shape), numbered continuously across the headings from `## Would break` on; the walk's lines are numbered 1..K on their own and are not items; read nothing beyond the brief but the code around a hunk; under 400 words.
+ 
+ If the spec is missing, the script writes no Spec brief; skip the Spec sub-agent, and step 6 says so in the final report.
+ 
+@@ -105,13 +115,13 @@ Read the two reports and the ticket, never the code under review (the delegation
+ 
+ Five `## ` headings, in this order, each holding numbered items or nothing:
+ 
+-- `## Act on`: wrong behavior in normal use, or a breach worth fixing on this PR. Counted.
++- `## Act on`: the documented path gives a wrong or silent result, or an input outside it proceeds silently (fails open), or a breach worth fixing on this PR. Counted.
+ - `## Ask`: a finding in the ask-by-default categories of [`bugbot-triage.md`](../poteto-mode/references/bugbot-triage.md): security, privacy, auth, billing, data, migrations, concurrency, cross-system. You never dismiss one of these; it waits for the human. Counted.
+ - `## Consider`: a legitimate point you are not sure outweighs the cost of addressing it now.
+ - `## Noted`: valid but not actionable here.
+ - `## Dismissed`: wrong, nitpicky or missing context, and why.
+ 
+-Each item is `1. [S2] **Title.** reason`: `[S2]` is the Standards report's second item and `[P1]` the Spec report's first, counted across every heading of that report in document order; the reason is one line. Number the judgment's items the same way, 1..N continuously across the five headings; step 6 refuses a numbering that restarts under a heading. Every numbered item in both reports appears exactly once in the judgment; step 6 refuses a judgment that misses, repeats or invents a reference.
++Each item is `1. [S2] **Title.** reason`: `[S2]` is the Standards report's second item and `[P1]` the Spec report's first, counted across every heading of that report in document order, the Spec report's `## Walk` lines being steps and not items; the reason is one line. Number the judgment's items the same way, 1..N continuously across the five headings; step 6 refuses a numbering that restarts under a heading. Every numbered item in both reports appears exactly once in the judgment; step 6 refuses a judgment that misses, repeats or invents a reference.
+ 
+ A `## Fix alongside` item from the Standards report goes under Act on when an Act on item's fix touches the same code, otherwise under Noted.
+ 
+@@ -127,7 +137,7 @@ Three trailing fields, each with one grammar:
+ 
+ Run `scripts/review-comment.sh`. It prints the two reports under `## Standards` and `## Spec` (or `no spec: Standards axis only`), the judgment under `## Judgment`, all verbatim, a one-line summary, the line `round: N of 3` from `<dir>/round` (1 when the file is missing), and the final line `act-on items: N`, where N is the number of items under `## Act on` without a `fixed:` or `ticket:` field plus the number under `## Ask`; then it clears `.claude/state/review/`. Zero is written as `act-on items: 0`. Babysit reads this line, so it is always present and always last.
+ 
+-It exits 1, printing why and clearing nothing, when a report is missing or has no `hard findings:` line (wait for the reviewer; do not write the report yourself); when a report's `hard findings: N` is larger than its `## Would break` item count (ask the reviewer to re-sort); when a report's or the judgment's `## ` headings are not the shape above; when a report's or the judgment's items are not numbered 1..N continuously across its headings, in document order; when `judgment.md` is missing; when the judgment's item count differs from the reports'; when a `[S<n>]` or `[P<n>]` reference is missing, repeated or points at no item; or when `<dir>/round` holds no number (rerun `review-brief.sh`). An off-shape report goes back to its reviewer with the refusal text; a new round is not started for it.
++It exits 1, printing why and clearing nothing, when a report is missing or has no `hard findings:` line (wait for the reviewer; do not write the report yourself); when a report's `hard findings: N` is larger than its `## Would break` and `## Fails open` item count (ask the reviewer to re-sort); when a `## Would break` or `## Fails open` item has no `Documented step:` line (ask the reviewer for the step and the result); when a report's or the judgment's `## ` headings are not the shape above; when a report's or the judgment's items are not numbered 1..N continuously across its headings, in document order; when `judgment.md` is missing; when the judgment's item count differs from the reports'; when a `[S<n>]` or `[P<n>]` reference is missing, repeated or points at no item; or when `<dir>/round` holds no number (rerun `review-brief.sh`). An off-shape report goes back to its reviewer with the refusal text; a new round is not started for it.
+ 
+ With the review dir as its argument, `scripts/review-comment.sh .scratch/review/<id>`, it reruns on the same reports after the state is gone: an Ask item the human answered, or a report sent back and rewritten. Same round; the `round:` line comes from the dir.
+ 
+diff --git a/template/.agents/skills/spec-review/scripts/review-brief.sh b/template/.agents/skills/spec-review/scripts/review-brief.sh
+index 15d7b4b..7c92f42 100755
+--- a/template/.agents/skills/spec-review/scripts/review-brief.sh
++++ b/template/.agents/skills/spec-review/scripts/review-brief.sh
+@@ -226,11 +226,20 @@ if [ -n "$ticket" ]; then
+   [ -z "$spec" ] || comments="$(gh issue view "$ticket" --json author,comments -q "$by_author" 2>/dev/null || true)"
+ fi
+ if [ ${#standards[@]} -eq 0 ] && [ -f CODING_STANDARDS.md ]; then standards=(CODING_STANDARDS.md); fi
+-# The definition both reports rest on; SKILL.md step 4 carries it word for word (tests/spec-review/review-brief.sh holds them together).
+-definition="A hard finding is wrong behavior in normal use: a command, hook, script or documented flow does something other than what the ticket or its own documentation says it does, on the path a user takes."
++# The definition both reports rest on, Manuel's words it follows, the step rule and the count rule;
++# SKILL.md step 4 carries each word for word (tests/spec-review/review-brief.sh holds them together).
++definition="A hard finding is one of two things: the documented path gives a wrong or silent result, or an input outside it proceeds silently (fails open). An input outside the documented path that is refused with a message saying how to correct it is not a finding; it is the design. Zero items is the expected result for a clean change."
++quotes=(
++  '- Manuel: "there are an infinite amount of unhappy paths and only 1 happy one"'
++  '- Manuel: "AT MOST hardening to fail fast and loud if we move outside of that"'
++  '- Manuel: "we notice the variable is unexpected and flag that without having to diagnose every reason the variable might be wrong for the user"'
++  '- Manuel: "An edge case outside the intended path being unsupported is not a flag."'
++  '- Manuel: "Primary focus must be the happy path, then unhappy paths that error in a way the user can correct."'
++)
++step_rule='Every item under `## Would break` or `## Fails open` carries a line `Documented step:` quoting the ticket line or the `file:line` of the documentation the user follows, and a line `Result:` saying what happens instead; an item without its `Documented step:` line is sent back.'
+ # The blast-radius paragraph; SKILL.md step 4 carries it word for word (the same test holds them together).
+ blast_rule="The sessions and skills this change reaches, as the author grounded them before the review. Check the diff against each one; the grounding is the author's claim, not evidence."
+-count_rule='End the report with exactly one line `hard findings: N`, where N is the number of items under `## Would break` and nothing else.'
++count_rule='End the report with exactly one line `hard findings: N`, where N is the number of items under `## Would break` and `## Fails open` and nothing else.'
+ common() {
+   echo "Read nothing beyond this brief unless a finding needs the code around a hunk, and then read that one function or section, not the file. Run nothing."
+   echo
+@@ -269,6 +278,17 @@ common() {
+     echo
+   fi
+ }
++# The opening of each brief's Report section: the definition, Manuel's words, the shape sentence.
++report_rules() {
++  echo "## Report"
++  echo
++  echo "$definition"
++  echo
++  printf '%s\n' "${quotes[@]}"
++  echo
++  echo "Write the report as Markdown with exactly these \`## \` headings, in this order, each holding numbered items or nothing:"
++  echo
++}
+ {
+   echo "# Standards review brief"
+   echo
+@@ -292,18 +312,16 @@ common() {
+   echo
+   printf '%s\n' "$smells"
+   echo
+-  echo "## Report"
+-  echo
+-  echo "$definition"
+-  echo
+-  echo "Write the report as Markdown with exactly these \`## \` headings, in this order, each holding numbered items or nothing:"
+-  echo
+-  echo '- `## Would break`: a breach of a documented standard that produces wrong behavior in normal use. Cite the standard (file + the rule) and quote the hunk.'
++  report_rules
++  echo '- `## Would break`: a breach of a documented standard that makes the documented path give a wrong or silent result. Cite the standard (file + the rule) and quote the hunk.'
++  echo '- `## Fails open`: a breach of a documented standard that lets an input outside the documented path proceed silently. Cite the standard (file + the rule) and quote the hunk.'
+   echo '- `## Standards breaches`: documented-standard breaches that do not change behavior. Cite the standard and quote the hunk.'
+   echo '- `## Fix alongside`: baseline smells and other judgement calls. Name the smell and quote the hunk. They are fixed only when a would-break fix already touches that code; they never count.'
+   echo
+   echo 'Each item opens with a line of the form `1. **Title.** body`, with the quoted hunk in a fenced block under it; number the items continuously across the headings, so the judgment can name your third item as [S3]. A documented repo standard overrides the baseline. Skip anything tooling enforces. Read nothing beyond this brief unless a finding needs the code around a hunk, and then read that one function or section, not the file. Under 400 words.'
+   echo
++  echo "$step_rule"
++  echo
+   echo "Write your report to \`$dir/standards-report.md\` and reply with only that path."
+   echo "$count_rule"
+ } > "$dir/standards-brief.md"
+@@ -322,17 +340,15 @@ if [ -n "$spec" ]; then
+       printf '%s\n' "$comments"
+       echo
+     fi
+-    echo "## Report"
+-    echo
+-    echo "$definition"
+-    echo
+-    echo "Write the report as Markdown with exactly these \`## \` headings, in this order, each holding numbered items or nothing:"
+-    echo
+-    echo '- `## Would break`: a requirement missing, partial, or implemented so that normal use does something other than the ticket says.'
+-    echo '- `## Latent`: edge cases, visibility, policy, wording; anything a user would not hit in normal use.'
++    report_rules
++    echo '- `## Walk`: one numbered line per documented step of the path the change touches (the ticket'"'"'s criteria and the documentation the diff changes), each saying what the code does at that step. A walk, not findings: its lines are numbered 1..K on their own and count nothing.'
++    echo '- `## Would break`: a requirement missing, partial, or implemented so that the documented path gives a wrong or silent result.'
++    echo '- `## Fails open`: an input outside the documented path that proceeds silently instead of being refused with a message saying how to correct it.'
+     echo '- `## Not asked for`: behaviour in the diff the ticket did not ask for.'
+     echo
+-    echo 'Each item opens with a line of the form `1. **Title.** body` and quotes the spec line it rests on in a fenced block (a criterion can carry `## ` or `1. ` lines, and only fenced text is exempt from the report shape); number the items continuously across the headings, so the judgment can name your third item as [P3]. Read nothing beyond this brief unless a finding needs the code around a hunk, and then read that one function or section, not the file. Under 400 words.'
++    echo 'Each item opens with a line of the form `1. **Title.** body` and quotes the spec line it rests on in a fenced block (a criterion can carry `## ` or `1. ` lines, and only fenced text is exempt from the report shape); number the items continuously across the headings from `## Would break` on, so the judgment can name your third item as [P3]. Read nothing beyond this brief unless a finding needs the code around a hunk, and then read that one function or section, not the file. Under 400 words.'
++    echo
++    echo "$step_rule"
+     echo
+     echo "Write your report to \`$dir/spec-report.md\` and reply with only that path."
+     echo "$count_rule"
+diff --git a/template/.agents/skills/spec-review/scripts/review-comment.sh b/template/.agents/skills/spec-review/scripts/review-comment.sh
+index 57f7419..a6414da 100755
+--- a/template/.agents/skills/spec-review/scripts/review-comment.sh
++++ b/template/.agents/skills/spec-review/scripts/review-comment.sh
+@@ -8,9 +8,11 @@
+ # answers an Ask item, or a report sent back for its shape, reruns on the same reports once the
+ # state is gone, in the same round; the state is cleared only when it exists and names this dir,
+ # however the dir is spelled. Exits 1, clearing nothing, when a file is missing or off its shape:
+-# a count line above the Would-break items, a heading outside the shape, report or judgment items
+-# not numbered 1..N in document order, a round file that holds no number, or a judgment that does
+-# not name every report item exactly once.
++# a count line above the Would-break and Fails-open items, a Would-break or Fails-open item with no
++# `Documented step:` line, a heading outside the shape, report or judgment items not numbered 1..N
++# in document order, a round file that holds no number, or a judgment that does not name every
++# report item exactly once. The Spec report's `## Walk` lines are steps, not items: they are not
++# counted, not numbered with the findings and not judged.
+ set -euo pipefail
+ root="$(git rev-parse --show-toplevel)"
+ cd "$root"
+@@ -43,9 +45,20 @@ fenced='
+   /^## / { h = substr($0, 4); sub(/[ \t\r]+$/, "", h) }
+ '
+ headings() { awk "$fenced"'/^## / { print h }' "$1"; }
+-# items <file> [heading]: the numbered items under one heading, or under every heading in document order.
+-items() { awk -v want="${2:-}" "$fenced"'/^## / { next } h != "" && /^[0-9]+\. / && (want == "" || h == want)' "$1"; }
++# items <file> [heading]: the numbered items under one heading, or under every heading but Walk in document order.
++items() { awk -v want="${2:-}" "$fenced"'/^## / { next } h != "" && h != "Walk" && /^[0-9]+\. / && (want == "" || h == want)' "$1"; }
+ count() { items "$@" | wc -l | tr -d ' '; }
++# stepless <file>: the heading and opening line of the first Would-break or Fails-open item with no
++# `Documented step:` line before the next item or heading; fenced text does not count.
++stepless() {
++  awk "$fenced"'
++    function flush() { if (item != "" && !ok) { print at ": " item; item = ""; exit } item = ""; ok = 0 }
++    /^## / { flush(); next }
++    /^[0-9]+\. / { flush(); if (h == "Would break" || h == "Fails open") { at = h; item = $0 } next }
++    /^Documented step:/ { ok = 1 }
++    END { flush() }
++  ' "$1"
++}
+ # numbered <file>: the written item numbers run 1..N in document order across the headings, so a
+ # [S<n>] reference names the item its reviewer wrote as n.
+ numbered() {
+@@ -62,27 +75,33 @@ shape() {
+   got="$(headings "$f")"
+   [ "$got" = "$want" ] || fail "$f has the headings [$(printf '%s' "$got" | paste -sd '|' -)]; the shape is [$(printf '%s' "$want" | paste -sd '|' -)], in that order, each holding numbered items or nothing"
+ }
+-# report <file> <heading>...: the shape, the numbering, then the count line, which may not exceed the Would-break items.
++# report <file> <heading>...: the shape, the numbering, the count line, which may not exceed the
++# Would-break and Fails-open items, then the step line every one of those items carries.
+ report() {
+-  local f="$1" line n wb
++  local f="$1" line n wb fo
+   shape "$@"
+   numbered "$f"
+   line="$(grep -E '^hard findings: [0-9]+$' "$f" | tail -1)" || fail "$f has no 'hard findings: N' line; ask the reviewer for it"
+   n="${line#hard findings: }"
+   wb="$(count "$f" "Would break")"
+-  [ "$n" -le "$wb" ] || fail "$f says 'hard findings: $n' but has $wb items under '## Would break'; only those count. Ask the reviewer to put each finding under the heading it belongs to and recount"
++  fo="$(count "$f" "Fails open")"
++  [ "$n" -le $((wb + fo)) ] || fail "$f says 'hard findings: $n' but has $wb items under '## Would break' and $fo under '## Fails open'; only those count. Ask the reviewer to put each finding under the heading it belongs to and recount"
++  line="$(stepless "$f")"
++  [ -z "$line" ] || fail "$f item '$(printf '%s' "${line#*: }" | sed -E 's/^([0-9]+\. \*\*[^*]+\*\*).*/\1/')' under '## ${line%%: *}' has no 'Documented step:' line; a counted item quotes the ticket line or the file:line of the documentation the user follows, then 'Result:' what happens instead. Ask the reviewer for both"
+ }
+ 
+ [ -f "$dir/standards-report.md" ] || fail "$dir/standards-report.md is missing; wait for the Standards reviewer"
+-report "$dir/standards-report.md" "Would break" "Standards breaches" "Fix alongside"
++report "$dir/standards-report.md" "Would break" "Fails open" "Standards breaches" "Fix alongside"
+ s_total="$(count "$dir/standards-report.md")"
+ s_wb="$(count "$dir/standards-report.md" "Would break")"
+-has_spec="" p_total=0 p_wb=0
++s_fo="$(count "$dir/standards-report.md" "Fails open")"
++has_spec="" p_total=0 p_wb=0 p_fo=0
+ if [ -f "$dir/spec-brief.md" ]; then
+   [ -f "$dir/spec-report.md" ] || fail "$dir/spec-report.md is missing; wait for the Spec reviewer"
+-  report "$dir/spec-report.md" "Would break" "Latent" "Not asked for"
++  report "$dir/spec-report.md" "Walk" "Would break" "Fails open" "Not asked for"
+   p_total="$(count "$dir/spec-report.md")"
+   p_wb="$(count "$dir/spec-report.md" "Would break")"
++  p_fo="$(count "$dir/spec-report.md" "Fails open")"
+   has_spec=yes
+ fi
+ 
+@@ -129,11 +148,11 @@ act="$(count "$dir/judgment.md" "Act on")"
+ fixed_here="$(items "$dir/judgment.md" "Act on" | grep -cE 'fixed: [0-9a-f]{7,40}$' || true)"
+ ticketed="$(items "$dir/judgment.md" "Act on" | grep -cE 'ticket: #[0-9]+$' || true)"
+ ask="$(count "$dir/judgment.md" "Ask")"
+-if [ -n "$has_spec" ]; then spec="$p_wb would break of $p_total"; else spec="no spec"; fi
++if [ -n "$has_spec" ]; then spec="$p_wb would break, $p_fo fail open, of $p_total"; else spec="no spec"; fi
+ if [ -f "$dir/fixed-point" ]; then fixed="fixed point $(cat "$dir/fixed-point")"
+ elif [ -f "$state/fixed-point" ]; then fixed="fixed point $(cat "$state/fixed-point")"
+ else fixed="fixed point unknown"; fi
+-echo "Standards: $s_wb would break of $s_total; Spec: $spec; judged: act on $act ($fixed_here fixed, $ticketed with a ticket), ask $ask, consider $(count "$dir/judgment.md" Consider), noted $(count "$dir/judgment.md" Noted), dismissed $(count "$dir/judgment.md" Dismissed); $fixed."
++echo "Standards: $s_wb would break, $s_fo fail open, of $s_total; Spec: $spec; judged: act on $act ($fixed_here fixed, $ticketed with a ticket), ask $ask, consider $(count "$dir/judgment.md" Consider), noted $(count "$dir/judgment.md" Noted), dismissed $(count "$dir/judgment.md" Dismissed); $fixed."
+ echo "round: $round of 3"
+ echo "act-on items: $((act - fixed_here - ticketed + ask))"
+ if [ -f "$state/dir" ] && [ "$(cat "$state/dir")" = "$dir" ]; then rm -rf "$state"; fi
+diff --git a/template/docs/agents/review-ladder.md b/template/docs/agents/review-ladder.md
+index 56c023c..16eea2a 100644
+--- a/template/docs/agents/review-ladder.md
++++ b/template/docs/agents/review-ladder.md
+@@ -3,7 +3,7 @@
+ Each rung runs only if its precondition exists. Missing rungs are skipped, never failed.
+ 
+ - **Rung 0 — CI.** `vp check` (format, lint, types), `pnpm sg` (ast-grep rules), `vp run -r build`, `vp test run`. Required to merge: the human checks the PR page for green checks before merging (decision P3 leaves branch protection off).
+-- **Rung 1 — spec-review.** After CI is green, the agent runs `spec-review` in a fresh context: the Standards axis reads `CODING_STANDARDS.md`; the Spec axis reads the originating ticket and its parent spec. A cross-cutting diff's review brief also carries its blast radius, the PR body's `## Blast Radius` section, and the review does not start without one. Act-on items get fixed; the rest are recorded in the PR body. The report is posted as a comment on the PR, names the commit it reviewed, and ends with the lines `round: N of 3` and `act-on items: N`. One PR gets at most three rounds, and the review stops earlier at `act-on items: 0`; a comment reading `round: 3 of 3` and `act-on items: 0` makes the PR review-ready even when the fix commits it names come after the reviewed commit. An Ask item waits for the human. Fixes land on the PR that was reviewed, never on a PR above it. On a stack, the chain above the fix is rebased onto it and re-verified. A finding outside the PR's scope becomes a ticket, not a commit here. A long review comment opens with two plain sentences for a person, per `AGENTS.md` "Pull requests". Fallback if the skill is missing: Claude Code's built-in `/code-review`.
++- **Rung 1 — spec-review.** After CI is green, the agent runs `spec-review` in a fresh context: the Standards axis reads `CODING_STANDARDS.md`; the Spec axis reads the originating ticket and its parent spec. Each axis counts two kinds of finding: the documented path gives a wrong or silent result, or an input outside it proceeds silently (fails open); an input outside the documented path that is refused with a message saying how to correct it is not a finding, it is the design, and zero items is the expected result for a clean change. A cross-cutting diff's review brief also carries its blast radius, the PR body's `## Blast Radius` section, and the review does not start without one. Act-on items get fixed; the rest are recorded in the PR body. The report is posted as a comment on the PR, names the commit it reviewed, and ends with the lines `round: N of 3` and `act-on items: N`. One PR gets at most three rounds, and the review stops earlier at `act-on items: 0`; a comment reading `round: 3 of 3` and `act-on items: 0` makes the PR review-ready even when the fix commits it names come after the reviewed commit. An Ask item waits for the human. Fixes land on the PR that was reviewed, never on a PR above it. On a stack, the chain above the fix is rebased onto it and re-verified. A finding outside the PR's scope becomes a ticket, not a commit here. A long review comment opens with two plain sentences for a person, per `AGENTS.md` "Pull requests". Fallback if the skill is missing: Claude Code's built-in `/code-review`.
+ - **Rung 2 — external review bot.** Only if listed below. The agent babysits: verify every finding against the source; fix, dismiss with a written reason, or ask, per `.agents/skills/poteto-mode/references/bugbot-triage.md`. Ask by default for security, auth, data, billing, migrations.
+ - **Rung 3 — interrogate.** When the design is contested, or the diff touches an invariant named in `CONTEXT.md`. Multi-tier review on this account's models.
+ - **Rung 4 — human.** Reads the conversation, the Verification section and the signatures; merges. The agent never merges.
+diff --git a/template/docs/factory918/DECISIONS.md b/template/docs/factory918/DECISIONS.md
+index b40cb5e..c01004b 100644
+--- a/template/docs/factory918/DECISIONS.md
++++ b/template/docs/factory918/DECISIONS.md
+@@ -74,9 +74,10 @@ Travels anywhere without change: the planning skills, the execution playbooks, `
+ | P15 | Where a ticket starts | The Ticket playbook fetches, refuses a dirty checkout and branches from `origin/main` (or the parent PR's branch when stacking on purpose); `factory918 doctor` fetches `origin/main` on every run and opens with a branch line, so a fresh session sees where it is | A session inherits the branch the last one left, and PR #3 and the closing-PR shortcut both came from building on the wrong base. The fetch is the one network call the doctor did not already make through `gh`; offline it is skipped and the line compares against what is known. 2026-09-17. |
+ | P16 | The Standards axis of `spec-review` is junior work | `standards reviewer: claude:opus@medium` in both presets, a factory-owned role that `/setup-pstack` does not know. Amended 2026-09-18 (#76): the Spec axis has its own row too, `spec reviewer: claude:opus@high`; both reviewers are finders, and the orchestrator judges what they find (P19) | Matching a pasted diff against pasted rules needs less judgment than deciding whether the work matches the ask, and every sub-agent costs its context floor whichever model runs it (ticket #33). 2026-09-17. Manuel, 2026-09-18: the reviewer's context matters more than its model. |
+ | P17 | (promoted) | Became settled decision 19 on 2026-09-18: the delegation hooks guard the execute phase | The number stays retired so earlier references to P17 keep their meaning. |
+-| P18 | What a review counts | A hard finding is wrong behavior in normal use, listed under `## Would break`; standards breaches, latent and visibility items and scope creep sit under their own headings and never count; smells sit under `## Fix alongside` and are fixed only when a would-break fix already touches that code. `review-comment.sh` refuses a report whose count exceeds its Would-break items or whose headings are off the shape | On PR #75 five rounds produced fourteen findings of which four were would-break; the Standards reviewer counted smells as hard in two rounds and the script trusted its line (#76). 2026-09-18. |
++| P18 | What a review counts | A hard finding is one of two things: the documented path gives a wrong or silent result, or an input outside it proceeds silently (fails open). An input outside the documented path that is refused with a message saying how to correct it is not a finding; it is the design. Zero items is the expected result for a clean change. The first kind is listed under `## Would break` and the second under `## Fails open`, each item with a `Documented step:` line quoting the ticket line or the `file:line` the user follows and a `Result:` line saying what happens instead; standards breaches, scope creep and the Spec report's walk sit under their own headings and never count; smells sit under `## Fix alongside` and are fixed only when a would-break fix already touches that code. `review-comment.sh` refuses a report whose count exceeds its Would-break and Fails-open items, whose headings are off the shape, or whose counted item has no `Documented step:` line. The briefs quote Manuel's five sentences on the happy path after the definition | On PR #75 five rounds produced fourteen findings of which four were would-break; the Standards reviewer counted smells as hard in two rounds and the script trusted its line (#76). 2026-09-18. Amended 2026-09-21 (#81): the earlier definition rested on "normal use" and reviewers read "normal" generously; across #75, #77 and #78 about one finding in six was the intended path giving a wrong or silent result, and most of the rest were inputs outside it that already fail loud. Manuel: "there are an infinite amount of unhappy paths and only 1 happy one". |
+ | P19 | The orchestrator judges before the count | After the reports, the orchestrator writes `<dir>/judgment.md` sorting every report item into Act on, Ask, Consider, Noted or Dismissed with a one-line reason and a `[S<n>]`/`[P<n>]` reference; `act-on items` is Act on plus Ask (amended 2026-09-18, PR B: an Act on item marked `ticket: #N` is filed as its own ticket and not counted); the script refuses a judgment that misses, repeats or invents a reference. Ask holds the bugbot-triage ask-by-default categories and the agent never dismisses those | pstack has no review-until-zero loop; that gate was the factory's patch. pstack converges by a lead judge with the full context and a visible Dismissed list the human can overrule (`interrogate` step 5). The reference check is what keeps a dismissal visible rather than silent (#76). 2026-09-18. |
+ | P20 | Three review rounds at most | `review-brief.sh` counts the PR's earlier review comments and refuses a fourth round before writing any state; the comment prints `round: N of 3`; the third round's Act on items are fixed on the PR by a fix lane, marked `fixed: <sha>`, not counted and not reviewed again; `ticket: #N` is for a finding outside the PR's scope at any round; Ask items wait for the human; `act-on items: 0` with `round: 3 of 3` makes the PR review-ready even when the fix commits follow the reviewed one. The cap is per PR, and a ticket is one PR (Ticket step 4 sends a multi-concern ticket back to be split) | Manuel: after three passes, find the rest the hard way. Amended 2026-09-18 after #77: the cap is on reviews, not fixes; ticketing the last round's findings was ticket churn (#79, closed). 2026-09-18. |
+ | P21 | What carries into the next round | Only a Noted or Dismissed judgment item ending in `cites: user: "..." on #N`, `cites: DECISIONS.md <row>` or `cites: #N comment <date>` is pasted into the next briefs, under a fixed paragraph that says they are settled and nothing about what to find. A ticket's spec is its body plus the comments posted by the ticket's author; nobody else's comments and none of the PR's own | Manuel: no leading the witness, no non-falsifiable expectations ("I typed x=5, check that the script says x=5"); and the comment he had written on #74 settled two choices no reviewer saw (#76). 2026-09-18. |
++| P23 | The Spec report opens with a walk | `## Walk` is the Spec report's first heading: one numbered line per documented step of the path the change touches (the ticket's criteria and the documentation the diff changes), each saying what the code does at that step. Its lines are numbered 1..K on their own, are not findings and are not judged; `review-comment.sh` leaves them out of the item count, the numbering check and the `[P<n>]` set, so the findings start at 1 under `## Would break` | A finding starts from a documented step, so the reviewer walks the path before looking for what breaks on it; counted as items, a walk of nine steps would push every finding's number and break the judgment's references (#81). 2026-09-21. |
+ | P22 | Who signs a comment | A comment the agent posts on a PR or a ticket ends with the model and harness (`Claude Fable 5.1 on Claude Code`), plus `approved by <name>` when the human approved it before posting; only an approved comment posted from the author's account is the author's words. `review-brief.sh` reads only the PR author's account for rounds and carry-forward | Manuel, 2026-09-18: a comment left by the orchestrator without human involvement is signed by the model on the harness; approved, it is signed by both; strangers' comments never reach a brief (#78 round 1). |
+ | P2 | Tool versions in CI | Pin every tool CI runs to an exact version, as a devDependency where the tool publishes one | `dlx` and `npx` resolve the latest version, so a rule engine or formatter can change under a project with no diff to show for it. Spec §0 rule 1 already says to pin what you install; this extends it to what CI fetches. First applied to `@ast-grep/cli` 0.45.3 in M0. |
+diff --git a/tests/spec-review/fake-gh.sh b/tests/spec-review/fake-gh.sh
+new file mode 100755
+index 0000000..fa32377
+--- /dev/null
++++ b/tests/spec-review/fake-gh.sh
+@@ -0,0 +1,24 @@
++#!/bin/sh
++# A gh for review-brief.sh: copied onto PATH as `gh` by tests/spec-review/review-brief.sh and by the
++# CI fixture step. Fixtures are read from FAKE_GH_DIR, default the current directory (the script
++# runs at the repository root):
++#   pr.json     the PR, its author and comments; the script's own jq expression runs against it, so
++#               the author filter is what is tested. Absent: a PR with no comments.
++#   pr-error    printed to stderr with exit 1 in place of the comments (a failing gh).
++#   FAKE_PR_BODY  the file whose text is the PR body for `gh pr view --json body`; unset or missing:
++#               no PR for this branch.
++# `gh issue view` answers with a fixed ticket body holding an acceptance-criteria list, and with the
++# ticket author's comments already in the shape the script's jq expression prints (a comment by
++# someone else is left out), so a run needs no fixture at all.
++d="${FAKE_GH_DIR:-.}"
++case "$*" in
++  "pr view --json body"*) [ -f "${FAKE_PR_BODY:-}" ] && cat "$FAKE_PR_BODY" || { echo 'no pull requests found for branch "x"' >&2; exit 1; } ;;
++  "pr view"*)
++    if [ -f "$d/pr-error" ]; then cat "$d/pr-error" >&2; exit 1; fi
++    while [ "$1" != -q ]; do shift; done
++    if [ -f "$d/pr.json" ]; then exec jq -r "$2" "$d/pr.json"; fi
++    echo '{"author": {"login": "me"}, "comments": []}' | exec jq -r "$2" ;;
++  *"--json body"*) printf '## What to build\n\nWhat to build: the ticket body\n\n## Acceptance criteria\n\n- [ ] The brief carries the ticket body.\n' ;;
++  *"--json author,comments"*) printf '### 2026-09-17\n\nuser: the hook stays in bash.\n\n### 2026-09-18\n\nuser: the count is Act on plus Ask.\n\n' ;;
++  *) echo "fake gh: unexpected args: $*" >&2; exit 2 ;;
++esac
+diff --git a/tests/spec-review/layout.sh b/tests/spec-review/layout.sh
+new file mode 100644
+index 0000000..06ce544
+--- /dev/null
++++ b/tests/spec-review/layout.sh
+@@ -0,0 +1,26 @@
++# Sourced by the spec-review tests. layout <project|factory> <dir>: the spec-review skill copied
++# into a new git repository at <dir>, laid out the way that repository holds it, and committed.
++# A project (what `factory918 apply` leaves) has `.agents/skills/spec-review/`, `.claude/hooks/`
++# with an executable hook, and `.claude/skills -> ../.agents/skills`. The factory has the same
++# under `template/`, with `.claude/skills` and `.claude/hooks` linking there. Sets `skill`, the
++# copy of the skill to run, and `hooks`, the hooks directory a cross-cutting commit touches.
++source_skill="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)/template/.agents/skills/spec-review"
++layout() {
++  local base link
++  case "$1" in
++    project) base="$2"; hooks=.claude/hooks; link=../.agents/skills ;;
++    factory) base="$2/template"; hooks=template/.claude/hooks; link=../template/.agents/skills ;;
++  esac
++  mkdir -p "$base/.agents/skills" "$base/.claude/hooks" "$2/.claude"
++  cp -R "$source_skill" "$base/.agents/skills/spec-review"
++  printf '#!/bin/sh\nexit 0\n' > "$base/.claude/hooks/noop.sh"
++  chmod +x "$base/.claude/hooks/noop.sh"
++  ln -s "$link" "$2/.claude/skills"
++  [ "$1" = project ] || ln -s ../template/.claude/hooks "$2/.claude/hooks"
++  skill="$base/.agents/skills/spec-review"
++  git -C "$2" init -q
++  git -C "$2" config user.email test@factory918.invalid
++  git -C "$2" config user.name test
++  git -C "$2" add -A
++  git -C "$2" commit -qm "the layout"
++}
+diff --git a/tests/spec-review/no-stale-wording.sh b/tests/spec-review/no-stale-wording.sh
+new file mode 100755
+index 0000000..5ff43b5
+--- /dev/null
++++ b/tests/spec-review/no-stale-wording.sh
+@@ -0,0 +1,13 @@
++#!/usr/bin/env bash
++# Greps template/ and docs/knowledge/core/ for the wording #81 retired, the `## Latent` heading and
++# the definition sentence that began "A hard finding is wrong behavior in normal use", so a rename
++# that leaves the old words behind fails here. Prints each hit as file:line and exits 1 on any;
++# prints `ok: no stale wording` otherwise.
++set -euo pipefail
++cd "$(dirname "$0")/../.."
++hits="$(grep -rnF -e '## Latent' -e 'A hard finding is wrong behavior in normal use' template docs/knowledge/core | cut -d: -f1,2 || true)"
++if [ -n "$hits" ]; then
++  printf '%s\n' "$hits"
++  exit 1
++fi
++echo "ok: no stale wording"
+diff --git a/tests/spec-review/review-brief.sh b/tests/spec-review/review-brief.sh
+index 6cf205a..b368f33 100755
+--- a/tests/spec-review/review-brief.sh
++++ b/tests/spec-review/review-brief.sh
+@@ -1,60 +1,29 @@
+ #!/usr/bin/env bash
+-# Runs template/.agents/skills/spec-review/scripts/review-brief.sh in a temp repo and asserts that
+-# each brief carries the report shape review-comment.sh enforces: the definition sentence, every
+-# heading name, the item format and the count rule. A fake gh on PATH supplies the ticket body and
+-# the ticket's comments, and the PR's earlier review comments when a fixture file names them (no
+-# PR otherwise), so the Spec brief is written and the round is 1 unless the comments or --round say
++# Runs review-brief.sh twice, in a temp repo laid out as a project and in one laid out as the
++# factory (tests/spec-review/layout.sh), each time the copy of the skill that repo holds, and
++# asserts that each brief carries the report shape review-comment.sh enforces: the definition
++# sentence, Manuel's five sentences, every heading name, the item format, the step rule and the
++# count rule. The fake gh (tests/spec-review/fake-gh.sh) on PATH supplies the ticket body and the
++# ticket's comments, and the PR's earlier review comments when a fixture file names them (no PR
++# otherwise), so the Spec brief is written and the round is 1 unless the comments or --round say
+ # otherwise. Only the judgment items that cite a decision carry into both briefs, from every earlier
+ # comment, each line once; the round is one more than the highest `round: N of 3` among the comments,
+ # so a rebuilt comment does not advance it; a fourth round is refused before any state is written;
+ # a gh failure other than "no pull requests found" is printed and the run goes on. A diff touching
+ # a cross-cutting path is briefed with its blast-radius grounding (--blast-radius FILE, else the PR
+-# body's section) before the diff, and refused without one. SKILL.md step 4 must carry the
+-# definition, the settled paragraph and the blast-radius paragraph word for word, so the skill and
+-# the script cannot drift apart. Exits 1 on the first miss.
++# body's section) before the diff, and refused without one. The source SKILL.md, step 4, must carry
++# the definition, the five sentences, the heading bullets, the step rule, the count rule, the
++# settled paragraph and the blast-radius paragraph word for word, so the skill and the script
++# cannot drift apart. Exits 1 on the first miss.
+ set -euo pipefail
+ here="$(cd "$(dirname "$0")/../.." && pwd -P)"
+-skill="$here/template/.agents/skills/spec-review"
+-fx="$(mktemp -d)"
+-trap 'rm -rf "$fx"' EXIT
+-cd "$fx"
+-git init -q
+-git config user.email test@factory918.invalid
+-git config user.name test
+-echo one > a.txt
+-git add a.txt
+-git commit -qm "first"
+-echo two > a.txt
+-git commit -qam "second, no ticket named"
+-mkdir bin
+-# gh pr view --json body: the PR body is the file FAKE_PR_BODY names when set, else there is no PR.
+-# gh pr view for the comments: pr.json, when it exists, is the PR (its author and comments) and
+-# the script's own jq expression runs against it through jq, so the author filter is what is
+-# tested; pr-error, when it exists, goes to stderr with exit 1; with neither there is no PR for
+-# this branch. gh issue view: the body, or the author's comments already formatted the way the
+-# script's jq expression formats them (one is by someone else and is left out).
++. "$here/tests/spec-review/layout.sh"
+ command -v jq >/dev/null || { echo "FAIL: jq is needed to play gh pr view"; exit 1; }
+-{
+-  echo '#!/bin/sh'
+-  echo "fx='$fx'"
+-  cat <<'EOF'
+-case "$*" in
+-  "pr view --json body"*) [ -f "${FAKE_PR_BODY:-}" ] && cat "$FAKE_PR_BODY" || { echo 'no pull requests found for branch "x"' >&2; exit 1; } ;;
+-  "pr view"*)
+-    if [ -f "$fx/pr-error" ]; then cat "$fx/pr-error" >&2; exit 1; fi
+-    if [ -f "$fx/pr.json" ]; then
+-      while [ "$1" != -q ]; do shift; done
+-      exec jq -r "$2" "$fx/pr.json"
+-    fi
+-    echo 'no pull requests found for branch "x"' >&2; exit 1 ;;
+-  *"--json body"*) echo "What to build: the ticket body" ;;
+-  *"--json author,comments"*) printf '### 2026-09-17\n\nuser: the hook stays in bash.\n\n### 2026-09-18\n\nuser: the count is Act on plus Ask.\n\n' ;;
+-  *) echo "fake gh: unexpected args: $*" >&2; exit 2 ;;
+-esac
+-EOF
+-} > bin/gh
+-chmod +x bin/gh
+-PATH="$fx/bin:$PATH"
++tmp="$(mktemp -d)"
++trap 'rm -rf "$tmp"' EXIT
++mkdir "$tmp/bin"
++cp "$here/tests/spec-review/fake-gh.sh" "$tmp/bin/gh"
++PATH="$tmp/bin:$PATH"
+ # pr <author> [login:file ...]: pr.json, the PR opened by <author> with one comment per pair, in order.
+ pr() {
+   local a="$1" c; shift
+@@ -87,7 +56,21 @@ printed() {
+   n=$((n + 1))
+ }
+ 
++# suite <project|factory>: every assertion, against the copy of the skill a repo of that layout holds.
++suite() {
++fx="$tmp/$1"
++layout "$1" "$fx"
++cd "$fx"
++echo one > a.txt
++git add a.txt
++git commit -qm "first"
++echo two > a.txt
++git commit -qam "second, no ticket named"
++
++# No PR: gh's "no pull requests found" is swallowed and the round is 1.
++echo 'no pull requests found for branch "x"' > pr-error
+ bash "$skill/scripts/review-brief.sh" HEAD~1 --ticket 7 > out.txt 2> err.txt
++rm pr-error
+ printed out.txt "ticket: #7
+ round: 1 of 3
+ .scratch/review/HEAD_1/standards-brief.md
+@@ -98,6 +81,11 @@ spec=.scratch/review/HEAD_1/spec-brief.md
+ n=$((n + 1))
+ [ ! -s err.txt ] || { echo "FAIL no PR: gh's 'no pull requests found' is printed:"; cat err.txt; exit 1; }
+ n=$((n + 1))
++# A PR with no comments is round 1 too.
++bash "$skill/scripts/review-brief.sh" HEAD~1 --ticket 7 > out.txt 2> err.txt
++has out.txt "round: 1 of 3" "a PR without comments is round 1"
++[ ! -s err.txt ] || { echo "FAIL PR without comments: stderr is not empty:"; cat err.txt; exit 1; }
++n=$((n + 1))
+ 
+ # Any other gh failure is printed, and the run goes on as round 1 with nothing carried.
+ echo "HTTP 401: Bad credentials (https://api.github.com/graphql)" > pr-error
+@@ -107,41 +95,72 @@ has err.txt "review-brief: gh could not read the PR's review comments (HTTP 401:
+ has out.txt "round: 1 of 3" "a gh failure other than no PR still runs round 1"
+ lacks "$std" "## Settled in earlier rounds" "a gh failure other than no PR carries nothing"
+ 
+-definition="A hard finding is wrong behavior in normal use: a command, hook, script or documented flow does something other than what the ticket or its own documentation says it does, on the path a user takes."
+-count_rule='End the report with exactly one line `hard findings: N`, where N is the number of items under `## Would break` and nothing else.'
++definition="A hard finding is one of two things: the documented path gives a wrong or silent result, or an input outside it proceeds silently (fails open). An input outside the documented path that is refused with a message saying how to correct it is not a finding; it is the design. Zero items is the expected result for a clean change."
++quotes=(
++  '- Manuel: "there are an infinite amount of unhappy paths and only 1 happy one"'
++  '- Manuel: "AT MOST hardening to fail fast and loud if we move outside of that"'
++  '- Manuel: "we notice the variable is unexpected and flag that without having to diagnose every reason the variable might be wrong for the user"'
++  '- Manuel: "An edge case outside the intended path being unsupported is not a flag."'
++  '- Manuel: "Primary focus must be the happy path, then unhappy paths that error in a way the user can correct."'
++)
++step_rule='Every item under `## Would break` or `## Fails open` carries a line `Documented step:` quoting the ticket line or the `file:line` of the documentation the user follows, and a line `Result:` saying what happens instead; an item without its `Documented step:` line is sent back.'
++count_rule='End the report with exactly one line `hard findings: N`, where N is the number of items under `## Would break` and `## Fails open` and nothing else.'
+ settled_rule="These findings were raised in an earlier round and settled by the decision each one cites. Do not raise them again. Nothing in this section says what you should find or confirm."
+ blast_rule="The sessions and skills this change reaches, as the author grounded them before the review. Check the diff against each one; the grounding is the author's claim, not evidence."
+-has "$skill/SKILL.md" "$definition" "SKILL.md step 4 carries the definition"
+-has "$skill/SKILL.md" "$settled_rule" "SKILL.md step 4 carries the settled paragraph"
+-has "$skill/SKILL.md" "$blast_rule" "SKILL.md step 4 carries the blast-radius paragraph"
++has "$source_skill/SKILL.md" "$definition" "SKILL.md step 4 carries the definition"
++has "$source_skill/SKILL.md" "$step_rule" "SKILL.md step 4 carries the step rule"
++has "$source_skill/SKILL.md" "$count_rule" "SKILL.md step 4 carries the count rule"
++has "$source_skill/SKILL.md" "$settled_rule" "SKILL.md step 4 carries the settled paragraph"
++has "$source_skill/SKILL.md" "$blast_rule" "SKILL.md step 4 carries the blast-radius paragraph"
++lacks "$source_skill/SKILL.md" "## Latent" "SKILL.md has no Latent heading"
++for q in "${quotes[@]}"; do
++  has "$source_skill/SKILL.md" "$q" "SKILL.md step 4 carries the quote"
++done
+ for f in "$std" "$spec"; do
+   has "$f" "$definition" "$f carries the definition"
++  for q in "${quotes[@]}"; do
++    has "$f" "$q" "$f carries the quote"
++  done
++  if [ "$(grep -nF -- "$definition" "$f" | cut -d: -f1)" -ne "$(($(grep -nF -- "${quotes[0]}" "$f" | cut -d: -f1) - 2))" ]; then
++    echo "FAIL $f: the quotes do not follow the definition"; exit 1
++  fi
++  n=$((n + 1))
+   has "$f" 'Write the report as Markdown with exactly these `## ` headings, in this order, each holding numbered items or nothing:' "$f names the shape"
+   has "$f" '`1. **Title.** body`' "$f carries the item format"
+   has "$f" "number the items continuously across the headings" "$f says how to number"
++  has "$f" "$step_rule" "$f carries the step rule"
+   has "$f" "$count_rule" "$f carries the count rule"
++  has "$f" '- `## Fails open`' "$f has the Fails open heading"
++  lacks "$f" "## Latent" "$f has no Latent heading"
+   lacks "$f" "## Settled in earlier rounds" "$f has no settled section without a previous comment"
+   lacks "$f" "## Blast radius" "$f has no blast-radius section for a diff that is not cross-cutting"
+ done
+-# The three heading bullets of each Report paragraph, word for word in SKILL.md step 4 and in the brief.
++# The heading bullets of each Report paragraph, word for word in SKILL.md step 4 and in the brief.
+ standards_bullets=(
+-  '- `## Would break`: a breach of a documented standard that produces wrong behavior in normal use. Cite the standard (file + the rule) and quote the hunk.'
++  '- `## Would break`: a breach of a documented standard that makes the documented path give a wrong or silent result. Cite the standard (file + the rule) and quote the hunk.'
++  '- `## Fails open`: a breach of a documented standard that lets an input outside the documented path proceed silently. Cite the standard (file + the rule) and quote the hunk.'
+   '- `## Standards breaches`: documented-standard breaches that do not change behavior. Cite the standard and quote the hunk.'
+   '- `## Fix alongside`: baseline smells and other judgement calls. Name the smell and quote the hunk. They are fixed only when a would-break fix already touches that code; they never count.'
+ )
+ spec_bullets=(
+-  '- `## Would break`: a requirement missing, partial, or implemented so that normal use does something other than the ticket says.'
+-  '- `## Latent`: edge cases, visibility, policy, wording; anything a user would not hit in normal use.'
++  "- \`## Walk\`: one numbered line per documented step of the path the change touches (the ticket's criteria and the documentation the diff changes), each saying what the code does at that step. A walk, not findings: its lines are numbered 1..K on their own and count nothing."
++  '- `## Would break`: a requirement missing, partial, or implemented so that the documented path gives a wrong or silent result.'
++  '- `## Fails open`: an input outside the documented path that proceeds silently instead of being refused with a message saying how to correct it.'
+   '- `## Not asked for`: behaviour in the diff the ticket did not ask for.'
+ )
+ for b in "${standards_bullets[@]}"; do
+-  has "$skill/SKILL.md" "$b" "SKILL.md step 4 carries the Standards bullet"
++  has "$source_skill/SKILL.md" "$b" "SKILL.md step 4 carries the Standards bullet"
+   has "$std" "$b" "Standards: the heading bullet"
+ done
+ for b in "${spec_bullets[@]}"; do
+-  has "$skill/SKILL.md" "$b" "SKILL.md step 4 carries the Spec bullet"
++  has "$source_skill/SKILL.md" "$b" "SKILL.md step 4 carries the Spec bullet"
+   has "$spec" "$b" "Spec: the heading bullet"
+ done
++lacks "$std" '`## Walk`' "Standards: no walk"
++[ "$(grep -o '^- `## [A-Za-z ]*`' "$spec" | head -1)" = '- `## Walk`' ] || { echo "FAIL Spec: the first heading bullet is not the walk"; exit 1; }
++n=$((n + 1))
++[ "$(grep -o '^- `## [A-Za-z ]*`' "$std" | head -2 | tail -1)" = '- `## Fails open`' ] || { echo "FAIL Standards: Fails open is not after Would break"; exit 1; }
++n=$((n + 1))
+ has "$std" "Write your report to \`$(dirname "$std")/standards-report.md\` and reply with only that path." "Standards: the report path"
+ has "$spec" 'quotes the spec line it rests on in a fenced block (a criterion can carry `## ` or `1. ` lines, and only fenced text is exempt from the report shape)' "Spec: the quote is fenced"
+ has "$spec" "What to build: the ticket body" "Spec: the ticket body from gh"
+@@ -266,7 +285,7 @@ has out.txt "settled: carried 2, dropped 1 without a citation" "a stranger's cit
+ lacks "$std" "Stranger's item" "a stranger's cited item is not carried"
+ # Rounds 1, 2 and 3 were run: the fourth is refused before any state is written.
+ pr me me:previous.md me:previous-2.md me:previous-3.md
+-rm -rf .scratch .claude
++rm -rf .scratch .claude/state
+ set +e
+ out="$(bash "$skill/scripts/review-brief.sh" HEAD~1 --ticket 7 2>&1)"
+ code=$?
+@@ -326,7 +345,7 @@ fi
+ n=$((n + 1))
+ 
+ # A fourth round is refused before any state is written.
+-rm -rf .scratch .claude
++rm -rf .scratch .claude/state
+ set +e
+ out="$(bash "$skill/scripts/review-brief.sh" HEAD~1 --ticket 7 --round 4 2>&1)"
+ code=$?
+@@ -338,11 +357,10 @@ if [ "$code" != 1 ] || [ "$out" != 'review-brief: three rounds were run on this
+ fi
+ n=$((n + 1))
+ 
+-# A cross-cutting diff: a commit touching .claude/hooks/x.sh. With --blast-radius FILE the file's text
+-# goes into both briefs under `## Blast radius`, before `## Diff`.
+-mkdir -p .claude/hooks
+-echo 'exit 0' > .claude/hooks/x.sh
+-git add .claude/hooks/x.sh
++# A cross-cutting diff: a commit touching the hooks directory of this layout. With --blast-radius
++# FILE the file's text goes into both briefs under `## Blast radius`, before `## Diff`.
++echo 'exit 0' > "$hooks/x.sh"
++git add "$hooks/x.sh"
+ git commit -qm "a hook, #7"
+ cat > blast.md <<'EOF'
+ 
+@@ -374,7 +392,7 @@ code=$?
+ set -e
+ if [ "$code" != 1 ] || [ "$out" != "ticket: #7
+ round: 1 of 3
+-review-brief: cross-cutting diff (.claude/hooks/x.sh) without a blast-radius grounding; run the blast-radius skill, put the result in the PR body's Blast Radius section or pass --blast-radius FILE" ] || [ -e .claude/state/review ] || [ -e .scratch/review/HEAD_1 ]; then
++review-brief: cross-cutting diff ($hooks/x.sh) without a blast-radius grounding; run the blast-radius skill, put the result in the PR body's Blast Radius section or pass --blast-radius FILE" ] || [ -e .claude/state/review ] || [ -e .scratch/review/HEAD_1 ]; then
+   echo "FAIL cross-cutting diff without a grounding: exit $code, wanted 1, the message, no state and no briefs"
+   echo "  got: $out"
+   exit 1
+@@ -397,7 +415,7 @@ set +e
+ out="$(FAKE_PR_BODY="$fx/pr-body-empty.md" bash "$skill/scripts/review-brief.sh" HEAD~1 2>&1)"
+ code=$?
+ set -e
+-if [ "$code" != 1 ] || ! printf '%s' "$out" | grep -qF "cross-cutting diff (.claude/hooks/x.sh) without a blast-radius grounding" || [ -e .claude/state/review ]; then
++if [ "$code" != 1 ] || ! printf '%s' "$out" | grep -qF "cross-cutting diff ($hooks/x.sh) without a blast-radius grounding" || [ -e .claude/state/review ]; then
+   echo "FAIL empty Blast Radius section: exit $code, wanted 1 with the refusal and no state"
+   echo "  got: $out"
+   exit 1
+@@ -414,5 +432,8 @@ for f in "$std" "$spec"; do
+   lacks "$f" "## Blast radius" "$f has no blast-radius section for a README-only diff"
+   lacks "$f" "Adds a hook that exits 0" "$f does not carry the ignored file"
+ done
++}
+ 
++suite project
++suite factory
+ echo "ok $n assertions"
+diff --git a/tests/spec-review/review-comment.sh b/tests/spec-review/review-comment.sh
+index 030a160..f80e45b 100755
+--- a/tests/spec-review/review-comment.sh
++++ b/tests/spec-review/review-comment.sh
+@@ -1,18 +1,16 @@
+ #!/usr/bin/env bash
+-# Runs template/.agents/skills/spec-review/scripts/review-comment.sh against fixture reports and
+-# judgments in a temp repo and asserts the exact stdout of each accepted shape and the exact
+-# refusal line of each rejected one. Report and judgment items are numbered 1..N across the headings. A refusal leaves the review state in place; an accepted
+-# run clears it. Exits 1 on the first miss.
++# Runs review-comment.sh twice, in a temp repo laid out as a project and in one laid out as the
++# factory (tests/spec-review/layout.sh), each time the copy of the skill that repo holds, against
++# fixture reports and judgments, and asserts the exact stdout of each accepted shape and the exact
++# refusal line of each rejected one. Report and judgment items are numbered 1..N across the
++# headings; the Spec report's `## Walk` lines are steps, not items, and count nothing. Every item
++# under `## Would break` or `## Fails open` carries a `Documented step:` line. A refusal leaves the
++# review state in place; an accepted run clears it. Exits 1 on the first miss.
+ set -euo pipefail
+ here="$(cd "$(dirname "$0")/../.." && pwd -P)"
+-script="$here/template/.agents/skills/spec-review/scripts/review-comment.sh"
+-fx="$(mktemp -d)"
+-trap 'rm -rf "$fx"' EXIT
+-cd "$fx"
+-git init -q
+-git config user.email test@factory918.invalid
+-git config user.name test
+-git commit -q --allow-empty -m fixture
++. "$here/tests/spec-review/layout.sh"
++tmp="$(mktemp -d)"
++trap 'rm -rf "$tmp"' EXIT
+ dir=.scratch/review/x
+ state=.claude/state/review
+ 
+@@ -63,33 +61,47 @@ accept() {
+   fi
+   n=$((n + 1))
+ }
+-empty_standards() { printf '## Would break\n\n## Standards breaches\n\n## Fix alongside\n\nhard findings: 0\n'; }
+-empty_spec() { printf '## Would break\n\n## Latent\n\n## Not asked for\n\nhard findings: 0\n'; }
++empty_standards() { printf '## Would break\n\n## Fails open\n\n## Standards breaches\n\n## Fix alongside\n\nhard findings: 0\n'; }
++empty_spec() { printf '## Walk\n\n## Would break\n\n## Fails open\n\n## Not asked for\n\nhard findings: 0\n'; }
+ empty_judgment() { printf '## Act on\n\n## Ask\n\n## Consider\n\n## Noted\n\n## Dismissed\n'; }
+ 
++# suite <project|factory>: every assertion, against the copy of the skill a repo of that layout holds.
++suite() {
++fx="$tmp/$1"
++layout "$1" "$fx"
++script="$skill/scripts/review-comment.sh"
++cd "$fx"
++
+ refuse "no review in progress ($state/dir is missing); run scripts/review-brief.sh first, or pass the review dir to rerun a finished review" "no state"
+ 
+ reset
+ refuse "$dir/standards-report.md is missing; wait for the Standards reviewer" "no Standards report"
+ 
+-printf '## Would break\n\n## Standards breaches\n\n## Fix alongside\n' > "$dir/standards-report.md"
++printf '## Would break\n\n## Fails open\n\n## Standards breaches\n\n## Fix alongside\n' > "$dir/standards-report.md"
+ refuse "$dir/standards-report.md has no 'hard findings: N' line; ask the reviewer for it" "Standards report without the count line"
+ 
+-printf '## Would break\n\n1. **One.** a\n\n## Standards breaches\n\n## Fix alongside\n\n2. **Smell.** b\n\nhard findings: 2\n' > "$dir/standards-report.md"
+-refuse "$dir/standards-report.md says 'hard findings: 2' but has 1 items under '## Would break'; only those count. Ask the reviewer to put each finding under the heading it belongs to and recount" "count line above the Would-break items"
++printf '## Would break\n\n1. **One.** a\n\n## Fails open\n\n2. **Open.** o\n\n## Standards breaches\n\n## Fix alongside\n\n3. **Smell.** b\n\nhard findings: 3\n' > "$dir/standards-report.md"
++refuse "$dir/standards-report.md says 'hard findings: 3' but has 1 items under '## Would break' and 1 under '## Fails open'; only those count. Ask the reviewer to put each finding under the heading it belongs to and recount" "count line above the Would-break and Fails-open items"
+ 
+-printf '## Would break\n\n1. **One.** a\n\n## Standards breaches\n\n1. **Two.** b\n2. **Three.** c\n\n## Fix alongside\n\nhard findings: 1\n' > "$dir/standards-report.md"
++printf '## Would break\n\n1. **One.** a\n\n## Fails open\n\n## Standards breaches\n\n1. **Two.** b\n2. **Three.** c\n\n## Fix alongside\n\nhard findings: 1\n' > "$dir/standards-report.md"
+ refuse "$dir/standards-report.md item '1. **Two.** b' is numbered 1 where 2 was expected; number the items 1..N continuously across the headings, in document order" "numbering restarts under the second heading"
+ 
+ printf '## Would Break\n\n## Standards breaches\n\nhard findings: 0\n' > "$dir/standards-report.md"
+-refuse "$dir/standards-report.md has the headings [Would Break|Standards breaches]; the shape is [Would break|Standards breaches|Fix alongside], in that order, each holding numbered items or nothing" "Standards report off its shape"
++refuse "$dir/standards-report.md has the headings [Would Break|Standards breaches]; the shape is [Would break|Fails open|Standards breaches|Fix alongside], in that order, each holding numbered items or nothing" "Standards report off its shape"
++
++# A Would-break or Fails-open item without a `Documented step:` line is refused by name; a line
++# inside a quoted hunk does not count; a body sentence is not the item's title.
++printf '## Would break\n\n1. **One.** a\nDocumented step: ticket line\nResult: r\n\n## Fails open\n\n2. **Open, silently.** the guard returns. More.\n\n```sh\nDocumented step: inside the hunk\n```\n\n## Standards breaches\n\n## Fix alongside\n\nhard findings: 2\n' > "$dir/standards-report.md"
++refuse "$dir/standards-report.md item '2. **Open, silently.**' under '## Fails open' has no 'Documented step:' line; a counted item quotes the ticket line or the file:line of the documentation the user follows, then 'Result:' what happens instead. Ask the reviewer for both" "Fails-open item without a Documented step line, the fenced one not counting"
++printf '## Would break\n\n1. **One.** a\n\n## Fails open\n\n2. **Open.** o\nDocumented step: ticket line\n\n## Standards breaches\n\n3. **Breach.** b\n\n## Fix alongside\n\nhard findings: 2\n' > "$dir/standards-report.md"
++refuse "$dir/standards-report.md item '1. **One.**' under '## Would break' has no 'Documented step:' line; a counted item quotes the ticket line or the file:line of the documentation the user follows, then 'Result:' what happens instead. Ask the reviewer for both" "Would-break item without a Documented step line"
+ 
+ empty_standards > "$dir/standards-report.md"
+ echo brief > "$dir/spec-brief.md"
+ refuse "$dir/spec-report.md is missing; wait for the Spec reviewer" "Spec brief without a Spec report"
+ 
+-printf '## Would break\n\n## Not asked for\n\n## Latent\n\nhard findings: 0\n' > "$dir/spec-report.md"
+-refuse "$dir/spec-report.md has the headings [Would break|Not asked for|Latent]; the shape is [Would break|Latent|Not asked for], in that order, each holding numbered items or nothing" "Spec report headings out of order"
++printf '## Would break\n\n## Fails open\n\n## Not asked for\n\n## Walk\n\nhard findings: 0\n' > "$dir/spec-report.md"
++refuse "$dir/spec-report.md has the headings [Would break|Fails open|Not asked for|Walk]; the shape is [Walk|Would break|Fails open|Not asked for], in that order, each holding numbered items or nothing" "Spec report headings out of order"
+ 
+ empty_spec > "$dir/spec-report.md"
+ refuse "$dir/judgment.md is missing; sort every report item into Act on, Ask, Consider, Noted or Dismissed with a one-line reason (SKILL.md step 5), then rerun" "no judgment"
+@@ -97,8 +109,8 @@ refuse "$dir/judgment.md is missing; sort every report item into Act on, Ask, Co
+ printf '## Act on\n\n## Consider\n\n## Noted\n\n## Dismissed\n' > "$dir/judgment.md"
+ refuse "$dir/judgment.md has the headings [Act on|Consider|Noted|Dismissed]; the shape is [Act on|Ask|Consider|Noted|Dismissed], in that order, each holding numbered items or nothing" "judgment without Ask"
+ 
+-printf '## Would break\n\n1. **One.** a\n\n## Standards breaches\n\n2. **Two.** b\n\n## Fix alongside\n\nhard findings: 1\n' > "$dir/standards-report.md"
+-printf '## Would break\n\n## Latent\n\n1. **Edge.** c\n\n## Not asked for\n\nhard findings: 0\n' > "$dir/spec-report.md"
++printf '## Would break\n\n1. **One.** a\nDocumented step: t\n\n## Fails open\n\n## Standards breaches\n\n2. **Two.** b\n\n## Fix alongside\n\nhard findings: 1\n' > "$dir/standards-report.md"
++printf '## Walk\n\n1. step one\n2. step two\n\n## Would break\n\n## Fails open\n\n1. **Edge.** c\nDocumented step: t\n\n## Not asked for\n\nhard findings: 1\n' > "$dir/spec-report.md"
+ printf '## Act on\n\n1. [S1] **One.** yes\n\n## Ask\n\n## Consider\n\n## Noted\n\n## Dismissed\n' > "$dir/judgment.md"
+ refuse "$dir/judgment.md has 1 items; the reports have 3 (Standards 2, Spec 1). Every report item appears exactly once in the judgment" "judgment short of the reports"
+ 
+@@ -125,6 +137,8 @@ accept "## Standards
+ 
+ ## Would break
+ 
++## Fails open
++
+ ## Standards breaches
+ 
+ ## Fix alongside
+@@ -147,7 +161,7 @@ no spec: Standards axis only
+ 
+ ## Dismissed
+ 
+-Standards: 0 would break of 0; Spec: no spec; judged: act on 0 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 0, dismissed 0; fixed point main.
++Standards: 0 would break, 0 fail open, of 0; Spec: no spec; judged: act on 0 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 0, dismissed 0; fixed point main.
+ round: 1 of 3
+ act-on items: 0" "nothing found, no spec, no round file"
+ 
+@@ -156,12 +170,16 @@ cat > "$dir/standards-report.md" <<'EOF'
+ ## Would break
+ 
+ 1. **Hook exits 0 on a miss.** The guard returns before blocking.
++Documented step: `docs/agents/review-ladder.md:6`, "the delegation hook blocks your reads of the changed files"
++Result: the read goes through.
+ 
+ ```sh
+ ## Would break
+ 1. a numbered line inside a quoted hunk is not an item
+ ```
+ 
++## Fails open
++
+ ## Standards breaches
+ 
+ 2. **Bare number.** P3 wants the constant named.
+@@ -174,17 +192,27 @@ hard findings: 1
+ EOF
+ echo brief > "$dir/spec-brief.md"
+ cat > "$dir/spec-report.md" <<'EOF'
++## Walk
++
++1. `review-brief.sh <fixed-point>` resolves the fixed point and writes the diff.
++2. `--ticket N` names the spec; the sweep form drops it.
++3. The state file is written under `.claude/state/review/`.
++
+ ## Would break
+ 
+ 1. **Sweep form ignores --ticket.** "add `--ticket N` when the commits do not name the ticket".
++Documented step: "add `--ticket N` when the commits do not name the ticket"
++Result: the sweep form writes no Spec brief.
+ 
+-## Latent
++## Fails open
+ 
+-2. **Token in the log.** The state file could carry a secret.
++2. **Token in the log.** A malformed state file is read as a fixed point and the run goes on.
++Documented step: "It also writes the review state under `.claude/state/review/`"
++Result: a hook reads garbage and blocks nothing.
+ 
+ ## Not asked for
+ 
+-hard findings: 1
++hard findings: 2
+ EOF
+ cat > "$dir/judgment.md" <<'EOF'
+ ## Act on
+@@ -219,9 +247,9 @@ $(cat "$dir/spec-report.md")
+ 
+ $(cat "$dir/judgment.md")
+ 
+-Standards: 1 would break of 3; Spec: 1 would break of 2; judged: act on 2 (0 fixed, 0 with a ticket), ask 1, consider 0, noted 1, dismissed 1; fixed point main.
++Standards: 1 would break, 0 fail open, of 3; Spec: 1 would break, 1 fail open, of 2; judged: act on 2 (0 fixed, 0 with a ticket), ask 1, consider 0, noted 1, dismissed 1; fixed point main.
+ round: 2 of 3
+-act-on items: 3" "two Act on and one Ask, round 2"
++act-on items: 3" "two Act on and one Ask, round 2; the walk's three lines are not items"
+ 
+ rearm
+ echo 3 > "$dir/round"
+@@ -257,7 +285,7 @@ $(cat "$dir/spec-report.md")
+ 
+ $(cat "$dir/judgment.md")
+ 
+-Standards: 1 would break of 3; Spec: 1 would break of 2; judged: act on 2 (0 fixed, 1 with a ticket), ask 1, consider 0, noted 1, dismissed 1; fixed point main.
++Standards: 1 would break, 0 fail open, of 3; Spec: 1 would break, 1 fail open, of 2; judged: act on 2 (0 fixed, 1 with a ticket), ask 1, consider 0, noted 1, dismissed 1; fixed point main.
+ round: 3 of 3
+ act-on items: 2" "an Act on item filed as a ticket is not counted, round 3"
+ 
+@@ -274,7 +302,7 @@ $(cat "$dir/spec-report.md")
+ 
+ $(cat "$dir/judgment.md")
+ 
+-Standards: 1 would break of 3; Spec: 1 would break of 2; judged: act on 2 (0 fixed, 1 with a ticket), ask 1, consider 0, noted 1, dismissed 1; fixed point main.
++Standards: 1 would break, 0 fail open, of 3; Spec: 1 would break, 1 fail open, of 2; judged: act on 2 (0 fixed, 1 with a ticket), ask 1, consider 0, noted 1, dismissed 1; fixed point main.
+ round: 3 of 3
+ act-on items: 2" "rebuilt from the directory after the state was cleared" "$dir"
+ refuse "nowhere is not a directory; pass the .scratch/review/<id> review-brief.sh wrote" "a directory that does not exist" nowhere
+@@ -316,7 +344,7 @@ $(cat "$dir/spec-report.md")
+ 
+ $(cat "$dir/judgment.md")
+ 
+-Standards: 1 would break of 3; Spec: 1 would break of 2; judged: act on 2 (1 fixed, 1 with a ticket), ask 1, consider 0, noted 1, dismissed 1; fixed point main.
++Standards: 1 would break, 0 fail open, of 3; Spec: 1 would break, 1 fail open, of 2; judged: act on 2 (1 fixed, 1 with a ticket), ask 1, consider 0, noted 1, dismissed 1; fixed point main.
+ round: 3 of 3
+ act-on items: 1" "an Act on item fixed on this PR is not counted, round 3" "$dir"
+ 
+@@ -339,7 +367,7 @@ echo three > "$dir/round"
+ refuse "$dir/round holds 'three', not a round number; rerun scripts/review-brief.sh" "round file off its shape"
+ 
+ reset
+-printf '## Would break\n\n## Standards breaches\n\n## Fix alongside\n\n1. **Mysterious Name.** x\n2. **Middle Man.** y\n\nhard findings: 0\n' > "$dir/standards-report.md"
++printf '## Would break\n\n## Fails open\n\n## Standards breaches\n\n## Fix alongside\n\n1. **Mysterious Name.** x\n2. **Middle Man.** y\n\nhard findings: 0\n' > "$dir/standards-report.md"
+ printf '## Act on\n\n## Ask\n\n## Consider\n\n## Noted\n\n## Dismissed\n\n1. [S1] **Mysterious Name.** the name is the domain term\n2. [S2] **Middle Man.** one caller, kept inline\n' > "$dir/judgment.md"
+ accept "## Standards
+ 
+@@ -353,7 +381,7 @@ no spec: Standards axis only
+ 
+ $(cat "$dir/judgment.md")
+ 
+-Standards: 0 would break of 2; Spec: no spec; judged: act on 0 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 0, dismissed 2; fixed point main.
++Standards: 0 would break, 0 fail open, of 2; Spec: no spec; judged: act on 0 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 0, dismissed 2; fixed point main.
+ round: 1 of 3
+ act-on items: 0" "Dismissed only"
+ 
+@@ -372,7 +400,7 @@ no spec: Standards axis only
+ 
+ $(cat "$dir/judgment.md")
+ 
+-Standards: 0 would break of 2; Spec: no spec; judged: act on 1 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 0, dismissed 1; fixed point main.
++Standards: 0 would break, 0 fail open, of 2; Spec: no spec; judged: act on 1 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 0, dismissed 1; fixed point main.
+ round: 1 of 3
+ act-on items: 1" "rerun with the dir argument after the state was cleared" "$dir"
+ accept "$out" "the same with a trailing slash on the dir" "$dir/"
+@@ -393,7 +421,7 @@ no spec: Standards axis only
+ 
+ $(cat "$dir/judgment.md")
+ 
+-Standards: 0 would break of 2; Spec: no spec; judged: act on 0 (0 fixed, 0 with a ticket), ask 1, consider 0, noted 0, dismissed 1; fixed point main.
++Standards: 0 would break, 0 fail open, of 2; Spec: no spec; judged: act on 0 (0 fixed, 0 with a ticket), ask 1, consider 0, noted 0, dismissed 1; fixed point main.
+ round: 1 of 3
+ act-on items: 1" "an Ask item, counted" "$dir"
+ printf '## Act on\n\n## Ask\n\n## Consider\n\n## Noted\n\n## Dismissed\n\n2. [S2] **Middle Man.** one caller, kept inline\n1. [S1] **Mysterious Name.** the human says the name is the domain term. cites: #7 comment 2026-09-18\n' > "$dir/judgment.md"
+@@ -411,7 +439,7 @@ no spec: Standards axis only
+ 
+ $(cat "$dir/judgment.md")
+ 
+-Standards: 0 would break of 2; Spec: no spec; judged: act on 0 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 0, dismissed 2; fixed point main.
++Standards: 0 would break, 0 fail open, of 2; Spec: no spec; judged: act on 0 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 0, dismissed 2; fixed point main.
+ round: 1 of 3
+ act-on items: 0" "an Ask item moved and renumbered, the same round" "$dir"
+ 
+@@ -419,7 +447,7 @@ act-on items: 0" "an Ask item moved and renumbered, the same round" "$dir"
+ # naming the dir: each spelling is the dir the state names, so the state is cleared.
+ for spelling in "./$dir/" "$(git rev-parse --show-toplevel)/$dir"; do
+   reset
+-  printf '## Would break\n\n## Standards breaches\n\n## Fix alongside\n\n1. **Mysterious Name.** x\n2. **Middle Man.** y\n\nhard findings: 0\n' > "$dir/standards-report.md"
++  printf '## Would break\n\n## Fails open\n\n## Standards breaches\n\n## Fix alongside\n\n1. **Mysterious Name.** x\n2. **Middle Man.** y\n\nhard findings: 0\n' > "$dir/standards-report.md"
+   printf '## Act on\n\n1. [S1] **Mysterious Name.** the human wants it renamed\n\n## Ask\n\n## Consider\n\n## Noted\n\n## Dismissed\n\n2. [S2] **Middle Man.** one caller, kept inline\n' > "$dir/judgment.md"
+   accept "## Standards
+ 
+@@ -433,7 +461,7 @@ no spec: Standards axis only
+ 
+ $(cat "$dir/judgment.md")
+ 
+-Standards: 0 would break of 2; Spec: no spec; judged: act on 1 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 0, dismissed 1; fixed point main.
++Standards: 0 would break, 0 fail open, of 2; Spec: no spec; judged: act on 1 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 0, dismissed 1; fixed point main.
+ round: 1 of 3
+ act-on items: 1" "rerun with the dir spelled $spelling" "$spelling"
+ done
+@@ -446,7 +474,7 @@ done
+ # fenced_twin <label> <hunk>: the twin with the hunk under item 1 is accepted with the twin's summary.
+ fenced_twin() {
+   reset
+-  printf '## Would break\n\n1. **One.** a\n\n%s\n\n## Standards breaches\n\n2. **Two.** b\n\n## Fix alongside\n\n3. **Three.** c\n\nhard findings: 1\n' "$2" > "$dir/standards-report.md"
++  printf '## Would break\n\n1. **One.** a\nDocumented step: t\n\n%s\n\n## Fails open\n\n## Standards breaches\n\n2. **Two.** b\n\n## Fix alongside\n\n3. **Three.** c\n\nhard findings: 1\n' "$2" > "$dir/standards-report.md"
+   printf '## Act on\n\n1. [S1] **One.** yes\n\n## Ask\n\n## Consider\n\n## Noted\n\n2. [S3] **Three.** later\n\n## Dismissed\n\n3. [S2] **Two.** no\n' > "$dir/judgment.md"
+   accept "## Standards
+ 
+@@ -460,7 +488,7 @@ no spec: Standards axis only
+ 
+ $(cat "$dir/judgment.md")
+ 
+-Standards: 1 would break of 3; Spec: no spec; judged: act on 1 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 1, dismissed 1; fixed point main.
++Standards: 1 would break, 0 fail open, of 3; Spec: no spec; judged: act on 1 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 1, dismissed 1; fixed point main.
+ round: 1 of 3
+ act-on items: 1" "$1"
+ }
+@@ -471,7 +499,7 @@ fenced_twin "a fence quoted inside a longer fence" '````md
+ ```
+ 2. still the hunk
+ ```
+-## Latent
++## Fails open
+ ````'
+ fenced_twin 'a ~~~ fence quoting a ``` line' '~~~sh
+ ## Would break
+@@ -482,7 +510,7 @@ fenced_twin 'a ```sh fence quoted inside a ``` block' '```
+ ## Would break
+ ```sh
+ 1. still the hunk
+-## Latent
++## Fails open
+ ```'
+ fenced_twin "a fenced hunk carrying heading and item lines" '```
+ ## Fix alongside
+@@ -491,7 +519,7 @@ fenced_twin "a fenced hunk carrying heading and item lines" '```
+ ```'
+ 
+ reset
+-printf '## Would break \n\n## Standards breaches\t\n\n## Fix alongside \n\nhard findings: 0\n' > "$dir/standards-report.md"
++printf '## Would break \n\n## Fails open\t\n\n## Standards breaches\t\n\n## Fix alongside \n\nhard findings: 0\n' > "$dir/standards-report.md"
+ empty_judgment > "$dir/judgment.md"
+ accept "## Standards
+ 
+@@ -505,8 +533,11 @@ no spec: Standards axis only
+ 
+ $(cat "$dir/judgment.md")
+ 
+-Standards: 0 would break of 0; Spec: no spec; judged: act on 0 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 0, dismissed 0; fixed point main.
++Standards: 0 would break, 0 fail open, of 0; Spec: no spec; judged: act on 0 (0 fixed, 0 with a ticket), ask 0, consider 0, noted 0, dismissed 0; fixed point main.
+ round: 1 of 3
+ act-on items: 0" "headings with trailing whitespace"
++}
+ 
++suite project
++suite factory
+ echo "ok $n assertions"

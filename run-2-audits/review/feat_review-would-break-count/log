@@ -1,0 +1,5 @@
+fd7996e Record that a rule was added to a ticket before the problem was put to Manuel
+fd6c805 Close a fence only on its own character with no info string, and pin the heading bullets (#79)
+04e5a2a Parse the carried judgment's fences by the CommonMark rule and refuse a misnumbered judgment
+d7860b0 Record the three-round limit, the carry-forward rule, and the #74 comment the reviewers never saw
+98ba213 Run a review three rounds at most, carry only what cites a decision, and read the ticket author's comments as spec

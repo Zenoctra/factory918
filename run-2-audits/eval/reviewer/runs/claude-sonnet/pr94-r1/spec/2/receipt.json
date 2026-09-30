@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "run": {
+    "descriptor": "claude:sonnet",
+    "round": "pr94-r1",
+    "axis": "spec",
+    "k": 2
+  },
+  "route": "native",
+  "status": "contaminated",
+  "detail": "Bash sed -n '260,283p' \"/Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory91",
+  "reported_model": "claude-sonnet-5",
+  "model_verified": true,
+  "effort": "medium",
+  "tokens": {
+    "input": 14,
+    "cache_read": 498763,
+    "cache_write": 70431,
+    "output": 8391
+  },
+  "wall_ms": 105796,
+  "source": "/Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/subagents/agent-a849b08a81ec69f9a.jsonl"
+}

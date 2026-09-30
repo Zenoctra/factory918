@@ -1,0 +1,107 @@
+f2cbc01 (on c8aca57, which is feat/reviewer-eval-rerun; one new commit; not pushed)
+
+Opus 5 is out of the measurement. GPT-6 Sol runs through `codex exec` and gets the same receipt and the same content and cross-run checks as a Claude run. I launched no reviewer run. The only Codex call I made was the smoke call the brief allows.
+
+Commit: f2cbc01 "Retire Opus 5 from the reviewer measurement and add GPT-6 Sol through codex exec".
+
+1. Opus 5.
+- RETIRED maps claude:opus-5 to "partial (pass 1 and some pass 2; retired 2026-09-24)".
+- `next claude:opus-5` does these things:
+  - it prints "retired claude:opus-5: retired from scheduling (Manuel, 2026-09-24); its collected runs stay in the table";
+  - it sets aside every prepared Opus 5 run: it writes a dropout receipt with the detail "retired: stopped by the root" and moves the run under dropped/, the same way as other set-asides;
+  - it prepares nothing for Opus 5. When another model is named in the same command, only that model is scheduled.
+- `collect` never collects a prepared Opus 5 run. It prints "retired <dir>: not collected; set it aside with: next claude:opus-5".
+- In the table, each Opus 5 section has the line "This model is partial (pass 1 and some pass 2; retired 2026-09-24).".
+- I ran `next claude:opus-5` on W. It set aside 7 runs, not the 8 the brief counts. These were the only Opus 5 runs with a run.json and no receipt:
+  - dropped/claude-opus-5/pr94-r1/spec/M2/2
+  - dropped/claude-opus-5/pr94-r1/standards/I2/1
+  - dropped/claude-opus-5/pr94-r1/standards/M2/1
+  - dropped/claude-opus-5/pr94-r1/standards/S2/1
+  - dropped/claude-opus-5/pr96-r1/spec/M2/1
+  - dropped/claude-opus-5/pr96-r1/spec/S2/1
+  - dropped/claude-opus-5/pr96-r1/standards/M2/1
+  Nothing was deleted, and the complete Opus 5 runs are untouched. If there was an eighth, it already had a receipt when I looked.
+
+2. The Codex route.
+- MODELS["codex:gpt-6-sol"] = Codex("gpt-6-sol", ^gpt-6-sol$). gpt-6-terra is not added. The old External route and pstack-runner are not brought back; the route calls codex directly.
+- The command:
+  `codex exec -m gpt-6-sol -c model_reasoning_effort="high" --sandbox workspace-write -c sandbox_workspace_write.network_access=true --skip-git-repo-check --cd <export> --json <prompt>`
+  - It runs with cwd set to the export and stdin from /dev/null.
+  - `--skip-git-repo-check` is needed because the export is a git archive with no .git.
+- Sandbox: workspace-write with network access.
+  - It lets the reviewer write inside its export (.scratch/work included), run the tests, and reach the network (gh, installs), as a Claude lane can.
+  - I did not choose full access, because that would let it write anywhere, into other runs' exports too.
+  - One limit: workspace-write also makes TMPDIR and /tmp writable, and the exports live under $TMPDIR/review-work, so a Sol run could still write into a sibling export. The cross-run check catches reads of another run's files, not writes.
+- `next codex:gpt-6-sol` prints launch lines of the form {"run", "command"} and prepares those runs.
+- `next codex:gpt-6-sol --run [--limit N]` launches the runs it would print, up to CODEX_AT_ONCE = 4 at a time:
+  - Each run's stdout goes to <run dir>/codex.jsonl and its stderr to <run dir>/codex-stderr.txt.
+  - It waits, and collects each run as it exits. After a usage-limit dropout it launches nothing more.
+  - With a Claude descriptor, --run refuses.
+- `collect` also picks up Codex runs whose stdout shows turn.completed or turn.failed, for example after the reviewer.py process died.
+- The run is the same as a Claude run: the same plan() prompt, export, frozen ticket.md and blast-radius.md, .scratch/work/ and report path. The report is read from the export.
+- The session log is bound through the thread id that the first stdout event (thread.started) names: $CODEX_HOME/sessions/*/*/*/rollout-*-<thread_id>.jsonl. The receipt's source is that path.
+
+What the Codex log records (0.156.1, read from real logs and from the smoke call):
+- Model: turn_context.payload.model ("gpt-6-sol"), with the same value in collaboration_mode.settings.model. A mismatch is refused.
+- Effort: turn_context.payload.effort ("high" in the smoke call; "medium" in the root's earlier smoke call, which set no effort), with the same value in collaboration_mode.settings.reasoning_effort.
+  - Anything other than high is refused.
+  - If a log records no effort, the receipt says "requested: high". The code handles this and a test covers it, but every log I saw records the effort.
+- Tokens: the last event_msg token_count, in info.total_token_usage: input_tokens, cached_input_tokens, cache_write_input_tokens, output_tokens and reasoning_output_tokens.
+  - Receipt tokens are: input = input minus cached, cache_read = cached, cache_write, output, and reasoning (new optional field).
+  - Reasoning tokens are included in output.
+- Wall clock: the first to the last timestamp in the log.
+- Tool calls:
+  - Each call is a response_item custom_tool_call. In exec mode the tool is "exec", whose input is JS calling tools.exec_command. Older sessions use function_call.
+  - Each call is followed by item_completed events for the work it did: CommandExecution (command, cwd, output), FileChange (paths), Extension web.search.
+  - Then comes custom_tool_call_output: what the model saw, with exec's result as JSON text {"output": ...}.
+- The mapping into the transcript the checks read:
+  - One tool_use per model call, with the Bash command built as "cd <cwd> && <cmd>" from its CommandExecutions, plus "apply_patch <paths>" for its FileChanges.
+  - WRITES now includes apply_patch, so a file the run itself wrote does not count as a cross-run read.
+  - The call's output, unwrapped, becomes its tool_result.
+  - A web search or fetch becomes WebSearch or WebFetch, which the check cannot date and so treats as contaminated, as it does for Claude. That holds even for a search logged outside any call.
+  - Content check, cross-run check, first-contaminated call ordinal, sightings and outside-path record all run on this shape unchanged. recheck and sightings read a Codex receipt's source through the same mapping.
+- Dropouts:
+  - A usage-limit message ("hit your ... limit") in an error event of the log, in a stdout error or turn.failed event, or on stderr gives a usage-limit dropout, which pauses the model until `next --resume codex:gpt-6-sol`.
+  - No served model, or no task_complete with an answer, gives a no-response dropout carrying what the log or stderr said.
+
+Fixtures:
+- tests/eval/reviewer/codex/smoke.jsonl is the real session log of my one smoke call, trimmed to the records the parser reads.
+  - Instructions, developer messages, reasoning and rate limits were dropped. The temp cwd became /tmp/codex-smoke.
+  - The call was: `codex exec -m gpt-6-sol -c model_reasoning_effort="high" --sandbox workspace-write -c sandbox_workspace_write.network_access=true --skip-git-repo-check --json "Run cat hello.txt with the shell, then write the word done into a new file out.txt, then reply with the line you read."`, run from an empty mktemp directory. It took 14 s, and its log recorded model gpt-6-sol and effort high.
+  - It read one line and wrote out.txt, so the fixture carries a real exec call, its CommandExecution and its output.
+- tests/eval/reviewer/codex/smoke-stdout.jsonl is that call's --json stdout. Its thread.started id is the log's session_id, which is the binding.
+- No #103 astra session log is on this machine (~/.codex/sessions starts on 2026-09-21), so I used the smoke call.
+- The fake codex in refusals.sh replays smoke.jsonl into $CODEX_HOME with the model, effort, command or output the test asks for. CI needs no ~/.codex.
+
+3. Verification at f2cbc01.
+- refusals.sh: 316 of 316, 51 more checks than before. They cover:
+  - next's command line and prompt, which match a Claude run's;
+  - --run launching and collecting;
+  - model, effort, tokens, wall clock and source read from the log;
+  - the report copied and the export removed;
+  - six launches capped at 4 at once, with a fake codex that records the peak;
+  - effort medium refused, and a gpt-6-terra model refused;
+  - a later line inside an exec output contaminating the run at call 1;
+  - a cross-run read of another scratchpad by a Codex command;
+  - the usage-limit pause, then --resume completing the run;
+  - a crash with no answer counting as no-response;
+  - the real smoke log read as two Bash calls with their outputs;
+  - "requested: high" when no effort is recorded;
+  - a web search counting as undated, in a call and on its own;
+  - a FileChange making its path the run's own;
+  - the thread id binding;
+  - Opus 5: collect not collecting, next setting aside with the detail, next preparing nothing, the table label.
+  The Claude checks now schedule Opus 5.5 where they scheduled Opus 5, because Opus 5 is retired. The wrong-model checks now use claude-opus-5.
+- Earlier, the first version of "codex ran in the export" failed once in five runs: two fakes append to the same log, so the first line can belong to either run. It now checks every line, and it has passed on every run since.
+- corpus.sh: 44 of 44.
+- check: exit 0.
+- rebuild.sh pr94-r1, pr96-r1 and pr99-r1: identical.
+- fixes.sh: all identical.
+- ShellCheck with the AGENTS.md line: 28 files, exit 0. No script was added, because the fake codex is inside refusals.sh.
+- Dry run: `REVIEWER_OUT=<temp> REVIEWER_WORK=<temp> python3 tests/eval/reviewer/reviewer.py next codex:gpt-6-sol --limit 8` exited 0 and printed 6 pass-1 lines (pr94-r1, pr96-r1 and pr99-r1, standards and spec), each with the codex command. I then removed the temporary directory.
+
+Not covered by a test: the rule that stops launching new runs after a usage limit when more than four runs are queued. The pause itself and --resume are tested.
+
+Pilot command. Run it from your worktree (W) after fast-forwarding to f2cbc01; REVIEWER_OUT defaults to W's .scratch/eval/reviewer-138:
+    python3 tests/eval/reviewer/reviewer.py next codex:gpt-6-sol --run --limit 6
+It prepares the six pass-1 Sol runs, launches four and then two, and blocks until all six are collected, printing a line per launch and per collected run. Run it in the background with its output sent to a log.

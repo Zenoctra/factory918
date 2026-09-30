@@ -1,0 +1,17 @@
+ .github/workflows/factory-ci.yml                   |   4 +-
+ AGENTS.md                                          |   1 +
+ SOURCES.md                                         |   2 +-
+ docs/agents/ledger.md                              |   2 +
+ docs/knowledge/INDEX.md                            |   4 +-
+ docs/knowledge/core/DECISIONS.md                   |   3 +-
+ docs/knowledge/core/MANUAL.md                      |  22 ++-
+ factory918.sh                                      |   2 +-
+ .../poteto-mode/playbooks/autopilot-stack.md.patch |   7 +-
+ template/.agents/skills/factory918/SKILL.md        |   4 +-
+ .../poteto-mode/playbooks/autopilot-stack.md       |   2 +-
+ .../.agents/skills/poteto-mode/playbooks/ticket.md |   4 +-
+ .../.agents/skills/poteto-mode/scripts/overlap.sh  | 116 +++++++++++
+ template/docs/factory918/DECISIONS.md              |   1 +
+ template/docs/factory918/MANUAL.md                 |   4 +-
+ tests/poteto-mode/overlap.sh                       | 213 +++++++++++++++++++++
+ 16 files changed, 367 insertions(+), 24 deletions(-)

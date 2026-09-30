@@ -1,0 +1,15 @@
+ SOURCES.md                                         |   6 +-
+ patches/mattpocock/spec-review.SKILL.md.patch      |  17 ++-
+ patches/pstack/babysit/SKILL.md.patch              |   3 +-
+ .../pstack/poteto-mode/playbooks/babysit.md.patch  |   6 +-
+ template/.agents/skills/babysit/SKILL.md           |   1 +
+ .../skills/poteto-mode/playbooks/babysit.md        |   2 +
+ .../.agents/skills/poteto-mode/playbooks/ticket.md |  13 +-
+ template/.agents/skills/spec-review/SKILL.md       |  15 +-
+ .../skills/spec-review/scripts/review-brief.sh     |  64 ++++++--
+ .../skills/spec-review/scripts/review-comment.sh   |  92 +++++++++---
+ template/docs/agents/review-ladder.md              |   2 +-
+ tests/spec-review/no-stale-wording.sh              |  11 +-
+ tests/spec-review/review-brief.sh                  | 157 ++++++++++++++++++-
+ tests/spec-review/review-comment.sh                | 166 ++++++++++++++++++++-
+ 14 files changed, 483 insertions(+), 72 deletions(-)

@@ -1,0 +1,14 @@
+.github/workflows/factory-ci.yml
+docs/knowledge/INDEX.md
+docs/knowledge/core/DECISIONS.md
+patches/mattpocock/spec-review.SKILL.md.patch
+template/.agents/skills/spec-review/SKILL.md
+template/.agents/skills/spec-review/scripts/review-brief.sh
+template/.agents/skills/spec-review/scripts/review-comment.sh
+template/docs/agents/review-ladder.md
+template/docs/factory918/DECISIONS.md
+tests/spec-review/fake-gh.sh
+tests/spec-review/layout.sh
+tests/spec-review/no-stale-wording.sh
+tests/spec-review/review-brief.sh
+tests/spec-review/review-comment.sh

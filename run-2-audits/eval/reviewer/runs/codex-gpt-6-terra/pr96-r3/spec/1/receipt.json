@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "run": {
+    "descriptor": "codex:gpt-6-terra",
+    "round": "pr96-r3",
+    "axis": "spec",
+    "k": 1
+  },
+  "route": "external",
+  "status": "dropout",
+  "detail": "unavailable-model: {'message': 'child exited with status 1', 'evidence': '{\"type\":\"thread.started\",\"thread_id\":\"01a0cc4c-bbf4-73e1-b0e6-388e45090887\"}\\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_0\",\"type\":\"error\",\"message\":\"Model metadata for `gpt-6-terra` not found. Defaulting to fallback metadata; this can degrade performance and cause issues.\"}}\\n{\"type\":\"turn.started\"}\\n{\"type\":\"error\",\"message\":\"{\\\\\"type\\\\\":\\\\\"error\\\\\",\\\\\"status\\\\\":400,\\\\\"error\\\\\":{\\\\\"type\\\\\":\\\\\"invalid_request_error\\\\\",\\\\\"message\\\\\":\\\\\"The \\'gpt-6-terra\\' model is not supported when using Codex with a ChatGPT account.\\\\\"}}\"}\\n{\"type\":\"turn.failed\",\"error\":{\"message\":\"{\\\\\"type\\\\\":\\\\\"error\\\\\",\\\\\"status\\\\\":400,\\\\\"error\\\\\":{\\\\\"type\\\\\":\\\\\"invalid_request_error\\\\\",\\\\\"message\\\\\":\\\\\"The \\'gpt-6-terra\\' model is not supported when using Codex with a ChatGPT account.\\\\\"}}\"}}'}",
+  "reported_model": null,
+  "model_verified": false,
+  "effort": "high",
+  "tokens": null,
+  "wall_ms": 2661,
+  "source": "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.scratch/eval/reviewer/runs/codex-gpt-6-terra/pr96-r3/spec/1/runner-receipt.json"
+}

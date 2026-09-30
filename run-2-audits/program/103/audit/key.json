@@ -1,0 +1,442 @@
+{
+ "R66f07dac": {
+  "descriptor": "claude:opus-5",
+  "brief": "pr94-r1/spec",
+  "k": 1
+ },
+ "R136d1fc9": {
+  "descriptor": "claude:opus-5",
+  "brief": "pr94-r1/spec",
+  "k": 2
+ },
+ "R8d8d92b0": {
+  "descriptor": "claude:opus-5",
+  "brief": "pr94-r1/spec",
+  "k": 3
+ },
+ "R0dbf889b": {
+  "descriptor": "claude:opus-5.5",
+  "brief": "pr94-r1/spec",
+  "k": 1
+ },
+ "R0b5f5ae5": {
+  "descriptor": "claude:opus-5.5",
+  "brief": "pr94-r1/spec",
+  "k": 2
+ },
+ "R185ecbf2": {
+  "descriptor": "claude:opus-5.5",
+  "brief": "pr94-r1/spec",
+  "k": 3
+ },
+ "R268cf621": {
+  "descriptor": "claude:sonnet",
+  "brief": "pr94-r1/spec",
+  "k": 1
+ },
+ "R51bfba8c": {
+  "descriptor": "claude:sonnet",
+  "brief": "pr94-r1/spec",
+  "k": 3
+ },
+ "R844665f2": {
+  "descriptor": "claude:sonnet",
+  "brief": "pr94-r1/spec",
+  "k": 4
+ },
+ "R7e855189": {
+  "descriptor": "claude:opus-5",
+  "brief": "pr94-r1/standards",
+  "k": 1
+ },
+ "R0522c079": {
+  "descriptor": "claude:opus-5",
+  "brief": "pr94-r1/standards",
+  "k": 2
+ },
+ "R5414c4df": {
+  "descriptor": "claude:opus-5",
+  "brief": "pr94-r1/standards",
+  "k": 3
+ },
+ "Rb8329430": {
+  "descriptor": "claude:opus-5.5",
+  "brief": "pr94-r1/standards",
+  "k": 1
+ },
+ "R5efa2b6e": {
+  "descriptor": "claude:opus-5.5",
+  "brief": "pr94-r1/standards",
+  "k": 2
+ },
+ "R70a46199": {
+  "descriptor": "claude:opus-5.5",
+  "brief": "pr94-r1/standards",
+  "k": 3
+ },
+ "R74359da8": {
+  "descriptor": "claude:sonnet",
+  "brief": "pr94-r1/standards",
+  "k": 1
+ },
+ "Rb10d53b7": {
+  "descriptor": "claude:sonnet",
+  "brief": "pr94-r1/standards",
+  "k": 3
+ },
+ "R99fb1c2c": {
+  "descriptor": "claude:sonnet",
+  "brief": "pr94-r1/standards",
+  "k": 4
+ },
+ "R7bce59aa": {
+  "descriptor": "claude:opus-5",
+  "brief": "pr96-r1/spec",
+  "k": 1
+ },
+ "Rf97ccb90": {
+  "descriptor": "claude:opus-5",
+  "brief": "pr96-r1/spec",
+  "k": 2
+ },
+ "Re891bb56": {
+  "descriptor": "claude:opus-5",
+  "brief": "pr96-r1/spec",
+  "k": 3
+ },
+ "R7f1263f1": {
+  "descriptor": "claude:opus-5.5",
+  "brief": "pr96-r1/spec",
+  "k": 1
+ },
+ "R77be5d48": {
+  "descriptor": "claude:opus-5.5",
+  "brief": "pr96-r1/spec",
+  "k": 2
+ },
+ "Rbf136302": {
+  "descriptor": "claude:opus-5.5",
+  "brief": "pr96-r1/spec",
+  "k": 3
+ },
+ "R4111d2cc": {
+  "descriptor": "claude:sonnet",
+  "brief": "pr96-r1/spec",
+  "k": 1
+ },
+ "Rcc53e260": {
+  "descriptor": "claude:sonnet",
+  "brief": "pr96-r1/spec",
+  "k": 2
+ },
+ "R023e47d5": {
+  "descriptor": "claude:sonnet",
+  "brief": "pr96-r1/spec",
+  "k": 3
+ },
+ "R89d89c12": {
+  "descriptor": "claude:opus-5",
+  "brief": "pr96-r1/standards",
+  "k": 1
+ },
+ "R430e6340": {
+  "descriptor": "claude:opus-5",
+  "brief": "pr96-r1/standards",
+  "k": 2
+ },
+ "R314623ff": {
+  "descriptor": "claude:opus-5",
+  "brief": "pr96-r1/standards",
+  "k": 3
+ },
+ "R88a6d5c5": {
+  "descriptor": "claude:opus-5.5",
+  "brief": "pr96-r1/standards",
+  "k": 1
+ },
+ "R496cfe92": {
+  "descriptor": "claude:opus-5.5",
+  "brief": "pr96-r1/standards",
+  "k": 2
+ },
+ "R15721996": {
+  "descriptor": "claude:opus-5.5",
+  "brief": "pr96-r1/standards",
+  "k": 3
+ },
+ "R8e7320df": {
+  "descriptor": "claude:sonnet",
+  "brief": "pr96-r1/standards",
+  "k": 2
+ },
+ "Rb4b0c098": {
+  "descriptor": "claude:sonnet",
+  "brief": "pr96-r1/standards",
+  "k": 3
+ },
+ "Ra53ab8fc": {
+  "descriptor": "claude:sonnet",
+  "brief": "pr96-r1/standards",
+  "k": 4
+ },
+ "R5c2e1c26": {
+  "descriptor": "claude:opus-5",
+  "brief": "pr96-r2/spec",
+  "k": 1
+ },
+ "R8e992bc0": {
+  "descriptor": "claude:opus-5",
+  "brief": "pr96-r2/spec",
+  "k": 2
+ },
+ "R0cca48c7": {
+  "descriptor": "claude:opus-5",
+  "brief": "pr96-r2/spec",
+  "k": 3
+ },
+ "R0e8c6890": {
+  "descriptor": "claude:opus-5.5",
+  "brief": "pr96-r2/spec",
+  "k": 1
+ },
+ "R0d3abea5": {
+  "descriptor": "claude:opus-5.5",
+  "brief": "pr96-r2/spec",
+  "k": 2
+ },
+ "Re7e1890d": {
+  "descriptor": "claude:opus-5.5",
+  "brief": "pr96-r2/spec",
+  "k": 3
+ },
+ "R5c02bbd6": {
+  "descriptor": "claude:sonnet",
+  "brief": "pr96-r2/spec",
+  "k": 1
+ },
+ "Re120c371": {
+  "descriptor": "claude:sonnet",
+  "brief": "pr96-r2/spec",
+  "k": 2
+ },
+ "Re6eadee3": {
+  "descriptor": "claude:opus-5",
+  "brief": "pr96-r2/standards",
+  "k": 1
+ },
+ "R8be809bf": {
+  "descriptor": "claude:opus-5",
+  "brief": "pr96-r2/standards",
+  "k": 2
+ },
+ "R2376327c": {
+  "descriptor": "claude:opus-5",
+  "brief": "pr96-r2/standards",
+  "k": 3
+ },
+ "R5159796e": {
+  "descriptor": "claude:opus-5.5",
+  "brief": "pr96-r2/standards",
+  "k": 1
+ },
+ "R5b67342d": {
+  "descriptor": "claude:opus-5.5",
+  "brief": "pr96-r2/standards",
+  "k": 2
+ },
+ "R3e1bc70e": {
+  "descriptor": "claude:opus-5.5",
+  "brief": "pr96-r2/standards",
+  "k": 3
+ },
+ "Re06e950e": {
+  "descriptor": "claude:sonnet",
+  "brief": "pr96-r2/standards",
+  "k": 1
+ },
+ "R659d9ec6": {
+  "descriptor": "claude:sonnet",
+  "brief": "pr96-r2/standards",
+  "k": 3
+ },
+ "R82033f20": {
+  "descriptor": "claude:sonnet",
+  "brief": "pr96-r2/standards",
+  "k": 4
+ },
+ "R7bc7372f": {
+  "descriptor": "claude:opus-5",
+  "brief": "pr99-r1/spec",
+  "k": 1
+ },
+ "R6da306cf": {
+  "descriptor": "claude:opus-5",
+  "brief": "pr99-r1/spec",
+  "k": 2
+ },
+ "Rb38da363": {
+  "descriptor": "claude:opus-5",
+  "brief": "pr99-r1/spec",
+  "k": 3
+ },
+ "Re4678f5a": {
+  "descriptor": "claude:opus-5.5",
+  "brief": "pr99-r1/spec",
+  "k": 1
+ },
+ "R161f7f25": {
+  "descriptor": "claude:opus-5.5",
+  "brief": "pr99-r1/spec",
+  "k": 2
+ },
+ "Rc1ec8462": {
+  "descriptor": "claude:opus-5.5",
+  "brief": "pr99-r1/spec",
+  "k": 3
+ },
+ "R6be6701a": {
+  "descriptor": "claude:sonnet",
+  "brief": "pr99-r1/spec",
+  "k": 2
+ },
+ "R06f07029": {
+  "descriptor": "claude:sonnet",
+  "brief": "pr99-r1/spec",
+  "k": 3
+ },
+ "R1be469e8": {
+  "descriptor": "claude:sonnet",
+  "brief": "pr99-r1/spec",
+  "k": 4
+ },
+ "R95460f99": {
+  "descriptor": "claude:opus-5",
+  "brief": "pr99-r1/standards",
+  "k": 1
+ },
+ "Rf6eb6186": {
+  "descriptor": "claude:opus-5",
+  "brief": "pr99-r1/standards",
+  "k": 2
+ },
+ "Rbb3c5096": {
+  "descriptor": "claude:opus-5",
+  "brief": "pr99-r1/standards",
+  "k": 3
+ },
+ "R14b163c9": {
+  "descriptor": "claude:opus-5.5",
+  "brief": "pr99-r1/standards",
+  "k": 1
+ },
+ "R7b21b68c": {
+  "descriptor": "claude:opus-5.5",
+  "brief": "pr99-r1/standards",
+  "k": 2
+ },
+ "R7c83c2c2": {
+  "descriptor": "claude:opus-5.5",
+  "brief": "pr99-r1/standards",
+  "k": 3
+ },
+ "R53c3d07d": {
+  "descriptor": "claude:sonnet",
+  "brief": "pr99-r1/standards",
+  "k": 2
+ },
+ "R09eecb65": {
+  "descriptor": "claude:sonnet",
+  "brief": "pr99-r1/standards",
+  "k": 3
+ },
+ "R8d992177": {
+  "descriptor": "claude:sonnet",
+  "brief": "pr99-r1/standards",
+  "k": 4
+ },
+ "R51170afc": {
+  "descriptor": "claude:opus-5",
+  "brief": "pr99-r1b/spec",
+  "k": 1
+ },
+ "R843b1548": {
+  "descriptor": "claude:opus-5",
+  "brief": "pr99-r1b/spec",
+  "k": 2
+ },
+ "Rd4bfa928": {
+  "descriptor": "claude:opus-5",
+  "brief": "pr99-r1b/spec",
+  "k": 3
+ },
+ "Rb947ce52": {
+  "descriptor": "claude:opus-5.5",
+  "brief": "pr99-r1b/spec",
+  "k": 1
+ },
+ "R5d1c457e": {
+  "descriptor": "claude:opus-5.5",
+  "brief": "pr99-r1b/spec",
+  "k": 2
+ },
+ "Re365c415": {
+  "descriptor": "claude:opus-5.5",
+  "brief": "pr99-r1b/spec",
+  "k": 3
+ },
+ "Re34550ff": {
+  "descriptor": "claude:sonnet",
+  "brief": "pr99-r1b/spec",
+  "k": 1
+ },
+ "R1b344f3e": {
+  "descriptor": "claude:sonnet",
+  "brief": "pr99-r1b/spec",
+  "k": 3
+ },
+ "R1b4597f7": {
+  "descriptor": "claude:opus-5",
+  "brief": "pr99-r1b/standards",
+  "k": 1
+ },
+ "R5703cb92": {
+  "descriptor": "claude:opus-5",
+  "brief": "pr99-r1b/standards",
+  "k": 2
+ },
+ "R46f33f82": {
+  "descriptor": "claude:opus-5",
+  "brief": "pr99-r1b/standards",
+  "k": 4
+ },
+ "Ra2f67455": {
+  "descriptor": "claude:opus-5.5",
+  "brief": "pr99-r1b/standards",
+  "k": 1
+ },
+ "Rc016da63": {
+  "descriptor": "claude:opus-5.5",
+  "brief": "pr99-r1b/standards",
+  "k": 2
+ },
+ "R47dff13a": {
+  "descriptor": "claude:opus-5.5",
+  "brief": "pr99-r1b/standards",
+  "k": 3
+ },
+ "R022d8e19": {
+  "descriptor": "claude:sonnet",
+  "brief": "pr99-r1b/standards",
+  "k": 1
+ },
+ "R94fcb4c3": {
+  "descriptor": "claude:sonnet",
+  "brief": "pr99-r1b/standards",
+  "k": 2
+ },
+ "R5e2d94d7": {
+  "descriptor": "claude:sonnet",
+  "brief": "pr99-r1b/standards",
+  "k": 3
+ }
+}

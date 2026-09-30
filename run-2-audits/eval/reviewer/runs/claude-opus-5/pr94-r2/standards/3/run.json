@@ -1,0 +1,11 @@
+{
+  "run": {
+    "descriptor": "claude:opus-5",
+    "round": "pr94-r2",
+    "axis": "standards",
+    "k": 3
+  },
+  "nonce": "2c17ba685e9d",
+  "checkout": "/private/tmp/claude-501/review-work/2c17ba685e9d/factory918",
+  "prompt": "Read `/private/tmp/claude-501/review-work/2c17ba685e9d/factory918/.scratch/review/c83f166/standards-brief.md` whole and follow it. You are working in `/private/tmp/claude-501/review-work/2c17ba685e9d/factory918`; every relative path in the brief is relative to it."
+}

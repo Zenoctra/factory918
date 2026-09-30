@@ -1,0 +1,17 @@
+8b47278 Refuse the --diff record on a detached HEAD
+ebf7e96 Treat a git error in the ancestor test as a failure, not as "no"
+432397e Record that overlap.sh is ours and kept through sync
+aac4dc6 Make the one-off go name the ticket the printed PR closes
+46a0f1d Quote the program file path in the overlap test
+661b8e1 Document the go command with bare ticket numbers
+6b027ef Record the overlap rule and the go line as P24
+67903cf Say in the playbook and the manual that a PR's line is its own commits
+9439fb9 Diff each open PR from the PR under it, so a stacked PR reports only its own commits
+b7ea7ed Record the program's go line when autopilot-stack starts
+4839da7 Tell the manual's reader how two tickets relate before running both
+d83b310 Route several tickets by how their files relate
+b699cc6 Make the Ticket playbook run the overlap check before it branches
+cce8b80 Add the overlap check the Ticket playbook runs before it branches
+4de9c91 Add the test for the overlap check before its script
+4da48ab Record the script path the brief got wrong
+e79a411 Record the seven re-reviews mis-estimate in the ledger

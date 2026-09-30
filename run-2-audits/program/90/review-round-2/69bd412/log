@@ -1,0 +1,9 @@
+384bb43 Record the design-hole decision and the merge read's restart clause
+831f4b4 Show a refused hole's value as written
+785b158 Expect a hole written without the space to be refused as written
+32978fa Say what a hole: field is and that a review with no spec marks none
+53ca502 Show a malformed hole's value and refuse a hole in a review with no spec
+096954b Test the round-one amendments to ticket #90's tables before the scripts
+52ccd8e Say where a design hole goes, in the skill, the ladder and the playbooks
+8b3de0a Return a design hole to architect and restart the review rounds
+cc36280 Test the design-hole restart from ticket #90's tables before the scripts

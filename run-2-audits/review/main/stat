@@ -1,0 +1,15 @@
+ .github/workflows/factory-ci.yml                   |  20 +++
+ docs/knowledge/INDEX.md                            |   2 +-
+ docs/knowledge/core/DECISIONS.md                   |   5 +-
+ patches/mattpocock/spec-review.SKILL.md.patch      |  42 +++---
+ template/.agents/skills/spec-review/SKILL.md       |  30 ++--
+ .../skills/spec-review/scripts/review-brief.sh     |  54 ++++---
+ .../skills/spec-review/scripts/review-comment.sh   |  45 ++++--
+ template/docs/agents/review-ladder.md              |   2 +-
+ template/docs/factory918/DECISIONS.md              |   3 +-
+ tests/spec-review/fake-gh.sh                       |  24 ++++
+ tests/spec-review/layout.sh                        |  26 ++++
+ tests/spec-review/no-stale-wording.sh              |  13 ++
+ tests/spec-review/review-brief.sh                  | 157 ++++++++++++---------
+ tests/spec-review/review-comment.sh                | 121 ++++++++++------
+ 14 files changed, 368 insertions(+), 176 deletions(-)

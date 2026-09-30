@@ -1,0 +1,16 @@
+.github/workflows/factory-ci.yml
+AGENTS.md
+SOURCES.md
+docs/agents/ledger.md
+docs/knowledge/INDEX.md
+docs/knowledge/core/DECISIONS.md
+docs/knowledge/core/MANUAL.md
+factory918.sh
+patches/pstack/poteto-mode/playbooks/autopilot-stack.md.patch
+template/.agents/skills/factory918/SKILL.md
+template/.agents/skills/poteto-mode/playbooks/autopilot-stack.md
+template/.agents/skills/poteto-mode/playbooks/ticket.md
+template/.agents/skills/poteto-mode/scripts/overlap.sh
+template/docs/factory918/DECISIONS.md
+template/docs/factory918/MANUAL.md
+tests/poteto-mode/overlap.sh

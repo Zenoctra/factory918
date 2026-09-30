@@ -1,0 +1,97 @@
+{
+ "Rb9718820": {
+  "descriptor": "codex:gpt-6-astra",
+  "brief": "pr94-r1/spec",
+  "k": 1
+ },
+ "Ra8fb11d9": {
+  "descriptor": "codex:gpt-6-astra",
+  "brief": "pr94-r1/spec",
+  "k": 2
+ },
+ "R80a26128": {
+  "descriptor": "codex:gpt-6-astra",
+  "brief": "pr94-r1/spec",
+  "k": 3
+ },
+ "R888b7e13": {
+  "descriptor": "codex:gpt-6-astra",
+  "brief": "pr94-r1/standards",
+  "k": 1
+ },
+ "Re7e6c74b": {
+  "descriptor": "codex:gpt-6-astra",
+  "brief": "pr94-r1/standards",
+  "k": 2
+ },
+ "Rf22673d8": {
+  "descriptor": "codex:gpt-6-astra",
+  "brief": "pr94-r1/standards",
+  "k": 3
+ },
+ "Ref67b316": {
+  "descriptor": "codex:gpt-6-astra",
+  "brief": "pr96-r1/spec",
+  "k": 1
+ },
+ "Rf190d9c5": {
+  "descriptor": "codex:gpt-6-astra",
+  "brief": "pr96-r1/spec",
+  "k": 2
+ },
+ "R4cd28dd8": {
+  "descriptor": "codex:gpt-6-astra",
+  "brief": "pr96-r1/spec",
+  "k": 3
+ },
+ "R58738a87": {
+  "descriptor": "codex:gpt-6-astra",
+  "brief": "pr96-r1/standards",
+  "k": 1
+ },
+ "Rcd3d2b70": {
+  "descriptor": "codex:gpt-6-astra",
+  "brief": "pr96-r1/standards",
+  "k": 2
+ },
+ "R03a90d74": {
+  "descriptor": "codex:gpt-6-astra",
+  "brief": "pr96-r1/standards",
+  "k": 3
+ },
+ "Ra2a53b3c": {
+  "descriptor": "codex:gpt-6-astra",
+  "brief": "pr96-r2/standards",
+  "k": 1
+ },
+ "Rcdb58195": {
+  "descriptor": "codex:gpt-6-astra",
+  "brief": "pr96-r2/standards",
+  "k": 2
+ },
+ "Racc3de66": {
+  "descriptor": "codex:gpt-6-astra",
+  "brief": "pr96-r2/standards",
+  "k": 3
+ },
+ "R2b263f43": {
+  "descriptor": "codex:gpt-6-astra",
+  "brief": "pr99-r1/standards",
+  "k": 1
+ },
+ "R9e3259ba": {
+  "descriptor": "codex:gpt-6-astra",
+  "brief": "pr99-r1/standards",
+  "k": 2
+ },
+ "Rd7fb71c8": {
+  "descriptor": "codex:gpt-6-astra",
+  "brief": "pr99-r1/standards",
+  "k": 3
+ },
+ "R9f5ca17c": {
+  "descriptor": "codex:gpt-6-astra",
+  "brief": "pr99-r1b/standards",
+  "k": 1
+ }
+}

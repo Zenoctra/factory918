@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "parent": "claude",
+  "provider": "codex",
+  "model": "gpt-6-terra",
+  "effort": "high",
+  "mode": "isolated-write",
+  "cwd": "/private/tmp/claude-501/review-work/10c8c8e1df50/factory918",
+  "promptPath": "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.scratch/eval/reviewer/runs/codex-gpt-6-terra/pr102-r1/spec/1/prompt.txt",
+  "outputPath": "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.scratch/eval/reviewer/runs/codex-gpt-6-terra/pr102-r1/spec/1/runner-output.md",
+  "startedAt": "2026-09-23T03:26:48.262Z",
+  "completedAt": "2026-09-23T03:26:51.131Z",
+  "elapsedMs": 2869,
+  "executable": "/opt/homebrew/bin/codex",
+  "preflight": {
+    "argv": [
+      "/opt/homebrew/bin/codex",
+      "login",
+      "status"
+    ],
+    "status": "passed",
+    "evidence": "authenticated"
+  },
+  "argv": [
+    "/opt/homebrew/bin/codex",
+    "exec",
+    "--model",
+    "gpt-6-terra",
+    "--config",
+    "model_reasoning_effort=\"high\"",
+    "--sandbox",
+    "workspace-write",
+    "--cd",
+    "/private/tmp/claude-501/review-work/10c8c8e1df50/factory918",
+    "--skip-git-repo-check",
+    "--ephemeral",
+    "--disable",
+    "plugins",
+    "--disable",
+    "multi_agent",
+    "--disable",
+    "hooks",
+    "--disable",
+    "memories",
+    "--json",
+    "-"
+  ],
+  "exitCode": 1,
+  "signal": null,
+  "status": "unavailable-model",
+  "reportedModel": null,
+  "modelVerified": false,
+  "modelEvidence": null,
+  "sessionId": null,
+  "usage": null,
+  "costUsd": null,
+  "error": {
+    "message": "child exited with status 1",
+    "evidence": "{\"type\":\"thread.started\",\"thread_id\":\"01a0cc4d-39fa-7760-be42-688ad3432382\"}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_0\",\"type\":\"error\",\"message\":\"Model metadata for `gpt-6-terra` not found. Defaulting to fallback metadata; this can degrade performance and cause issues.\"}}\n{\"type\":\"turn.started\"}\n{\"type\":\"error\",\"message\":\"{\\\"type\\\":\\\"error\\\",\\\"status\\\":400,\\\"error\\\":{\\\"type\\\":\\\"invalid_request_error\\\",\\\"message\\\":\\\"The 'gpt-6-terra' model is not supported when using Codex with a ChatGPT account.\\\"}}\"}\n{\"type\":\"turn.failed\",\"error\":{\"message\":\"{\\\"type\\\":\\\"error\\\",\\\"status\\\":400,\\\"error\\\":{\\\"type\\\":\\\"invalid_request_error\\\",\\\"message\\\":\\\"The 'gpt-6-terra' model is not supported when using Codex with a ChatGPT account.\\\"}}\"}}"
+  }
+}

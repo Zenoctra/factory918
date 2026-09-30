@@ -1,0 +1,7 @@
+1e0d5f945968c885bcacb51d2d856490b49c2642
+c46b65d S1: a banned command behind if, then, do, else, elif, while, until, { or ! is seen
+a6e53cf S2: a .. component before ; & | ) > or < is flagged
+20921f5 S3: a path outside the export is flagged from the transcript alone; a token with a regex character is a pattern
+812e8f9 S5: the fixes.sh header names --no-color --no-ext-diff
+ff012bf S6: refusals.sh inits its fixture repository with -b main
+1e0d5f9 P1/P3: REVIEWER_OUT defaults to .scratch/eval/reviewer-138; a receipt or run.json of another version is refused, and collect lists it as stuck

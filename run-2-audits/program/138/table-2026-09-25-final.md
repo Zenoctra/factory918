@@ -1,0 +1,149 @@
+The key: pr94-r1 2 hard, 4 non-hard; pr96-r1 3 hard, 1 non-hard; pr99-r1 4 hard, 0 non-hard.
+
+## claude:opus-5, spec
+
+This model is partial (pass 1 and some pass 2; retired 2026-09-24).
+
+Means per chain. The four bug counts are over the chain's passes up to this one; new found counts bugs the chain names for the first time at this pass. A masked pass leaves out the bugs its tree has fixed.
+Contaminated runs excluded from recall: 1.
+
+| arm | pass | chains | hard bugs filed hard | hard bugs found | non-hard bugs found | non-hard filed hard | new found | other hard items | context failures | out tokens | cache read | wall s | contaminated | usage limit | no response |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| I | 1 | 3 | 1.00 | 1.00 | 0.67 | 0.67 | 1.67 | 0.00 | 0 | 39920 | 4639488 | 590.0 | 0 | 0 | 0 |
+| I | 2 | 2 | 1.50 | 1.50 | 1.50 | 1.50 | 0.50 | 0.00 | 1 | 28770 | 3262307 | 473.4 | 0 | 0 | 0 |
+| I | 3 | 0 | n/a | n/a | n/a | n/a | n/a | n/a | 0 | n/a | n/a | n/a | 0 | 0 | 0 |
+| S | 1 | 3 | 1.00 | 1.00 | 0.67 | 0.67 | 1.67 | 0.00 | 0 | 39920 | 4639488 | 590.0 | 0 | 0 | 0 |
+| S | 2 | 1 | 2.00 | 2.00 | 3.00 | 3.00 | 1.00 | 0.00 | 0 | 31985 | 5055588 | 640.9 | 0 | 0 | 0 |
+| S | 3 | 0 | n/a | n/a | n/a | n/a | n/a | n/a | 0 | n/a | n/a | n/a | 0 | 0 | 0 |
+| M | 1 | 3 | 1.00 | 1.00 | 0.67 | 0.67 | 1.67 | 0.00 | 0 | 39920 | 4639488 | 590.0 | 0 | 0 | 0 |
+| M | 2 | 0 | n/a | n/a | n/a | n/a | n/a | n/a | 0 | n/a | n/a | n/a | 1 | 0 | 0 |
+| M | 3 | 0 | n/a | n/a | n/a | n/a | n/a | n/a | 0 | n/a | n/a | n/a | 0 | 0 | 0 |
+
+## claude:opus-5, standards
+
+This model is partial (pass 1 and some pass 2; retired 2026-09-24).
+
+Means per chain. The four bug counts are over the chain's passes up to this one; new found counts bugs the chain names for the first time at this pass. A masked pass leaves out the bugs its tree has fixed.
+Contaminated runs excluded from recall: 4.
+
+| arm | pass | chains | hard bugs found | hard bugs filed hard | non-hard bugs found | non-hard filed hard | new found | other hard items | context failures | out tokens | cache read | wall s | contaminated | usage limit | no response |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| I | 1 | 3 | 1.67 | 1.00 | 0.67 | 0.33 | 2.33 | 0.67 | 0 | 39353 | 3136111 | 580.6 | 4 | 0 | 0 |
+| I | 2 | 1 | 2.00 | 2.00 | 1.00 | 0.00 | 1.00 | 0.00 | 0 | 27814 | 1541803 | 384.6 | 0 | 0 | 0 |
+| I | 3 | 0 | n/a | n/a | n/a | n/a | n/a | n/a | 0 | n/a | n/a | n/a | 0 | 0 | 0 |
+| S | 1 | 3 | 1.67 | 1.00 | 0.67 | 0.33 | 2.33 | 0.67 | 0 | 39353 | 3136111 | 580.6 | 4 | 0 | 0 |
+| S | 2 | 1 | 2.00 | 2.00 | 1.00 | 0.00 | 1.00 | 0.00 | 0 | 36728 | 2376966 | 506.8 | 0 | 0 | 0 |
+| S | 3 | 0 | n/a | n/a | n/a | n/a | n/a | n/a | 0 | n/a | n/a | n/a | 0 | 0 | 0 |
+| M | 1 | 3 | 1.67 | 1.00 | 0.67 | 0.33 | 2.33 | 0.67 | 0 | 39353 | 3136111 | 580.6 | 4 | 0 | 0 |
+| M | 2 | 0 | n/a | n/a | n/a | n/a | n/a | n/a | 0 | n/a | n/a | n/a | 0 | 0 | 0 |
+| M | 3 | 0 | n/a | n/a | n/a | n/a | n/a | n/a | 0 | n/a | n/a | n/a | 0 | 0 | 0 |
+
+The Standards brief demands a `spec:` line citing the ticket but carries no part of it (#144, the key's pr99-r1 G4), so a reviewer that will not invent a reference files a real bug non-hard. Filed hard and non-hard filed hard are understated on this axis; found at all is its headline.
+
+## claude:opus-5.5, spec
+
+Means per chain. The four bug counts are over the chain's passes up to this one; new found counts bugs the chain names for the first time at this pass. A masked pass leaves out the bugs its tree has fixed.
+Contaminated runs excluded from recall: 7.
+
+| arm | pass | chains | hard bugs filed hard | hard bugs found | non-hard bugs found | non-hard filed hard | new found | other hard items | context failures | out tokens | cache read | wall s | contaminated | usage limit | no response |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| I | 1 | 3 | 0.33 | 0.33 | 0.00 | 0.00 | 0.33 | 0.33 | 0 | 17104 | 2278644 | 215.9 | 0 | 0 | 0 |
+| I | 2 | 3 | 1.00 | 1.00 | 0.33 | 0.33 | 1.00 | 0.33 | 0 | 15940 | 2299734 | 201.1 | 1 | 0 | 0 |
+| I | 3 | 3 | 1.00 | 1.00 | 0.33 | 0.33 | 0.00 | 0.00 | 0 | 17965 | 2089871 | 217.7 | 1 | 0 | 0 |
+| S | 1 | 3 | 0.33 | 0.33 | 0.00 | 0.00 | 0.33 | 0.33 | 0 | 17104 | 2278644 | 215.9 | 0 | 0 | 0 |
+| S | 2 | 3 | 1.00 | 1.00 | 0.33 | 0.33 | 1.00 | 0.00 | 0 | 18407 | 2742607 | 231.2 | 2 | 0 | 0 |
+| S | 3 | 1 | 1.00 | 1.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0 | 20890 | 2219244 | 271.9 | 1 | 0 | 0 |
+| M | 1 | 3 | 0.33 | 0.33 | 0.00 | 0.00 | 0.33 | 0.33 | 0 | 17104 | 2278644 | 215.9 | 0 | 0 | 0 |
+| M | 2 | 3 | 1.00 | 1.00 | 0.33 | 0.33 | 1.00 | 0.00 | 0 | 17370 | 2208225 | 214.8 | 2 | 0 | 0 |
+| M | 3 | 3 | 1.33 | 1.33 | 0.67 | 0.67 | 0.67 | 2.00 | 0 | 18940 | 2709920 | 241.8 | 0 | 0 | 0 |
+
+## claude:opus-5.5, standards
+
+Means per chain. The four bug counts are over the chain's passes up to this one; new found counts bugs the chain names for the first time at this pass. A masked pass leaves out the bugs its tree has fixed.
+Contaminated runs excluded from recall: 2.
+
+| arm | pass | chains | hard bugs found | hard bugs filed hard | non-hard bugs found | non-hard filed hard | new found | other hard items | context failures | out tokens | cache read | wall s | contaminated | usage limit | no response |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| I | 1 | 3 | 1.33 | 0.67 | 0.33 | 0.00 | 1.67 | 0.00 | 0 | 14321 | 1627489 | 173.5 | 2 | 0 | 0 |
+| I | 2 | 3 | 1.33 | 0.67 | 0.33 | 0.00 | 0.00 | 0.00 | 0 | 13106 | 1899139 | 168.7 | 0 | 0 | 0 |
+| I | 3 | 3 | 1.33 | 0.67 | 0.33 | 0.00 | 0.00 | 0.00 | 0 | 14904 | 1908726 | 179.7 | 0 | 0 | 0 |
+| S | 1 | 3 | 1.33 | 0.67 | 0.33 | 0.00 | 1.67 | 0.00 | 0 | 14321 | 1627489 | 173.5 | 2 | 0 | 0 |
+| S | 2 | 3 | 1.33 | 0.67 | 0.67 | 0.00 | 0.33 | 0.00 | 0 | 18268 | 2658249 | 235.2 | 0 | 0 | 0 |
+| S | 3 | 3 | 1.33 | 0.67 | 0.67 | 0.00 | 0.00 | 0.00 | 0 | 17102 | 2651162 | 214.2 | 0 | 0 | 0 |
+| M | 1 | 3 | 1.33 | 0.67 | 0.33 | 0.00 | 1.67 | 0.00 | 0 | 14321 | 1627489 | 173.5 | 2 | 0 | 0 |
+| M | 2 | 3 | 1.33 | 0.67 | 0.67 | 0.00 | 0.33 | 0.00 | 0 | 15451 | 2186568 | 188.3 | 0 | 0 | 0 |
+| M | 3 | 3 | 1.67 | 0.67 | 0.67 | 0.00 | 0.33 | 0.00 | 0 | 15994 | 2995016 | 216.4 | 0 | 0 | 0 |
+
+The Standards brief demands a `spec:` line citing the ticket but carries no part of it (#144, the key's pr99-r1 G4), so a reviewer that will not invent a reference files a real bug non-hard. Filed hard and non-hard filed hard are understated on this axis; found at all is its headline.
+
+## claude:fable-5.1, spec
+
+Means per chain. The four bug counts are over the chain's passes up to this one; new found counts bugs the chain names for the first time at this pass. A masked pass leaves out the bugs its tree has fixed.
+Contaminated runs excluded from recall: 4.
+
+| arm | pass | chains | hard bugs filed hard | hard bugs found | non-hard bugs found | non-hard filed hard | new found | other hard items | context failures | out tokens | cache read | wall s | contaminated | usage limit | no response |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| I | 1 | 3 | 0.33 | 0.33 | 0.33 | 0.33 | 0.67 | 0.00 | 0 | 17373 | 1800946 | 324.9 | 1 | 0 | 0 |
+| I | 2 | 3 | 0.33 | 0.33 | 1.00 | 1.00 | 0.67 | 0.33 | 0 | 16118 | 1017117 | 217.0 | 0 | 0 | 0 |
+| I | 3 | 3 | 1.00 | 1.00 | 1.00 | 1.00 | 0.67 | 0.33 | 0 | 23228 | 1983020 | 330.7 | 0 | 0 | 0 |
+| S | 1 | 3 | 0.33 | 0.33 | 0.33 | 0.33 | 0.67 | 0.00 | 0 | 17373 | 1800946 | 324.9 | 1 | 0 | 0 |
+| S | 2 | 3 | 0.67 | 0.67 | 1.00 | 1.00 | 1.00 | 0.33 | 0 | 21296 | 1435170 | 304.6 | 0 | 0 | 0 |
+| S | 3 | 3 | 1.00 | 1.33 | 1.00 | 1.00 | 0.67 | 0.33 | 0 | 23143 | 1156825 | 317.1 | 0 | 0 | 0 |
+| M | 1 | 3 | 0.33 | 0.33 | 0.33 | 0.33 | 0.67 | 0.00 | 0 | 17373 | 1800946 | 324.9 | 1 | 0 | 0 |
+| M | 2 | 3 | 0.33 | 0.33 | 1.00 | 1.00 | 0.67 | 0.00 | 0 | 21625 | 1628340 | 305.3 | 1 | 0 | 0 |
+| M | 3 | 3 | 0.33 | 0.33 | 1.00 | 1.00 | 0.00 | 0.33 | 0 | 18090 | 1651621 | 259.1 | 2 | 0 | 0 |
+
+## claude:fable-5.1, standards
+
+Means per chain. The four bug counts are over the chain's passes up to this one; new found counts bugs the chain names for the first time at this pass. A masked pass leaves out the bugs its tree has fixed.
+Contaminated runs excluded from recall: 1.
+
+| arm | pass | chains | hard bugs found | hard bugs filed hard | non-hard bugs found | non-hard filed hard | new found | other hard items | context failures | out tokens | cache read | wall s | contaminated | usage limit | no response |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| I | 1 | 3 | 1.33 | 0.33 | 0.67 | 0.33 | 2.00 | 0.00 | 0 | 22139 | 1469369 | 305.9 | 1 | 0 | 0 |
+| I | 2 | 3 | 1.67 | 0.67 | 1.00 | 0.67 | 0.67 | 0.00 | 0 | 22613 | 1727120 | 314.9 | 0 | 0 | 0 |
+| I | 3 | 3 | 2.00 | 0.67 | 1.00 | 0.67 | 0.33 | 0.00 | 0 | 21434 | 1561407 | 297.7 | 0 | 0 | 0 |
+| S | 1 | 3 | 1.33 | 0.33 | 0.67 | 0.33 | 2.00 | 0.00 | 0 | 22139 | 1469369 | 305.9 | 1 | 0 | 0 |
+| S | 2 | 3 | 1.33 | 0.33 | 1.00 | 0.67 | 0.33 | 0.33 | 0 | 20450 | 1166021 | 276.5 | 0 | 0 | 0 |
+| S | 3 | 3 | 1.67 | 0.67 | 1.00 | 0.67 | 0.33 | 0.00 | 0 | 20245 | 868510 | 281.2 | 0 | 0 | 0 |
+| M | 1 | 3 | 1.33 | 0.33 | 0.67 | 0.33 | 2.00 | 0.00 | 0 | 22139 | 1469369 | 305.9 | 1 | 0 | 0 |
+| M | 2 | 3 | 1.67 | 0.67 | 1.00 | 0.33 | 0.67 | 0.00 | 0 | 15560 | 1051332 | 259.7 | 0 | 0 | 0 |
+| M | 3 | 3 | 1.67 | 0.67 | 1.00 | 0.33 | 0.00 | 0.00 | 0 | 19707 | 1614338 | 292.7 | 0 | 0 | 0 |
+
+The Standards brief demands a `spec:` line citing the ticket but carries no part of it (#144, the key's pr99-r1 G4), so a reviewer that will not invent a reference files a real bug non-hard. Filed hard and non-hard filed hard are understated on this axis; found at all is its headline.
+
+## codex:gpt-6-sol, spec
+
+Means per chain. The four bug counts are over the chain's passes up to this one; new found counts bugs the chain names for the first time at this pass. A masked pass leaves out the bugs its tree has fixed.
+Contaminated runs excluded from recall: 2.
+
+| arm | pass | chains | hard bugs filed hard | hard bugs found | non-hard bugs found | non-hard filed hard | new found | other hard items | context failures | out tokens | cache read | wall s | contaminated | usage limit | no response |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| I | 1 | 3 | 0.67 | 0.67 | 0.33 | 0.33 | 1.00 | 0.67 | 0 | 5502 | 1161216 | 151.9 | 1 | 0 | 0 |
+| I | 2 | 3 | 1.00 | 1.00 | 0.33 | 0.33 | 0.33 | 0.33 | 0 | 8747 | 1409152 | 224.3 | 1 | 5 | 0 |
+| I | 3 | 3 | 1.00 | 1.00 | 0.67 | 0.67 | 0.33 | 0.33 | 0 | 8715 | 1127168 | 222.1 | 0 | 0 | 0 |
+| S | 1 | 3 | 0.67 | 0.67 | 0.33 | 0.33 | 1.00 | 0.67 | 0 | 5502 | 1161216 | 151.9 | 1 | 0 | 0 |
+| S | 2 | 3 | 1.00 | 1.00 | 0.33 | 0.33 | 0.33 | 0.00 | 0 | 7719 | 1173888 | 204.7 | 0 | 1 | 0 |
+| S | 3 | 3 | 1.00 | 1.00 | 0.33 | 0.33 | 0.00 | 0.33 | 0 | 5993 | 1249451 | 174.3 | 0 | 10 | 0 |
+| M | 1 | 3 | 0.67 | 0.67 | 0.33 | 0.33 | 1.00 | 0.67 | 0 | 5502 | 1161216 | 151.9 | 1 | 0 | 0 |
+| M | 2 | 3 | 0.67 | 0.67 | 0.67 | 0.67 | 0.33 | 1.00 | 0 | 8530 | 1343659 | 218.4 | 0 | 1 | 0 |
+| M | 3 | 3 | 0.67 | 0.67 | 0.67 | 0.67 | 0.00 | 1.00 | 0 | 7333 | 1146837 | 203.2 | 0 | 9 | 0 |
+
+## codex:gpt-6-sol, standards
+
+Means per chain. The four bug counts are over the chain's passes up to this one; new found counts bugs the chain names for the first time at this pass. A masked pass leaves out the bugs its tree has fixed.
+Contaminated runs excluded from recall: 3.
+
+| arm | pass | chains | hard bugs found | hard bugs filed hard | non-hard bugs found | non-hard filed hard | new found | other hard items | context failures | out tokens | cache read | wall s | contaminated | usage limit | no response |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| I | 1 | 3 | 0.67 | 0.67 | 0.33 | 0.33 | 1.00 | 0.00 | 0 | 6094 | 1154005 | 168.5 | 0 | 0 | 0 |
+| I | 2 | 3 | 0.67 | 0.67 | 0.33 | 0.33 | 0.00 | 0.00 | 0 | 5757 | 1190997 | 151.6 | 1 | 1 | 0 |
+| I | 3 | 3 | 0.67 | 0.67 | 1.00 | 1.00 | 0.67 | 0.00 | 0 | 5610 | 899968 | 148.7 | 0 | 4 | 0 |
+| S | 1 | 3 | 0.67 | 0.67 | 0.33 | 0.33 | 1.00 | 0.00 | 0 | 6094 | 1154005 | 168.5 | 0 | 0 | 0 |
+| S | 2 | 3 | 0.67 | 0.67 | 0.67 | 0.67 | 0.33 | 0.33 | 0 | 7782 | 1567829 | 211.8 | 1 | 1 | 0 |
+| S | 3 | 3 | 0.67 | 0.67 | 1.00 | 1.00 | 0.33 | 0.00 | 0 | 6874 | 1436245 | 180.4 | 0 | 4 | 0 |
+| M | 1 | 3 | 0.67 | 0.67 | 0.33 | 0.33 | 1.00 | 0.00 | 0 | 6094 | 1154005 | 168.5 | 0 | 0 | 0 |
+| M | 2 | 3 | 0.67 | 0.67 | 0.67 | 0.67 | 0.33 | 0.33 | 0 | 6683 | 1129131 | 186.1 | 1 | 0 | 0 |
+| M | 3 | 3 | 0.67 | 0.67 | 0.67 | 0.67 | 0.00 | 0.67 | 0 | 8631 | 1697024 | 227.2 | 0 | 4 | 0 |
+
+The Standards brief demands a `spec:` line citing the ticket but carries no part of it (#144, the key's pr99-r1 G4), so a reviewer that will not invent a reference files a real bug non-hard. Filed hard and non-hard filed hard are understated on this axis; found at all is its headline.

@@ -1,0 +1,83 @@
+fde13312eb34fad4854c49f249ae10484a999813 (one new commit on f2cbc01; not pushed)
+
+Sol reading back its own report no longer counts as contamination. The three flagged pr94-r1 chains are back in their slots and complete, and no run was launched. My recheck also undid Manuel's Fable ruling on three receipts; I put it back (below).
+
+Commit: fde1331 "Stop flagging a reviewer that reads back its own report".
+- A call that only reads the run's own report, or a file in its own .scratch/work/, has its result skipped by the content check (`own_read`, called from `leaks`). A call counts as that when it is either of these:
+  - a Read of such a path;
+  - a Bash command that cds to the export itself and then runs only cat, sed, head, tail, grep, wc or nl on such paths.
+- A command still flags when it names any other file, has a redirect, uses a relative path with no cd to the export, or reads another run's export.
+- The own report is `.scratch/review/<sha>/(spec|standards)-report.md` relative to the export.
+- No other check changes. corpus.sh passes the export to `leaks` too.
+- refusals.sh has two new cases:
+  - The real S2/2 call (`cd <export> && cat .scratch/review/ab47eb9/standards-report.md`), the S2/1 form with `&& wc -l`, and a sed of a .scratch/work file do not flag "spec: criterion 3".
+  - The same later line still flags when it is read from a repository file, from the report plus another file, from another run's report, from a relative path with no cd, or when the output is redirected.
+- The fix clears all seven attempts: every leak in them came from `cat` of their own report.
+
+The chains, in W/.scratch/eval/reviewer-138:
+- The runs/ slots for pr94-r1/spec/1, standards/S2 and standards/M2 were empty. They held no prepared re-attempt, so there was nothing to move to unlaunched-reprep.
+- I moved each /2 back into its slot:
+  - dropped/codex-gpt-6-sol/pr94-r1/spec/1/2 to runs/codex-gpt-6-sol/pr94-r1/spec/1
+  - dropped/.../standards/S2/2 to runs/.../standards/S2
+  - dropped/.../standards/M2/2 to runs/.../standards/M2
+- `collect --recheck`:
+  - runs/codex-gpt-6-sol/pr94-r1/spec/1: contaminated -> complete
+  - runs/codex-gpt-6-sol/pr94-r1/standards/M2: contaminated -> complete
+  - runs/codex-gpt-6-sol/pr94-r1/standards/S2: contaminated -> complete
+  - standards/I2 keeps its complete retry, and its /1 stays in dropped.
+  - The /1 attempts of spec/1, S2, M2 and I2 are clean now, but they stay set aside behind the later attempt.
+  - Recheck does not rewrite their receipts, so they still say contaminated. The table's "Contaminated runs excluded" counts them: Sol spec 1, Sol standards 3. If they should read clean, that is a receipt edit I did not make.
+- Nothing was deleted. Nothing was launched.
+
+Warning: my recheck overrode Manuel's Fable ruling, and I put it back.
+- The recheck judged every run again, and it turned claude-fable-5.1/pr96-r1/spec/I2, S2 and M3 from complete to contaminated because of their WebFetch calls.
+- These are the three runs Manuel ruled count, per report.md and decisions.tsv, applied by count_fable.py.
+- I re-applied count_fable.py's receipt edit to those three: status complete, with the ruling text in front of the check's verdict. I moved nothing. The script is scratchpad/d16/reruling.py.
+- Recheck also refreshed the outside, first_contaminated and sightings fields of every other collected receipt. Their statuses did not change.
+- The Opus 5.5 set-aside attempts it lists were already "clean now, stays set aside" before this commit.
+- Any future `collect --recheck` will flag those three Fable runs again.
+
+Verification at fde1331:
+- refusals.sh: 318 of 318.
+- corpus.sh: 44 of 44.
+- ShellCheck: 28 files, exit 0.
+- `table` run on W. It exited 0 and wrote W/table.md.
+
+Sol rows of the table (W, after the restore):
+
+## codex:gpt-6-sol, spec
+Contaminated runs excluded from recall: 1.
+
+| arm | pass | chains | hard bugs filed hard | hard bugs found | non-hard bugs found | non-hard filed hard | new found | other hard items | context failures | out tokens | cache read | wall s | contaminated | usage limit | no response |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| I | 1 | 3 | 0.67 | 0.67 | 0.33 | 0.33 | 1.00 | 0.67 | 0 | 5502 | 1161216 | 151.9 | 1 | 0 | 0 |
+| I | 2 | 1 | 2.00 | 2.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0 | 9128 | 1395072 | 241.9 | 0 | 0 | 0 |
+| I | 3 | 0 | n/a | n/a | n/a | n/a | n/a | n/a | 0 | n/a | n/a | n/a | 0 | 0 | 0 |
+| S | 1 | 3 | 0.67 | 0.67 | 0.33 | 0.33 | 1.00 | 0.67 | 0 | 5502 | 1161216 | 151.9 | 1 | 0 | 0 |
+| S | 2 | 0 | n/a | n/a | n/a | n/a | n/a | n/a | 0 | n/a | n/a | n/a | 0 | 1 | 0 |
+| S | 3 | 0 | n/a | n/a | n/a | n/a | n/a | n/a | 0 | n/a | n/a | n/a | 0 | 0 | 0 |
+| M | 1 | 3 | 0.67 | 0.67 | 0.33 | 0.33 | 1.00 | 0.67 | 0 | 5502 | 1161216 | 151.9 | 1 | 0 | 0 |
+| M | 2 | 0 | n/a | n/a | n/a | n/a | n/a | n/a | 0 | n/a | n/a | n/a | 0 | 1 | 0 |
+| M | 3 | 0 | n/a | n/a | n/a | n/a | n/a | n/a | 0 | n/a | n/a | n/a | 0 | 0 | 0 |
+
+## codex:gpt-6-sol, standards
+Contaminated runs excluded from recall: 3.
+
+| arm | pass | chains | hard bugs found | hard bugs filed hard | non-hard bugs found | non-hard filed hard | new found | other hard items | context failures | out tokens | cache read | wall s | contaminated | usage limit | no response |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| I | 1 | 3 | 0.67 | 0.67 | 0.33 | 0.33 | 1.00 | 0.00 | 0 | 6094 | 1154005 | 168.5 | 0 | 0 | 0 |
+| I | 2 | 2 | 1.00 | 1.00 | 0.50 | 0.50 | 0.00 | 0.00 | 0 | 6991 | 1419648 | 172.6 | 1 | 1 | 0 |
+| I | 3 | 0 | n/a | n/a | n/a | n/a | n/a | n/a | 0 | n/a | n/a | n/a | 0 | 0 | 0 |
+| S | 1 | 3 | 0.67 | 0.67 | 0.33 | 0.33 | 1.00 | 0.00 | 0 | 6094 | 1154005 | 168.5 | 0 | 0 | 0 |
+| S | 2 | 2 | 1.00 | 1.00 | 1.00 | 1.00 | 0.50 | 0.50 | 0 | 9246 | 1814016 | 248.7 | 1 | 1 | 0 |
+| S | 3 | 0 | n/a | n/a | n/a | n/a | n/a | n/a | 0 | n/a | n/a | n/a | 0 | 0 | 0 |
+| M | 1 | 3 | 0.67 | 0.67 | 0.33 | 0.33 | 1.00 | 0.00 | 0 | 6094 | 1154005 | 168.5 | 0 | 0 | 0 |
+| M | 2 | 2 | 1.00 | 1.00 | 1.00 | 1.00 | 0.50 | 0.50 | 0 | 7399 | 1166080 | 206.8 | 1 | 0 | 0 |
+| M | 3 | 0 | n/a | n/a | n/a | n/a | n/a | n/a | 0 | n/a | n/a | n/a | 0 | 0 | 0 |
+
+(The #144 footnote follows the standards table in W/table.md.)
+
+Still pending on the usage limit:
+- Four Sol runs are prepared and unlaunched: pr99-r1 spec I2, M2 and S2, and standards M2.
+- Four hold usage-limit receipts: pr96-r1 spec M2 and S2, and pr99-r1 standards I2 and S2.
+- After the reset, `next --resume codex:gpt-6-sol --run` picks all of them up.

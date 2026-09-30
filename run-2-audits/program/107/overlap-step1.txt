@@ -1,0 +1,4 @@
+go: autopilot-stack
+#121 feat/provisional-ticket-ids: template/.agents/skills/spec-review/scripts/review-brief.sh tests/spec-review/review-brief.sh
+#125 feat/fix-only-from-round-two: template/.agents/skills/spec-review/scripts/review-brief.sh tests/spec-review/review-brief.sh
+base: origin/feat/fix-only-from-round-two

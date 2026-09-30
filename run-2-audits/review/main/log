@@ -1,0 +1,5 @@
+e262186 Fail CI on retired review wording and brief the applied project's diff
+fb72131 Record the two counted kinds in P18, the walk in P23 and the ladder
+83b62ea Name the two counted kinds in the judgment and the refusals of SKILL.md
+2a78ee0 Count Fails open with Would break and refuse a finding without its documented step
+e691e3f Define a hard finding as the documented path or a fail-open, in both briefs

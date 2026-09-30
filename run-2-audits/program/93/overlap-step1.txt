@@ -1,0 +1,6 @@
+go: autopilot-stack
+#96 feat/shellcheck: tests/spec-review/fake-gh.sh tests/spec-review/layout.sh tests/spec-review/review-brief.sh tests/spec-review/review-comment.sh
+#99 feat/design-hole-restart: tests/spec-review/no-stale-wording.sh tests/spec-review/review-brief.sh tests/spec-review/review-comment.sh
+#101 feat/spec-walk-risks: tests/spec-review/review-brief.sh tests/spec-review/review-comment.sh
+base: origin/feat/spec-walk-risks
+exit: 0

@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "run": {
+    "descriptor": "claude:sonnet",
+    "round": "pr101-r1",
+    "axis": "standards",
+    "k": 5
+  },
+  "route": "native",
+  "status": "contaminated",
+  "detail": "Bash grep -n \"fenced\" \"/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a91d9f; Bash sed -n '120,320p' \"/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a91d9; Bash wc -l \"/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a91d9f1cee64cb2f2",
+  "reported_model": "claude-sonnet-5",
+  "model_verified": true,
+  "effort": "medium",
+  "tokens": {
+    "input": 18,
+    "cache_read": 647471,
+    "cache_write": 107513,
+    "output": 9284
+  },
+  "wall_ms": 126821,
+  "source": "/Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/subagents/agent-a0f1f65437e50cb47.jsonl"
+}

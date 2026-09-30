@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "run": {
+    "descriptor": "claude:sonnet",
+    "round": "pr102-r2",
+    "axis": "standards",
+    "k": 1
+  },
+  "route": "native",
+  "status": "contaminated",
+  "detail": "Bash grep -n '^diff --git' \"/Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-facto; Bash grep -n \"shellcheck disable\" \"/Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-91; Bash grep -n \"at most three rounds\\|three rounds\\|round: N of\" \"/Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Und; Bash grep -n \"^+\" \"/Users/manuel/.claude/projects/-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddc; Bash grep -n \"^specs()\\|^holed()\\|^items()\\|^title()\\|^count()\\|^fail()\" \"/Users/manuel/Desktop/Work/Under The Sun Collective; Read /Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a91d9f1cee64cb2f2/template/.agents/skills/spec-review/scripts/review-comment.sh; Bash grep -n \"sed -i\\|date -d\\|readlink -f\" \"/Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collecti",
+  "reported_model": "claude-sonnet-5",
+  "model_verified": true,
+  "effort": "medium",
+  "tokens": {
+    "input": 32,
+    "cache_read": 1456741,
+    "cache_write": 96705,
+    "output": 13558
+  },
+  "wall_ms": 176836,
+  "source": "/Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/subagents/agent-a7ade460b56afa313.jsonl"
+}

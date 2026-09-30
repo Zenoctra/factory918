@@ -1,0 +1,7 @@
+abf4d3785ef5225f98ca5b89c36c4b00dcc089b0
+97e0d21 Spec 1: hit your <word> limit, so the session-limit wording in a synthetic line is a usage-limit dropout
+f50ec20 Spec 2: no served model is a no-response dropout, prepared again and counted toward giving up; collect writes every other receipt before a refusal
+1cddf6b Spec 3: settled items are <n>. [S|P<k>] **<title>.** <body>, fences removed, one line
+6e2d566 Standards 1: only ^ $ backslash + | make a pattern; glob paths outside the export are flagged
+fc0c91c Standards 2: a prerequisite whose report fails to parse stops its chain (stopped <run dir>: <failure>)
+abf4d37 Standards 3: fixes.sh names a missing commit and the fetch, exit 2

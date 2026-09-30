@@ -1,0 +1,30 @@
+git version 2.51.2
+--- A1 no file
+main top                           common-dir=.git                                                       tier=safe
+nested worktree                    common-dir=/private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/scratchpad/tierwalk109/main repo with spaces/.git tier=safe
+--- A3 eco in main
+main top                           common-dir=.git                                                       tier=eco
+main subdir                        common-dir=../../.git                                                 tier=eco
+nested worktree top                common-dir=/private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/scratchpad/tierwalk109/main repo with spaces/.git tier=eco
+nested worktree subdir             common-dir=/private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/scratchpad/tierwalk109/main repo with spaces/.git tier=eco
+worktree outside main              common-dir=/private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/scratchpad/tierwalk109/main repo with spaces/.git tier=eco
+--- A4 other content, read from the nested worktree
+value [ECO]                        common-dir=/private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/scratchpad/tierwalk109/main repo with spaces/.git tier=safe
+value [eco ]                       common-dir=/private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/scratchpad/tierwalk109/main repo with spaces/.git tier=safe
+value []                           common-dir=/private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/scratchpad/tierwalk109/main repo with spaces/.git tier=safe
+value [safe]                       common-dir=/private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/scratchpad/tierwalk109/main repo with spaces/.git tier=safe
+two lines ECO/fast                 common-dir=/private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/scratchpad/tierwalk109/main repo with spaces/.git tier=safe
+eco + blank lines                  common-dir=/private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/scratchpad/tierwalk109/main repo with spaces/.git tier=eco
+eco CRLF                           common-dir=/private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/scratchpad/tierwalk109/main repo with spaces/.git tier=safe
+--- file only in a worktree session's own .claude/state
+eco set in worktree only           common-dir=/private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/scratchpad/tierwalk109/main repo with spaces/.git tier=safe
+--- outside any repo
+fatal: not a git repository (or any of the parent directories): .git
+no repo                            common-dir=fatal: not a git repository (or any of the parent directories): .git tier=safe
+--- submodule of main
+inside a submodule                 common-dir=/private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/48857ffb-f0e5-4af1-9b36-ecddce7fb416/scratchpad/tierwalk109/main repo with spaces/.git/modules/vendor/lib tier=safe
+--- day zero: echo eco > .claude/state/tier with no .claude/state
+/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.scratch/program/109/blast/tier-proof.sh: line 38: .claude/state/tier: No such file or directory
+exit=1
+rm: .claude/state/tier: No such file or directory
+rm exit=1

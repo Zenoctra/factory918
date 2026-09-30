@@ -1,0 +1,53 @@
+897125ea71676e1e5353b7a5a4ab05020f6bfabf
+
+The pr94-r1/spec/S2 give-up was not caused by cross-run reads. All three attempts read only scratchpad files they had written themselves. What contaminated them were two Markdown headings from live #42, the worked example the frozen ticket tells the reviewer to read. After this work those attempts read clean.
+
+Commits (on 5f270e0, fast-forwarded; not pushed):
+- 75e8fbc: every export gets .scratch/work/, the masked one too. The prompt adds "Your scratch folder for notes and any files you make is `<export>/.scratch/work/`.", worded that way because "notes and test files" puts the BANNED word "test" in the prompt. A new `cross-run read` gate catches a Read, Grep, Glob or Bash call that names a path under the session scratchpad or under another run's export when this run did not write that path first.
+- 32064f7: labels the three pr94-r1/spec/S2 attempts clean. corpus.sh failed on them at this commit.
+- 4404972: Markdown headings and `#` comments of up to three words no longer date anything; one-word ones already did not. This fixed those three.
+- 897125e: a run with no given/ no longer gets the frozen ticket in its given set, since such a run was never given it. My survey caught this.
+
+How the gate decides a file is the run's own:
+- A path is the run's own once a Write or Edit named it, or once a Bash command that writes named it: a redirect, tee, mkdir, cp, mv, touch, ln, rsync, tar, unzip, git init or git clone. Everything under an owned path is owned too.
+- NAME=value assignments inside the same command are expanded first. That covers the `S=.../scratchpad/rv89; cd $S` idiom the reviewers use.
+- The bare scratchpad or work directory names no file and passes.
+- /tmp and /private/tmp are the same path.
+
+Per-case labels and outcomes (corpus.sh, 44 of 44 match). I labelled each from its transcript:
+- dropped/claude-opus-5.5/pr94-r1/spec/S2/1 (agent-a8fccf18792dcf649): label clean, check clean.
+  - Its scratchpad reads were rv89 (made by mkdir and cp at call 15), then i42.md and td.md (written by redirect at calls 24, 26 and 29). All are its own.
+  - Before the fix, the check flagged it at call 26 on "## Testing decisions" and "## Scenario table", headings of live #42.
+- dropped/claude-opus-5.5/pr94-r1/spec/S2/2 (agent-accc4fbc1a5454840): label clean, check clean.
+  - It wrote r89 (call 10) and i42.md (redirect, call 15) before reading them.
+  - Before the fix: the same two headings, at call 15.
+- runs/claude-opus-5.5/pr94-r1/spec/S2, the third attempt, given up (agent-afa3d13c6b600ac71): label clean, check clean.
+  - It rm -rf'd and recreated rv89 (call 13) and redirected into rv89/i42.md (calls 17 and 19) before reading them.
+  - Before the fix: "## Testing decisions", at call 20.
+- runs/claude-opus-5/pr99-r1/spec/1, collected clean (agent-af5c0a9bbe823acbb): label clean, check clean. It redirected diff slices into scratchpad d2.txt to d4.txt, then read them back with Read.
+
+The gate over every #138 transcript collected or dropped so far found 0 cross-run reads.
+
+Hazard the gate cannot see: reviewers reuse the same scratchpad names across runs. Examples: rv89 (3 runs), probe (5), sync (4), syncchk (4), sc (3), fx, p, rc, rev89, rv, kb, i42.md, syncsim, synccheck. A run that `rm -rf`s and recreates such a folder while a sibling uses it can have its content swapped mid-run, and the run still "wrote it first". The new .scratch/work/ sentence is the fix for runs launched from now on.
+
+What `collect --recheck` would change (read-only survey; I changed and deleted nothing under W):
+- Six Opus 5.5 pr94-r1/spec receipts whose only dated lines were the two #42 headings go contaminated -> complete: runs/.../spec/S2 (given up), and dropped .../spec/I3/1, M2/1, M2/2, S2/1 and S2/2.
+- Following the recheck rules, a dropped one comes back only when its report is still there and its runs/ slot is free. The given-up S2 in runs/ turns complete in place.
+- Every other contaminated receipt stays contaminated:
+  - live #88 on pr96-r1 standards;
+  - #89 and #90 ticket text on the standards runs, which were not given the ticket;
+  - fable pr99-r1 spec 1;
+  - opus-5.5 pr99-r1/spec/I2/1.
+
+Verify:
+- refusals.sh: 250 of 250. New checks:
+  - the scratch folder exists in a plain export and a masked one, and the prompt names it;
+  - a Read of another run's scratchpad file, the same file by its /tmp name from Bash, a Grep of another run's scratchpad folder and a Read of another run's export are all contaminated, with detail "cross-run read at call 1: ...";
+  - the bare scratchpad folder passes, and a read in its own .scratch/work passes;
+  - a pycheck on own writes: a Write then a Read, mkdir and cp through $S then cd $S, and a redirect then a Read are all clean, while another run's file and export are flagged;
+  - headings of up to three words date nothing, and a longer `#` comment still does.
+- corpus.sh: 44 of 44.
+- check: exit 0.
+- rebuild.sh pr94-r1, pr96-r1 and pr99-r1: identical.
+- fixes.sh: 10 identical.
+- ShellCheck: exit 0 over 28 files.

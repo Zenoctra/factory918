@@ -1,0 +1,79 @@
+Round one found no hard finding on either axis: the Spec walk covered nine documented steps and reported nothing missing, and the Standards reviewer raised two duplication smells, both left for a later change. Nothing was fixed before posting, so no further round is owed and the count is zero.
+
+## Standards
+
+## Would break
+
+## Fails open
+
+## Standards breaches
+
+## Fix alongside
+
+1. **Duplicated Code / magic number.** The `reviewed:` and `fix only after` readers in `review-brief.sh` are the same awk shape twice, each with a hard-coded total length (50, 55) that encodes the prefix's character count. The comment admits it ("the length checks stand in for an interval expression"). Reword either line and the check silently stops matching; the failure is quiet, but it fails safe — round three then reviews the whole diff — so it is a smell, not a finding. One helper taking the prefix, with `length($0) == length(prefix) + 40`, removes both the duplication and the constant.
+
+```sh
+rv="$(printf '%s\n' "$deciding" | awk "$fenced"'
+  /^reviewed: / && length($0) == 50 && substr($0, 11) ~ /^[0-9a-f]+$/ { v = substr($0, 11) }
+  END { print v }
+')"
+fo="$(printf '%s\n' "$deciding" | awk "$fenced"'
+  /^fix only after / && length($0) == 55 && substr($0, 16) ~ /^[0-9a-f]+$/ { v = substr($0, 16) }
+  END { print v }
+')"
+```
+
+2. **Duplicated Code.** `outside()` re-implements the heading/item walk that `items()` and `stepless()` already do over `$fenced` (`/^## /` reset, `/^[0-9]+\. /` item boundary, `h == "Would break" || h == "Fails open"`). Three copies now drift together. `stepless()` is the closest sibling; a shared per-item walk that both call would keep the item boundary defined once.
+
+```sh
+      /^## / { done(); next }
+      /^[0-9]+\. / { done(); hard = (h == "Would break" || h == "Fails open"); next }
+```
+
+Checked and clean: `fix-lines` absent or empty yields the empty set, so every hard item counts outside and round three reads the whole diff — the uncertain case reviews more, as documented. `${has_spec:+"$dir/spec-report.md"}` keeps its inner quoting in bash, so a path with spaces survives. `ok` is set to 1 by the first `done()` before `hard` can be 1. `git rev-parse HEAD > "$dir/reviewed"` runs before the round-two `fix-lines` block, so the diff is taken from round one's commit, not round two's. `[ -n "$from" ]` reproduces the old `round >= 4` condition for `## The fix under review`. The P106 row id follows P110.
+
+hard findings: 0
+
+## Spec
+
+## Walk
+
+1. Round one's brief runs, records `HEAD` in `<dir>/reviewed`, writes no `fix-lines` (`round` is 1), and `common()` prints no fix section because `from` is empty. Stdout, diff and both briefs are what they were (criterion 1).
+2. Round one's `review-comment.sh` computes `fixed_here` before the tail, and with `holes` 0 and `round` 1 sets `record="reviewed: $mine"` from a 40-hex `<dir>/reviewed`, plus `owed` when an Act on item ends in `fixed:`. Both print between the WB line's place and `round:`, in that order (criterion 4; table B 1A, 7A, 8A).
+3. Round two's brief reads the deciding comment for `rv` (`reviewed: ` and 40 hex, length 50, outside fences). With `round` 2, `top` 1, `rv` resolving and an ancestor of `HEAD`, it writes `<dir>/fix-lines` from `git diff -U0 $rv HEAD`: markers stripped, trimmed, four characters or more, each once. The gate leaves `from` empty, so round two is whole-diff (criterion 1; table A rows 2, 3, 22).
+4. Round two's `review-comment.sh` calls `outside`, which counts Would-break and Fails-open items in the Standards report and, with `has_spec`, the Spec report. An item is inside when a quoted fenced line's text is a fix line and every `+`/`-` line it quotes is one; fence lines, `@@` lines, texts under four characters and unmarked non-fix lines count nothing. Zero outside prints `fix only after <reviewed>`; the judgment is never read (criterion 2; table B rows 1 to 6 and 12).
+5. Round three's brief reads `fo` the same way and, with `round` 3 and `top` 2, sets `from="$fo"` and `via="fix only after"`. The shared block refuses a commit that does not resolve (`FR`), a fixed point that is not it (`FP`, naming `$via`), and a missing ticket after a spec (`FT`), all before `mkdir -p "$dir"`. At rounds four and five `via` is `would-break fixed after`, so #93's strings stay byte-identical (criterion 3; table A rows 5, 7 to 11, 15 to 18).
+6. `fixed_items` is computed after the gate: at round three every Act on line not ending in `ticket: #N`, otherwise #93's `fixed:` filter. `common()` prints `## The fix under review` whenever `from` is set (table A 5A, 15A).
+7. Stickiness needs no code: round four exists only after a Would-break fix and is #93's fix-only round, so every round after a fix-only round three is fix-only (criterion 2).
+8. Prose: `SKILL.md` steps 1, 4 and 6 through the patch with `SOURCES.md` item 6; the owed sentence byte-identical in both babysit copies with items 4 and 12; the `MANUAL.md` and `review-ladder.md` merge-ready clauses; P20 retitled and amended, P106 added; `no-stale-wording.sh` pins the rewritten step-1 phrase (criteria 4, 7).
+9. Tests: one assertion per cell of both tables, `same` proving criterion 1 byte for byte, and #93's cells 13B, 5C and 5D given direct assertions (criteria 5, 6).
+
+## Would break
+
+## Fails open
+
+## Not asked for
+
+hard findings: 0
+
+## Judgment
+
+## Act on
+
+## Ask
+
+## Consider
+
+1. [S1] **Duplicated Code / magic number.** A shared reader with `length(prefix) + 40` is tidier; the two readers are four lines each, a reworded line fails toward a whole-diff round, and #107 and #108 edit this script next, so the helper waits for a change that touches these lines.
+2. [S2] **Duplicated Code.** A shared per-item walk would define the item boundary once; `stepless()` and `specs()` already repeat it, and folding three walkers into one is a refactor of its own, not #106's.
+
+## Noted
+
+## Dismissed
+
+Standards: 0 would break, 0 fail open, of 2; Spec: 0 would break, 0 fail open, of 0; judged: act on 0 (0 fixed, 0 with a ticket), ask 0, consider 2, noted 0, dismissed 0; fixed point 01a1e5f46891d10b234fe9ee80cbd9e8c67d4438.
+reviewed: caecbc448983e071d4289d252f515993c4978cbf
+round: 1 of 3
+act-on items: 0
+
+Claude Opus 5.5 on Claude Code

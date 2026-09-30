@@ -1,0 +1,6 @@
+e202b20bedb583ca01646f0524cc6b2ecb0ad364
+babd952 Std 1 / Spec 2: a slash-bounded token is a pattern only when its segment holds a regex character or a space
+c32b441 Spec 3: served model and effort are checked before the no-response dropout
+ff85905 Spec 4: finished() reads a plain-string content as text, so it settles
+f0e5c50 Spec 1: the docstring states the settle rule finished() has
+e202b20 ShellCheck: the drift test checks absent receipts instead of counting them with ls (SC2012 on c32b441)

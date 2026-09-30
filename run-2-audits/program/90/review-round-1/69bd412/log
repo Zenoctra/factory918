@@ -1,0 +1,3 @@
+52ccd8e Say where a design hole goes, in the skill, the ladder and the playbooks
+8b3de0a Return a design hole to architect and restart the review rounds
+cc36280 Test the design-hole restart from ticket #90's tables before the scripts

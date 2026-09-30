@@ -1,0 +1,21 @@
+# #103 todo
+- [x] Read poteto-mode Principles in full
+- [x] Ticket 1. up-to-date main, overlap.sh 103 (go: autopilot-stack, base: origin/main), branch feat/reviewer-model-eval
+- [x] Ticket 2. read the ticket
+- [x] Ticket 3. Blocked by: none
+- [x] Ticket 4. falsifiability pass (every criterion fails at 86d156a: no tests/eval/reviewer, no M0 section, no P103, no Design section)
+- [x] Ticket 5. Feature; not cross-cutting, no blast-radius file
+- [x] Ticket 6. Design section posted on #103 before the runner was written
+- [x] Feature 1. how (how.md)
+- [x] Feature 2. architect (two runners, synthesis)
+- [x] Feature 3. throughput checkpoint: blocking design then fixtures; runner, fixtures, dispatch patch in parallel; run dirs unique; three writers
+- [x] Feature 4. writers delegated, diffs reviewed; fix lanes 1-4
+- [x] Feature 5. verified on the real surface: 375 live runs, blind audit
+- [x] Feature 6. small ordered commits
+- [ ] Feature 7. interrogate: skip, the design was not contested after synthesis
+- [x] Ticket 8. overlap.sh --diff in the PR body; Opening a PR (draft, then ready)
+- [x] Ticket 7. verify per evidence (verify.sh)
+- [ ] spec-review rounds; trail review
+- [ ] Ticket 9. babysit to merge-ready (never merge)
+- [x] records commit (P103, ledger, M0)
+- [ ] report.md

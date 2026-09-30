@@ -1,0 +1,22 @@
+# #109 todo (safe mode)
+
+- [x] Read poteto-mode Principles in full
+- [x] Ticket 0. digest (.scratch/program/109/digest.md)
+- [x] Ticket 1. overlap.sh 109 -> base origin/main, branch feat/eco-tier
+- [x] Ticket 2. read the ticket (no Parent; split from #104)
+- [x] Ticket 3. Blocked by #105: merged in the a9ebdac chain
+- [ ] Ticket 4. falsifiability pass
+- [ ] Ticket 5. Feature; cross-cutting (hooks) -> blast-radius beside writer, architect mandatory
+- [ ] Ticket 6. scenario table on ticket under ## Testing decisions before implementation
+- [ ] Feature 1. how over the subsystem
+- [ ] Feature 2. architect (cross-cutting: not skippable)
+- [ ] Feature 3. throughput checkpoint
+- [ ] Feature 4. writer lane (tests first from table); act-on list settled before round one
+- [ ] Feature 5. verify on matching surface
+- [ ] Feature 6. small ordered commits
+- [ ] Feature 7. interrogate if contested (skip: the ticket's choices are Manuel-settled)
+- [ ] Ticket 8 / Feature 8. overlap --diff, blast radius check, Opening a PR (draft early)
+- [ ] Ticket 7. verify (AGENTS.md Verifying lines)
+- [ ] Ticket 9. review rounds, CI green, trail review
+- [ ] Records commit (P109, ledger line)
+- [ ] Report

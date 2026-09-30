@@ -1,0 +1,578 @@
+diff --git a/.github/workflows/factory-ci.yml b/.github/workflows/factory-ci.yml
+index 417e46e..1395632 100644
+--- a/.github/workflows/factory-ci.yml
++++ b/.github/workflows/factory-ci.yml
+@@ -16,13 +16,15 @@ jobs:
+     steps:
+       - uses: actions/checkout@v4
+       - name: Shell syntax
+-        run: bash -n factory918.sh && for f in template/.claude/hooks/*.sh template/.agents/skills/spec-review/scripts/*.sh tests/*/*.sh; do bash -n "$f"; done
++        run: bash -n factory918.sh && for f in template/.claude/hooks/*.sh template/.agents/skills/spec-review/scripts/*.sh template/.agents/skills/poteto-mode/scripts/*.sh tests/*/*.sh; do bash -n "$f"; done
+       - name: The delegation hook blocks and passes what the test says
+         run: bash tests/hooks/delegation.sh
+       - name: review-comment.sh prints and refuses what the test says
+         run: bash tests/spec-review/review-comment.sh
+       - name: review-brief.sh writes the report shape into both briefs
+         run: bash tests/spec-review/review-brief.sh
++      - name: overlap.sh prints, stops and refuses what the test says
++        run: bash tests/poteto-mode/overlap.sh
+       - name: No retired review wording under template/ or the core knowledge
+         run: bash tests/spec-review/no-stale-wording.sh
+       - name: Knowledge base is consistent and built from its sources
+diff --git a/AGENTS.md b/AGENTS.md
+index da45111..ce4e413 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -39,6 +39,7 @@ Inside a playbook the writer is never the orchestrator: implementation is delega
+ - `bash tests/hooks/delegation.sh`.
+ - `bash tests/spec-review/review-comment.sh`.
+ - `bash tests/spec-review/review-brief.sh`.
++- `bash tests/poteto-mode/overlap.sh`.
+ - `python3 tools/build_knowledge.py` leaves `git status` clean, and `python3 tools/check_knowledge.py` passes.
+ - `./factory918.sh sync` leaves `git status` clean.
+ - The fixture flow, which is what CI runs: `vp create vite:monorepo --directory /tmp/fx --no-interactive --git --hooks --no-agent`, then `./factory918.sh apply /tmp/fx --scaffold --profile python --name demo`, then in `/tmp/fx`: `vp check`, `vp test run`, `pnpm sg:test`, and the steps of `.github/workflows/python.yml` inside `python/demo`.
+diff --git a/SOURCES.md b/SOURCES.md
+index c133c89..b462419 100644
+--- a/SOURCES.md
++++ b/SOURCES.md
+@@ -18,7 +18,7 @@ Upstream pins for everything vendored into `template/`. Pinned copies of each up
+ 6. `code-review` → `spec-review` (directory, `name:`, first heading). Step 2.4 no longer asks the author where the spec is: without a ticket, a passed path or a spec file, the Spec axis skips and says "no spec: Standards axis only". Step 6 ends the report with the line `act-on items: N` so babysit can read it. Steps 1 and 4 hand each reviewer content instead of commands: the commit list, the `--stat` list and the diff pasted in (a path to it past the paste limit), the standards sections that apply, the ticket body verbatim; each brief says to read nothing beyond it. The Standards axis dispatches through the factory's `standards reviewer` role and the Spec axis through its `spec reviewer` role. Each report sorts its findings under `## Would break` and two axis-specific headings, and its `hard findings: N` counts only the Would-break items; a new step 5, Judge, has the orchestrator sort every finding into Act on, Ask, Consider, Noted or Dismissed in `judgment.md`, with `act-on items` the Act on plus Ask count. Step 1 runs `scripts/review-brief.sh`, ours, which writes the diff, the two briefs and the review state under `.claude/state/review/` that the delegation hook reads; step 6 runs `scripts/review-comment.sh`, ours, which checks the reports and the judgment against those shapes, builds the comment from them and clears the state; the sweep form (`--paths`, `--commits`) is the same skill. One PR gets three rounds at most: `review-brief.sh` reads the PR author's comments ending in `act-on items:`, takes the round from their `round: N of 3` lines and refuses a fourth, carries every earlier judgment's Noted and Dismissed items that cite a decision (`cites:`) into both briefs as settled and drops the rest, and pastes the ticket author's comments after the ticket body as spec; `review-comment.sh` prints `round: N of 3`, leaves an Act on item fixed on the PR (`fixed: <sha>`, the round-three path) or filed as a ticket (`ticket: #N`) out of the count, and rebuilds an earlier comment from its directory. Step 6's two sentences for a person end with the model and harness, plus `approved by <name>` when the human approved the comment before it was posted. A cross-cutting diff (a `.claude/hooks/` file, a `.claude/settings.json` or the `factory918` skill, at any depth) is briefed with its blast-radius grounding under `## Blast radius` before the diff, from `--blast-radius FILE` or the PR body's `## Blast Radius` section, and `review-brief.sh` refuses it without one. Both scripts are in `sync`'s `keep_files`.
+ 7. Session mandate replaced by ours (`template/.claude/hooks/session-mandate.md`).
+ 8. `mobile-fingerprint-check.yml` copied into `profiles/react-native/` (T3 Code, MIT) with two edits: `runs-on: ubuntu-latest` instead of T3's Blacksmith runner, and the watched paths reduced to `apps/mobile/**`, `packages/shared/**` and the workspace files.
+-11. `playbooks/autopilot-stack.md` step 1: when a unit is a ticket, its owner runs the Ticket playbook, so tickets close on merge and blockers are checked under a stack run.
++11. `playbooks/autopilot-stack.md` step 1: when a unit is a ticket, its owner runs the Ticket playbook, so tickets close on merge and blockers are checked under a stack run. Step 3: on the go, it runs `overlap.sh go "autopilot-stack" 4 5 8` over the unit tickets, as bare numbers, the program line the owners' Ticket step 1 reads. `poteto-mode/scripts/overlap.sh` is ours, not a patch, and is in `sync`'s `keep_files`.
+ 10. `interrogate/SKILL.md` step 2: when a ticket exists, its What to build and Acceptance criteria are the intent verbatim; the author's PR description and commit messages are used only without one.
+ 9. Every remaining `/no-comments` reference removed from `poteto-mode/` (router step list, `playbooks/autopilot-full.md`, `playbooks/autopilot-stack.md`, `playbooks/multi-phase-plan.md`, `references/codex-tools.md`), since the skill is not vendored (decision 4).
+ 12. `babysit/SKILL.md` step 4: ready also requires the `spec-review` comment on the latest commit to read `act-on items: 0`. The review runs at most three rounds on one PR: a comment reading `round: 3 of 3` and `act-on items: 0` makes the PR review-ready even when the fix commits it names come after the reviewed commit, and an Ask item waits for the human, then is re-sorted and the comment rebuilt with `review-comment.sh <dir>` in the same round.
+diff --git a/docs/agents/ledger.md b/docs/agents/ledger.md
+index 1fa6602..8b3cd29 100644
+--- a/docs/agents/ledger.md
++++ b/docs/agents/ledger.md
+@@ -19,3 +19,5 @@ One line per time an agent surprised you: `YYYY-MM-DD | model | what it did | wh
+ 2026-09-18 | fable | turned Manuel's question about where a judgment heuristic was recorded into a rule on a ticket before laying the problem out for him to choose; he removed it: a model extends the intent without it being written | present the problem, then let him choose the fix
+ 2026-09-18 | fable | amended #76 to eight criteria across three concerns and wrote 'likely a stack of PRs' into it instead of splitting it; three PRs ran nine review rounds finding one or two items each, and the Spec reviewers flagged absent criteria every round | one concern per ticket so one PR closes it; three rounds per PR; fix what the last round found and stop
+ 2026-09-21 | fable | asked whether ticket #82 needed to exist, then closed it before Manuel answered; he had only asked a question and would have said close it, but the decision was his and it was taken from him | a question is a question; answer it and wait for his decision, even when the answer is obvious
++2026-09-17 | fable | put the seven-re-reviews price on fixing low in a stack and used it to stack the seven independent tickets #16 to #22, which shared files but had no dependency; every review then covered all seven at once and a low fix rebased everything above | autopilot-stack step 7 re-verifies only the PRs whose patch-id changed, so a low fix costs one re-review; independent tickets that overlap in files are sequenced, one to merge-ready and then the next, and a stack is built only for coupled work on a go
++2026-09-21 | fable | briefed the writer lane with the script path .agents/skills/factory918/scripts/overlap.sh after its own design note said .claude/skills resolves in both the factory and a project; the wrong path shipped to the playbook and the router and the Spec reviewer found it in round two | the brief is checked against the design note before it is sent; a path an agent will type is tested the way it is typed
+diff --git a/docs/knowledge/INDEX.md b/docs/knowledge/INDEX.md
+index 51e6c7f..2b97449 100644
+--- a/docs/knowledge/INDEX.md
++++ b/docs/knowledge/INDEX.md
+@@ -6,8 +6,8 @@ The literal transcript of the conversation that produced this system is not avai
+ | file | what | lines | read when |
+ |---|---|---|---|
+ | `core/PHILOSOPHY.md` | Factory918: philosophy | 64 | First. Whenever the spec is silent. |
+-| `core/MANUAL.md` | Factory918: the manual | 172 | How to run the loop; what the human does at each point. |
+-| `core/DECISIONS.md` | Factory918: decisions | 91 | Before overriding any vendored skill; these win. |
++| `core/MANUAL.md` | Factory918: the manual | 174 | How to run the loop; what the human does at each point. |
++| `core/DECISIONS.md` | Factory918: decisions | 92 | Before overriding any vendored skill; these win. |
+ | `core/GLOSSARY.md` | Factory918: glossary | 69 | A term in AGENTS.md, a playbook or a ticket is unclear. |
+ | `core/CONVERSATION-DIGEST.md` | How Factory918 was arrived at | 53 | Why something was chosen, historically; the corrections. |
+ | `spec/FACTORY-SPEC-v2/01-preamble.md` | The Factory spec, v2 — (preamble) | 11 | Building or updating the factory itself. |
+diff --git a/docs/knowledge/core/DECISIONS.md b/docs/knowledge/core/DECISIONS.md
+index a14a2fb..b22d877 100644
+--- a/docs/knowledge/core/DECISIONS.md
++++ b/docs/knowledge/core/DECISIONS.md
+@@ -1,4 +1,4 @@
+-<!-- lines: 91 | source: core/DECISIONS.md | part 1/1 | title: Factory918: decisions -->
++<!-- lines: 92 | source: core/DECISIONS.md | part 1/1 | title: Factory918: decisions -->
+ 
+ ## Contents (line numbers are for the Read tool's offset)
+ - L13: Settled (2026-09-09)
+@@ -89,3 +89,4 @@ Travels anywhere without change: the planning skills, the execution playbooks, `
+ | P23 | The Spec report opens with a walk | `## Walk` is the Spec report's first heading: one numbered line per documented step of the path the change touches (the ticket's criteria and the documentation the diff changes), each saying what the code does at that step. Its lines are numbered 1..K on their own, are not findings and are not judged; `review-comment.sh` leaves them out of the item count, the numbering check and the `[P<n>]` set, so the findings start at 1 under `## Would break` | A finding starts from a documented step, so the reviewer walks the path before looking for what breaks on it; counted as items, a walk of nine steps would push every finding's number and break the judgment's references (#81). 2026-09-21. |
+ | P22 | Who signs a comment | A comment the agent posts on a PR or a ticket ends with the model and harness (`Claude Fable 5.1 on Claude Code`), plus `approved by <name>` when the human approved it before posting; only an approved comment posted from the author's account is the author's words. `review-brief.sh` reads only the PR author's account for rounds and carry-forward | Manuel, 2026-09-18: a comment left by the orchestrator without human involvement is signed by the model on the harness; approved, it is signed by both; strangers' comments never reach a brief (#78 round 1). |
+ | P2 | Tool versions in CI | Pin every tool CI runs to an exact version, as a devDependency where the tool publishes one | `dlx` and `npx` resolve the latest version, so a rule engine or formatter can change under a project with no diff to show for it. Spec §0 rule 1 already says to pin what you install; this extends it to what CI fetches. First applied to `@ast-grep/cli` 0.45.3 in M0. |
++| P24 | Overlap is not coupling; a go is a line that covers its own tickets | Two unblocked tickets relate three ways: dependent (`Blocked by`, off the frontier), disjoint in files (parallel branches off `main`), or overlapping in files (sequenced: one to merge-ready, the merge, then the next). Coupled work, a ticket that needs code an open PR introduces, stacks, and only on a go. Ticket step 1 runs `.claude/skills/poteto-mode/scripts/overlap.sh N` before branching: every open PR's head is fetched fresh and its own commits (its diff from the open PR it stacks on, else `origin/main`) are matched with the ticket body's backticked tokens as pathspecs (its `## Diff` section excluded), so a file, a directory, a glob or a file the PR creates all match; exit 0 prints `base: <ref>` to branch from, exit 1 stops and names the PR to merge first, exit 2 means the check could not run and stderr says why. A go is a line `<label>: #a #b ...` that `overlap.sh go "<label>" N...` appends to the gitignored `.claude/state/program`, written by the orchestrator when the human gives it (autopilot-stack step 3 runs it itself). A go covers a stack only when a line names the ticket and, for every overlapping PR, the ticket that PR closes; so a line a dead program left behind covers nothing outside its own tickets' open PRs and needs no removal. Under a cover the base is the overlapping PR's head, the lowest-numbered when siblings overlap, the containing one when one contains the other; step 8's `--diff` run records the shared paths as the PR body's `## Overlap` section | Ticket #42, Manuel: "working a ticket to completion before automatically moving on"; the #16 to #22 stack was built on a seven-re-reviews mis-estimate (ledger 2026-09-17). First run (PR #87, closed): three review rounds redesigned the matcher three times; the second run designed from a scenario table Manuel approved 2026-09-21 as the ticket's Testing decisions. Rejected: a ticket label as the go (outlives the program), a line pasted into each lane's brief (a forgotten paste blocks a lane), a `done` step (a crash skips it), the script under the factory918 skill (every later edit cross-cutting). |
+diff --git a/docs/knowledge/core/MANUAL.md b/docs/knowledge/core/MANUAL.md
+index cb97f5f..0607df6 100644
+--- a/docs/knowledge/core/MANUAL.md
++++ b/docs/knowledge/core/MANUAL.md
+@@ -1,4 +1,4 @@
+-<!-- lines: 172 | source: core/MANUAL.md | part 1/1 | title: Factory918: the manual -->
++<!-- lines: 174 | source: core/MANUAL.md | part 1/1 | title: Factory918: the manual -->
+ 
+ ## Contents (line numbers are for the Read tool's offset)
+ - L24: The loop in one screen
+@@ -8,14 +8,14 @@
+ - L61: Planning
+ - L71: Tickets
+ - L75: Execution
+-- L85: Pull requests, review and merge
+-- L108: Retro and the ledger
+-- L112: Maintenance
+-- L124: Multi-surface products
+-- L128: Models and cost
+-- L145: Updating the factory
+-- L149: Troubleshooting
+-- L161: Where to read more
++- L87: Pull requests, review and merge
++- L110: Retro and the ledger
++- L114: Maintenance
++- L126: Multi-surface products
++- L130: Models and cost
++- L147: Updating the factory
++- L151: Troubleshooting
++- L163: Where to read more
+ 
+ # Factory918: the manual
+ 
+@@ -76,7 +76,9 @@ A ticket is a GitHub issue with `## What to build`, `## Acceptance criteria` (ch
+ 
+ `/poteto-mode "#42"` (or paste the issue URL). The Ticket playbook reads the issue and its parent spec, refuses to start if a blocker is open, and runs a falsifiability pass over the acceptance criteria: for each one it names the command or observation that would fail it today, and sends back any criterion that already passes, that another ticket owns, or that merely restates the request. Answer those notes, then it runs the matching pstack playbook (Feature, Bug fix, Refactoring, Perf issue) from step 1: `how` and `why` over the subsystem, design, delegated build with a reviewed diff, verification on the real surface, then Opening a PR and Babysit.
+ 
+-**Several at once.** One ticket per `/poteto-mode "#N"` is the default, and a fresh session per ticket keeps the orchestrator's context clean. To drain the frontier instead: `/poteto-mode "autopilot-stack #4 #5 #8"`. pstack's autopilot-stack runs one owner lane per ticket in its own context and worktree, swarm-verifies each PR, keeps the chain rebased as `main` moves, and hands you one bottom-to-top list of verified PRs to land one at a time; it never merges (`playbooks/autopilot-stack.md` is the full procedure). It states its plan first and starts on your go, then runs without you; each owner runs the Ticket playbook for its ticket, so every unit needs a ticket and quick tickets come first. Its sibling `autopilot-full` is not used here: its merge step is blocked by the git guard.
++**Several at once.** One ticket per `/poteto-mode "#N"` is the default, and a fresh session per ticket keeps the orchestrator's context clean. Two unblocked tickets relate three ways. A dependent ticket lists the other under `## Blocked by` and stays off the frontier until it merges. Two independent tickets disjoint in files each branch from `main`, in any order. Two independent tickets that overlap in files are sequenced. The first goes to merge-ready, you merge, the next starts. Overlap is not coupling. Coupled work is a ticket that needs code an open PR introduces, and only that stacks, only on your go. The Ticket playbook checks before it branches (`overlap.sh` compares each open PR's own commits, its diff from the PR under it or from `main`, with the paths the ticket names) and on overlap stops and names the PR to merge first, unless your go opened a program that names the ticket.
++
++**Draining the frontier.** `/poteto-mode "autopilot-stack #4 #5 #8"` is for coupled work. pstack's autopilot-stack runs one owner lane per ticket in its own context and worktree, swarm-verifies each PR, keeps the chain rebased as `main` moves, and hands you one bottom-to-top list of verified PRs to land one at a time; it never merges (`playbooks/autopilot-stack.md` is the full procedure). It states its plan first and starts on your go, then runs without you; each owner runs the Ticket playbook for its ticket, so every unit needs a ticket and quick tickets come first. Your go opens a program, a line the agent appends with `overlap.sh go`, naming its tickets (this run, or a sweep run as one chain), and stands for every stack the program builds. A line covers only stacks among the tickets it names, so it needs no removal. An overlap inside it is recorded in the PR body (`## Overlap`) and the ticket stacks on the PR it overlaps. A rebase re-reviews only a PR whose `git patch-id` changed, so a fix low in the chain costs one re-review, not one per PR above it. Its sibling `autopilot-full` is not used here: its merge step is blocked by the git guard.
+ 
+ **What you do.** Not much until the PR exists. The agent proceeds on anything reversible and asks only before irreversible actions. If it goes wrong, note what you would have said earlier; that note is a ledger entry, and the ledger is where rules come from.
+ 
+diff --git a/factory918.sh b/factory918.sh
+index 57dac15..9ecfacd 100755
+--- a/factory918.sh
++++ b/factory918.sh
+@@ -378,7 +378,7 @@ cmd_sync() {
+   local pstack="$F918_DIR/research/3-pstack/open-pstack-claude-code-port/plugins/pstack"
+   local matt="$F918_DIR/research/1-matt-pocock/skills-repo/skills"
+   local ours="factory918 factory-start knowledge mode-plan mode-build factory-doctor factory-retro"
+-  local keep_files="poteto-mode/playbooks/ticket.md spec-review/scripts/review-brief.sh spec-review/scripts/review-comment.sh"
++  local keep_files="poteto-mode/playbooks/ticket.md poteto-mode/scripts/overlap.sh spec-review/scripts/review-brief.sh spec-review/scripts/review-comment.sh"
+   local tmp; tmp="$(mktemp -d)"
+   for k in $keep_files; do mkdir -p "$tmp/keep/$(dirname "$k")"; cp "$skills/$k" "$tmp/keep/$k"; done
+   for d in "$pstack"/skills/*/; do n="$(basename "$d")"; [ "$n" = no-comments ] && continue; rm -rf "$skills/$n"; cp -R "$d" "$skills/$n"; done
+diff --git a/patches/pstack/poteto-mode/playbooks/autopilot-stack.md.patch b/patches/pstack/poteto-mode/playbooks/autopilot-stack.md.patch
+index b2a6c9f..fb56bea 100644
+--- a/patches/pstack/poteto-mode/playbooks/autopilot-stack.md.patch
++++ b/patches/pstack/poteto-mode/playbooks/autopilot-stack.md.patch
+@@ -1,11 +1,14 @@
+ --- a/poteto-mode/playbooks/autopilot-stack.md
+ +++ b/poteto-mode/playbooks/autopilot-stack.md
+-@@ -2,7 +2,7 @@
++@@ -2,9 +2,9 @@
+  
+  **You own the stack, never the landing. Build and verify the queue with full autonomy, then hand the operator one linear stack she reviews and lands herself.** For "autopilot-stack", "stack them, don't ship", "build the stack, I'll land it". The sibling of **Autopilot-full**. The owner loop and the verification gate are the same; only the terminal differs. There a clean verdict authorizes the owner's merge. Here it appends a link to the one reviewed chain, and nothing auto-ships.
+  
+ -1. **Run the owner loop unchanged.** Resolve the forge once for the program. GitHub CLI (`gh`) is the default. If `command -v origin` succeeds and Origin can resolve the repository, use `origin pr ...` for PR create, edit, view, and watch operations; this playbook never merges. Otherwise stay on `gh` and record the fallback. Record the forge-reported base repository as `<base-repo>` and pass `--repo "$base_repo"` to every `gh pr` command. Resolve and validate `<head-remote>`, `<head-url>`, and `<base-remote>` separately by Shipping step 1; never assume any of them is named `origin` or that the base and head repositories are the same. When the head repository is a fork, validate its identity and record its owner and repository name as `<fork-owner>` and `<head-name>`. Never require Graphite (`gt`). One background subagent per PR, in its own worktree, owns its change end to end: build, first push, an early PR opened per Opening a PR's readiness rule, self-proof (gates, CI, receipts), skeptical review-bot triage per `../references/bugbot-triage.md`, a slop-strip (the **deslop** skill, `/deslop`), `/no-comments` (the **no-comments** skill), and babysit to green per `playbooks/babysit.md`. Owners parallelize when the work is self-contained. Within about 15 minutes, every owner starts a `decisions.tsv` trail per the **show-me-your-work** skill, pushes its first branch snapshot, and opens the PR before self-proof. Repository instructions can keep the early PR draft until its required evidence is recorded. Keep the trail uncommitted and return it in the report.
+ +1. **Run the owner loop unchanged, with one addition: when a unit is a ticket, its owner runs the Ticket playbook (`playbooks/ticket.md`) for it, so blockers are checked, criteria proven, and the PR says `Closes #N`.** Resolve the forge once for the program. GitHub CLI (`gh`) is the default. If `command -v origin` succeeds and Origin can resolve the repository, use `origin pr ...` for PR create, edit, view, and watch operations; this playbook never merges. Otherwise stay on `gh` and record the fallback. Record the forge-reported base repository as `<base-repo>` and pass `--repo "$base_repo"` to every `gh pr` command. Resolve and validate `<head-remote>`, `<head-url>`, and `<base-remote>` separately by Shipping step 1; never assume any of them is named `origin` or that the base and head repositories are the same. When the head repository is a fork, validate its identity and record its owner and repository name as `<fork-owner>` and `<head-name>`. Never require Graphite (`gt`). One background subagent per PR, in its own worktree, owns its change end to end: build, first push, an early PR opened per Opening a PR's readiness rule, self-proof (gates, CI, receipts), skeptical review-bot triage per `../references/bugbot-triage.md`, a slop-strip (the **deslop** skill, `/deslop`), and babysit to green per `playbooks/babysit.md`. Owners parallelize when the work is self-contained. Within about 15 minutes, every owner starts a `decisions.tsv` trail per the **show-me-your-work** skill, pushes its first branch snapshot, and opens the PR before self-proof. Repository instructions can keep the early PR draft until its required evidence is recorded. Keep the trail uncommitted and return it in the report.
+  2. **Audit on the wake chain.** The root runs an audit tick roughly every 30 minutes. The tick is an observation cadence, never a lease, deadline, or cancellation threshold. Arm each tick as a real `/loop` in dynamic mode, which schedules its own wake-up rather than blocking on a sleep. Never leave the cadence to memory or lossy completion notifications. At each tick, re-read this playbook from disk (`skills/poteto-mode/playbooks/autopilot-stack.md` under the installed plugin), then re-read the standing objective. Audit the operation against both. Fix drift during that tick and treat it as urgent. Probe each owner through its retained handle with a generic liveness or status check. Count commits, pushes, PR or check deltas, store reports, and a live retained process as evidence. Elapsed time or the absence of a new side effect alone never proves a lane is stuck; implementation runs can remain healthy for 90 minutes or much longer. Stand a lane down only on affirmative failure evidence such as a dead process, failed handle, explicit error, or a caller-supplied external deadline. Cancel through the retained handle before dispatching a replacement.
+- 3. **Hold the operator gates.** State-then-wait, so a request to state the plan is not a go. On her explicit go, write the full program objective into the standing orders and restate it in your todolist, since Claude Code has no `/goal` command. That objective stands across turns until the chain is done. On her stop, every owner takes an immediate zero-writes hold.
++-3. **Hold the operator gates.** State-then-wait, so a request to state the plan is not a go. On her explicit go, write the full program objective into the standing orders and restate it in your todolist, since Claude Code has no `/goal` command. That objective stands across turns until the chain is done. On her stop, every owner takes an immediate zero-writes hold.
+++3. **Hold the operator gates.** State-then-wait, so a request to state the plan is not a go. On her explicit go, write the full program objective into the standing orders and restate it in your todolist, and run `.claude/skills/poteto-mode/scripts/overlap.sh go "autopilot-stack" 4 5 8` (the unit tickets, bare numbers), the go owners read in Ticket step 1, since Claude Code has no `/goal` command. That objective stands across turns until the chain is done. On her stop, every owner takes an immediate zero-writes hold.
+  4. **Verify at STACK-READY.** The owner reports STACK-READY with the exact head SHA. The root swarm-verifies that SHA, fan-out per the **swarm** skill: parallel independent verifiers re-running the gates at that SHA, a live runtime floor over the load-bearing behavior, and a receipts-and-diff audit that distrusts the PR body. The swarm aggregates to one verdict. Findings go back to the owner, and nothing enters the stack unverified.
++ 5. **Append on a clean verdict, never ship.** No owner merges, arms auto-merge, or closes. A clean verdict appends the PR to one frozen bottom-to-top list, in verified order or an order the operator specified. For same-repository heads, the forge's base-branch chain also records that order. For fork heads, every PR targets trunk, so never infer stack order from their equal base branches.
++ 6. **Single writer on topology, parallel writers on builds.** Owners push only their own branches and report the tip, current patch base, and intended parent. The root is the only topology writer. Before it rebases, force-pushes, or retargets an existing PR, the root applies Shipping step 4's disarm-and-confirm rule to that PR and every descendant, stopping if the forge cannot confirm every request off. Fetch trunk through `<base-remote>`. Fetch another stack branch directly through `<head-url>`, because `<head-remote>` may have the base repository as its fetch URL and the fork as its push URL. Validate the chosen repository identity through the active forge, and record the fetched target as `<parent-tip>`. Before rebasing, record the child branch's published SHA as `<captured-sha>` with `git ls-remote -- "$head_url" "refs/heads/$branch"` and require it to equal the local pre-rebase tip. Require `git merge-base --is-ancestor "$current_base_sha" "refs/heads/$branch"` to pass. When the parent changed, move only the child's commits with `git rebase --onto "$parent_tip" "$current_base_sha" -- "$branch"`, then record `<parent-tip>` as the child's new patch base. Publish with `git push --force-with-lease="refs/heads/$branch:$captured_sha" -- "$head_url" "HEAD:refs/heads/$branch"`. When the head and base repositories are the same, create or retarget the child PR with the parent branch as its base. Use `origin pr create --status open --base "$parent_branch"`, `gh pr create --base "$parent_branch" --repo "$base_repo"`, `origin pr edit "$pr" --base "$parent_branch"`, or `gh pr edit "$pr" --base "$parent_branch" --repo "$base_repo"` according to the resolved forge and operation. When the head repository is a fork, keep the local child branch rebased onto its parent's exact tip but create or retarget every PR against `<trunk>` in the base repository. With GitHub, capture the approved PR title and body as `<title>` and `<body>`, then create it with `gh api --method POST "repos/$base_repo/pulls" -f "title=$title" -f "body=$body" -f "head=$fork_owner:$branch" -f "head_repo=$head_name" -f "base=$trunk" --jq .html_url`; add `-F draft=true` only when Opening a PR's readiness rule requires a draft. Otherwise use the resolved Origin equivalent. Retarget it with `gh pr edit "$pr" --base "$trunk" --repo "$base_repo"` or the resolved Origin equivalent. A forge cannot use a fork-only parent branch as a PR base. Never submit or register the chain through `gt`.
+diff --git a/template/.agents/skills/factory918/SKILL.md b/template/.agents/skills/factory918/SKILL.md
+index 99d245e..d2e8f60 100644
+--- a/template/.agents/skills/factory918/SKILL.md
++++ b/template/.agents/skills/factory918/SKILL.md
+@@ -52,8 +52,8 @@ Read the phase: `cat .claude/state/mode` (missing means `execute`). Match the si
+ | A feature to add in this repo | planning | `/grill-with-docs`, then `/to-spec` and `/to-tickets` in the same window, then `/clear`. |
+ | An idea and no repo yet | planning | `/grill-me`, then `factory918 init`, then `/factory-start`. |
+ | A repo that was never grilled (no `CONTEXT.md` terms) | planning | `/grill-with-docs help me document this repo`. Long; the human answers. |
+-| A ticket reference (`#N`, URL) | execute | `/poteto-mode "#N"`. The Ticket playbook takes it from there. |
+-| Several unblocked tickets to run | execute | `/poteto-mode "autopilot-stack #4 #5 #8"` (`playbooks/autopilot-stack.md`): one owner lane per ticket, a verified chain the human lands. Every unit needs a ticket first. `autopilot-full` is not used: its merge step is blocked by the git guard. |
++| A ticket reference (`#N`, URL) | execute | `/poteto-mode "#N"`. The Ticket playbook takes it from there; its step 1 runs `.claude/skills/poteto-mode/scripts/overlap.sh N` and stops on a path shared with an open PR unless a go names the ticket and the ticket that PR closes (`docs/factory918/MANUAL.md` "Execution"). |
++| Several unblocked tickets to run | execute | Three cases (`docs/factory918/MANUAL.md` "Execution"). Disjoint in files: `/poteto-mode "#N"` each, from `main`. Overlapping in files: one at a time, a merge between, never stacked. Coupled, one needs code another's open PR introduces: `/poteto-mode "autopilot-stack #4 #5 #8"` (`playbooks/autopilot-stack.md`), one owner lane per ticket, a verified chain the human lands, on the human's go. A go opens a program: run `.claude/skills/poteto-mode/scripts/overlap.sh go "<label>" 4 5 8` (bare numbers) before the first lane (autopilot-stack step 3 does it itself); the line covers stacks among those tickets and needs no removal. Every unit needs a ticket first. `autopilot-full` is not used: its merge step is blocked by the git guard. |
+ | A task with no ticket | execute | If it will end in a PR, file a quick ticket first (`playbooks/ticket.md`, "Quick ticket"), then `/poteto-mode "#N"`. If it ends in a commit on a branch, `/poteto-mode <task>` with no ticket. |
+ | A bug with a reproduction | execute | `/poteto-mode` routes to Bug fix; `tdd` when a cheap failing test exists. |
+ | "How does X work / why is it like this" | either | `/how`, `/why`, or `/teach`. Read-only. |
+diff --git a/template/.agents/skills/poteto-mode/playbooks/autopilot-stack.md b/template/.agents/skills/poteto-mode/playbooks/autopilot-stack.md
+index 1d177b0..56061dc 100644
+--- a/template/.agents/skills/poteto-mode/playbooks/autopilot-stack.md
++++ b/template/.agents/skills/poteto-mode/playbooks/autopilot-stack.md
+@@ -4,7 +4,7 @@
+ 
+ 1. **Run the owner loop unchanged, with one addition: when a unit is a ticket, its owner runs the Ticket playbook (`playbooks/ticket.md`) for it, so blockers are checked, criteria proven, and the PR says `Closes #N`.** Resolve the forge once for the program. GitHub CLI (`gh`) is the default. If `command -v origin` succeeds and Origin can resolve the repository, use `origin pr ...` for PR create, edit, view, and watch operations; this playbook never merges. Otherwise stay on `gh` and record the fallback. Record the forge-reported base repository as `<base-repo>` and pass `--repo "$base_repo"` to every `gh pr` command. Resolve and validate `<head-remote>`, `<head-url>`, and `<base-remote>` separately by Shipping step 1; never assume any of them is named `origin` or that the base and head repositories are the same. When the head repository is a fork, validate its identity and record its owner and repository name as `<fork-owner>` and `<head-name>`. Never require Graphite (`gt`). One background subagent per PR, in its own worktree, owns its change end to end: build, first push, an early PR opened per Opening a PR's readiness rule, self-proof (gates, CI, receipts), skeptical review-bot triage per `../references/bugbot-triage.md`, a slop-strip (the **deslop** skill, `/deslop`), and babysit to green per `playbooks/babysit.md`. Owners parallelize when the work is self-contained. Within about 15 minutes, every owner starts a `decisions.tsv` trail per the **show-me-your-work** skill, pushes its first branch snapshot, and opens the PR before self-proof. Repository instructions can keep the early PR draft until its required evidence is recorded. Keep the trail uncommitted and return it in the report.
+ 2. **Audit on the wake chain.** The root runs an audit tick roughly every 30 minutes. The tick is an observation cadence, never a lease, deadline, or cancellation threshold. Arm each tick as a real `/loop` in dynamic mode, which schedules its own wake-up rather than blocking on a sleep. Never leave the cadence to memory or lossy completion notifications. At each tick, re-read this playbook from disk (`skills/poteto-mode/playbooks/autopilot-stack.md` under the installed plugin), then re-read the standing objective. Audit the operation against both. Fix drift during that tick and treat it as urgent. Probe each owner through its retained handle with a generic liveness or status check. Count commits, pushes, PR or check deltas, store reports, and a live retained process as evidence. Elapsed time or the absence of a new side effect alone never proves a lane is stuck; implementation runs can remain healthy for 90 minutes or much longer. Stand a lane down only on affirmative failure evidence such as a dead process, failed handle, explicit error, or a caller-supplied external deadline. Cancel through the retained handle before dispatching a replacement.
+-3. **Hold the operator gates.** State-then-wait, so a request to state the plan is not a go. On her explicit go, write the full program objective into the standing orders and restate it in your todolist, since Claude Code has no `/goal` command. That objective stands across turns until the chain is done. On her stop, every owner takes an immediate zero-writes hold.
++3. **Hold the operator gates.** State-then-wait, so a request to state the plan is not a go. On her explicit go, write the full program objective into the standing orders and restate it in your todolist, and run `.claude/skills/poteto-mode/scripts/overlap.sh go "autopilot-stack" 4 5 8` (the unit tickets, bare numbers), the go owners read in Ticket step 1, since Claude Code has no `/goal` command. That objective stands across turns until the chain is done. On her stop, every owner takes an immediate zero-writes hold.
+ 4. **Verify at STACK-READY.** The owner reports STACK-READY with the exact head SHA. The root swarm-verifies that SHA, fan-out per the **swarm** skill: parallel independent verifiers re-running the gates at that SHA, a live runtime floor over the load-bearing behavior, and a receipts-and-diff audit that distrusts the PR body. The swarm aggregates to one verdict. Findings go back to the owner, and nothing enters the stack unverified.
+ 5. **Append on a clean verdict, never ship.** No owner merges, arms auto-merge, or closes. A clean verdict appends the PR to one frozen bottom-to-top list, in verified order or an order the operator specified. For same-repository heads, the forge's base-branch chain also records that order. For fork heads, every PR targets trunk, so never infer stack order from their equal base branches.
+ 6. **Single writer on topology, parallel writers on builds.** Owners push only their own branches and report the tip, current patch base, and intended parent. The root is the only topology writer. Before it rebases, force-pushes, or retargets an existing PR, the root applies Shipping step 4's disarm-and-confirm rule to that PR and every descendant, stopping if the forge cannot confirm every request off. Fetch trunk through `<base-remote>`. Fetch another stack branch directly through `<head-url>`, because `<head-remote>` may have the base repository as its fetch URL and the fork as its push URL. Validate the chosen repository identity through the active forge, and record the fetched target as `<parent-tip>`. Before rebasing, record the child branch's published SHA as `<captured-sha>` with `git ls-remote -- "$head_url" "refs/heads/$branch"` and require it to equal the local pre-rebase tip. Require `git merge-base --is-ancestor "$current_base_sha" "refs/heads/$branch"` to pass. When the parent changed, move only the child's commits with `git rebase --onto "$parent_tip" "$current_base_sha" -- "$branch"`, then record `<parent-tip>` as the child's new patch base. Publish with `git push --force-with-lease="refs/heads/$branch:$captured_sha" -- "$head_url" "HEAD:refs/heads/$branch"`. When the head and base repositories are the same, create or retarget the child PR with the parent branch as its base. Use `origin pr create --status open --base "$parent_branch"`, `gh pr create --base "$parent_branch" --repo "$base_repo"`, `origin pr edit "$pr" --base "$parent_branch"`, or `gh pr edit "$pr" --base "$parent_branch" --repo "$base_repo"` according to the resolved forge and operation. When the head repository is a fork, keep the local child branch rebased onto its parent's exact tip but create or retarget every PR against `<trunk>` in the base repository. With GitHub, capture the approved PR title and body as `<title>` and `<body>`, then create it with `gh api --method POST "repos/$base_repo/pulls" -f "title=$title" -f "body=$body" -f "head=$fork_owner:$branch" -f "head_repo=$head_name" -f "base=$trunk" --jq .html_url`; add `-F draft=true` only when Opening a PR's readiness rule requires a draft. Otherwise use the resolved Origin equivalent. Retarget it with `gh pr edit "$pr" --base "$trunk" --repo "$base_repo"` or the resolved Origin equivalent. A forge cannot use a fork-only parent branch as a PR base. Never submit or register the chain through `gt`.
+diff --git a/template/.agents/skills/poteto-mode/playbooks/ticket.md b/template/.agents/skills/poteto-mode/playbooks/ticket.md
+index 92bed06..eafcbb8 100644
+--- a/template/.agents/skills/poteto-mode/playbooks/ticket.md
++++ b/template/.agents/skills/poteto-mode/playbooks/ticket.md
+@@ -2,14 +2,14 @@
+ 
+ **A ticket is the ask. Read it, prove its criteria can fail, run the matching playbook, end in a PR that closes it.** For any request carrying an issue reference: `#N`, `owner/repo#N`, or an issue URL. A request carrying several references and `autopilot-stack` goes to that playbook instead; each of its owner lanes then runs this playbook for its own ticket.
+ 
+-1. Start from an up-to-date `main`. `git fetch origin main:main` (`git pull --ff-only` when on `main`), so local `main` moves too, then note the current branch. If `git status --porcelain` prints anything, stop, tell the user the checkout is dirty and what is in it, and do not start. Otherwise `git switch -c <branch> origin/main` (`main` when the repository has no remote), or start from the parent PR's branch when the ticket stacks on an open PR on purpose. A session inherits whatever branch the last one left; a branch started from a stale or already-merged one carries someone else's commits into the PR.
++1. Start from an up-to-date `main`. `git fetch origin main:main` (`git pull --ff-only` when on `main`), so local `main` moves too, then note the current branch. If `git status --porcelain` prints anything, stop, tell the user the checkout is dirty and what is in it, and do not start. Then run `.claude/skills/poteto-mode/scripts/overlap.sh N`. It prints `go: <label or none>`, one line per open PR whose own commits (its diff from the open PR it stacks on, else `origin/main`) touch a path the ticket names in backticks, `#<pr> <head>: <path> <path>`, and on exit 0 a last line `base: <ref>`: `git switch -c <branch> <ref>`, and when the ref is a PR head, keep the output and report every printed PR as an overlap and the base as the intended parent. Exit 1 (paths shared, no go covering them): stop, report the output, and do not start; the reply says: merge #k, or say `stack #N on #M` where #M is the ticket #k closes (`gh pr view k --json closingIssuesReferences`). Exit 2: stop and report stderr. `stack #N on #M`, #M the ticket the printed PR closes, is a go for that one stack: run `overlap.sh go "stack on #M" N M`, so the line reads `stack on #M: #N #M`, then this step again. `paths: none` means the ticket names no file; step 8 is its check. A session inherits whatever branch the last one left; a branch started from a stale or already-merged one carries someone else's commits into the PR.
+ 2. Read the ticket: `gh issue view N --json title,body,labels,state,comments`. Its **What to build** is the goal; its **Acceptance criteria** are the finish condition; its **Parent** is the spec: read it too (`gh issue view <parent>`), and read `CONTEXT.md` and the ADRs in the area. The body shape is `docs/agents/issue-tracker.md`, "Ticket body".
+ 3. Check **Blocked by**. Every listed issue must be closed. If one is open, stop and report which; do not start.
+ 4. Falsifiability pass. For each criterion name the command or observation that would fail it right now. A criterion that already passes at HEAD, that another ticket owns, or that only restates the request goes back to the human as a note before work starts. A ticket whose criteria span more than one concern goes back to the human to be split before work starts, because one ticket is one PR. Criteria the human confirms become the verification plan.
+ 5. Select by content and run that playbook's steps verbatim from step 1: new behavior → Feature; a defect → Bug fix; a behavior-preserving change → Refactoring; measured slowness → Perf issue. `how` and `why` over the affected subsystem come first in all of them. A change whose diff will touch a cross-cutting path, one under a `.claude/hooks/` directory, a `.claude/settings.json`, or a file of the `factory918` skill (`.agents/skills/factory918/`), at any depth (`spec-review`'s `review-brief.sh` holds the predicate), reaches every session and skill at once: after `how`, run `blast-radius` over it and write the result to `.scratch/<ticket>/blast-radius.md` in that skill's hand-back shape (what it does; the one fact it is safe because of and how far it was proven; risks; cleared; before you merge), with a risk for every session kind (the interactive session, a subagent, a hook's own invocation, `factory-start` at day zero, a review in progress) and every skill the change reaches, each with a `file:line`. Such a change never skips `architect`. The PR body's `## Blast Radius` section is that file verbatim, and `review-brief.sh` refuses to brief the diff without it.
+ 6. The spec's **Testing decisions** are the pre-agreed seams. `tdd` there, and nowhere the spec did not agree unless a criterion needs it.
+ 7. Verify on the matching surface per `docs/agents/evidence.md`; the primary agent runs the project's `verify-<app>` skill once after integrating.
+-8. Run **Opening a PR**. The body's Verification section quotes each criterion with its evidence path. The last line before the attribution is `Closes #N`. Never close the issue by hand; the merge closes it.
++8. Run `.claude/skills/poteto-mode/scripts/overlap.sh N --diff`; its output, when there is any, is the PR body's `## Overlap` section verbatim, placed before `## Verification`; exit 1 means the reply names the printed PR as the one to merge first. Then run **Opening a PR**. The body's Verification section quotes each criterion with its evidence path. The last line before the attribution is `Closes #N`. Never close the issue by hand; the merge closes it.
+ 9. Babysit to merge-ready per `playbooks/babysit.md`. Never merge.
+ 
+ **Reply:** the ticket, the criteria and how each was proven, what the ticket did not settle and what you chose, the PR URL.
+diff --git a/template/.agents/skills/poteto-mode/scripts/overlap.sh b/template/.agents/skills/poteto-mode/scripts/overlap.sh
+new file mode 100755
+index 0000000..81b05ef
+--- /dev/null
++++ b/template/.agents/skills/poteto-mode/scripts/overlap.sh
+@@ -0,0 +1,116 @@
++#!/usr/bin/env bash
++# Ticket step 1 and step 8. `overlap.sh N` prints `go: <label or none>` (the newest line of
++# .claude/state/program naming #N), then `#<pr> <head>: <paths>` for every open PR whose own
++# commits (its diff from the nearest open-PR head under it, else origin/main) touch a path the
++# ticket's body names in backticks (tokens without whitespace, those under `## Diff` skipped,
++# passed together as pathspecs), ascending by PR number, then on exit 0 the ref to branch from:
++# origin/main when nothing is shared, else the printed head that contains every other, else the
++# lowest PR number's. `overlap.sh N --diff` compares the branch's own paths by the same rule (the
++# own PR skipped, literal pathspecs), prints nothing when none is shared, the go and the PR lines
++# otherwise, and no base. `overlap.sh go
++# "<label>" N...` appends `<label>: #a #b ...` to the program file, its only writer; a linked
++# worktree reads the main checkout's. Exit 0 decided, 1 a path shared with a PR no go covers (a go
++# covers when some line names #N and some line names the ticket each printed PR closes; a PR that
++# closes no ticket is never covered), 2 gh or git failed and its message is on stderr, or `--diff`
++# on a detached HEAD, 64 usage.
++# Every PR head is fetched fresh before any diff; no origin remote means nothing is in flight.
++set -euo pipefail
++trap 'exit 2' ERR
++usage() { echo 'usage: overlap.sh N [--diff] | overlap.sh go "<label>" N...' >&2; exit 64; }
++cd "$(git rev-parse --show-toplevel)"
++prog="$(git rev-parse --git-common-dir)/../.claude/state/program"
++
++if [ "${1:-}" = go ]; then
++  [ $# -ge 3 ] || usage
++  line="$2:"; shift 2
++  for t in "$@"; do t="${t#\#}"; [[ $t =~ ^[0-9]+$ ]] || usage; line="$line #$t"; done
++  mkdir -p "$(dirname "$prog")"; echo "$line" >> "$prog"; exit 0
++fi
++[ $# -ge 1 ] && [ $# -le 2 ] || usage
++n="${1#\#}"; [[ $n =~ ^[0-9]+$ ]] || usage
++diff=""; [ $# -eq 1 ] || { [ "$2" = --diff ] || usage; diff=1; }
++cur="$(git branch --show-current)"
++if [ -n "$diff" ] && [ -z "$cur" ]; then echo "detached HEAD; run from the ticket's branch" >&2; exit 2; fi
++
++# The newest go naming the ticket is the one the human gave last.
++l="$(grep -w -- "#$n" "$prog" 2>/dev/null | tail -n 1 || true)"
++go="go: ${l%%: #*}"; [ -n "$l" ] || go="go: none"
++covered=1; [ "$go" != "go: none" ] || covered=0
++
++if ! git remote get-url origin >/dev/null 2>&1; then
++  echo "no origin remote; nothing in flight" >&2
++  [ -n "$diff" ] || printf '%s\nbase: main\n' "$go"
++  exit 0
++fi
++
++if [ -z "$diff" ]; then
++  body="$(gh issue view "$n" --json body -q .body)"
++  # shellcheck disable=SC2016
++  paths="$(printf '%s\n' "$body" | awk '/^## /{skip=($0 ~ /^## Diff[[:space:]]*$/)} !skip' \
++    | grep -oE '`[^`[:space:]]+`' | tr -d '`' | sort -u || true)"
++  if [ -z "$paths" ]; then printf '%s\npaths: none\nbase: origin/main\n' "$go"; exit 0; fi
++fi
++
++# One line per open PR: number, head, the tickets it closes; heads refreshed in one fetch.
++prs="$(gh pr list --state open --limit 100 --json number,headRefName,closingIssuesReferences \
++  -q 'sort_by(.number)[] | "\(.number)\t\(.headRefName)\t\(.closingIssuesReferences | map("#\(.number)") | join(" "))"')"
++specs=(+refs/heads/main:refs/remotes/origin/main)
++while IFS=$'\t' read -r num head closes; do
++  [ -n "$num" ] || continue
++  specs+=("+refs/heads/$head:refs/remotes/origin/$head")
++done <<< "$prs"
++git fetch -q origin "${specs[@]}"
++
++# is_ancestor <a> <b>: 0 yes, 1 no; any other git exit ends the run, its message already on stderr.
++is_ancestor() { git merge-base --is-ancestor "$1" "$2" && return 0; [ $? -eq 1 ] && return 1; exit 2; }
++# nearest <ref> <own head>: the open-PR head under the ref with the fewest commits between, the
++# ref's own head never (a head is not its own base), else origin/main.
++nearest() {
++  local base=origin/main best="" num head closes d
++  while IFS=$'\t' read -r num head closes; do
++    [ -n "$num" ] && [ "$head" != "$2" ] || continue
++    is_ancestor "origin/$head" "$1" || continue
++    d="$(git rev-list --count "origin/$head..$1")"
++    [ "$d" -gt 0 ] || continue
++    if [ -z "$best" ] || [ "$d" -lt "$best" ]; then best="$d"; base="origin/$head"; fi
++  done <<< "$prs"
++  echo "$base"
++}
++
++if [ -n "$diff" ]; then
++  base="$(nearest HEAD "$cur")"
++  paths="$(git diff --name-only "$base...HEAD")"
++  [ -n "$paths" ] || exit 0
++  export GIT_LITERAL_PATHSPECS=1
++fi
++IFS=$'\n' read -r -d '' -a toks <<< "$paths" || true
++
++lines=""; printed=()
++while IFS=$'\t' read -r num head closes; do
++  [ -n "$num" ] || continue
++  [ -z "$diff" ] || [ "$head" != "$cur" ] || continue
++  base="$(nearest "origin/$head" "$head")"
++  shared="$(git diff --name-only "$base...origin/$head" -- "${toks[@]}" | tr '\n' ' ')"
++  [ -n "$shared" ] || continue
++  lines+="#$num $head: ${shared% }"$'\n'
++  printed+=("$head")
++  [ -n "$closes" ] || covered=0
++  for t in $closes; do grep -qw -- "$t" "$prog" 2>/dev/null || covered=0; done
++done <<< "$prs"
++
++if [ -n "$diff" ]; then
++  [ -n "$lines" ] || exit 0
++  printf '%s\n%s' "$go" "$lines"
++  [ "$covered" = 1 ] || exit 1
++  exit 0
++fi
++printf '%s\n%s' "$go" "$lines"
++if [ -z "$lines" ]; then echo "base: origin/main"; exit 0; fi
++[ "$covered" = 1 ] || exit 1
++base="origin/${printed[0]}"
++for h in "${printed[@]}"; do
++  holds=1
++  for o in "${printed[@]}"; do is_ancestor "origin/$o" "origin/$h" || holds=0; done
++  if [ "$holds" = 1 ]; then base="origin/$h"; break; fi
++done
++echo "base: $base"
+diff --git a/template/docs/factory918/DECISIONS.md b/template/docs/factory918/DECISIONS.md
+index c01004b..8f73598 100644
+--- a/template/docs/factory918/DECISIONS.md
++++ b/template/docs/factory918/DECISIONS.md
+@@ -81,3 +81,4 @@ Travels anywhere without change: the planning skills, the execution playbooks, `
+ | P23 | The Spec report opens with a walk | `## Walk` is the Spec report's first heading: one numbered line per documented step of the path the change touches (the ticket's criteria and the documentation the diff changes), each saying what the code does at that step. Its lines are numbered 1..K on their own, are not findings and are not judged; `review-comment.sh` leaves them out of the item count, the numbering check and the `[P<n>]` set, so the findings start at 1 under `## Would break` | A finding starts from a documented step, so the reviewer walks the path before looking for what breaks on it; counted as items, a walk of nine steps would push every finding's number and break the judgment's references (#81). 2026-09-21. |
+ | P22 | Who signs a comment | A comment the agent posts on a PR or a ticket ends with the model and harness (`Claude Fable 5.1 on Claude Code`), plus `approved by <name>` when the human approved it before posting; only an approved comment posted from the author's account is the author's words. `review-brief.sh` reads only the PR author's account for rounds and carry-forward | Manuel, 2026-09-18: a comment left by the orchestrator without human involvement is signed by the model on the harness; approved, it is signed by both; strangers' comments never reach a brief (#78 round 1). |
+ | P2 | Tool versions in CI | Pin every tool CI runs to an exact version, as a devDependency where the tool publishes one | `dlx` and `npx` resolve the latest version, so a rule engine or formatter can change under a project with no diff to show for it. Spec §0 rule 1 already says to pin what you install; this extends it to what CI fetches. First applied to `@ast-grep/cli` 0.45.3 in M0. |
++| P24 | Overlap is not coupling; a go is a line that covers its own tickets | Two unblocked tickets relate three ways: dependent (`Blocked by`, off the frontier), disjoint in files (parallel branches off `main`), or overlapping in files (sequenced: one to merge-ready, the merge, then the next). Coupled work, a ticket that needs code an open PR introduces, stacks, and only on a go. Ticket step 1 runs `.claude/skills/poteto-mode/scripts/overlap.sh N` before branching: every open PR's head is fetched fresh and its own commits (its diff from the open PR it stacks on, else `origin/main`) are matched with the ticket body's backticked tokens as pathspecs (its `## Diff` section excluded), so a file, a directory, a glob or a file the PR creates all match; exit 0 prints `base: <ref>` to branch from, exit 1 stops and names the PR to merge first, exit 2 means the check could not run and stderr says why. A go is a line `<label>: #a #b ...` that `overlap.sh go "<label>" N...` appends to the gitignored `.claude/state/program`, written by the orchestrator when the human gives it (autopilot-stack step 3 runs it itself). A go covers a stack only when a line names the ticket and, for every overlapping PR, the ticket that PR closes; so a line a dead program left behind covers nothing outside its own tickets' open PRs and needs no removal. Under a cover the base is the overlapping PR's head, the lowest-numbered when siblings overlap, the containing one when one contains the other; step 8's `--diff` run records the shared paths as the PR body's `## Overlap` section | Ticket #42, Manuel: "working a ticket to completion before automatically moving on"; the #16 to #22 stack was built on a seven-re-reviews mis-estimate (ledger 2026-09-17). First run (PR #87, closed): three review rounds redesigned the matcher three times; the second run designed from a scenario table Manuel approved 2026-09-21 as the ticket's Testing decisions. Rejected: a ticket label as the go (outlives the program), a line pasted into each lane's brief (a forgotten paste blocks a lane), a `done` step (a crash skips it), the script under the factory918 skill (every later edit cross-cutting). |
+diff --git a/template/docs/factory918/MANUAL.md b/template/docs/factory918/MANUAL.md
+index 37d0345..1016979 100644
+--- a/template/docs/factory918/MANUAL.md
++++ b/template/docs/factory918/MANUAL.md
+@@ -57,7 +57,9 @@ A ticket is a GitHub issue with `## What to build`, `## Acceptance criteria` (ch
+ 
+ `/poteto-mode "#42"` (or paste the issue URL). The Ticket playbook reads the issue and its parent spec, refuses to start if a blocker is open, and runs a falsifiability pass over the acceptance criteria: for each one it names the command or observation that would fail it today, and sends back any criterion that already passes, that another ticket owns, or that merely restates the request. Answer those notes, then it runs the matching pstack playbook (Feature, Bug fix, Refactoring, Perf issue) from step 1: `how` and `why` over the subsystem, design, delegated build with a reviewed diff, verification on the real surface, then Opening a PR and Babysit.
+ 
+-**Several at once.** One ticket per `/poteto-mode "#N"` is the default, and a fresh session per ticket keeps the orchestrator's context clean. To drain the frontier instead: `/poteto-mode "autopilot-stack #4 #5 #8"`. pstack's autopilot-stack runs one owner lane per ticket in its own context and worktree, swarm-verifies each PR, keeps the chain rebased as `main` moves, and hands you one bottom-to-top list of verified PRs to land one at a time; it never merges (`playbooks/autopilot-stack.md` is the full procedure). It states its plan first and starts on your go, then runs without you; each owner runs the Ticket playbook for its ticket, so every unit needs a ticket and quick tickets come first. Its sibling `autopilot-full` is not used here: its merge step is blocked by the git guard.
++**Several at once.** One ticket per `/poteto-mode "#N"` is the default, and a fresh session per ticket keeps the orchestrator's context clean. Two unblocked tickets relate three ways. A dependent ticket lists the other under `## Blocked by` and stays off the frontier until it merges. Two independent tickets disjoint in files each branch from `main`, in any order. Two independent tickets that overlap in files are sequenced. The first goes to merge-ready, you merge, the next starts. Overlap is not coupling. Coupled work is a ticket that needs code an open PR introduces, and only that stacks, only on your go. The Ticket playbook checks before it branches (`overlap.sh` compares each open PR's own commits, its diff from the PR under it or from `main`, with the paths the ticket names) and on overlap stops and names the PR to merge first, unless your go opened a program that names the ticket.
++
++**Draining the frontier.** `/poteto-mode "autopilot-stack #4 #5 #8"` is for coupled work. pstack's autopilot-stack runs one owner lane per ticket in its own context and worktree, swarm-verifies each PR, keeps the chain rebased as `main` moves, and hands you one bottom-to-top list of verified PRs to land one at a time; it never merges (`playbooks/autopilot-stack.md` is the full procedure). It states its plan first and starts on your go, then runs without you; each owner runs the Ticket playbook for its ticket, so every unit needs a ticket and quick tickets come first. Your go opens a program, a line the agent appends with `overlap.sh go`, naming its tickets (this run, or a sweep run as one chain), and stands for every stack the program builds. A line covers only stacks among the tickets it names, so it needs no removal. An overlap inside it is recorded in the PR body (`## Overlap`) and the ticket stacks on the PR it overlaps. A rebase re-reviews only a PR whose `git patch-id` changed, so a fix low in the chain costs one re-review, not one per PR above it. Its sibling `autopilot-full` is not used here: its merge step is blocked by the git guard.
+ 
+ **What you do.** Not much until the PR exists. The agent proceeds on anything reversible and asks only before irreversible actions. If it goes wrong, note what you would have said earlier; that note is a ledger entry, and the ledger is where rules come from.
+ 
+diff --git a/tests/poteto-mode/overlap.sh b/tests/poteto-mode/overlap.sh
+new file mode 100644
+index 0000000..765370c
+--- /dev/null
++++ b/tests/poteto-mode/overlap.sh
+@@ -0,0 +1,213 @@
++#!/usr/bin/env bash
++# Runs template/.agents/skills/poteto-mode/scripts/overlap.sh against a temp clone with a bare
++# origin and three open PRs (a fake gh on PATH answers `pr list` from FAKE_PRS, each PR carrying the
++# ticket it closes, `issue view` from FAKE_BODY, and fails the call FAKE_GH_FAIL names), and asserts
++# the exit code and the output of each call in the order of the scenario table in the ticket's
++# design: usage, no origin remote, a failing gh, a head with no merge base, tokens that name no path
++# or lie outside the repository, one PR shared, a deleted and a stale remote ref both fetched, a file
++# a PR creates, a stacked PR reporting only its own commits, a glob and both directory forms,
++# `## Diff` skipped, two PRs in ascending number, gos that cover and gos that do not, the base as the
++# head that contains the others, a one-off go appended under a program's line, a dead program's
++# line, a linked worktree reading the main checkout's file, --diff skipping the own PR and counting
++# only the branch's own commits, a literal token under --diff, and the mode bit. The fixture root
++# has a space, and from the third call on the script runs by the relative path the playbooks name.
++# Exits 1 on the first miss. The backticks in the bodies below are the ticket's token delimiters,
++# not command substitutions.
++# shellcheck disable=SC2016
++set -euo pipefail
++here="$(cd "$(dirname "$0")/../.." && pwd -P)"
++script="$here/template/.agents/skills/poteto-mode/scripts/overlap.sh"
++tmp="$(mktemp -d)"
++trap 'rm -rf "$tmp"' EXIT
++fx="$tmp/with space"
++mkdir -p "$fx/bin"
++cat > "$fx/bin/gh" <<'GH'
++#!/bin/sh
++prs='[{"number":2,"headRefName":"feat-b","closingIssuesReferences":[{"number":8}]},{"number":1,"headRefName":"feat-a","closingIssuesReferences":[{"number":7}]},{"number":4,"headRefName":"feat-b2","closingIssuesReferences":[{"number":10}]}]'
++case "$*" in
++  "${FAKE_GH_FAIL:-none}"*) echo "gh: $FAKE_GH_FAIL failed" >&2; exit 2 ;;
++  "pr list"*) while [ "$1" != -q ]; do shift; done; printf '%s' "${FAKE_PRS:-$prs}" | exec jq -r "$2" ;;
++  "issue view"*) printf '%s\n' "$FAKE_BODY" ;;
++  *) echo "fake gh: unexpected args: $*" >&2; exit 2 ;;
++esac
++GH
++chmod +x "$fx/bin/gh"
++export PATH="$fx/bin:$PATH"
++git init -q -b main "$fx/clone"
++cd "$fx/clone"
++# The path the playbooks name, through the symlink every project and the factory carry; it is in
++# the fixture commit, so a worktree has it too.
++mkdir .claude && ln -s "$here/template/.agents/skills" .claude/skills
++git config user.email test@factory918.invalid
++git config user.name test
++mkdir -p docs src/x
++echo readme > README.md; echo a > docs/a.md; echo y > src/x/y.txt; echo z > src/z.txt
++git add -A && git commit -qm fixture
++git clone -q --bare "$fx/clone" "$fx/origin"
++git remote add origin "$fx/origin"
++git fetch -q origin
++git switch -qc feat-a && echo a2 >> docs/a.md && git commit -qam "feat-a" && git push -q -u origin feat-a
++git switch -q main && git switch -qc feat-b && echo y2 >> src/x/y.txt && git commit -qam "feat-b" && git push -q -u origin feat-b
++feat_b1="$(git rev-parse HEAD)"
++echo z2 >> src/z.txt && echo new > src/new.txt && git add src/new.txt && git commit -qam "feat-b 2" && git push -q origin feat-b
++git switch -qc feat-b2 && echo z3 >> src/z.txt && git commit -qam "feat-b2" && git push -q -u origin feat-b2
++git switch -q main && git switch -qc feat-e && echo i > docs/i.md && git add docs/i.md && git commit -qm "feat-e" && git push -q -u origin feat-e
++git switch -q --orphan feat-x && echo orphan > orphan.txt && git add orphan.txt && git commit -qm "feat-x" && git push -q -u origin feat-x
++git switch -q main
++# feat-a's remote ref goes away and feat-b's is stale at its first commit, as another worktree's
++# fetch leaves them, so the script has to fetch both.
++git update-ref -d refs/remotes/origin/feat-a
++git update-ref refs/remotes/origin/feat-b "$feat_b1"
++# A repository with no remote at all.
++git init -q -b main "$fx/lone"
++mkdir "$fx/lone/.claude" && ln -s "$here/template/.agents/skills" "$fx/lone/.claude/skills"
++
++n=0
++prog=.claude/state/program
++fail() { echo "FAIL $1"; echo "  got:    $2"; echo "  wanted: $3"; exit 1; }
++# run <args...>: the script from the current directory, its exit in code and stdout plus stderr in got.
++run() { set +e; got="$("$script" "$@" 2>&1)"; code=$?; set -e; }
++# check <name> <exit> <output> <args...>: both exact.
++check() {
++  local name="$1" want="$2" out="$3"; shift 3
++  run "$@"
++  if [ "$code" != "$want" ] || [ "$got" != "$out" ]; then fail "$name" "exit $code: $got" "exit $want: $out"; fi
++  n=$((n + 1))
++}
++# check_err <name> <exit> <pattern> <args...>: the exit exact, the output holding the pattern.
++check_err() {
++  local name="$1" want="$2" pat="$3"; shift 3
++  run "$@"
++  if [ "$code" != "$want" ] || ! grep -q -- "$pat" <<< "$got"; then fail "$name" "exit $code: $got" "exit $want with $pat"; fi
++  n=$((n + 1))
++}
++# same <name> <wanted> <got>
++same() { [ "$2" = "$3" ] || fail "$1" "$3" "$2"; n=$((n + 1)); }
++
++usage='usage: overlap.sh N [--diff] | overlap.sh go "<label>" N...'
++check "1 no argument" 64 "$usage"
++check "2 a third argument" 64 "$usage" 9 --diff x
++check "2 a flag other than --diff" 64 "$usage" 9 --record
++script=.claude/skills/poteto-mode/scripts/overlap.sh
++check "3 go with no ticket" 64 "$usage" go sweep
++export FAKE_BODY='Touches `docs/a.md`.'
++cd "$fx/lone"
++check "4 no origin remote" 0 $'no origin remote; nothing in flight\ngo: none\nbase: main' 9
++cd "$fx/clone"
++export FAKE_GH_FAIL="issue view"
++check "5 gh issue view fails" 2 "gh: issue view failed" 9
++export FAKE_GH_FAIL="pr list"
++git switch -q feat-a
++check "6 gh pr list fails under --diff" 2 "gh: pr list failed" 9 --diff
++git switch -q main
++unset FAKE_GH_FAIL
++export FAKE_PRS='[{"number":3,"headRefName":"feat-x","closingIssuesReferences":[]}]'
++check_err "7 a head with no merge base" 2 "no merge base" 9
++unset FAKE_PRS
++export FAKE_BODY='## What to build
++
++Edit `README.md`, then `gh issue view` on `#9`.'
++check "8 tokens no PR touches" 0 $'go: none\nbase: origin/main' 9
++export FAKE_BODY='Edits nothing in particular.'
++check "9 a body with no token" 0 $'go: none\npaths: none\nbase: origin/main' 9
++export FAKE_BODY='Edits `nothing/here.md` with `set -e` under `{docs,src}`.'
++check "10 tokens that are no path" 0 $'go: none\nbase: origin/main' 9
++export FAKE_BODY='Reads `../x`.'
++check_err "11 a token outside the repository" 2 "outside repository" 9
++export FAKE_BODY='Touches `docs/a.md`.'
++check "12 one PR shared, no go" 1 $'go: none\n#1 feat-a: docs/a.md' 9
++same "12 the deleted origin/feat-a was fetched" "$(git rev-parse feat-a)" "$(git rev-parse origin/feat-a)"
++export FAKE_BODY='Touches `src/z.txt`.'
++check "13 a path past the stale origin/feat-b, siblings" 1 $'go: none\n#2 feat-b: src/z.txt\n#4 feat-b2: src/z.txt' 9
++export FAKE_BODY='Adds `src/new.txt`, which feat-b creates.'
++check "14 a file a PR creates" 1 $'go: none\n#2 feat-b: src/new.txt' 9
++export FAKE_BODY='Everything under `src/*`.'
++check "15 a glob token" 1 $'go: none\n#2 feat-b: src/new.txt src/x/y.txt src/z.txt\n#4 feat-b2: src/z.txt' 9
++export FAKE_BODY='Everything under `src`, that is `src/`.'
++check "16 both directory forms" 1 $'go: none\n#2 feat-b: src/new.txt src/x/y.txt src/z.txt\n#4 feat-b2: src/z.txt' 9
++export FAKE_BODY='## Diff
++
++`docs/a.md`
++
++## Notes
++
++`README.md`'
++check "17 a token under ## Diff ignored" 0 $'go: none\nbase: origin/main' 9
++export FAKE_BODY='Touches `docs/a.md` and `src/x/y.txt`.'
++# The fake lists PR 2 first; the output is sorted by PR number.
++check "18 two PRs in ascending number" 1 $'go: none\n#1 feat-a: docs/a.md\n#2 feat-b: src/x/y.txt' 9
++check "19 go writes the line" 0 "" go sweep 7 9
++same "19 the line" 'sweep: #7 #9' "$(cat "$prog")"
++rm "$prog"
++# The documented form, typed at a shell: bare numbers, since `#4` would open a comment.
++bash -c '.claude/skills/poteto-mode/scripts/overlap.sh go "autopilot-stack" 4 5 8'
++same "19 the documented form typed at a shell" 'autopilot-stack: #4 #5 #8' "$(cat "$prog")"
++rm "$prog"
++check "19 go accepts #9" 0 "" go sweep 7 '#9'
++same "19 the line from #9" 'sweep: #7 #9' "$(cat "$prog")"
++export FAKE_BODY='Touches `docs/a.md`.'
++check "20 a go covering one PR" 0 $'go: sweep\n#1 feat-a: docs/a.md\nbase: origin/feat-a' 9
++check "21 a go not naming the ticket" 1 $'go: none\n#1 feat-a: docs/a.md' 42
++rm "$prog"
++check "22 go s2" 0 "" go s2 9
++check "22 a go naming the ticket but not the PR's" 1 $'go: s2\n#1 feat-a: docs/a.md' 9
++rm "$prog"
++check "22 the one-off go names both tickets" 0 "" go "stack on #7" 9 7
++check "22 the one-off go covers the stack" 0 $'go: stack on #7\n#1 feat-a: docs/a.md\nbase: origin/feat-a' 9
++rm "$prog"
++check "23 go sweep 7 8 9" 0 "" go sweep 7 8 9
++export FAKE_BODY='Touches `docs/a.md` and `src/x/y.txt`.'
++check "23 siblings covered, the lowest number's head" 0 $'go: sweep\n#1 feat-a: docs/a.md\n#2 feat-b: src/x/y.txt\nbase: origin/feat-a' 9
++rm "$prog"
++check "24 go sweep 7 9" 0 "" go sweep 7 9
++check "24 siblings, one PR's ticket not on a line" 1 $'go: sweep\n#1 feat-a: docs/a.md\n#2 feat-b: src/x/y.txt' 9
++rm "$prog"
++check "25 go sweep 8 9 10" 0 "" go sweep 8 9 10
++export FAKE_PRS='[{"number":4,"headRefName":"feat-b2","closingIssuesReferences":[{"number":10}]},{"number":2,"headRefName":"feat-b","closingIssuesReferences":[{"number":8}]}]'
++export FAKE_BODY='Touches `src/z.txt`.'
++check "25 one head contains the other" 0 $'go: sweep\n#2 feat-b: src/z.txt\n#4 feat-b2: src/z.txt\nbase: origin/feat-b2' 9
++unset FAKE_PRS
++rm "$prog"
++check "26 go sweep 7 9" 0 "" go sweep 7 9
++export FAKE_BODY='Touches `README.md`.'
++check "26 a go and no overlap" 0 $'go: sweep\nbase: origin/main' 9
++rm "$prog"
++check "27 go autopilot-stack 7 8" 0 "" go autopilot-stack 7 8
++check "27 a one-off go appended" 0 "" go "stack on #1" 9
++export FAKE_BODY='Touches `docs/a.md`.'
++check "27 the one-off go covers with the program's line" 0 $'go: stack on #1\n#1 feat-a: docs/a.md\nbase: origin/feat-a' 9
++same "27 the file has two lines, the first unchanged" $'autopilot-stack: #7 #8\nstack on #1: #9' "$(cat "$prog")"
++export FAKE_BODY='Touches `src/z.txt`.'
++check "28 a dead program's line, one PR's ticket on no line" 1 $'go: stack on #1\n#2 feat-b: src/z.txt\n#4 feat-b2: src/z.txt' 9
++export FAKE_PRS='[{"number":2,"headRefName":"feat-b","closingIssuesReferences":[{"number":8}]}]'
++check "28 a dead program's line covers across lines" 0 $'go: stack on #1\n#2 feat-b: src/z.txt\nbase: origin/feat-b' 9
++unset FAKE_PRS
++rm "$prog"
++check "29 go wt 9 from the main checkout" 0 "" go wt 9
++git worktree add -q --detach "$fx/wt"
++export FAKE_BODY='Touches `README.md`.'
++cd "$fx/wt"
++check "29 a linked worktree reads the main checkout's file" 0 $'go: wt\nbase: origin/main' 9
++cd "$fx/clone"
++rm -rf .claude/state
++git switch -q feat-a
++check "30 --diff skips the own PR" 0 "" 9 --diff
++git switch -q --detach
++check "30 --diff on a detached HEAD" 2 "detached HEAD; run from the ticket's branch" 9 --diff
++git switch -q feat-a
++git switch -q main && git switch -qc feat-c && echo a3 >> docs/a.md && git commit -qam "feat-c"
++check "31 --diff overlaps another PR" 1 $'go: none\n#1 feat-a: docs/a.md' 9 --diff
++check "32 go sweep 7 9" 0 "" go sweep 7 9
++git switch -qc feat-c2 origin/feat-a && echo a3 >> docs/a.md && git commit -qam "feat-c2"
++check "32 --diff on a stack, the shared path from the own commit" 0 $'go: sweep\n#1 feat-a: docs/a.md' 9 --diff
++git switch -qc feat-c3 origin/feat-a && echo r2 >> README.md && git commit -qam "feat-c3"
++check "33 --diff on a stack, the parent's change not counted" 0 "" 9 --diff
++git switch -qc feat-d origin/main && echo id > 'docs/[id].md' && git add docs && git commit -qm "feat-d"
++export FAKE_PRS='[{"number":5,"headRefName":"feat-e","closingIssuesReferences":[{"number":11}]},{"number":1,"headRefName":"feat-a","closingIssuesReferences":[{"number":7}]}]'
++check "34 --diff takes the own paths literally" 0 "" 9 --diff
++unset FAKE_PRS
++git switch -q main
++test -x "$here/template/.agents/skills/poteto-mode/scripts/overlap.sh" || fail "35 the mode bit" "not executable" "executable"
++n=$((n + 1))
++
++echo "ok $n assertions"

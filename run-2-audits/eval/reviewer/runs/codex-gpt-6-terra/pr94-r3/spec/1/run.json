@@ -1,0 +1,11 @@
+{
+  "run": {
+    "descriptor": "codex:gpt-6-terra",
+    "round": "pr94-r3",
+    "axis": "spec",
+    "k": 1
+  },
+  "nonce": "e63f9c464ad2",
+  "checkout": "/private/tmp/claude-501/review-work/e63f9c464ad2/factory918",
+  "prompt": "Read `/private/tmp/claude-501/review-work/e63f9c464ad2/factory918/.scratch/review/78be65e/spec-brief.md` whole and follow it. You are working in `/private/tmp/claude-501/review-work/e63f9c464ad2/factory918`; every relative path in the brief is relative to it."
+}

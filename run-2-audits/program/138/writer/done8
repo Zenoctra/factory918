@@ -1,0 +1,6 @@
+d9d8ad0672cc6eb53b889684168dab24bbc65510
+694238e Std 1 + Std 4: a <synthetic> last line that is not a usage limit is a no-response dropout even after a served line; dead `or 'no model'` removed
+cc9490a Spec 4 + Std 8: finished() has no <synthetic> or usage-limit shortcut, the settle path collects such lines; docstring reflowed
+5c4e7b2 Std 2 + Spec 1: a pattern is one segment between two slashes plus sed flags [gpdIiMm0-9]*; REGEX_CHARS gone; $HOME paths read; removed cases restored
+1040ec2 Spec 2 / Std 7: fixes.sh checks verb and arity before the commits exist check
+d9d8ad0 Std 5: failures() renamed failed_attempts(); NO_RESPONSE comment updated

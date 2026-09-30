@@ -1,0 +1,20 @@
+id	model	brief	k	item_no	report_path
+U02	claude:opus-5.5	pr99-r1b/spec	1	1	/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.scratch/eval/reviewer/runs/claude-opus-5.5/pr99-r1b/spec/1/report.md
+U03	claude:opus-5.5	pr102-r1/spec	1	1	/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.scratch/eval/reviewer/runs/claude-opus-5.5/pr102-r1/spec/1/report.md
+U04	claude:opus-5	pr94-r1/spec	1	1	/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.scratch/eval/reviewer/runs/claude-opus-5/pr94-r1/spec/1/report.md
+U05	claude:opus-5	pr94-r1/spec	1	2	/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.scratch/eval/reviewer/runs/claude-opus-5/pr94-r1/spec/1/report.md
+U06	claude:opus-5	pr94-r1/standards	2	1	/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.scratch/eval/reviewer/runs/claude-opus-5/pr94-r1/standards/2/report.md
+U07	claude:opus-5	pr94-r2/spec	1	1	/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.scratch/eval/reviewer/runs/claude-opus-5/pr94-r2/spec/1/report.md
+U08	claude:opus-5	pr94-r2/spec	2	1	/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.scratch/eval/reviewer/runs/claude-opus-5/pr94-r2/spec/2/report.md
+U09	claude:opus-5	pr94-r3/spec	3	1	/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.scratch/eval/reviewer/runs/claude-opus-5/pr94-r3/spec/3/report.md
+U15	claude:opus-5	pr99-r1/spec	3	1	/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.scratch/eval/reviewer/runs/claude-opus-5/pr99-r1/spec/3/report.md
+U16	claude:opus-5	pr99-r1/standards	1	1	/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.scratch/eval/reviewer/runs/claude-opus-5/pr99-r1/standards/1/report.md
+U17	claude:opus-5	pr99-r1b/standards	4	1	/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.scratch/eval/reviewer/runs/claude-opus-5/pr99-r1b/standards/4/report.md
+U18	claude:opus-5	pr99-r2/spec	1	1	/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.scratch/eval/reviewer/runs/claude-opus-5/pr99-r2/spec/1/report.md
+U19	claude:opus-5	pr102-r1/spec	3	1	/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.scratch/eval/reviewer/runs/claude-opus-5/pr102-r1/spec/3/report.md
+U20	claude:opus-5	pr102-r2/spec	1	1	/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.scratch/eval/reviewer/runs/claude-opus-5/pr102-r2/spec/1/report.md
+U21	claude:opus-5	pr102-r2/spec	3	1	/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.scratch/eval/reviewer/runs/claude-opus-5/pr102-r2/spec/3/report.md
+U22	claude:sonnet	pr94-r3/spec	1	1	/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.scratch/eval/reviewer/runs/claude-sonnet/pr94-r3/spec/1/report.md
+U31	codex:gpt-6-astra	pr94-r1/spec	1	1	/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.scratch/eval/reviewer/runs/codex-gpt-6-astra/pr94-r1/spec/1/report.md
+U32	codex:gpt-6-astra	pr94-r1/spec	2	1	/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.scratch/eval/reviewer/runs/codex-gpt-6-astra/pr94-r1/spec/2/report.md
+U33	codex:gpt-6-astra	pr94-r1/spec	3	1	/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.scratch/eval/reviewer/runs/codex-gpt-6-astra/pr94-r1/spec/3/report.md

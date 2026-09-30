@@ -1,0 +1,4 @@
+41104d7 Record what a review counts and that the orchestrator judges before the count
+1a50d76 Add a spec reviewer row so the Spec axis runs cheaper than the writer
+8eb32c3 Give spec-review a Judge step between the reports and the count
+e730367 Count only what would break, and only after the orchestrator has judged it
