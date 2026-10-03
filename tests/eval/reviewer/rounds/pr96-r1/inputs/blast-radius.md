@@ -26,12 +26,6 @@ $ review-comment 82, review-brief 334, overlap 56 assertions; no-stale-wording o
 
 ### Risks
 
-1. A cached binary is reused with no checksum. Once `${TMPDIR:-/tmp}/shellcheck-0.11.0/shellcheck-v0.11.0/shellcheck` exists, `[ ! -x "$bin" ]` at `template/.github/shellcheck.sh:26` skips the download and the sha. On a shared Linux box `/tmp` is world-writable. Proven: I replaced the cached file with a two-line script and the gate ran it (`FAKE BINARY RAN --external-sources ...`, exit 0). Unlikely on a CI runner, which is fresh; bad if it happens, because the gate passes silently. Check: `ls -la ${TMPDIR:-/tmp}/shellcheck-0.11.0`.
-2. `tests/shellcheck/gate.sh:75` assumes no 0.11.0 lives in `/usr/bin` or `/bin`. Test 6 hides ShellCheck by narrowing PATH; the day the `ubuntu-latest` image ships 0.11.0 in `/usr/bin`, the on-pin branch runs and the test fails: I put `/opt/homebrew/bin` on that PATH and got `FAIL 6 ... got: 0 wanted: 1`. Likely within a year; cost is a red factory CI with no code fault. Check: `shellcheck --version` on the runner.
-3. An unmatched glob among matched ones is dropped without a word (`template/.github/shellcheck.sh:38`). `bash .github/shellcheck.sh 'template/.claude/hooks/*.sh' 'nope/*.sh'` prints `files checked: 5`, exit 0. A rename of `tests/` or `scripts/` shrinks the factory set silently; the count in the line is the only tell. Low likelihood, moderate cost.
-4. A lane in a sandbox with no network and no ShellCheck at the pin cannot run the playbook's step (`opening-a-pr.md:9`). Offline the gate exits 7 with curl's message (`shellcheck.sh:28`), and an Intel Mac or an ARM Linux runner is refused at `:20-22`. Loud, not silent; the finding moves back to CI, which is the cost the ticket wanted to avoid. Check: `bash .github/shellcheck.sh .github/shellcheck.sh` in the lane's environment.
-5. A project that edited its `ci.yml` near the top gets no gate. `cmd_update` runs `git merge-file` (`factory918.sh:357`); a project step inserted right after `actions/checkout` conflicts (exit 1 in my probe) and lands in `ci.yml.factory-merge` (`:362`), leaving `ci.yml` without the ShellCheck step. An edit elsewhere merges clean (exit 0, step present). The doctor does not check for the step. Medium likelihood, low cost.
-
 ### Cleared
 
 - Hook's own invocation: comment lines only, proof above; a `Bash` call of the gate passes the hook (exit 0), since `scan_segment` inspects only tee, cat, head, sed and git (`delegation.sh:191-197`).
