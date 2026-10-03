@@ -61,6 +61,7 @@ expect() {
 path() { jq -cn --arg p "$fx/$1" '{file_path:$p}'; }
 ranged() { jq -cn --arg p "$fx/$1" --argjson l "$2" '{file_path:$p,limit:$l}'; }
 bash_cmd() { jq -cn --arg c "$1" '{command:$c}'; }
+edit() { jq -cn --arg p "$fx/$1" --arg o "$2" --arg n "$3" '{file_path:$p,old_string:$o,new_string:$n}'; }
 
 expect 2 "$(write_msg big.sh)" orchestrator Write "$(path big.sh)" "orchestrator Write to big.sh"
 expect 2 "$(write_msg big.sh)" orchestrator Edit "$(path big.sh)" "orchestrator Edit of big.sh"
@@ -123,6 +124,22 @@ expect 0 "" agent Bash "$(bash_cmd 'git diff main...HEAD')" "sub-agent git diff 
 expect 0 "" agent Bash "$(bash_cmd 'cat .scratch/review/main/diff')" "sub-agent cat of the review diff"
 expect 0 "" agent NotebookEdit "$(jq -cn --arg p "$fx/big.sh" '{notebook_path:$p}')" "sub-agent NotebookEdit of big.sh"
 expect 0 "" agent Write "$(path template/docs/factory918/DECISIONS.md)" "sub-agent Write to the template's DECISIONS.md"
+
+for tier in none eco junk; do
+  case "$tier" in
+    none) rm -f .claude/state/tier ;;
+    eco) echo eco > .claude/state/tier ;;
+    junk) printf 'ECO\nfast\n' > .claude/state/tier ;;
+  esac
+  expect 2 "$(write_msg small.md)" orchestrator Edit "$(edit small.md 1 one)" "tier $tier: B1 orchestrator one-line Edit of small.md"
+  expect 2 "$(write_msg big.sh)" orchestrator Edit "$(edit big.sh 'echo 1' 'echo 0')" "tier $tier: B2 orchestrator Edit of big.sh"
+  expect 2 "$(write_msg small.md)" orchestrator Bash "$(bash_cmd 'echo x >> small.md')" "tier $tier: B3 orchestrator append to small.md"
+  expect 0 "" orchestrator Write "$(path docs/agents/ledger.md)" "tier $tier: B4 orchestrator Write to the ledger"
+  expect 0 "" orchestrator Write "$(path .claude/state/tier)" "tier $tier: B5 orchestrator Write to the tier file"
+  expect 0 "" orchestrator Bash "$(bash_cmd 'bash .claude/skills/spec-review/scripts/review-brief.sh main')" "tier $tier: B6 orchestrator runs the review script"
+  expect 0 "" agent Edit "$(edit small.md 1 one)" "tier $tier: B7 sub-agent Edit of small.md"
+done
+rm -f .claude/state/tier
 
 echo planning > .claude/state/mode
 expect 0 "" orchestrator Write "$(path big.sh)" "planning: Write to big.sh"

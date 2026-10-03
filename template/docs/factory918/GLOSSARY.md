@@ -34,6 +34,8 @@ Terms as this system uses them. Where a term belongs to one of the four sources,
 
 **Mode / phase.** `planning` or `execute`, stored in `.claude/state/mode`, printed every turn by the phase hook. Planning commands and `/mode-plan` set planning; a ticket reference, pstack commands and `/mode-build` set execute.
 
+**Model tier.** Which class of model a role runs on. **Frontier** is judgment and the code that gets merged; **Supporting** is exploration, fan-out and finding. Today both are Opus 5.5, Frontier at `xhigh` effort and Supporting at the effort its role sets; `docs/agents/models.md` places every role. Not the frontier of unblocked tickets (Blocked by), and not a ticket's `safe` or `eco` tier (Ticket step 0).
+
 **Playbook.** A task-shaped recipe inside `poteto-mode/playbooks/`; the router copies its steps verbatim into the todo list. Ours adds `ticket.md`. (pstack)
 
 **Principle.** One of pstack's 21 leaf skills that constrain decisions; cited by name, never "run."
