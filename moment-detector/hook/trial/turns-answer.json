@@ -1,0 +1,6 @@
+[
+  {"label": "task with a question", "expect": "no check result matters (first turn, empty slice)",
+   "text": "In greet.py, make greet() take a name. Before you change anything, ask me whether the name should be required."},
+  {"label": "answer starting with No", "expect": "pass (answers the agent's question, corrects nothing)",
+   "text": "No, it shouldn't be required. Go ahead."}
+]
