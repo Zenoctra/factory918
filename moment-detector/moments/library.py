@@ -41,7 +41,7 @@ def main() -> None:
         rows.append({
             "id": m["id"], "project": m["project"], "session_id": m["session_id"], "uuid": m["uuid"],
             "line": m["line"], "timestamp": m["timestamp"], "delivery": m["delivery"],
-            "starts_session": m["context"]["starts_session"],
+            "starts_session": m["context"]["starts_session"], "resend_of": m["resend_of"],
             "correction": a["label"] == "correction",
             "kind": a["kind"], "surface": a["surface"], "near_miss": a["near_miss"], "hard_case": a["hard_case"],
             "agent_erred": a.get("agent_erred"),

@@ -1,7 +1,7 @@
 """Pull every message Manuel wrote out of his main-session transcripts, with
 the context a reader needs to tell whether it corrects the agent.
 
-    python3 moment-detector/moments/extract.py [--projects GLOB] [--out DIR]
+    python3 moment-detector/moments/extract.py [--projects GLOB] [--until ISO-TIME] [--out DIR]
 
 Writes DIR/moments.jsonl (default: the main checkout's
 .scratch/moment-detector/moments/), one moment per line, sorted by time.
@@ -261,6 +261,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--projects", default="*", help="glob over ~/.claude/projects folder names")
     ap.add_argument("--out", type=Path, default=DEFAULT_OUT)
+    ap.add_argument("--until", default="9999", help="keep messages with a timestamp before this ISO time")
     args = ap.parse_args()
     # A forked or resumed session's file repeats its parent's records under the same
     # uuids. Reading sessions oldest first keeps each message where it was first written.
@@ -274,11 +275,20 @@ def main() -> None:
     for ms in sessions:
         for m in ms:
             keys = {m["uuid"]} | ({m["text"]} if len(m["text"]) > 80 else set())
-            if keys & seen:
+            if keys & seen or (m["timestamp"] or "") >= args.until:
                 continue
             seen |= keys
             moments.append(m)
     moments.sort(key=lambda m: (m["timestamp"] or "", m["id"]))
+    # After a rewind he often sends a longer version of the same message, and a
+    # forked session can carry it again under a new uuid. Both are kept; the later
+    # one names the earlier so a scorer can count the pair once.
+    first_by_start: dict[str, str] = {}
+    for m in moments:
+        start = m["text"][:150] if len(m["text"]) > 60 else None
+        m["resend_of"] = first_by_start.get(start) if start else None
+        if start and start not in first_by_start:
+            first_by_start[start] = m["id"]
     args.out.mkdir(parents=True, exist_ok=True)
     with open(args.out / "moments.jsonl", "w") as fh:
         for m in moments:

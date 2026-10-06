@@ -4,8 +4,8 @@ The evidence the moment detector (#174) is scored against: every message Manuel 
 
 ## Steps
 
-1. `python3 moment-detector/moments/extract.py` reads the top-level transcripts under `~/.claude/projects/` (all projects; `--projects GLOB` narrows it) and writes `moments.jsonl`. Rerunning rewrites it; ids are stable.
-2. `python3 moment-detector/moments/label.py --name opus55` labels every moment with Opus 5.5 at high effort, one fresh `claude -p` judge call per moment with no tools in an empty box (`quick-tests/lib/qtlib.py`). The prompt is `definition.md` followed by the moment. A rerun labels only what is missing. `--show ID` prints a moment's prompt. The second labeller is the same prompt on another model: `--name opus5 --model claude-opus-5`.
+1. `python3 moment-detector/moments/extract.py` reads the top-level transcripts under `~/.claude/projects/` (all projects; `--projects GLOB` narrows it) and writes `moments.jsonl`. Rerunning rewrites it; ids are stable. Live sessions keep adding messages, so pass `--until` to rebuild a labelled set: the first library is `--until 2026-10-06T04:12`.
+2. `python3 moment-detector/moments/label.py --name opus55` labels every moment with Opus 5.5 at high effort, one fresh `claude -p` judge call per moment with no tools in an empty box (`quick-tests/lib/qtlib.py`). The prompt is `definition.md` followed by the moment. A rerun labels only what is missing. `--show ID` prints a moment's prompt. `--no-hindsight` leaves out what came after the message, as a detector would see it. The second labeller is the same prompt on another model: `--name opus5 --model claude-opus-5`.
 3. `python3 moment-detector/moments/library.py` joins them into `library.jsonl` and `review.jsonl` and prints the counts.
 4. `python3 moment-detector/moments/score.py PREDICTIONS.jsonl` scores a detector.
 
@@ -36,11 +36,12 @@ Not his: tool results, `origin.kind` `task-notification` or `peer`, `isMeta` rec
 | `context.since_previous` | what the agent did since, in order: `said: ...`, `tool Name: ...`, tool errors, interrupts, background notifications |
 | `context.last_reply` | the agent's last words to him before this message |
 | `context.interrupted`, `context.starts_session` | flags |
+| `resend_of` | the id of an earlier message this one repeats (a longer version sent after a rewind, or a fork's copy); count the pair once |
 | `after.agent_reply`, `after.next_message` | hindsight, for the labeller only; a detector must not read it |
 
 `labels-NAME.jsonl`: `id`, `labeller`, `model`, `effort`, and the fields `definition.md` asks for.
 
-`library.jsonl`, the file a scorer reads: `id`, the location fields, `delivery`, `starts_session`, `correction` (bool, the primary labeller's), `kind`, `surface` (`overt`, `quiet`, `none`), `near_miss`, `hard_case`, `confidence`, `unclear`, `second_correction` (the second labeller's bool), `reason`, `evidence`, `other_reading`.
+`library.jsonl`, the file a scorer reads: `id`, the location fields, `delivery`, `starts_session`, `resend_of`, `correction` (bool, the primary labeller's), `kind`, `surface` (`overt`, `quiet`, `none`), `near_miss`, `hard_case`, `agent_erred`, `confidence`, `unclear`, `second_correction` (the second labeller's bool), `reason`, `evidence`, `other_reading`.
 
 `review.jsonl`: the library rows that are unclear or where the labellers disagree.
 

@@ -1,7 +1,7 @@
 """Label every moment as a correction or not with a strong model in a fresh pass.
 
     python3 moment-detector/moments/label.py --name opus55 [--model claude-opus-5-5] [--effort high]
-        [--ids ID,ID | --sample N --seed S] [--parallel 8] [--dir DIR]
+        [--ids ID,ID | --sample N --seed S] [--no-hindsight] [--parallel 8] [--dir DIR]
 
 Reads DIR/moments.jsonl (from extract.py), writes one label per moment to
 DIR/labels-NAME.jsonl. Each call is a judge session with no tools in an empty
@@ -62,7 +62,7 @@ DELIVERY = {
 }
 
 
-def render(m: dict) -> str:
+def render(m: dict, hindsight: bool = True) -> str:
     c, a = m["context"], m["after"]
     parts = [(HERE / "definition.md").read_text(), "\n---\n\n# The moment\n"]
     if c["starts_session"]:
@@ -80,9 +80,10 @@ def render(m: dict) -> str:
     parts.append(head + "\n\n" + m["text"] + ("\n\n(He also attached an image.)" if m.get("images") else "") + "\n")
     for i, p in enumerate(m["pasted"], 1):
         parts.append(f"**Pasted content {i} (material he pasted, not his words):**\n\n{p}\n")
-    parts.append("## After (evidence only; do not trust the agent's acceptance)\n")
-    parts.append("**The agent's next reply:**\n\n" + (a["agent_reply"] or "(none)") + "\n")
-    parts.append("**Manuel's next message:**\n\n" + (a["next_message"] or "(none)") + "\n")
+    if hindsight:
+        parts.append("## After (evidence only; do not trust the agent's acceptance)\n")
+        parts.append("**The agent's next reply:**\n\n" + (a["agent_reply"] or "(none)") + "\n")
+        parts.append("**Manuel's next message:**\n\n" + (a["next_message"] or "(none)") + "\n")
     parts.append("\nLabel the message under \"The message to label\" by the definition above, in the requested structure.")
     return "\n".join(parts)
 
@@ -98,6 +99,8 @@ def main() -> None:
     ap.add_argument("--parallel", type=int, default=8)
     ap.add_argument("--dir", type=Path, default=DEFAULT_DIR)
     ap.add_argument("--show", default="")
+    ap.add_argument("--no-hindsight", action="store_true",
+                    help="leave out what came after the message, as a detector would see it")
     args = ap.parse_args()
 
     moments = [json.loads(line) for line in open(args.dir / "moments.jsonl")]
@@ -122,7 +125,7 @@ def main() -> None:
         def run():
             run_dir = args.dir / "runs" / args.name / m["id"]
             try:
-                label = qtlib.judge(render(m), SCHEMA, run_dir, model=args.model, effort=args.effort)
+                label = qtlib.judge(render(m, not args.no_hindsight), SCHEMA, run_dir, model=args.model, effort=args.effort)
             except Exception as e:  # one failed call must not stop the batch; a rerun retries it
                 with lock:
                     progress["failed"] += 1
