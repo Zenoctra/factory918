@@ -46,6 +46,7 @@ def _next():
 
 SECTION = re.compile(r"(?ms)^## Bash command sandbox\n.*?(?=^#{1,2} |\Z)")
 DATE = re.compile(r"The date has changed\. Today's date is now [^\n]*\n?")
+LOST_TASK = re.compile(r"(?s)<task-notification>.*?before the previous session ended.*?</task-notification>")
 
 
 def strip_sandbox_note(body):
@@ -58,6 +59,9 @@ def strip_sandbox_note(body):
         new, k = SECTION.subn("", text)
         new, d = DATE.subn("", new)
         removed += k + d
+        if LOST_TASK.search(new):  # the whole reminder that carries it goes
+            removed += 1
+            return ""
         return new
 
     for s in body.get("system", []) if isinstance(body.get("system"), list) else []:

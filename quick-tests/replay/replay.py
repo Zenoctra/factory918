@@ -279,7 +279,8 @@ def write_copy(a, rows, cut_index, when, clone, memory_dir, pad_dir, source, rel
       seeded with the files that existed before the cut.
     - The memory folder holds the MEMORY.md the session held, so a replay never
       sees lessons written after its moment.
-    - Claude Code compares the instruction files a session holds with the files
+    - Claude Code compares the instruction files a session holds (the
+      attachment's `files`) with the files
       on disk, path by path and word for word. Any difference adds an
       "Instruction files were re-read" reminder beside the sent message. With
       --placement top, a file the change under test edits (in the clone or the
@@ -347,8 +348,15 @@ def write_copy(a, rows, cut_index, when, clone, memory_dir, pad_dir, source, rel
                     state = "missing on disk" if now is None else "differs on disk"
                     under_test = str(disk).startswith((str(clone), str(memory_dir)))
                     if under_test and a.placement == "top" and now is not None:
+                        # The model reads the row's `rendered` text, not `files`: replace it in both.
+                        placed = 0
+                        for item in r.get("rendered") or []:
+                            if isinstance(item.get("content"), str) and f["content"] in item["content"]:
+                                item["content"] = item["content"].replace(f["content"], now)
+                                placed += 1
                         f["content"] = now
-                        state += "; stored copy replaced (--placement top)"
+                        state += ("; stored copy replaced (--placement top)" if placed else
+                                  "; NOT PLACED: the stored text was not found in the rendered context")
                     else:
                         state += "; Claude Code will add a re-read reminder with today's text"
                     drift.append(f"{disk}: {state}")
@@ -544,8 +552,10 @@ def summarize_stream(stream_path, run_dir):
     meta = {k: result.get(k) for k in ("subtype", "is_error", "num_turns", "duration_ms", "total_cost_usd",
                                        "terminal_reason", "stop_reason", "result")}
     meta["result"] = str(meta.get("result") or "")[:300]
-    meta["permission_denials"] = [{"tool": d.get("tool_name"), "input": json.dumps(d.get("tool_input"))[:2000]}
+    meta["permission_denials"] = [{"tool": d.get("tool_name"), "input": json.dumps(d.get("tool_input"))}
                                   for d in result.get("permission_denials") or []]
+    meta["refused_github"] = sum(bool(re.search(r"(^|[\s;&|(])gh\s", d["input"]))
+                                 for d in meta["permission_denials"] if d["tool"] == "Bash")
     meta["usage"] = result.get("usage")
     meta["hook_events_in_stream"] = sorted(set(hooks))
     return meta
@@ -752,7 +762,8 @@ def cmd_summary(a):
             j = json.loads(m.read_text())
             tot += j.get("total_cost_usd") or 0
             fin = (m.parent / "final.md").read_text().strip().replace("\n", " ")[:90]
-            print(f"{m.parent.name} {j.get('subtype') or '?':22} turns={j.get('num_turns')} "
+            refused = len(j.get("permission_denials") or [])
+            print(f"{m.parent.name} {j.get('subtype') or '?':22} turns={j.get('num_turns')} refused={refused} "
                   f"${j.get('total_cost_usd') or 0:.2f}  {fin}")
         print(f"total ${tot:.2f} at API list price (subscription usage, not a bill)\n")
 
