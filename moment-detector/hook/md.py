@@ -300,7 +300,8 @@ def check(m: dict, case: dict, ctx: dict) -> dict:
                    "question_sha": _sha(moment_file(m, "question")),
                    "examples": m.get("examples"), "examples_sha": _sha(moment_file(m, "examples")),
                    "suggestion_sha": _sha(moment_file(m, "suggestion"))},
-        "case": case, "verdict": None, "delivered": False, "suggestion": None, "error": None,
+        "case": case, "verdict": None, "deliver": m.get("deliver", True), "delivered": False, "suggestion": None,
+        "error": None,
     }
     t0 = time.monotonic()
     try:
@@ -310,7 +311,9 @@ def check(m: dict, case: dict, ctx: dict) -> dict:
         rec["verdict"] = parse_verdict(call["text"], m.get("threshold"), tuple(m.get("score_range", (1, 10))))
         if rec["verdict"]["moment"]:
             rec["suggestion"] = suggestion_text(m, check_id, rec["verdict"], call["model_id"])
-            rec["delivered"] = True
+            # `deliver: false` is shadow mode: the check runs and is logged in full, and the
+            # main model gets nothing (the control arm of a paired run).
+            rec["delivered"] = m.get("deliver", True)
     except Exception as e:  # the hook must never break the user's turn
         rec["error"] = f"{type(e).__name__}: {e}"
     rec.setdefault("latency_ms", {})["check"] = round((time.monotonic() - t0) * 1000)
@@ -345,16 +348,21 @@ def cmd_hook() -> int:
     moments = moments_for(event)
     if not moments:
         return 0
+    # MD_TRANSCRIPT replaces the hook input's transcript. A forked session (replay's
+    # --fork-session, a rewind) writes its transcript only when its first message is
+    # recorded, after this hook, so its first check would otherwise read nothing.
+    transcript = os.environ.get("MD_TRANSCRIPT") or data.get("transcript_path")
     ctx = {"event": event, "session_id": data.get("session_id"), "prompt_id": data.get("prompt_id"),
            "prompt_sha": _sha(prompt),
-           "transcript_path": data.get("transcript_path"), "cwd": data.get("cwd")}
-    session = read_session(data.get("transcript_path"))
+           "transcript_path": data.get("transcript_path"), "transcript_read": transcript, "cwd": data.get("cwd")}
+    session = read_session(transcript)
     log = log_path(data.get("cwd"))
 
     def one(m: dict) -> dict:
         skip = next((f"prompt matches {p!r}" for p in m.get("skip_prompt_patterns", []) if re.search(p, prompt)), None)
         if m.get("skip_first_message") and not session["previous_user"]:
-            skip = "first message of the session"
+            skip = ("first message of the session" if transcript and os.path.exists(transcript)
+                    else "no transcript to read (a forked session's first message?)")
         if skip:
             return {"id": None, "ts": dt.datetime.now().astimezone().isoformat(timespec="milliseconds"),
                     "moment": m["name"], **ctx, "skipped": skip, "delivered": False}

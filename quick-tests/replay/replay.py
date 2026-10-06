@@ -366,10 +366,11 @@ def write_copy(a, rows, cut_index, when, clone, memory_dir, pad_dir, source, rel
     return report
 
 
-def settings_for(clone, out, memory_dir, allow_agents, short_tmp):
+def settings_for(clone, out, memory_dir, allow_agents, short_tmp, extra_hooks=None):
     """dontAsk denies anything not allowed here. Bash runs only inside the OS
     sandbox: no network, writes only to the clone, the run folder and the run's
-    short temp folder."""
+    short temp folder. `extra_hooks` ({event: [matcher groups]}, from --hooks)
+    run beside the logger, as hooks from the user's settings would."""
     allow = ["Read", "Grep", "Glob", "Bash", "Skill", "ToolSearch", "TodoWrite", "TaskCreate", "TaskUpdate",
              "TaskList", "TaskGet", f"Edit(/{clone}/**)", f"Write(/{clone}/**)", f"Edit(/{out}/**)",
              f"Write(/{out}/**)"]
@@ -394,7 +395,8 @@ def settings_for(clone, out, memory_dir, allow_agents, short_tmp):
         },
         "fileCheckpointingEnabled": False,
         "autoMemoryDirectory": str(memory_dir),
-        "hooks": {ev: [{"hooks": [hook]}] for ev in HOOK_EVENTS},
+        "hooks": {ev: ([{"hooks": [hook]}] if ev in HOOK_EVENTS else []) + (extra_hooks or {}).get(ev, [])
+                  for ev in sorted(set(HOOK_EVENTS) | set(extra_hooks or {}))},
     }
 
 
@@ -524,6 +526,7 @@ def relocate_leftovers(before, repo, out):
 
 def summarize_stream(stream_path, run_dir):
     tools, texts, result, hooks = [], [], {}, []
+    cost_before = None
     for line in open(stream_path):
         try:
             ev = json.loads(line)
@@ -545,6 +548,8 @@ def summarize_stream(stream_path, run_dir):
         elif ev.get("type") == "system" and str(ev.get("subtype", "")).startswith("hook"):
             hooks.append(f"{ev.get('subtype')} {ev.get('hook_event') or ev.get('hook_name') or ''}")
         elif ev.get("type") == "result":
+            if ev.get("num_turns") == 0 and cost_before is None:
+                cost_before = ev.get("total_cost_usd")
             result = ev
     (run_dir / "final.md").write_text(texts[-1] if texts else "")
     (run_dir / "all-text.md").write_text("\n\n---\n\n".join(texts))
@@ -552,6 +557,11 @@ def summarize_stream(stream_path, run_dir):
     meta = {k: result.get(k) for k in ("subtype", "is_error", "num_turns", "duration_ms", "total_cost_usd",
                                        "terminal_reason", "stop_reason", "result")}
     meta["result"] = str(meta.get("result") or "")[:300]
+    # total_cost_usd of a resumed session can include what the original session had
+    # spent (about $1,556 on one); run_cost_usd is this run's own.
+    meta["cost_before_usd"] = cost_before
+    if meta.get("total_cost_usd") is not None:
+        meta["run_cost_usd"] = meta["total_cost_usd"] - (cost_before or 0)
     meta["permission_denials"] = [{"tool": d.get("tool_name"), "input": json.dumps(d.get("tool_input"))}
                                   for d in result.get("permission_denials") or []]
     meta["refused_github"] = sum(bool(re.search(r"(^|[\s;&|(])gh\s", d["input"]))
@@ -587,11 +597,15 @@ def one_replay(job):
     clone = w / "repo"
     short_tmp = short_tmp_dir()
     settings_path = run_dir / "settings.json"
-    settings_path.write_text(json.dumps(settings_for(clone, run_dir, w / "memory", not a.no_agents, short_tmp),
-                                        indent=1))
+    extra = json.loads(Path(a.hooks).read_text()) if a.hooks else None
+    settings = settings_for(clone, run_dir, w / "memory", not a.no_agents, short_tmp, extra)
+    settings_path.write_text(json.dumps(settings, indent=1))
     proxy, base = start_proxy(run_dir, log, a.keep_sandbox_note)
+    # --persist keeps the forked session's transcript, so a hook that reads
+    # transcript_path finds the history; relocate_leftovers moves it into --out.
     cmd = [a.cli, "-p", "--resume", str(run_dir / "source.jsonl"), "--fork-session", "--resume-session-at", cut,
-           "--no-session-persistence", "--output-format", "stream-json", "--verbose", "--include-hook-events",
+           *([] if a.persist else ["--no-session-persistence"]),
+           "--output-format", "stream-json", "--verbose", "--include-hook-events",
            "--max-turns", str(a.max_turns),
            "--model", a.model, "--effort", a.effort, "--permission-mode", "dontAsk",
            "--settings", str(settings_path), "--strict-mcp-config", "--mcp-config", '{"mcpServers":{}}']
@@ -645,7 +659,9 @@ def cmd_run(a):
     config_path = out / "config.json"
     if config_path.exists():
         config = json.loads(config_path.read_text())
-        if (config["at"], config["thinking"], config["patch"]) != (rows[i]["uuid"], a.thinking, a.patch):
+        hooks_now = Path(a.hooks).read_text() if a.hooks else None
+        if (config["at"], config["thinking"], config["patch"], config.get("hooks_content"),
+                config.get("persist", False)) != (rows[i]["uuid"], a.thinking, a.patch, hooks_now, a.persist):
             sys.exit(f"{out} holds a different replay; use a new --out")
         cut = config["cut_uuid"]
     else:
@@ -663,7 +679,9 @@ def cmd_run(a):
                 f.write("\n".join(agent_notes) + "\n")
         config = {"session": str(session), "at": rows[i]["uuid"], "kind": kind, "cut_uuid": cut, "cut_time": when,
                   "ref": sha_, "ref_from": how, "phase_seeded": phase, "patch": a.patch, "placement": a.placement,
-                  "thinking": a.thinking, "model": a.model, "effort": a.effort, "max_turns": a.max_turns,
+                  "thinking": a.thinking, "hooks": a.hooks,
+                  "hooks_content": Path(a.hooks).read_text() if a.hooks else None, "persist": a.persist, "model": a.model,
+                  "effort": a.effort, "max_turns": a.max_turns,
                   "sandbox_note": "kept" if a.keep_sandbox_note else "removed by proxy.py", "cli": a.cli}
         config_path.write_text(json.dumps(config, indent=1))
         (out / "original.md").write_text(describe(rows, i))
@@ -783,6 +801,7 @@ def cmd_summary(a):
         print(f"# {out}")
         for m in sorted(out.glob("runs/*/meta.json")):
             j = json.loads(m.read_text())
+            j["total_cost_usd"] = j.get("run_cost_usd", j.get("total_cost_usd"))
             tot += j.get("total_cost_usd") or 0
             fin = (m.parent / "final.md").read_text().strip().replace("\n", " ")[:90]
             refused = len(j.get("permission_denials") or [])
@@ -846,6 +865,7 @@ def cmd_selftest(a):
     ns = argparse.Namespace(session=str(seed), at=at, out=str(replay_out), n=1, start=None, parallel=1,
                             thinking="keep", guidance=None, guidance_raw=False, prompt_file=str(msg), patch=None,
                             placement="top", memory=None, ref="HEAD", model="claude-opus-5-5", effort="low",
+                            hooks=None, persist=False,
                             max_turns=25, timeout=900, log_all=True,
                             keep_sandbox_note=a.keep_sandbox_note, no_agents=True, repo=a.repo, cli=a.cli)
     cmd_run(ns)
@@ -910,6 +930,9 @@ def main():
     p.add_argument("--log-all", action="store_true", help="log API requests for every run, not just the first")
     p.add_argument("--keep-sandbox-note", action="store_true", help="let the model see the CLI's sandbox description")
     p.add_argument("--no-agents", action="store_true")
+    p.add_argument("--hooks", help="JSON file {event: [matcher groups]}: hooks added to the run's settings")
+    p.add_argument("--persist", action="store_true",
+                   help="keep the forked session's transcript (moved into --out afterwards), for hooks that read it")
 
     p = sub.add_parser("judge", parents=[common])
     p.add_argument("folders", nargs="+")
