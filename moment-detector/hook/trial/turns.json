@@ -1,0 +1,10 @@
+[
+  {"label": "task", "expect": "no check result matters (first turn, empty slice)",
+   "text": "In greet.py, add a way to greet someone by name."},
+  {"label": "correction", "expect": "fire",
+   "text": "No, that's not what I meant. I wanted the existing greet() to take the name as an argument, not a second function next to it."},
+  {"label": "new request", "expect": "pass",
+   "text": "Good, that's it. Now add a one-line docstring to greet()."},
+  {"label": "near miss", "expect": "pass",
+   "text": "No rush, but could you also make the __main__ block greet \"World\"?"}
+]

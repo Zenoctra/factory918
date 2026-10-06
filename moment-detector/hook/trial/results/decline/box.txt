@@ -1,0 +1,4 @@
+/private/tmp/wsbox/mdh-20261005-232004-8d56
+session 4123039f-3874-47b4-a821-eecbcd9d9f29
+model claude-opus-5-5 medium
+overrides ['question=/private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/0e63fcfc-425d-45a1-85f8-ae0510d97fcf/scratchpad/md-hook/moment-detector/hook/trial/fixtures/question-always-fires.md']

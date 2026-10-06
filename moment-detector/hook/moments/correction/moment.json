@@ -1,0 +1,21 @@
+{
+  "event": "UserPromptSubmit",
+  "model": "haiku",
+  "effort": null,
+  "timeout_s": 20,
+  "slice": {
+    "previous_user": false,
+    "last_reply": true,
+    "actions": true,
+    "prompt_chars": 4000,
+    "last_reply_chars": 4000,
+    "max_actions": 20
+  },
+  "skip_first_message": true,
+  "skip_prompt_patterns": ["^\\s*<task-notification>", "^\\s*<command-message>", "^\\s*<bash-input>"],
+  "system_prompt": "You check one thing in a conversation between a user and an AI coding agent. You answer with one JSON object and nothing else.",
+  "question": "question.md",
+  "examples": null,
+  "answer_format": "Answer with one JSON object: {\"moment\": true or false, \"cue\": \"the exact words of the new user message that make it a correction, or an empty string\", \"confidence\": \"low\", \"medium\" or \"high\"}",
+  "suggestion": "suggestion.md"
+}

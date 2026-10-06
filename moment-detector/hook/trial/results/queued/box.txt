@@ -1,0 +1,4 @@
+/private/tmp/wsbox/mdh-20261005-231948-523a
+session aea93bda-1148-4650-a557-e0b8bee00dc5
+model claude-opus-5-5 medium
+overrides []
