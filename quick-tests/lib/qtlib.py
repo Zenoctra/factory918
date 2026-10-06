@@ -567,12 +567,23 @@ def paths_written(calls: list[dict]) -> set[str]:
         if c["name"] in ("Write", "Edit", "NotebookEdit") and i.get("file_path"):
             out.add(i["file_path"])
         if c["name"] == "Bash":
-            cmd = i.get("command", "")
+            cmd = expand_vars(i.get("command", ""))
+            for m in re.finditer(r"(?:worktree add(?:\s+--detach)?|mkdir(?:\s+-p)?)\s+(?:\"([^\"]+)\"|'([^']+)'|(/[^\s;|&<>]+))", cmd):
+                out.add(m.group(1) or m.group(2) or m.group(3))
             for m in re.finditer(r"(?:>>?|\btee(?:\s+-a)?)\s*(?:\"([^\"]+)\"|'([^']+)'|(/[^\s;|&<>]+))", cmd):
                 p = m.group(1) or m.group(2) or m.group(3)
                 if p and p.startswith("/") and not p.startswith("/dev/"):
                     out.add(p)
     return out
+
+
+def expand_vars(cmd: str) -> str:
+    """Substitute NAME="value" shell assignments made earlier in the same command."""
+    for m in re.finditer(r"\b([A-Za-z_]\w*)=(?:\"([^\"$]*)\"|'([^']*)')", cmd):
+        name, val = m.group(1), m.group(2) if m.group(2) is not None else m.group(3)
+        cmd = cmd.replace("${" + name + "}", val)
+        cmd = re.sub(r"\$" + name + r"(?!\w)", lambda _: val, cmd)
+    return cmd
 
 
 def heredoc_writes(calls: list[dict]) -> dict[str, str]:
@@ -659,6 +670,48 @@ def parent_after(path: Path, meta: dict, turns: int = 10) -> tuple[str | None, s
                 break
         return str(cand), "\n\n".join(out)
     return None, ""
+
+
+def session_of(path: Path) -> Path:
+    """The <projects>/<session>/ directory a subagent transcript belongs to."""
+    return next(p for p in path.parents if p.parent.parent.name == "projects")
+
+
+def session_writes(path: Path, wanted: set[str], before_ts: str) -> dict[str, str]:
+    """Rebuild files other agents of the same session wrote before `before_ts`.
+
+    Replays every Write and Edit (and `cat > file <<EOF` heredoc) on a wanted
+    path, across the root transcript and all its subagents, in timestamp order.
+    This is how a scratchpad file that is gone from disk (a how lane's findings,
+    an owner's synthesis) comes back for a re-run.
+    """
+    session = session_of(path)
+    files = [session.parent / (session.name + ".jsonl")]
+    files += [Path(p) for p in glob.glob(str(session / "subagents" / "**" / "*.jsonl"), recursive=True)]
+    events = []
+    for f in files:
+        if not f.exists():
+            continue
+        for c in tool_calls(load_rows(f)):
+            ts = c.get("ts") or ""
+            if c["is_error"] or not ts or ts >= before_ts:
+                continue
+            i = c["input"]
+            if c["name"] in ("Write", "Edit") and i.get("file_path") in wanted:
+                events.append((ts, c["name"], i))
+            elif c["name"] == "Bash":
+                for p2, text in heredoc_writes([c]).items():
+                    if p2 in wanted:
+                        events.append((ts, "Write", {"file_path": p2, "content": text}))
+    out: dict[str, str] = {}
+    for ts, name, i in sorted(events, key=lambda e: e[0]):
+        p2 = i["file_path"]
+        if name == "Write":
+            out[p2] = i.get("content", "")
+        elif p2 in out:
+            old, new = i.get("old_string", ""), i.get("new_string", "")
+            out[p2] = out[p2].replace(old, new) if i.get("replace_all") else out[p2].replace(old, new, 1)
+    return out
 
 
 # --------------------------------------------------------------------------

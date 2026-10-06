@@ -147,9 +147,11 @@ def cmd_prepare(a):
     candidates = set(q.abs_paths_in(brief)) | set(reads)
     for c in calls:
         if c["name"] == "Bash":
-            candidates |= q.abs_paths_in(c["input"].get("command", ""))
+            candidates |= q.abs_paths_in(q.expand_vars(c["input"].get("command", "")))
+    candidates |= set(a.input)
     inputs = []
     start_epoch = iso_epoch(start) if start else None
+    others = q.session_writes(t, {c for c in candidates if c not in written and not Path(c).exists()}, start or "")
     for old in sorted(candidates):
         new = q.remap(old, mapping)
         rec = {"original_path": old, "box_path": new.replace(str(seed.root), BOX_TOKEN)}
@@ -165,6 +167,10 @@ def cmd_prepare(a):
             Path(new).parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(old, new)
             rec["status"] = "restored from disk (unchanged since before the original started)"
+        elif old in others:
+            Path(new).parent.mkdir(parents=True, exist_ok=True)
+            Path(new).write_text(others[old])
+            rec["status"] = "restored from what other agents of the session wrote before the original started"
         elif old in reads:
             Path(new).parent.mkdir(parents=True, exist_ok=True)
             Path(new).write_text(reads[old])
@@ -516,6 +522,8 @@ def main():
     p.add_argument("--no-main", action="store_true", help="do not add a main branch at main-as-it-was")
     p.add_argument("--map", action="append", default=[], metavar="OLD=NEW",
                    help="an extra path rewrite; NEW may use {BOX}")
+    p.add_argument("--input", action="append", default=[], metavar="PATH",
+                   help="an extra original path to restore, when the brief abbreviates it")
     p.add_argument("--out")
     r = sub.add_parser("run")
     r.add_argument("dir")

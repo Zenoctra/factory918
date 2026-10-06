@@ -1,0 +1,4 @@
+1. The posting step names `gh issue edit N --body-file`, which replaces the ticket body rather than appending to it; an agent following the step as written wipes What to build and the acceptance criteria. (The original's hard finding; round 1's Act-on item S1.)
+2. The posted table carries example paths in backticks, and the overlap check (`overlap.sh`) reads every backticked token in a ticket body as a path, so later tickets would show phantom overlaps. (The original's item 5, a Fix-alongside; the Spec reviewer's hard finding P1.)
+3. Documents still count four core or project documents after the scenario table became an added core document, so a stated count is false at the commit. (Found by the Spec reviewer, P3, not by the original.)
+4. A failed post of the table has no stop clause: nothing says to stop the work when `gh issue edit` fails. (Found by the Spec reviewer, P4, not by the original.)
