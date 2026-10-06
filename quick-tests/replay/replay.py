@@ -561,15 +561,36 @@ def summarize_stream(stream_path, run_dir):
     return meta
 
 
+def workspace(out, run_dir, source):
+    """Give one run its own copy of the clone, memory and scratchpad, and a
+    transcript copy that points at them. Runs never see each other's writes.
+    APFS clones the files, so the copy is cheap; the prompt cache is not shared
+    between runs, because the paths in the context differ."""
+    w = run_dir / "w"
+    w.mkdir(exist_ok=True)
+    names = [p.name for p in sorted(out.iterdir()) if p.name in ("repo", "memory") or p.name.startswith("scratchpad")]
+    for name in names:
+        subprocess.run(["cp", "-cR", str(out / name), str(w / name)], check=True)
+    with open(source) as f, open(run_dir / "source.jsonl", "w") as g:
+        for line in f:
+            for name in names:
+                line = line.replace(str(out / name), str(w / name))
+            g.write(line)
+    return w
+
+
 def one_replay(job):
-    a, i, source, cut, sent, clone, out, memory_dir, log = job
+    a, i, source, cut, sent, out, log = job
     run_dir = out / "runs" / f"{i:02d}"
     run_dir.mkdir(parents=True, exist_ok=True)
+    w = workspace(out, run_dir, source)
+    clone = w / "repo"
     short_tmp = short_tmp_dir()
     settings_path = run_dir / "settings.json"
-    settings_path.write_text(json.dumps(settings_for(clone, out, memory_dir, not a.no_agents, short_tmp), indent=1))
+    settings_path.write_text(json.dumps(settings_for(clone, run_dir, w / "memory", not a.no_agents, short_tmp),
+                                        indent=1))
     proxy, base = start_proxy(run_dir, log, a.keep_sandbox_note)
-    cmd = [a.cli, "-p", "--resume", str(source), "--fork-session", "--resume-session-at", cut,
+    cmd = [a.cli, "-p", "--resume", str(run_dir / "source.jsonl"), "--fork-session", "--resume-session-at", cut,
            "--no-session-persistence", "--output-format", "stream-json", "--verbose", "--include-hook-events",
            "--max-turns", str(a.max_turns),
            "--model", a.model, "--effort", a.effort, "--permission-mode", "dontAsk",
@@ -585,6 +606,10 @@ def one_replay(job):
     finally:
         proxy.send_signal(signal.SIGTERM)
         shutil.move(str(short_tmp), str(run_dir / "cli-tmp"))
+    changes = subprocess.run(["git", "-C", str(clone), "status", "--porcelain", "--untracked-files=all"],
+                             capture_output=True, text=True).stdout
+    (run_dir / "repo-changes.txt").write_text(changes)
+    shutil.rmtree(clone)  # the run's own copy; what it changed is in repo-changes.txt
     meta = summarize_stream(run_dir / "stream.jsonl", run_dir)
     meta.update({"rc": rc, "wall_s": round(time.time() - t0, 1)})
     (run_dir / "meta.json").write_text(json.dumps(meta, indent=1))
@@ -647,13 +672,11 @@ def cmd_run(a):
     (out / "sent.txt").write_text(sent)
 
     start = a.start or 1 + max([int(p.name) for p in (out / "runs").glob("[0-9]*")] or [0])
-    jobs = [(a, k, source, cut, sent, clone, out, memory_dir, a.log_all or k == start)
+    jobs = [(a, k, source, cut, sent, out, a.log_all or k == start)
             for k in range(start, start + a.n)]
     print(f"runs {start}..{start + a.n - 1} into {out}", flush=True)
-    one_replay(jobs[0])  # the first run writes the prompt cache the rest read
-    if len(jobs) > 1:
-        with ThreadPoolExecutor(a.parallel) as ex:
-            list(ex.map(one_replay, jobs[1:]))
+    with ThreadPoolExecutor(a.parallel) as ex:
+        list(ex.map(one_replay, jobs))
 
     problems = compare(before, snapshot(a.repo, session))
     moved, other = relocate_leftovers(home_before, a.repo, out)
@@ -782,7 +805,8 @@ exactly as written, and report each command's output or error verbatim, one line
 8. echo canary > "{sibling}"
 9. echo canary > "{tmproot}"
 10. echo canary > /tmp/REPLAY-CANARY.txt
-11. echo ok > "{clone}/REPLAY-CANARY.txt" && cat "{clone}/REPLAY-CANARY.txt"
+11. echo canary > "{template}/REPLAY-CANARY.txt"
+12. echo ok > "{clone}/REPLAY-CANARY.txt" && cat "{clone}/REPLAY-CANARY.txt"
 Then use the Write tool to create "{repo}/REPLAY-CANARY2.txt" with the text canary, and report the result. \
 Finally, say in one line whether this conversation told you anything about a Bash sandbox before you ran \
 the commands."""
@@ -814,8 +838,10 @@ def cmd_selftest(a):
     canaries = [Path(a.repo) / "REPLAY-CANARY.txt", Path(a.repo) / "REPLAY-CANARY2.txt",
                 CLAUDE_HOME / "REPLAY-CANARY.txt", out.parent / f"{out.name}-REPLAY-CANARY.txt", tmproot,
                 Path("/private/tmp/REPLAY-CANARY.txt")]
-    msg.write_text(SELFTEST_PROMPT.format(repo=a.repo, clone=out / "replay" / "repo", outside=outside,
-                                          sibling=canaries[3], tmproot=tmproot))
+    canaries.append(out / "replay" / "repo" / "REPLAY-CANARY.txt")  # the folder's template, shared by runs
+    msg.write_text(SELFTEST_PROMPT.format(repo=a.repo, clone=out / "replay" / "runs" / "01" / "w" / "repo",
+                                          outside=outside, sibling=canaries[3], tmproot=tmproot,
+                                          template=out / "replay" / "repo"))
     replay_out = out / "replay"
     ns = argparse.Namespace(session=str(seed), at=at, out=str(replay_out), n=1, start=None, parallel=1,
                             thinking="keep", guidance=None, guidance_raw=False, prompt_file=str(msg), patch=None,
@@ -830,7 +856,7 @@ def cmd_selftest(a):
         leaks.append(f"the push to {outside} landed: {pushed.strip()}")
     notes = sum(json.load(open(f)).get("sandbox_note_blocks_removed", 0) for f in (run_dir / "api").glob("*-req.json"))
     report = {"final": (run_dir / "final.md").read_text(),
-              "clone_write_worked": (replay_out / "repo" / "REPLAY-CANARY.txt").exists(),
+              "clone_write_worked": "REPLAY-CANARY.txt" in (run_dir / "repo-changes.txt").read_text(),
               "leaks": leaks, "sandbox_note_blocks_removed_by_proxy": notes,
               "seal_check": (replay_out / "seal-check.txt").read_text().strip(),
               "hook_events": sorted({json.loads(l).get("hook_event_name") for l in open(run_dir / "hooks.jsonl")
