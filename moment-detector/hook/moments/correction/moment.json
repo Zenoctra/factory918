@@ -1,21 +1,33 @@
 {
   "event": "UserPromptSubmit",
-  "model": "haiku",
-  "effort": null,
-  "timeout_s": 20,
+  "model": "claude-opus-5-5",
+  "effort": "low",
+  "thinking_tokens": 0,
+  "prompt_caching": false,
+  "timeout_s": 10,
   "slice": {
     "previous_user": false,
     "last_reply": true,
     "actions": true,
     "prompt_chars": 4000,
+    "previous_user_chars": 2000,
     "last_reply_chars": 4000,
     "max_actions": 20
   },
   "skip_first_message": true,
-  "skip_prompt_patterns": ["^\\s*<task-notification>", "^\\s*<command-message>", "^\\s*<bash-input>"],
+  "skip_prompt_patterns": [
+    "^\\s*<task-notification>",
+    "^\\s*<command-message>",
+    "^\\s*<bash-input>"
+  ],
   "system_prompt": "You check one thing in a conversation between a user and an AI coding agent. You answer with one JSON object and nothing else.",
-  "question": "question.md",
+  "question": "question-definition.md",
   "examples": null,
-  "answer_format": "Answer with one JSON object: {\"moment\": true or false, \"cue\": \"the exact words of the new user message that make it a correction, or an empty string\", \"confidence\": \"low\", \"medium\" or \"high\"}",
+  "answer_format": "Answer with one JSON object and nothing else: {\"score\": an integer from 1 to 10, \"cue\": \"the exact words of the newest user message that carry the correction, or an empty string\"}. 1 means it is plainly not a correction, 10 that it plainly is, and 5 or 6 that it could be read either way.",
+  "threshold": 6,
+  "score_range": [
+    1,
+    10
+  ],
   "suggestion": "suggestion.md"
 }
