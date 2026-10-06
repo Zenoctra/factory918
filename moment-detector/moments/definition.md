@@ -18,6 +18,7 @@ These are **not** corrections, though some look like one:
 - Correcting himself ("sorry, I meant X", a typo fix) when the agent had not acted on the mistaken version.
 - Extending the work ("also do X", "now do Y") when X and Y were not part of what he had asked.
 - Asking for more, deeper, or a different form of output than the agent delivered, even when he says "I wanted more than that".
+- Choosing differently from a plan or offer the agent made, reshaping it, or handing a job back to the agent, when his reason is a preference and shows no misunderstanding of him.
 - Reporting that something the agent built, ran or shipped does not work, without saying the agent was at fault.
 - Asking whether the agent did something wrong, when the context shows it had not.
 - A question asked to learn something, with no gap in the agent's work behind it.
@@ -26,9 +27,9 @@ These are **not** corrections, though some look like one:
 
 ## Kinds Manuel has ruled on
 
-Eight kinds of message sit near the line, and Manuel has ruled on each. When a message is one of them, name the kind in `hard_case` and label it by the ruling. Use `none` when the message is none of them. When a message carries a kind but its own context makes the ruling fit badly, label it by your best reading, set `unclear`, and say in `other_reading` why the ruling fits badly.
+Eight kinds of message sit near the line, and Manuel has ruled on each. Most are ruled by their kind; `proposal_pushback` is ruled by what the message shows. When a message is one of them, name the kind in `hard_case` and label it by the ruling. Use `none` when the message is none of them. When a message carries a kind but its own context makes the ruling fit badly, label it by your best reading, set `unclear`, and say in `other_reading` why the ruling fits badly.
 
-- `proposal_pushback`: he declines, reshapes or attaches conditions to a plan or recommendation the agent made and had not yet carried out, with a reason of his own. **Correction.** His reason shows something the agent's plan missed about his situation or intent. Picking among offered options with no objection to the recommendation is an answer, not this kind.
+- `proposal_pushback`: he declines, reshapes or attaches conditions to a plan, recommendation or offer the agent made and had not yet carried out. **A correction only when what he says shows the agent failed to understand him**: his priorities, his values or what he meant. A reason that explains something about his situation or intent that the agent's plan missed is that evidence. Declining a proposal is a normal part of design, so choosing differently, reshaping an offer or handing a job back is **not** a correction by itself, even when he gives a reason, if the reason is only a preference or a design opinion. Picking among offered options with no objection to the recommendation is an answer, not this kind. Label the message by what its words show about the agent's grasp of him, not by whether he disagreed.
 - `suspicion_question`: he asks whether the agent did something wrong without saying it did ("you didn't just wipe X, did you?", "is there a chance your rebuild caused this?", "where is Y?" when Y should be in its work). **Not a correction** when the context shows the agent had not done it. A correction when the context shows the gap is real. Unclear when the context cannot tell.
 - `cannot_follow`: he says he cannot follow what the agent wrote, or asks it to explain again. **Correction**, even when he puts the difficulty on himself: the agent's writing did not reach him. A request to learn more than the agent wrote is a question, not this kind.
 - `earlier_agent_work`: he corrects work agents did in earlier or other sessions that this agent is carrying forward. **Correction.** When this agent has not touched, recommended or relied on that work (the message opens a session, or names work outside it), the ruling fits badly.
@@ -61,3 +62,16 @@ The context before the message (his previous message, what the agent did since, 
 - `agent_erred`: whether the context shows that the agent's work really fell short in the way the message says or implies: `yes`, `no` (he is mistaken, or nothing was wrong), `unknown`, or `n/a` when the message says nothing is wrong. Outside `suspicion_question`, label the message by what he tells the agent, not by whether he is right: a correction he is mistaken about is a `mistaken_correction`.
 - `unclear`: true when, after weighing everything, you would still give the other label a chance of one in three or more. Do not set it merely because an alternative reading exists. Also set it where a ruling above fits badly, and for every `mistaken_correction`.
 - `other_reading`: when unclear, the case for the other label in one or two sentences; otherwise empty.
+
+## Record of hand rulings (not part of the labeller's prompt)
+
+Manuel's reason for ruling 1, in his words: the pushback was a correction because the shape of the solution he was pushing back on was evidence the model fundamentally misunderstood his priorities. The specific content of the reason explained values the agent had missed. That the agent had proposed something he did not like is a normal part of design, and he did not mind it. The first wording of the ruling ("declining the agent's recommendation, with a reason, is a correction") misstated this and is replaced above.
+
+Held cases he then ruled on, listed by kind and with no transcript text:
+
+- **Group B, the held messages between answering the agent and pushing back.** Reshaping an offered report without a reason; handing a job back; changing a figure the agent had planned; asking what a script or a failing stage's output means; condemning old deploy scripts an earlier agent wrote. His ruling: none of these is a correction. Label them not corrections unless the message, read against ruling 1, shows the agent failed to understand him; a case like that is flagged, not decided quietly.
+- **Group A, six messages where he told the agent it was wrong and it had not been.**
+  - Two from one session of an early project (a setting he relies on so the agent can read his environment, and a question about why the agent will not do something similar): dropped from the library as test data. The first came from his not wanting to do proper security design; the second was his own mistake, made after the agent refused without making clear that the basics of what he wanted were already done or doable.
+  - Two corrections: a message about what he had meant by an ignore instruction, and a message about the order the agent listed packets in. The labeller leaned correctly; the weakness was in the agent's explanations.
+  - Two not corrections: a question about whether poteto-mode as an entry point skips factory context, which is a fault in the skill prose and is filed as issue #180; and a question about whether the agent had read a repository before naming two deploy keys, which is a design-opinion difference, asked to learn whether an architectural context made the agent's design better than his.
+- Of the kind `mistaken_correction`, no message is left unruled in the library; the kind itself stays open for new ones.

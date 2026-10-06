@@ -5,7 +5,7 @@
     "thinking_tokens=0",
     "timeout_s=60",
     "examples=null",
-    "question=question-definition.md",
+    "question=question-definition-r2.md",
     "slice.prompt_chars=4000",
     "slice.previous_user_chars=2000",
     "slice.last_reply_chars=4000",
@@ -232,6 +232,17 @@
         "per_fold": 24,
         "seed": 0
       }
+    },
+    "snew-b": {
+      "stage": 4,
+      "about": "Sonnet 5.5 at low effort; slice b; the question definition with ruling 1 rewritten around Manuel's reason (the shipped default)",
+      "slice": "b",
+      "format": "score",
+      "set": [
+        "model=claude-sonnet-5-5",
+        "effort=low",
+        "question=question-definition.md"
+      ]
     }
   }
 }

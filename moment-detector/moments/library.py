@@ -1,7 +1,7 @@
 """Join the moments with their labels into the library a scoring script reads,
 and collect the cases to look at again.
 
-    python3 moment-detector/moments/library.py [--primary opus55-r2] [--second opus5-r2] [--dir DIR]
+    python3 moment-detector/moments/library.py [--primary opus55-r2] [--revision sonnet55-r3] [--second opus5-r2] [--dir DIR]
 
 Writes DIR/library.jsonl (one row per moment: where to find it, the label,
 and the second labeller's label) and DIR/review.jsonl (rows that are unclear,
@@ -9,8 +9,12 @@ where the two labellers disagree, or where the label goes against Manuel's
 ruling on its kind). DIR/overrides.jsonl, one line per moment, holds what
 Manuel decided or left open by hand: {"id": ..., "ruled": true|false, "why": ...}
 is his own verdict on that message and replaces the labeller's;
-{"id": ..., "held": "why"} keeps it unclear for him. A correction he was
-mistaken about is held as well. Prints the counts, and the scoring set by class.
+{"id": ..., "held": "why"} keeps it unclear for him; {"id": ..., "drop": "why"}
+leaves the message out of the library (test data he would throw away). A
+correction he was mistaken about is held as well. The revision labels
+(labels-REVISION.jsonl, made after a ruling changed) replace the primary's for
+the ids they hold, and the second labeller's label for those ids, made under
+the old ruling, is left out. Prints the counts, and the scoring set by class.
 """
 
 from __future__ import annotations
@@ -59,16 +63,21 @@ def scoring_rows(rows: list[dict], include_unclear: bool = False) -> list[dict]:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--primary", default="opus55-r2")
+    ap.add_argument("--revision", default="sonnet55-r3", help="labels that replace the primary's for the ids they hold")
     ap.add_argument("--second", default="opus5-r2")
     ap.add_argument("--dir", type=Path, default=DEFAULT_DIR)
     args = ap.parse_args()
 
-    moments = [json.loads(line) for line in open(args.dir / "moments.jsonl")]
+    overrides = load(args.dir / "overrides.jsonl")
+    dropped = {i for i, o in overrides.items() if o.get("drop")}
+    moments = [m for m in map(json.loads, open(args.dir / "moments.jsonl")) if m["id"] not in dropped]
     first, second = load(args.dir / f"labels-{args.primary}.jsonl"), load(args.dir / f"labels-{args.second}.jsonl")
+    revised = load(args.dir / f"labels-{args.revision}.jsonl")
+    first.update(revised)
+    second = {i: b for i, b in second.items() if i not in revised}
     missing = [m["id"] for m in moments if m["id"] not in first]
     if missing:
         raise SystemExit(f"{len(missing)} moments have no {args.primary} label; run label.py --name {args.primary}")
-    overrides = load(args.dir / "overrides.jsonl")
 
     rows = []
     for m in moments:
@@ -83,7 +92,7 @@ def main() -> None:
             "line": m["line"], "timestamp": m["timestamp"], "delivery": m["delivery"],
             "starts_session": m["context"]["starts_session"], "resend_of": m["resend_of"],
             "correction": correction, "ruled_by_manuel": manuel is not None,
-            "kind": a["kind"], "surface": a["surface"], "near_miss": a["near_miss"], "hard_case": a["hard_case"],
+            "labelled_by": a["labeller"], "kind": a["kind"], "surface": a["surface"], "near_miss": a["near_miss"], "hard_case": a["hard_case"],
             "agent_erred": a.get("agent_erred"),
             "confidence": a["confidence"], "unclear": (a["unclear"] and manuel is None) or bool(held), "held": held,
             "against_ruling": manuel is None and ruled is not None and ruled != correction,
@@ -102,6 +111,7 @@ def main() -> None:
     corr = [r for r in rows if r["correction"]]
     paired = [r for r in rows if r["second_correction"] is not None]
     agree = sum(r["second_correction"] == r["correction"] for r in paired)
+    print(f"dropped {len(dropped)}; labels revised {len(revised)}")
     print(f"moments {len(rows)}; corrections {len(corr)} (quiet {sum(r['surface'] == 'quiet' for r in corr)}); "
           f"near misses {sum(r['near_miss'] for r in rows)}; unclear {sum(r['unclear'] for r in rows)} "
           f"(held {sum(bool(r['held']) for r in rows)})")
