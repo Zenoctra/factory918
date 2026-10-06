@@ -1,0 +1,282 @@
+[
+ {
+  "run": "f2-keep/runs/02",
+  "folder": "f2-keep",
+  "criterion": "conflict-claim",
+  "answer": "yes",
+  "evidence": "\"The factory has five different ways to depart from a rule, and they disagree\" ... \"Collapse them into that one. The current five give opposite defaults\""
+ },
+ {
+  "run": "f2-keep/runs/02",
+  "folder": "f2-keep",
+  "criterion": "read-in-place",
+  "answer": "no",
+  "evidence": "No tool calls."
+ },
+ {
+  "run": "f2-drop/runs/04",
+  "folder": "f2-drop",
+  "criterion": "conflict-claim",
+  "answer": "yes",
+  "evidence": "\"It actually has five, and they disagree\" ... \"should these five become one rule?\""
+ },
+ {
+  "run": "f2-drop/runs/04",
+  "folder": "f2-drop",
+  "criterion": "read-in-place",
+  "answer": "no",
+  "evidence": "No tool calls."
+ },
+ {
+  "run": "f2-drop/runs/03",
+  "folder": "f2-drop",
+  "criterion": "conflict-claim",
+  "answer": "yes",
+  "evidence": "\"Five ways of departing from a rule exist, and they disagree with each other.\" ... \"The factory has five mechanisms that disagree, so which survive?\" Recommends one mechanism everywhere."
+ },
+ {
+  "run": "f2-drop/runs/03",
+  "folder": "f2-drop",
+  "criterion": "read-in-place",
+  "answer": "no",
+  "evidence": "Its only tool call was a denied Bash call to the research branch and a gh issue, not one of the mechanism files."
+ },
+ {
+  "run": "f2-keep/runs/01",
+  "folder": "f2-keep",
+  "criterion": "conflict-claim",
+  "answer": "yes",
+  "evidence": "\"The factory has five ways for a reader to depart from a rule, and they contradict each other.\" ... \"The five current mechanisms collapse into those two.\""
+ },
+ {
+  "run": "f2-keep/runs/01",
+  "folder": "f2-keep",
+  "criterion": "read-in-place",
+  "answer": "no",
+  "evidence": "No tool calls."
+ },
+ {
+  "run": "f2-drop/runs/09",
+  "folder": "f2-drop",
+  "criterion": "conflict-claim",
+  "answer": "yes",
+  "evidence": "\"The factory has five different ways to depart from a rule, and they point different ways.\" Recommends \"One way for every reader\" and says the existing mechanisms get rewritten to match."
+ },
+ {
+  "run": "f2-drop/runs/09",
+  "folder": "f2-drop",
+  "criterion": "read-in-place",
+  "answer": "no",
+  "evidence": "No tool calls."
+ },
+ {
+  "run": "f2-keep/runs/05",
+  "folder": "f2-keep",
+  "criterion": "conflict-claim",
+  "answer": "yes",
+  "evidence": "\"five instructions for what to do when a rule gets in the way, and they disagree\" ... \"whether one rule replaces all five\""
+ },
+ {
+  "run": "f2-keep/runs/05",
+  "folder": "f2-keep",
+  "criterion": "read-in-place",
+  "answer": "no",
+  "evidence": "No tool calls."
+ },
+ {
+  "run": "f2-drop/runs/02",
+  "folder": "f2-drop",
+  "criterion": "conflict-claim",
+  "answer": "yes",
+  "evidence": "\"The factory gives five different answers to 'a rule fights the task', and they contradict each other.\" Its later mapping onto three cases is offered as a proposal, not as a sign that they already cover different situations."
+ },
+ {
+  "run": "f2-drop/runs/02",
+  "folder": "f2-drop",
+  "criterion": "read-in-place",
+  "answer": "no",
+  "evidence": "No tool calls."
+ },
+ {
+  "run": "f2-keep/runs/08",
+  "folder": "f2-keep",
+  "criterion": "conflict-claim",
+  "answer": "yes",
+  "evidence": "\"five different ways to depart from a rule, and they disagree\" ... \"Q3 is really choosing one rule to replace all five\""
+ },
+ {
+  "run": "f2-keep/runs/08",
+  "folder": "f2-keep",
+  "criterion": "read-in-place",
+  "answer": "no",
+  "evidence": "No tool calls."
+ },
+ {
+  "run": "f2-keep/runs/09",
+  "folder": "f2-keep",
+  "criterion": "conflict-claim",
+  "answer": "yes",
+  "evidence": "\"The factory has five ways to depart from a rule, and they disagree\" ... \"The other four would then be reconciled to it\""
+ },
+ {
+  "run": "f2-keep/runs/09",
+  "folder": "f2-keep",
+  "criterion": "read-in-place",
+  "answer": "no",
+  "evidence": "No tool calls."
+ },
+ {
+  "run": "f2-drop/runs/07",
+  "folder": "f2-drop",
+  "criterion": "conflict-claim",
+  "answer": "yes",
+  "evidence": "\"The factory has five ways of departing from a rule, and they don't agree with each other.\" ... \"they pull in different directions\""
+ },
+ {
+  "run": "f2-drop/runs/07",
+  "folder": "f2-drop",
+  "criterion": "read-in-place",
+  "answer": "no",
+  "evidence": "Its only tool call was a denied Bash call to the research branch and a gh issue, not one of the mechanism files."
+ },
+ {
+  "run": "f2-drop/runs/08",
+  "folder": "f2-drop",
+  "criterion": "conflict-claim",
+  "answer": "yes",
+  "evidence": "\"Five different ways to depart from a rule, and they contradict each other.\" ... \"Keep one rule for everyone.\""
+ },
+ {
+  "run": "f2-drop/runs/08",
+  "folder": "f2-drop",
+  "criterion": "read-in-place",
+  "answer": "no",
+  "evidence": "No tool calls."
+ },
+ {
+  "run": "f2-keep/runs/10",
+  "folder": "f2-keep",
+  "criterion": "conflict-claim",
+  "answer": "yes",
+  "evidence": "\"The factory has five ways to depart from a rule, and they disagree.\" ... \"one rule for every reader\""
+ },
+ {
+  "run": "f2-keep/runs/10",
+  "folder": "f2-keep",
+  "criterion": "read-in-place",
+  "answer": "no",
+  "evidence": "No tool calls."
+ },
+ {
+  "run": "f2-drop/runs/05",
+  "folder": "f2-drop",
+  "criterion": "conflict-claim",
+  "answer": "yes",
+  "evidence": "\"The factory gives agents five ways to depart from a rule, and they disagree.\" ... \"This now means picking between the five mechanisms above.\""
+ },
+ {
+  "run": "f2-drop/runs/05",
+  "folder": "f2-drop",
+  "criterion": "read-in-place",
+  "answer": "no",
+  "evidence": "No tool calls."
+ },
+ {
+  "run": "f2-keep/runs/07",
+  "folder": "f2-keep",
+  "criterion": "conflict-claim",
+  "answer": "yes",
+  "evidence": "\"The factory has five ways to depart from a rule, and they disagree.\" ... \"The factory has five answers today.\""
+ },
+ {
+  "run": "f2-keep/runs/07",
+  "folder": "f2-keep",
+  "criterion": "read-in-place",
+  "answer": "no",
+  "evidence": "No tool calls."
+ },
+ {
+  "run": "f2-keep/runs/06",
+  "folder": "f2-keep",
+  "criterion": "conflict-claim",
+  "answer": "yes",
+  "evidence": "\"The factory has five ways to depart from a rule, and they point different ways\" ... \"do the five ways to depart become one?\" ... \"make it one way\""
+ },
+ {
+  "run": "f2-keep/runs/06",
+  "folder": "f2-keep",
+  "criterion": "read-in-place",
+  "answer": "no",
+  "evidence": "No tool calls."
+ },
+ {
+  "run": "f2-drop/runs/10",
+  "folder": "f2-drop",
+  "criterion": "conflict-claim",
+  "answer": "yes",
+  "evidence": "\"The factory gives a reader five different ways to depart from a rule, and they disagree\" ... \"which one of these becomes the standard\""
+ },
+ {
+  "run": "f2-drop/runs/10",
+  "folder": "f2-drop",
+  "criterion": "read-in-place",
+  "answer": "no",
+  "evidence": "No tool calls."
+ },
+ {
+  "run": "f2-drop/runs/06",
+  "folder": "f2-drop",
+  "criterion": "conflict-claim",
+  "answer": "yes",
+  "evidence": "\"the factory gives five different answers to 'what do I do when a rule gets in the way'. They don't agree\""
+ },
+ {
+  "run": "f2-drop/runs/06",
+  "folder": "f2-drop",
+  "criterion": "read-in-place",
+  "answer": "no",
+  "evidence": "No tool calls."
+ },
+ {
+  "run": "f2-drop/runs/01",
+  "folder": "f2-drop",
+  "criterion": "conflict-claim",
+  "answer": "yes",
+  "evidence": "\"The factory has five ways to depart from a rule, and they disagree\" ... \"should that one answer replace the five ways the factory has now?\""
+ },
+ {
+  "run": "f2-drop/runs/01",
+  "folder": "f2-drop",
+  "criterion": "read-in-place",
+  "answer": "no",
+  "evidence": "No tool calls."
+ },
+ {
+  "run": "f2-keep/runs/03",
+  "folder": "f2-keep",
+  "criterion": "conflict-claim",
+  "answer": "yes",
+  "evidence": "\"The factory has five ways to depart from a rule, and they conflict.\" ... \"The five above conflict\""
+ },
+ {
+  "run": "f2-keep/runs/03",
+  "folder": "f2-keep",
+  "criterion": "read-in-place",
+  "answer": "no",
+  "evidence": "Its only tool call was a denied Bash call to the research branch and a gh issue, not one of the mechanism files."
+ },
+ {
+  "run": "f2-keep/runs/04",
+  "folder": "f2-keep",
+  "criterion": "conflict-claim",
+  "answer": "yes",
+  "evidence": "\"The factory has five ways to depart from a rule, and they disagree.\" ... \"Whatever Q3 decides should replace them all\""
+ },
+ {
+  "run": "f2-keep/runs/04",
+  "folder": "f2-keep",
+  "criterion": "read-in-place",
+  "answer": "no",
+  "evidence": "No tool calls."
+ }
+]

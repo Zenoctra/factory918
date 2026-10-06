@@ -1,0 +1,3 @@
+f1-drop	anecdote-rule	yes=5 no=5 unclear=0
+f1-keep	anecdote-rule	yes=9 no=11 unclear=0
+f1-turn	anecdote-rule	yes=6 no=4 unclear=0

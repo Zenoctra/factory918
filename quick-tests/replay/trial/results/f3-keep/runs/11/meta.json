@@ -1,0 +1,56 @@
+{
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 1,
+ "duration_ms": 164988,
+ "total_cost_usd": 0.329271,
+ "terminal_reason": "completed",
+ "stop_reason": "end_turn",
+ "result": "Yes, the research changes the round. Here is the revised round, which replaces round one.\n\n**What the research changes:**\n\n- **A rule about what \"done\" looks like can limit the work as much as a rule about how to do it.** Round one treated \"what done means\" as safe. The best-measured harm in the who",
+ "permission_denials": [],
+ "refused_github": 0,
+ "usage": {
+  "input_tokens": 1,
+  "cache_creation_input_tokens": 422,
+  "cache_read_input_tokens": 144155,
+  "output_tokens": 14853,
+  "output_tokens_details": {
+   "thinking_tokens": 10580
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 422,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "not_available",
+  "iterations": [
+   {
+    "input_tokens": 1,
+    "output_tokens": 14853,
+    "cache_read_input_tokens": 144155,
+    "cache_creation_input_tokens": 422,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 422
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "hook_events_in_stream": [
+  "hook_response SessionStart",
+  "hook_response Stop",
+  "hook_response UserPromptSubmit",
+  "hook_started SessionStart",
+  "hook_started Stop",
+  "hook_started UserPromptSubmit"
+ ],
+ "rc": 0,
+ "wall_s": 166.1
+}

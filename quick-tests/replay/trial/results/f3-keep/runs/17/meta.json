@@ -1,0 +1,56 @@
+{
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 1,
+ "duration_ms": 140823,
+ "total_cost_usd": 0.277123,
+ "terminal_reason": "completed",
+ "stop_reason": "end_turn",
+ "result": "Yes, the research changes the questions. Below is what changed, then the round again, rewritten.\n\n## What changed\n\n**1. The goal/route split I proposed is too clean.** In round one I treated the task statement as safe and the route as the danger. The research's strongest findings say the task statem",
+ "permission_denials": [],
+ "refused_github": 0,
+ "usage": {
+  "input_tokens": 1,
+  "cache_creation_input_tokens": 421,
+  "cache_read_input_tokens": 144155,
+  "output_tokens": 12246,
+  "output_tokens_details": {
+   "thinking_tokens": 8765
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 421,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "not_available",
+  "iterations": [
+   {
+    "input_tokens": 1,
+    "output_tokens": 12246,
+    "cache_read_input_tokens": 144155,
+    "cache_creation_input_tokens": 421,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 421
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "hook_events_in_stream": [
+  "hook_response SessionStart",
+  "hook_response Stop",
+  "hook_response UserPromptSubmit",
+  "hook_started SessionStart",
+  "hook_started Stop",
+  "hook_started UserPromptSubmit"
+ ],
+ "rc": 0,
+ "wall_s": 141.8
+}

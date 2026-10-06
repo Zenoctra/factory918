@@ -1,0 +1,1 @@
+Bash: {"command": "ls -la /private/tmp/qt-replay/f1-keep/scratchpad/ 2>&1 | head; cat /private/tmp/qt-replay/f1-keep/memory/budget-never-binds-unasked.md 2>&1 | head -20; cd /private/tmp/qt-replay/f1-keep/repo && sed -n 16,20p template/AGENTS.md; sed -n 68p template/AGENTS.md; sed -n 13p template/.agents/skills/poteto-mode/playbooks/ticket.md"}

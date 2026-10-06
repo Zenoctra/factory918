@@ -1,0 +1,18 @@
+{
+ "session": "/Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/785efd6d-6cc5-45b5-a8b7-8e8996cc3e9b.jsonl",
+ "at": "832548a0-fb5a-4cbe-9d39-5c976ff24eb9",
+ "kind": "moment",
+ "cut_uuid": "d33119c6-f61f-4f61-8d76-47ac9bfea790",
+ "cut_time": "2026-09-30T18:08:45.640Z",
+ "ref": "ee2ec2972f5ed82b8ba8d4bfff96d22bef95b7d0",
+ "ref_from": "HEAD of /Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918 at 2026-09-30T18:08:45.640Z, from its reflog",
+ "phase_seeded": "planning",
+ "patch": null,
+ "placement": "top",
+ "thinking": "drop",
+ "model": "claude-opus-5-5",
+ "effort": "high",
+ "max_turns": 30,
+ "sandbox_note": "removed by proxy.py",
+ "cli": "/Users/manuel/Library/Application Support/Claude/claude-code/2.1.286/f2326db61802/claude.app/Contents/MacOS/claude"
+}

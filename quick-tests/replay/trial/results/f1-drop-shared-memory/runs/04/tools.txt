@@ -1,0 +1,8 @@
+Bash: {"command": "cd \"/private/tmp/qt-replay/f1-drop/repo\" && sed -n 10,22p template/AGENTS.md; ls -la \"/private/tmp/qt-replay/f1-drop/scratchpad/152-answers-round1.md\"; NEW=\"/private/tmp/qr-f89c8eec/claude-501/-private-tmp-qt-replay-f1-drop-repo/022b707b-5948-4ed3-a176-a0f89d6c5f4e/scratchpad\"; cp \"/private/tmp/qt-replay/f1-drop/scratchpad/152-answers-round1.md\" \"$NEW/\" && echo copied"}
+  -> error: Exit code 1
+- **Minimal weight.** Every dependency and abstraction has to earn its place. Prefer deletion.
+- **Nothing merges without proof.** A claim in a PR body is not evidence; a test, a screenshot, a read-back is.
+- **The record is the merged PR, the glossary, and the ADRs.** Not plans, not cha
+Bash: {"command": "cd \"/private/tmp/qt-replay/f1-drop/repo\" && F=\"/private/tmp/qr-f89c8eec/claude-501/-private-tmp-qt-replay-f1-drop-repo/022b707b-5948-4ed3-a176-a0f89d6c5f4e/scratchpad/152-round1.md\" && cat > \"$F\" <<'EOF'\nManuel's answers to the first round on this ticket, 2026-09-30, word for word, so they don't have to be remembered or rediscovered. Claude's questions are shortened to what each answer needs for context; the full research behind them is [wording-and-reader-context.md](https://github.com/Zenoctra/factory918/blob/research/wording-and-reader-context/docs/research/wording-and-r
+  -> error: Permission to use Bash with command cd "/private/tmp/qt-replay/f1-drop/repo" && F="/private/tmp/qr-f89c8eec/claude-501/-private-tmp-qt-replay-f1-drop-repo/022b707b-5948-4ed3-a176-a0f89d6c5f4e/scratchpad/152-round1.md" && cat > "$F" <<'EOF'
+Manuel's answers to the first round on this ticket, 2026-09-

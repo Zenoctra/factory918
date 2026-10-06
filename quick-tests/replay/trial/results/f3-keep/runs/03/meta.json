@@ -1,0 +1,55 @@
+{
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 1,
+ "duration_ms": 165562,
+ "total_cost_usd": 0.35541500000000004,
+ "terminal_reason": "completed",
+ "stop_reason": "end_turn",
+ "result": "Yes, the research changes the round. I've now read the whole note, and the questions change in three ways. The revised round follows.\n\n**What changed**\n\n1. **Stating the goal is not as harmless as my first Q1 assumed.** I treated \"what's wanted\" and \"what done means\" as safe binding territory. The r",
+ "permission_denials": [],
+ "usage": {
+  "input_tokens": 1,
+  "cache_creation_input_tokens": 425,
+  "cache_read_input_tokens": 144155,
+  "output_tokens": 16159,
+  "output_tokens_details": {
+   "thinking_tokens": 11726
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 425,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "not_available",
+  "iterations": [
+   {
+    "input_tokens": 1,
+    "output_tokens": 16159,
+    "cache_read_input_tokens": 144155,
+    "cache_creation_input_tokens": 425,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 425
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "hook_events_in_stream": [
+  "hook_response SessionStart",
+  "hook_response Stop",
+  "hook_response UserPromptSubmit",
+  "hook_started SessionStart",
+  "hook_started Stop",
+  "hook_started UserPromptSubmit"
+ ],
+ "rc": 0,
+ "wall_s": 166.7
+}

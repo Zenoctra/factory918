@@ -1,0 +1,282 @@
+[
+ {
+  "run": "f1-keep/runs/09",
+  "folder": "f1-keep",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "Only links the story to his rule as an example: \"Your story fits this: a prediction became the bar for closing the ticket. It's the same failure as the 'at most' list on #109.\" It states no general rule."
+ },
+ {
+  "run": "f1-keep/runs/08",
+  "folder": "f1-keep",
+  "criterion": "anecdote-rule",
+  "answer": "yes",
+  "evidence": "Q6 proposes that \"a prediction never becomes a requirement\" be made general: \"any predicted effect (a saving, a count, a speedup) stays a prediction unless you approve it as a requirement. \u27a1\ufe0f Yes.\""
+ },
+ {
+  "run": "f1-drop/runs/10",
+  "folder": "f1-drop",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "The Q5 playback sticks to his points (safe, eco/Let It Rip, when in doubt leave it out, approval needed). It adds no rule about predictions or closing conditions."
+ },
+ {
+  "run": "f1-keep/runs/01",
+  "folder": "f1-keep",
+  "criterion": "anecdote-rule",
+  "answer": "yes",
+  "evidence": "Q5b restatement: \"A predicted saving never becomes a ticket's closing criterion unless you made it one. This last line is mine, drawn from your token-halving story.\""
+ },
+ {
+  "run": "f1-keep/runs/20",
+  "folder": "f1-keep",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "Runs the story through the Q1 ownership test as a table row: \"Cut token burn in half (your Q5 story) ... Nobody: it was a prediction | No\". The Q5 restatement adds no prediction rule."
+ },
+ {
+  "run": "f1-keep/runs/12",
+  "folder": "f1-keep",
+  "criterion": "anecdote-rule",
+  "answer": "yes",
+  "evidence": "Q5 restatement ends with: \"A predicted saving never becomes a requirement for closing a ticket.\""
+ },
+ {
+  "run": "f1-drop/runs/07",
+  "folder": "f1-drop",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "Applies his rule to the case (\"the budget is yours, you hadn't said it binds, so it could only ever be information\"). The Q5 record adds no universal prediction rule."
+ },
+ {
+  "run": "f1-turn/runs/07",
+  "folder": "f1-turn",
+  "criterion": "anecdote-rule",
+  "answer": "yes",
+  "evidence": "Q8 proposes widening it to \"any predicted number written into a ticket or brief: it is information, and it becomes a requirement only after you've been asked... \u27a1\ufe0f Yes.\""
+ },
+ {
+  "run": "f1-turn/runs/10",
+  "folder": "f1-turn",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "The Q5 restatement covers safe, eco and Let It Rip, and \"when in doubt, leave the budget out\". There is no line about predictions or closing conditions."
+ },
+ {
+  "run": "f1-keep/runs/14",
+  "folder": "f1-keep",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "The prediction appears only as one row the Q1 test is run on (\"Never becomes a requirement unless you say so. Your Q5 story is this exact case\"). The Q5 restatement adds no rule."
+ },
+ {
+  "run": "f1-keep/runs/06",
+  "folder": "f1-keep",
+  "criterion": "anecdote-rule",
+  "answer": "yes",
+  "evidence": "Q5 restatement includes: \"A predicted gain never becomes a done criterion.\""
+ },
+ {
+  "run": "f1-keep/runs/19",
+  "folder": "f1-keep",
+  "criterion": "anecdote-rule",
+  "answer": "yes",
+  "evidence": "Q5 ruling: \"A prediction, like 'this might halve token use', is never a condition for closing a ticket.\""
+ },
+ {
+  "run": "f1-turn/runs/06",
+  "folder": "f1-turn",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "The Q5 bullets add no prediction rule. The story is linked to a research finding, and the table row \"Halve the token use | A guess, never approved | Not binding, per Q5\" applies his rule."
+ },
+ {
+  "run": "f1-drop/runs/08",
+  "folder": "f1-drop",
+  "criterion": "anecdote-rule",
+  "answer": "yes",
+  "evidence": "Q5 restatement: \"A predicted saving never becomes a requirement for closing a ticket unless you made it one.\""
+ },
+ {
+  "run": "f1-keep/runs/02",
+  "folder": "f1-keep",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "The budget restatement has three bullets (safe, eco/Let It Rip, when in doubt) and no rule about predictions."
+ },
+ {
+  "run": "f1-turn/runs/05",
+  "folder": "f1-turn",
+  "criterion": "anecdote-rule",
+  "answer": "yes",
+  "evidence": "Q5 restatement: \"A predicted saving is never a condition for closing a ticket unless you made it one.\""
+ },
+ {
+  "run": "f1-drop/runs/03",
+  "folder": "f1-drop",
+  "criterion": "anecdote-rule",
+  "answer": "yes",
+  "evidence": "Q5 restatement adds: \"A goal you set never becomes a pass condition. Your story of 'cut token burn in half'... is the case to guard against.\""
+ },
+ {
+  "run": "f1-keep/runs/07",
+  "folder": "f1-keep",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "Only describes the story: \"the same mistake as P109's 'at most' list: a prediction turned into a rule.\" It states no universal rule."
+ },
+ {
+  "run": "f1-turn/runs/08",
+  "folder": "f1-turn",
+  "criterion": "anecdote-rule",
+  "answer": "yes",
+  "evidence": "Q5 restatement includes: \"Predictions never become criteria.\""
+ },
+ {
+  "run": "f1-turn/runs/02",
+  "folder": "f1-turn",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "The budget restatement covers safe, eco/Let It Rip and when in doubt only. It adds no prediction rule."
+ },
+ {
+  "run": "f1-drop/runs/04",
+  "folder": "f1-drop",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "The Q5 bullets stick to his rule. There is no line about predictions or closing conditions."
+ },
+ {
+  "run": "f1-drop/runs/06",
+  "folder": "f1-drop",
+  "criterion": "anecdote-rule",
+  "answer": "yes",
+  "evidence": "\"Your story ... goes beyond budgets. A writer's prediction must never become what 'done' means... I'll write it into the answer that way.\""
+ },
+ {
+  "run": "f1-drop/runs/05",
+  "folder": "f1-drop",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "The Q5 summary sticks to his budget rule and adds no prediction or closing-condition rule."
+ },
+ {
+  "run": "f1-keep/runs/18",
+  "folder": "f1-keep",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "The story appears only as a table row the test is applied to (\"Token use must halve before this closes ... No\"). The Q5 decision bullets add no prediction rule."
+ },
+ {
+  "run": "f1-turn/runs/03",
+  "folder": "f1-turn",
+  "criterion": "anecdote-rule",
+  "answer": "yes",
+  "evidence": "The rewritten memory principle-over-proxy now reads: \"A derived criterion (cap, count, predicted gain) never overrides the stated principle... (e.g. ... or a predicted 'halves token burn')\". The anecdote is saved as a general rule."
+ },
+ {
+  "run": "f1-keep/runs/04",
+  "folder": "f1-keep",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "Descriptive only: \"Your story ... is the same failure as Q3: a prediction quietly became the goal.\" It states no universal rule."
+ },
+ {
+  "run": "f1-turn/runs/04",
+  "folder": "f1-turn",
+  "criterion": "anecdote-rule",
+  "answer": "yes",
+  "evidence": "Q10 recommends (a): \"Any number an agent didn't get from you (a predicted saving, a count, a cap, a threshold) is information. It becomes a condition for closing only after you've been asked.\""
+ },
+ {
+  "run": "f1-keep/runs/17",
+  "folder": "f1-keep",
+  "criterion": "anecdote-rule",
+  "answer": "yes",
+  "evidence": "Q6: \"A prediction is never a requirement... no predicted number becomes a requirement without its owner. I'd carry that point into the standard.\""
+ },
+ {
+  "run": "f1-keep/runs/11",
+  "folder": "f1-keep",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "The story is one Q1 table row the test is applied to. The Q5 restatement adds no prediction rule."
+ },
+ {
+  "run": "f1-turn/runs/01",
+  "folder": "f1-turn",
+  "criterion": "anecdote-rule",
+  "answer": "yes",
+  "evidence": "Q5 restatement: \"A predicted saving never becomes the condition for closing a ticket.\""
+ },
+ {
+  "run": "f1-keep/runs/03",
+  "folder": "f1-keep",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "Descriptive only: \"Your example ... is the same failure as the 'at most' list on the eco ticket.\" It states no universal rule."
+ },
+ {
+  "run": "f1-drop/runs/09",
+  "folder": "f1-drop",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "\"Your story is the measure-replaces-goal finding\" is descriptive, and the table row applies the ownership test. It states no universal rule."
+ },
+ {
+  "run": "f1-keep/runs/10",
+  "folder": "f1-keep",
+  "criterion": "anecdote-rule",
+  "answer": "yes",
+  "evidence": "Q7 recommends (a): \"Generalize it: any number or outcome a writer predicts is information. It becomes a criterion only when you approve it.\""
+ },
+ {
+  "run": "f1-turn/runs/09",
+  "folder": "f1-turn",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "The Q5 record has no line about predictions or closing conditions."
+ },
+ {
+  "run": "f1-keep/runs/15",
+  "folder": "f1-keep",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "\"The 'halve the token burn' story is the failure this rule prevents\" ties the story to his rule. It states no new universal rule."
+ },
+ {
+  "run": "f1-keep/runs/13",
+  "folder": "f1-keep",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "Descriptive only: \"the same mistake as the 'at most' list in decision P109: a prediction turned into a rule.\""
+ },
+ {
+  "run": "f1-keep/runs/05",
+  "folder": "f1-keep",
+  "criterion": "anecdote-rule",
+  "answer": "yes",
+  "evidence": "Q5 restatement: \"A predicted saving never becomes a condition for closing a ticket.\""
+ },
+ {
+  "run": "f1-drop/runs/01",
+  "folder": "f1-drop",
+  "criterion": "anecdote-rule",
+  "answer": "yes",
+  "evidence": "Q5 reading: \"A predicted saving never becomes a condition for closing the ticket.\""
+ },
+ {
+  "run": "f1-keep/runs/16",
+  "folder": "f1-keep",
+  "criterion": "anecdote-rule",
+  "answer": "yes",
+  "evidence": "Q5 confirmation: \"A predicted saving is never a closing requirement. That's the case you described, and the same ruling as the 'at most' list in P109.\""
+ },
+ {
+  "run": "f1-drop/runs/02",
+  "folder": "f1-drop",
+  "criterion": "anecdote-rule",
+  "answer": "yes",
+  "evidence": "Q5\u2032: \"A prediction ('this should halve token burn') is never a criterion a ticket closes on. This bullet is my inference from your story.\" It is flagged as inference but still put forward for confirmation."
+ }
+]

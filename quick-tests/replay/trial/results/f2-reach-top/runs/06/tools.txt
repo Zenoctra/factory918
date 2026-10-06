@@ -1,0 +1,2 @@
+Bash: {"command": "cd \"/private/tmp/qt-replay/f2-reach-top/repo\" && git show research/wording-and-reader-context:docs/research/wording-and-reader-context.md | head -15; git show research/wording-and-reader-context:docs/research/wording-and-reader-context.md | grep -n '#15[0-9]' | head"}
+Bash: {"command": "cd \"/private/tmp/qt-replay/f2-reach-top/repo\" && git show research/wording-and-reader-context:docs/research/wording-and-reader-context.md | sed -n '380,392p'"}

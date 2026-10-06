@@ -1,0 +1,1 @@
+Bash: {"command": "cd \"/private/tmp/qt-replay/f3-drop/repo\" && sed -n 10,22p template/AGENTS.md; grep -n \"^3\\.\\|belief 3\\|strongest rung\\|highest rung\" docs/knowledge/core/PHILOSOPHY.md | head -5"}

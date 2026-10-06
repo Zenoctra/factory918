@@ -1,0 +1,4 @@
+f4-drop	old-framing-unflagged	yes=0 no=10 unclear=0
+f4-drop	slides-back	yes=4 no=5 unclear=1
+f4-keep	old-framing-unflagged	yes=0 no=20 unclear=0
+f4-keep	slides-back	yes=7 no=12 unclear=1

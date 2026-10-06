@@ -1,0 +1,12 @@
+Bash: {"command": "cd \"/private/tmp/qt-replay/f1-keep/repo\" && cat /private/tmp/qt-replay/f1-keep/memory/budget-never-binds-unasked.md 2>&1 | head -20; ls -la /private/tmp/qt-replay/f1-keep/scratchpad/152-answers-round1.md 2>&1"}
+  -> error: Exit code 1
+---
+name: budget-never-binds-unasked
+description: "Token and wall-clock budgets never shape process in safe; in eco and Let It Rip they reach a brief only after Manuel says how binding they are; when in doubt, leave them out"
+metadata:
+  node_type: memory
+  type: feedback
+  originSession
+Bash: {"command": "S=\"/private/tmp/qr-5eb19325/claude-501/-private-tmp-qt-replay-f1-keep-repo/01fe5be0-e979-4bad-a20e-e86016230313/scratchpad\"; mkdir -p \"$S\"; cat > \"$S/c1.md\" <<'EOF'\nManuel's answers to the first grilling round on this ticket, 2026-09-30, kept word for word so they don't have to be remembered. The round was asked after the research for [Research how wording and missing context shape a reader's response](https://github.com/Zenoctra/factory918/issues/154) landed. Each answer is preceded by the question it answers, shortened.\n\n**Q1. What binds, and who can make it bind?** Opt
+  -> error: Permission to use Bash with command S="/private/tmp/qr-5eb19325/claude-501/-private-tmp-qt-replay-f1-keep-repo/01fe5be0-e979-4bad-a20e-e86016230313/scratchpad"; mkdir -p "$S"; cat > "$S/c1.md" <<'EOF'
+Manuel's answers to the first grilling round on this ticket, 2026-09-30, kept word for word so they

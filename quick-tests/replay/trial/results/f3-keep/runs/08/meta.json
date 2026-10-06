@@ -1,0 +1,55 @@
+{
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 1,
+ "duration_ms": 185749,
+ "total_cost_usd": 0.26832700000000004,
+ "terminal_reason": "completed",
+ "stop_reason": "end_turn",
+ "result": "I read the whole research note, and it changes the round. One recommendation was wrong. Two questions are new, and the others now rest on evidence rather than my opinion.\n\n**What was wrong.** In round one I treated the goal and \"what done means\" as safe ground, with only rules about the route at ris",
+ "permission_denials": [],
+ "usage": {
+  "input_tokens": 1,
+  "cache_creation_input_tokens": 419,
+  "cache_read_input_tokens": 144155,
+  "output_tokens": 11807,
+  "output_tokens_details": {
+   "thinking_tokens": 7775
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 419,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "not_available",
+  "iterations": [
+   {
+    "input_tokens": 1,
+    "output_tokens": 11807,
+    "cache_read_input_tokens": 144155,
+    "cache_creation_input_tokens": 419,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 419
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "hook_events_in_stream": [
+  "hook_response SessionStart",
+  "hook_response Stop",
+  "hook_response UserPromptSubmit",
+  "hook_started SessionStart",
+  "hook_started Stop",
+  "hook_started UserPromptSubmit"
+ ],
+ "rc": 0,
+ "wall_s": 186.9
+}

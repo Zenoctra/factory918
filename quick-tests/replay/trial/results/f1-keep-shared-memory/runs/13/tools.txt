@@ -1,0 +1,12 @@
+Bash: {"command": "cat /private/tmp/qt-replay/f1-keep/memory/budget-never-binds-unasked.md 2>&1 | head -20; ls /private/tmp/qt-replay/f1-keep/scratchpad/152-answers-round1.md"}
+  -> error: Exit code 1
+---
+name: budget-never-binds-unasked
+description: "Token and wall-clock budgets never shape process in safe; in eco and Let It Rip they reach a brief only after Manuel says how binding they are; when in doubt, leave them out"
+metadata:
+  node_type: memory
+  type: feedback
+  originSession
+Bash: {"command": "S=\"/private/tmp/qr-6f38dc75/claude-501/-private-tmp-qt-replay-f1-keep-repo/46efec76-de9e-4c35-bf66-bd97ae262927/scratchpad\"; mkdir -p \"$S\"; cat > \"$S/c1.md\" <<'EOF'\nManuel's answers to the first round on this ticket, 2026-09-30, word for word. The questions were asked after reading [the research note](https://github.com/Zenoctra/factory918/blob/research/wording-and-reader-context/docs/research/wording-and-reader-context.md). In short: Q1 asked what makes a rule binding and who can make it bind; Q2 how the writer passes on what it knows about the route; Q3 what happens to ru
+  -> error: Permission to use Bash with command S="/private/tmp/qr-6f38dc75/claude-501/-private-tmp-qt-replay-f1-keep-repo/46efec76-de9e-4c35-bf66-bd97ae262927/scratchpad"; mkdir -p "$S"; cat > "$S/c1.md" <<'EOF'
+Manuel's answers to the first round on this ticket, 2026-09-30, word for word. The questions were a

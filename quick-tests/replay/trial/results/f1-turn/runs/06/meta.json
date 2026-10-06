@@ -1,0 +1,63 @@
+{
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 2,
+ "duration_ms": 86563,
+ "total_cost_usd": 1.0435424,
+ "terminal_reason": "completed",
+ "stop_reason": "end_turn",
+ "result": "Here's where this round landed. I'll post your answers word for word on the ticket when it closes, as with the earlier rounds.\n\n**Q2 (b), plus your point about terms that pull related ideas with them.** You compared it to naming the right micro-genre for a song instead of listing BPM and guitar styl",
+ "permission_denials": [
+  {
+   "tool": "Bash",
+   "input": "{\"command\": \"cd \\\"/private/tmp/qt-replay/f1-turn/runs/06/w/repo\\\" && grep -n -i '\\\\beco\\\\b\\\\|tier' docs/knowledge/core/DECISIONS.md | head -8; gh issue list --state all --search 'review in:title' --json number,title,state --limit 15; ls /private/tmp/qt-replay/f1-turn/runs/06/w/memory/; gh issue view 147 --json body --jq .body | grep -n -i 'wall\\\\|budget\\\\|mode' | head\"}"
+  }
+ ],
+ "refused_github": 1,
+ "usage": {
+  "input_tokens": 3,
+  "cache_creation_input_tokens": 106852,
+  "cache_read_input_tokens": 196972,
+  "output_tokens": 7466,
+  "output_tokens_details": {
+   "thinking_tokens": 4717
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 106852,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "not_available",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 4150,
+    "cache_read_input_tokens": 150155,
+    "cache_creation_input_tokens": 3514,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 3514
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "hook_events_in_stream": [
+  "hook_response PreToolUse",
+  "hook_response SessionStart",
+  "hook_response Stop",
+  "hook_response UserPromptSubmit",
+  "hook_started PreToolUse",
+  "hook_started SessionStart",
+  "hook_started Stop",
+  "hook_started UserPromptSubmit"
+ ],
+ "rc": 0,
+ "wall_s": 88.0
+}

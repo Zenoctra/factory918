@@ -58,7 +58,7 @@ for arm in arms:
     for run in sorted(src.glob("runs/[0-9]*")):
         out = dst / "runs" / run.name
         out.mkdir(parents=True, exist_ok=True)
-        for name in ("all-text.md", "tools.txt", "meta.json"):
+        for name in ("all-text.md", "tools.txt", "meta.json", "repo-changes.txt"):
             if (run / name).exists():
                 shutil.copyfile(run / name, out / name)
     first = sorted(src.glob("runs/*/api/0001-req.json"))

@@ -1,0 +1,59 @@
+{
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 3,
+ "duration_ms": 55671,
+ "total_cost_usd": 0.2195266,
+ "terminal_reason": "completed",
+ "stop_reason": "end_turn",
+ "result": "The background search finished. Your round-one answers are still outstanding, so I won't build anything on them yet. Three findings change Q1 and Q2, and the revised versions are below. Q3 to Q5 stand as I wrote them.\n\n**1. The old \"safe\" categories hid a harmful rule.** The run-2 constraints audit ",
+ "permission_denials": [],
+ "usage": {
+  "input_tokens": 5,
+  "cache_creation_input_tokens": 7186,
+  "cache_read_input_tokens": 325793,
+  "output_tokens": 4843,
+  "output_tokens_details": {
+   "thinking_tokens": 2691
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 7186,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "not_available",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 3290,
+    "cache_read_input_tokens": 110617,
+    "cache_creation_input_tokens": 3956,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 3956
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "hook_events_in_stream": [
+  "hook_response PostToolUse",
+  "hook_response PreToolUse",
+  "hook_response SessionStart",
+  "hook_response Stop",
+  "hook_response UserPromptSubmit",
+  "hook_started PostToolUse",
+  "hook_started PreToolUse",
+  "hook_started SessionStart",
+  "hook_started Stop",
+  "hook_started UserPromptSubmit"
+ ],
+ "rc": 0,
+ "wall_s": 56.8
+}

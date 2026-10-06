@@ -1,0 +1,2 @@
+Bash: {"command": "cd \"/private/tmp/qt-replay/f2-reach-top/repo\" && git show research/wording-and-reader-context:docs/research/wording-and-reader-context.md | head -12; gh issue view 154 --json comments,state --jq '.state, (.comments[]|.body[0:300])'"}
+  -> error: Permission to use Bash with command cd "/private/tmp/qt-replay/f2-reach-top/repo" && git show research/wording-and-reader-context:docs/research/wording-and-reader-context.md | head -12; gh issue view 154 --json comments,state --jq '.state, (.comments[]|.body[0:300])' has been denied.

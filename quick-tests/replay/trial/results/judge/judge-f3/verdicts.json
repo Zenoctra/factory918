@@ -1,0 +1,562 @@
+[
+ {
+  "run": "f3-keep/runs/09",
+  "folder": "f3-keep",
+  "criterion": "contradiction",
+  "answer": "no",
+  "evidence": "No content test: \"'Binding' stays, but it only says who decides whether the rule may be broken... It no longer sorts rules by content.\""
+ },
+ {
+  "run": "f3-keep/runs/09",
+  "folder": "f3-keep",
+  "criterion": "abstract",
+  "answer": "yes",
+  "evidence": "Q1 cites ticket.md:10 and the 150-line cap only as examples of rules with and without reasons. No rule gets a binds / does-not-bind verdict."
+ },
+ {
+  "run": "f3-keep/runs/08",
+  "folder": "f3-keep",
+  "criterion": "contradiction",
+  "answer": "no",
+  "evidence": "The test is ownership: \"Both are rules about the route, both are yours\". This is consistent."
+ },
+ {
+  "run": "f3-keep/runs/08",
+  "folder": "f3-keep",
+  "criterion": "abstract",
+  "answer": "yes",
+  "evidence": "Q2 applies the test to only two concrete rules, the trail review and the delegation rule. \"Find the bugs in this diff\" illustrates how wide a goal is, not a binding verdict."
+ },
+ {
+  "run": "f3-drop/runs/10",
+  "folder": "f3-drop",
+  "criterion": "contradiction",
+  "answer": "no",
+  "evidence": "\"A rule on the route is binding when its owner set it and its reason is written next to it.\""
+ },
+ {
+  "run": "f3-drop/runs/10",
+  "folder": "f3-drop",
+  "criterion": "abstract",
+  "answer": "no",
+  "evidence": "Verdicts with reasons: trail review and delegation (set by you, with evidence); \"never an arena\" and \"Read no brief and no diff\" are \"defects until someone writes down why\"."
+ },
+ {
+  "run": "f3-keep/runs/01",
+  "folder": "f3-keep",
+  "criterion": "contradiction",
+  "answer": "no",
+  "evidence": "The test is authority, or \"A rule you set because real runs showed it was needed\". This covers the trail review and delegation consistently."
+ },
+ {
+  "run": "f3-keep/runs/01",
+  "folder": "f3-keep",
+  "criterion": "abstract",
+  "answer": "no",
+  "evidence": "Applied to merging, other subagents' files, ticket scope, trail review (3 of 3) and delegation (hook), with reasons, plus the reviewer briefs as the failing case."
+ },
+ {
+  "run": "f3-keep/runs/20",
+  "folder": "f3-keep",
+  "criterion": "contradiction",
+  "answer": "no",
+  "evidence": "\"Only authority binds... It binds because its owner set it. The delegation rule binds because you set it.\" Nothing says a route rule cannot bind."
+ },
+ {
+  "run": "f3-keep/runs/20",
+  "folder": "f3-keep",
+  "criterion": "abstract",
+  "answer": "no",
+  "evidence": "Delegation binds (you set it); ticket scope limits changes but not reading; \"the `spec:` citation gate... can't bind\"."
+ },
+ {
+  "run": "f3-keep/runs/12",
+  "folder": "f3-keep",
+  "criterion": "contradiction",
+  "answer": "no",
+  "evidence": "The test is about the reason lying outside the reader's view, plus an owner. It says \"the test still keeps some rules about the route.\""
+ },
+ {
+  "run": "f3-keep/runs/12",
+  "folder": "f3-keep",
+  "criterion": "abstract",
+  "answer": "no",
+  "evidence": "Seven cases with verdicts: \"Never push to main\" binding, \"Read only the diff\" not binding, 150-line cap \"can't be binding\", and others."
+ },
+ {
+  "run": "f3-drop/runs/07",
+  "folder": "f3-drop",
+  "criterion": "contradiction",
+  "answer": "no",
+  "evidence": "Option (a): \"A rule binds only when its owner made it binding.\" There is no content requirement."
+ },
+ {
+  "run": "f3-drop/runs/07",
+  "folder": "f3-drop",
+  "criterion": "abstract",
+  "answer": "yes",
+  "evidence": "Only two ownership verdicts: \"Delegation is your rule\" and \"'Read only the brief' was added by subagents\". The trail review is used to test a different test, not given a binding verdict."
+ },
+ {
+  "run": "f3-turn/runs/07",
+  "folder": "f3-turn",
+  "criterion": "contradiction",
+  "answer": "yes",
+  "evidence": "The test is \"A rule binds when it states the goal or a limit of authority, and its owner set it\". Yet \"Your two owner-set rules still pass\" includes the mandatory trail review, a route rule, with nothing showing it states a goal or authority."
+ },
+ {
+  "run": "f3-turn/runs/07",
+  "folder": "f3-turn",
+  "criterion": "abstract",
+  "answer": "no",
+  "evidence": "Cases with verdicts: the blind-review rule binds, delegation and trail review pass, the `spec:` gate is a proxy that yields."
+ },
+ {
+  "run": "f3-turn/runs/10",
+  "folder": "f3-turn",
+  "criterion": "contradiction",
+  "answer": "no",
+  "evidence": "Q1 limits binding to purpose, end state and authority. The trail review and delegation are noted in Q7 only as an observation, never declared binding by ownership."
+ },
+ {
+  "run": "f3-turn/runs/10",
+  "folder": "f3-turn",
+  "criterion": "abstract",
+  "answer": "yes",
+  "evidence": "Q1 gives options (a), (b) and (c) with no rules from the factory run through the test."
+ },
+ {
+  "run": "f3-keep/runs/14",
+  "folder": "f3-keep",
+  "criterion": "contradiction",
+  "answer": "no",
+  "evidence": "Reconciled explicitly: \"An owner may also bind a route rule, as you did with delegation, but then the rule carries its reason.\""
+ },
+ {
+  "run": "f3-keep/runs/14",
+  "folder": "f3-keep",
+  "criterion": "abstract",
+  "answer": "no",
+  "evidence": "Four cases with verdicts, plus \"'Don't read round one's findings' passes. 'Read only the diff' fails\"."
+ },
+ {
+  "run": "f3-keep/runs/06",
+  "folder": "f3-keep",
+  "criterion": "contradiction",
+  "answer": "no",
+  "evidence": "The test is about action versus looking/reporting, not about content. The delegation hook is handled as a hard case with a reason."
+ },
+ {
+  "run": "f3-keep/runs/06",
+  "folder": "f3-keep",
+  "criterion": "abstract",
+  "answer": "no",
+  "evidence": "\"Kept: That is the scope...\", \"Goes: 'Read only the diff'...\", \"Goes as a gate: the `spec:` citation gate\"."
+ },
+ {
+  "run": "f3-keep/runs/19",
+  "folder": "f3-keep",
+  "criterion": "contradiction",
+  "answer": "no",
+  "evidence": "\"A rule is closed only when its owner closes it and writes down why.\""
+ },
+ {
+  "run": "f3-keep/runs/19",
+  "folder": "f3-keep",
+  "criterion": "abstract",
+  "answer": "no",
+  "evidence": "Four cases: trail review, delegation rule, \"Read nothing beyond this brief\", \"Never an arena\", each with its status and reason."
+ },
+ {
+  "run": "f3-turn/runs/06",
+  "folder": "f3-turn",
+  "criterion": "contradiction",
+  "answer": "no",
+  "evidence": "\"Ownership decides what is binding\". Delegation is binding because you set it. This is consistent."
+ },
+ {
+  "run": "f3-turn/runs/06",
+  "folder": "f3-turn",
+  "criterion": "abstract",
+  "answer": "yes",
+  "evidence": "Only two test cases: \"The delegation rule\" and \"'Read only the diff.'\""
+ },
+ {
+  "run": "f3-drop/runs/08",
+  "folder": "f3-drop",
+  "criterion": "contradiction",
+  "answer": "no",
+  "evidence": "The recommendation is to sort by authority, with no content requirement."
+ },
+ {
+  "run": "f3-drop/runs/08",
+  "folder": "f3-drop",
+  "criterion": "abstract",
+  "answer": "yes",
+  "evidence": "Q1 mentions that the trail review and delegation hook worked, but no rules are given binding verdicts."
+ },
+ {
+  "run": "f3-keep/runs/02",
+  "folder": "f3-keep",
+  "criterion": "contradiction",
+  "answer": "no",
+  "evidence": "(b) authority and reason; the trail review is \"Binding under (b), though it bounds the route.\""
+ },
+ {
+  "run": "f3-keep/runs/02",
+  "folder": "f3-keep",
+  "criterion": "abstract",
+  "answer": "no",
+  "evidence": "Cases: git guard binding, trail review binding, 150-line cap \"stops binding\", \"Read no brief and no diff\" \"doesn't bind them\"."
+ },
+ {
+  "run": "f3-turn/runs/05",
+  "folder": "f3-turn",
+  "criterion": "contradiction",
+  "answer": "yes",
+  "evidence": "(a): \"A rule may bind only if it states the goal, what done means, or a decision that belongs to someone other than the reader\". Then \"the delegation rule and the mandatory trail review bind because you set them and had evidence for them.\""
+ },
+ {
+  "run": "f3-turn/runs/05",
+  "folder": "f3-turn",
+  "criterion": "abstract",
+  "answer": "no",
+  "evidence": "Three verdicts: delegation binds, trail review binds, \"'Read only the diff' doesn't bind.\""
+ },
+ {
+  "run": "f3-drop/runs/03",
+  "folder": "f3-drop",
+  "criterion": "contradiction",
+  "answer": "no",
+  "evidence": "\"Binding comes from authority, not from what the rule is about.\""
+ },
+ {
+  "run": "f3-drop/runs/03",
+  "folder": "f3-drop",
+  "criterion": "abstract",
+  "answer": "yes",
+  "evidence": "\"Two test cases\": the delegation rule and the trail review. There is no third."
+ },
+ {
+  "run": "f3-keep/runs/07",
+  "folder": "f3-keep",
+  "criterion": "contradiction",
+  "answer": "no",
+  "evidence": "\"The delegation rule binds under this test because it limits authority and you own it.\" This fits the stated test."
+ },
+ {
+  "run": "f3-keep/runs/07",
+  "folder": "f3-keep",
+  "criterion": "abstract",
+  "answer": "no",
+  "evidence": "The `spec:` gate is evidence and does not bind; P109 \"a prediction, not a constraint\"; delegation binds."
+ },
+ {
+  "run": "f3-turn/runs/08",
+  "folder": "f3-turn",
+  "criterion": "contradiction",
+  "answer": "no",
+  "evidence": "The task-plus-owner test. The reply never claims an owner-set route rule binds."
+ },
+ {
+  "run": "f3-turn/runs/08",
+  "folder": "f3-turn",
+  "criterion": "abstract",
+  "answer": "yes",
+  "evidence": "Only \"never an arena\" and the 150-line cap are mentioned (\"can't stay as they are\"), with no binding verdicts."
+ },
+ {
+  "run": "f3-turn/runs/02",
+  "folder": "f3-turn",
+  "criterion": "contradiction",
+  "answer": "no",
+  "evidence": "There are two explicit cases, the second being \"You set it, with a stated reason\". The trail review \"binds only because you set it\"."
+ },
+ {
+  "run": "f3-turn/runs/02",
+  "folder": "f3-turn",
+  "criterion": "abstract",
+  "answer": "no",
+  "evidence": "Five cases with verdicts: blind rounds, `spec:` gate, never push to main, delegation, trail review."
+ },
+ {
+  "run": "f3-drop/runs/04",
+  "folder": "f3-drop",
+  "criterion": "contradiction",
+  "answer": "no",
+  "evidence": "The top tier explicitly includes \"rules the owner of that authority marked top tier\". Delegation fits this."
+ },
+ {
+  "run": "f3-drop/runs/04",
+  "folder": "f3-drop",
+  "criterion": "abstract",
+  "answer": "yes",
+  "evidence": "Only the delegation rule gets a concrete verdict; the other examples are categories."
+ },
+ {
+  "run": "f3-drop/runs/06",
+  "folder": "f3-drop",
+  "criterion": "contradiction",
+  "answer": "no",
+  "evidence": "The test is about saying where the reader is going or marking authority. It does not claim route rules bind by ownership."
+ },
+ {
+  "run": "f3-drop/runs/06",
+  "folder": "f3-drop",
+  "criterion": "abstract",
+  "answer": "no",
+  "evidence": "Cases: \"Only report high-severity issues\", the `spec:` gate, \"Review this diff against the ticket\", \"Never push to main\", each with a verdict."
+ },
+ {
+  "run": "f3-drop/runs/05",
+  "folder": "f3-drop",
+  "criterion": "contradiction",
+  "answer": "no",
+  "evidence": "\"A rule binds only when its owner marks it as binding and gives the reason.\""
+ },
+ {
+  "run": "f3-drop/runs/05",
+  "folder": "f3-drop",
+  "criterion": "abstract",
+  "answer": "no",
+  "evidence": "Delegation binding, never push binding, `spec:` gate a default, the ledger case."
+ },
+ {
+  "run": "f3-keep/runs/18",
+  "folder": "f3-keep",
+  "criterion": "contradiction",
+  "answer": "no",
+  "evidence": "(a) is by owner; trail review and delegation \"fit this: you set both\"."
+ },
+ {
+  "run": "f3-keep/runs/18",
+  "folder": "f3-keep",
+  "criterion": "abstract",
+  "answer": "yes",
+  "evidence": "There is no worked list of verdicts. Only the trail review and delegation are noted as fitting, plus a sample wording about merging."
+ },
+ {
+  "run": "f3-turn/runs/03",
+  "folder": "f3-turn",
+  "criterion": "contradiction",
+  "answer": "no",
+  "evidence": "\"Ownership, not content.\""
+ },
+ {
+  "run": "f3-turn/runs/03",
+  "folder": "f3-turn",
+  "criterion": "abstract",
+  "answer": "yes",
+  "evidence": "Mentions the record of the trail review and delegation as evidence, but gives no verdicts applying the test to three rules."
+ },
+ {
+  "run": "f3-keep/runs/04",
+  "folder": "f3-keep",
+  "criterion": "contradiction",
+  "answer": "no",
+  "evidence": "Delegation counts as a decision made by its holder, which is consistent with the decision/fact/prediction test."
+ },
+ {
+  "run": "f3-keep/runs/04",
+  "folder": "f3-keep",
+  "criterion": "abstract",
+  "answer": "no",
+  "evidence": "\"Read only the diff\", \"report only high severity\" never bind; \"You set the delegation rule\" binds; the guard is a fact."
+ },
+ {
+  "run": "f3-turn/runs/04",
+  "folder": "f3-turn",
+  "criterion": "contradiction",
+  "answer": "no",
+  "evidence": "The test is goal or authority plus owner. It never claims an owner-set route rule binds."
+ },
+ {
+  "run": "f3-turn/runs/04",
+  "folder": "f3-turn",
+  "criterion": "abstract",
+  "answer": "no",
+  "evidence": "Verdicts for the `spec:` gate and P109 \"at most N lanes\" (not binding), and \"Never push to main\" becomes \"Manuel merges\"."
+ },
+ {
+  "run": "f3-keep/runs/17",
+  "folder": "f3-keep",
+  "criterion": "contradiction",
+  "answer": "yes",
+  "evidence": "\"two things bind: the purpose; whose decision something is\" and \"Everything else is offered\". Yet \"The delegation rule is route, and it binds because you set it.\""
+ },
+ {
+  "run": "f3-keep/runs/17",
+  "folder": "f3-keep",
+  "criterion": "abstract",
+  "answer": "no",
+  "evidence": "Three test cases with verdicts: delegation, vendored playbook, a rule a subagent invents."
+ },
+ {
+  "run": "f3-keep/runs/11",
+  "folder": "f3-keep",
+  "criterion": "contradiction",
+  "answer": "no",
+  "evidence": "The test is that the outcome can't exist without the rule, plus an owner. Route rules that pass are explained by that test."
+ },
+ {
+  "run": "f3-keep/runs/11",
+  "folder": "f3-keep",
+  "criterion": "abstract",
+  "answer": "no",
+  "evidence": "\"'Form your view...' passes\", \"'Read only the diff' fails\", \"'Report only hard bugs' fails\"."
+ },
+ {
+  "run": "f3-turn/runs/01",
+  "folder": "f3-turn",
+  "criterion": "contradiction",
+  "answer": "no",
+  "evidence": "The test is a decision belonging to someone other than the reader, and the owner binds. Delegation binds because you set it, which is consistent."
+ },
+ {
+  "run": "f3-turn/runs/01",
+  "folder": "f3-turn",
+  "criterion": "abstract",
+  "answer": "yes",
+  "evidence": "Only delegation gets a concrete verdict; merges, files and scope are given as categories."
+ },
+ {
+  "run": "f3-keep/runs/03",
+  "folder": "f3-keep",
+  "criterion": "contradiction",
+  "answer": "no",
+  "evidence": "\"a rule binds when the decision isn't the reader's to make... delegation and the trail review, bind because you own them\". This is consistent with an authority test."
+ },
+ {
+  "run": "f3-keep/runs/03",
+  "folder": "f3-keep",
+  "criterion": "abstract",
+  "answer": "no",
+  "evidence": "Verdicts for merge, another subagent's file, ticket scope, delegation and trail review, with reasons."
+ },
+ {
+  "run": "f3-drop/runs/09",
+  "folder": "f3-drop",
+  "criterion": "contradiction",
+  "answer": "yes",
+  "evidence": "The test requires \"It's about the goal or about authority\" AND owner. Yet \"The delegation rule and the mandatory trail review are rules about the route... they stay binding because you set them\"."
+ },
+ {
+  "run": "f3-drop/runs/09",
+  "folder": "f3-drop",
+  "criterion": "abstract",
+  "answer": "no",
+  "evidence": "Delegation and trail review binding, \"'Read only the diff' fails both conditions.\""
+ },
+ {
+  "run": "f3-keep/runs/10",
+  "folder": "f3-keep",
+  "criterion": "contradiction",
+  "answer": "yes",
+  "evidence": "\"a rule is binding only when it states what's wanted, or a decision that belongs to someone other than the reader\". Yet \"The mandatory trail review is a route rule... It's binding because it's yours.\""
+ },
+ {
+  "run": "f3-keep/runs/10",
+  "folder": "f3-keep",
+  "criterion": "abstract",
+  "answer": "yes",
+  "evidence": "Only two test cases: the trail review and \"Read the tier in two plain commands\"."
+ },
+ {
+  "run": "f3-turn/runs/09",
+  "folder": "f3-turn",
+  "criterion": "contradiction",
+  "answer": "no",
+  "evidence": "The guess-or-fact test explicitly lets a guess bind \"when the system's owner makes it binding deliberately\"."
+ },
+ {
+  "run": "f3-turn/runs/09",
+  "folder": "f3-turn",
+  "criterion": "abstract",
+  "answer": "no",
+  "evidence": "Seven cases with verdicts, for example \"Never push to main... Binding\", \"Read only the diff is a guess\"."
+ },
+ {
+  "run": "f3-keep/runs/15",
+  "folder": "f3-keep",
+  "criterion": "contradiction",
+  "answer": "no",
+  "evidence": "Binding by authority holder; there is no content test."
+ },
+ {
+  "run": "f3-keep/runs/15",
+  "folder": "f3-keep",
+  "criterion": "abstract",
+  "answer": "yes",
+  "evidence": "Q1 and Q2 give no verdicts for three concrete rules; only a general record of good and bad rules."
+ },
+ {
+  "run": "f3-keep/runs/13",
+  "folder": "f3-keep",
+  "criterion": "contradiction",
+  "answer": "no",
+  "evidence": "Reconciled explicitly: \"You can still bind the route. The delegation rule is an example. When you do, it's your authority being used\"."
+ },
+ {
+  "run": "f3-keep/runs/13",
+  "folder": "f3-keep",
+  "criterion": "abstract",
+  "answer": "yes",
+  "evidence": "No worked application of the test to three concrete rules with verdicts."
+ },
+ {
+  "run": "f3-keep/runs/05",
+  "folder": "f3-keep",
+  "criterion": "contradiction",
+  "answer": "no",
+  "evidence": "\"Keep ownership as the test\". There is no content requirement."
+ },
+ {
+  "run": "f3-keep/runs/05",
+  "folder": "f3-keep",
+  "criterion": "abstract",
+  "answer": "yes",
+  "evidence": "Q2 gives no concrete rules with binding verdicts; the trail review and delegation are cited only as evidence."
+ },
+ {
+  "run": "f3-drop/runs/01",
+  "folder": "f3-drop",
+  "criterion": "contradiction",
+  "answer": "yes",
+  "evidence": "\"A rule binds only if... it states the goal or a limit of someone's authority\". Yet the delegation rule is \"about the route, but you own it\" and is treated as binding."
+ },
+ {
+  "run": "f3-drop/runs/01",
+  "folder": "f3-drop",
+  "criterion": "abstract",
+  "answer": "yes",
+  "evidence": "Only two cases: \"Copy these files unchanged\" and the delegation rule."
+ },
+ {
+  "run": "f3-keep/runs/16",
+  "folder": "f3-keep",
+  "criterion": "contradiction",
+  "answer": "no",
+  "evidence": "\"the difference isn't what a rule is about. It's who designed it\". This is consistent with route rules binding."
+ },
+ {
+  "run": "f3-keep/runs/16",
+  "folder": "f3-keep",
+  "criterion": "abstract",
+  "answer": "no",
+  "evidence": "The trail review and delegation (yours, worked) set against \"Read no brief and no diff\" and the pstack wrapper (written by models, harmful)."
+ },
+ {
+  "run": "f3-drop/runs/02",
+  "folder": "f3-drop",
+  "criterion": "contradiction",
+  "answer": "no",
+  "evidence": "The knowledge-based test lets route rules pass on ownership and evidence. This is consistent."
+ },
+ {
+  "run": "f3-drop/runs/02",
+  "folder": "f3-drop",
+  "criterion": "abstract",
+  "answer": "no",
+  "evidence": "Seven cases with pass/fail and reasons, for example \"'Read only the diff.' It fails\", \"The delegation rule. It passes\"."
+ }
+]

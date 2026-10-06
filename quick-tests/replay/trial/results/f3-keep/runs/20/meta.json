@@ -1,0 +1,56 @@
+{
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 1,
+ "duration_ms": 174310,
+ "total_cost_usd": 0.36038700000000007,
+ "terminal_reason": "completed",
+ "stop_reason": "end_turn",
+ "result": "Yes. The research changes most of the round, and in two places it changes what I'd recommend. I've now read the whole note, [docs/research/wording-and-reader-context.md](https://github.com/Zenoctra/factory918/blob/research/wording-and-reader-context/docs/research/wording-and-reader-context.md); the ",
+ "permission_denials": [],
+ "refused_github": 0,
+ "usage": {
+  "input_tokens": 1,
+  "cache_creation_input_tokens": 419,
+  "cache_read_input_tokens": 144155,
+  "output_tokens": 16410,
+  "output_tokens_details": {
+   "thinking_tokens": 12841
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 419,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "not_available",
+  "iterations": [
+   {
+    "input_tokens": 1,
+    "output_tokens": 16410,
+    "cache_read_input_tokens": 144155,
+    "cache_creation_input_tokens": 419,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 419
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "hook_events_in_stream": [
+  "hook_response SessionStart",
+  "hook_response Stop",
+  "hook_response UserPromptSubmit",
+  "hook_started SessionStart",
+  "hook_started Stop",
+  "hook_started UserPromptSubmit"
+ ],
+ "rc": 0,
+ "wall_s": 175.5
+}

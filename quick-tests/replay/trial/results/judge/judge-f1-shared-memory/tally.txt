@@ -1,0 +1,3 @@
+f1-drop-shared-memory	anecdote-rule	yes=5 no=5 unclear=0
+f1-keep-shared-memory	anecdote-rule	yes=0 no=20 unclear=0
+f1-turn-shared-memory	anecdote-rule	yes=2 no=8 unclear=0

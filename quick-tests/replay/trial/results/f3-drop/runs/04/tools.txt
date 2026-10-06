@@ -1,0 +1,1 @@
+Bash: {"command": "cd \"/private/tmp/qt-replay/f3-drop/repo\" && sed -n '12,20p' template/AGENTS.md; echo ---; sed -n '21,24p;37p' docs/knowledge/core/PHILOSOPHY.md"}

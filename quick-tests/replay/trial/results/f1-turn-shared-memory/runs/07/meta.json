@@ -1,0 +1,65 @@
+{
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 7,
+ "duration_ms": 152532,
+ "total_cost_usd": 0.6032038000000001,
+ "terminal_reason": "completed",
+ "stop_reason": "end_turn",
+ "result": "Q2, Q3 and Q5 are settled, and I'm writing up round two now. On the record-keeping:\n\n- **Your budget rule (Q5)** was already in my memory, word for word as you set it: in `safe`, budget is only measured afterward; in `eco` and Let It Rip, you're asked how binding a budget is before any brief carries",
+ "permission_denials": [
+  {
+   "tool": "Bash",
+   "input": "{\"command\": \"cd \\\"/private/tmp/qt-replay/f1-turn/repo\\\" && echo '- [Dense terms over rule lists](dense-terms-over-rule-lists.md) \\u2014 fewer rules get followed as they grow; one precise term may carry many; test it first' >> /private/tmp/qt-replay/f1-turn/memory/MEMORY.md && gh issue comment 152 --body-file \\\"/private/tmp/qr-20d23a95/claude-501/-private-tmp-qt-replay-f1-turn-repo/83b918f9-09e1-4744-abe4-d4f07b8ac4f1/scratchpad/round1.md\\\"\"}"
+  }
+ ],
+ "refused_github": 1,
+ "usage": {
+  "input_tokens": 11,
+  "cache_creation_input_tokens": 15118,
+  "cache_read_input_tokens": 951679,
+  "output_tokens": 14594,
+  "output_tokens_details": {
+   "thinking_tokens": 8194
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 15118,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "not_available",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 4472,
+    "cache_read_input_tokens": 165383,
+    "cache_creation_input_tokens": 291,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 291
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "hook_events_in_stream": [
+  "hook_response PostToolUse",
+  "hook_response PreToolUse",
+  "hook_response SessionStart",
+  "hook_response Stop",
+  "hook_response UserPromptSubmit",
+  "hook_started PostToolUse",
+  "hook_started PreToolUse",
+  "hook_started SessionStart",
+  "hook_started Stop",
+  "hook_started UserPromptSubmit"
+ ],
+ "rc": 0,
+ "wall_s": 153.5
+}

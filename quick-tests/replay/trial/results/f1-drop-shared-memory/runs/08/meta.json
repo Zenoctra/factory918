@@ -1,0 +1,64 @@
+{
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 5,
+ "duration_ms": 163338,
+ "total_cost_usd": 0.5619062,
+ "terminal_reason": "completed",
+ "stop_reason": "end_turn",
+ "result": "I couldn't post your answers to the ticket because the permission was denied. They're saved word for word in [152-round1.md](/private/tmp/qr-8f208021/claude-501/-private-tmp-qt-replay-f1-drop-repo/9b61b783-7693-47e7-8fe1-b646e82ed37b/scratchpad/152-round1.md). I'll post them with the resolution, or ",
+ "permission_denials": [
+  {
+   "tool": "Bash",
+   "input": "{\"command\": \"cd \\\"/private/tmp/qt-replay/f1-drop/repo\\\" && gh issue comment 152 --body-file \\\"/private/tmp/qr-8f208021/claude-501/-private-tmp-qt-replay-f1-drop-repo/9b61b783-7693-47e7-8fe1-b646e82ed37b/scratchpad/152-round1.md\\\"; sed -n 60,70p template/AGENTS.md; sed -n 10,15p template/.agents/skills/poteto-mode/playbooks/ticket.md | cut -c1-400\"}"
+  }
+ ],
+ "usage": {
+  "input_tokens": 9,
+  "cache_creation_input_tokens": 10564,
+  "cache_read_input_tokens": 799891,
+  "output_tokens": 15869,
+  "output_tokens_details": {
+   "thinking_tokens": 9694
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 10564,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "not_available",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 6946,
+    "cache_read_input_tokens": 164362,
+    "cache_creation_input_tokens": 1069,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 1069
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "hook_events_in_stream": [
+  "hook_response PostToolUse",
+  "hook_response PreToolUse",
+  "hook_response SessionStart",
+  "hook_response Stop",
+  "hook_response UserPromptSubmit",
+  "hook_started PostToolUse",
+  "hook_started PreToolUse",
+  "hook_started SessionStart",
+  "hook_started Stop",
+  "hook_started UserPromptSubmit"
+ ],
+ "rc": 0,
+ "wall_s": 164.4
+}

@@ -1,0 +1,65 @@
+{
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 5,
+ "duration_ms": 81888,
+ "total_cost_usd": 0.3504918,
+ "terminal_reason": "completed",
+ "stop_reason": "end_turn",
+ "result": "I've recorded your answers. Your budget rule and the new binding test are already in my memory. I'll keep your words verbatim and post them on the ticket when it resolves, the same way the map's comments do.\n\nTwo things to pin before round two:\n\n- **One well-chosen term can do the work of a dozen ru",
+ "permission_denials": [
+  {
+   "tool": "Bash",
+   "input": "{\"command\": \"ls \\\"/private/tmp/qr-62c8486e/claude-501/-private-tmp-qt-replay-f1-keep-repo/ce5601a3-ee0a-406e-8edb-b72517457a88/scratchpad\\\" 2>&1; cd /private/tmp/qt-replay/f1-keep/repo && gh issue view 152 --json assignees,comments --jq '[.assignees[].login], (.comments|length)'\"}"
+  }
+ ],
+ "refused_github": 1,
+ "usage": {
+  "input_tokens": 9,
+  "cache_creation_input_tokens": 6463,
+  "cache_read_input_tokens": 792659,
+  "output_tokens": 7011,
+  "output_tokens_details": {
+   "thinking_tokens": 3736
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 6463,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "not_available",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 2639,
+    "cache_read_input_tokens": 161973,
+    "cache_creation_input_tokens": 405,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 405
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "hook_events_in_stream": [
+  "hook_response PostToolUse",
+  "hook_response PreToolUse",
+  "hook_response SessionStart",
+  "hook_response Stop",
+  "hook_response UserPromptSubmit",
+  "hook_started PostToolUse",
+  "hook_started PreToolUse",
+  "hook_started SessionStart",
+  "hook_started Stop",
+  "hook_started UserPromptSubmit"
+ ],
+ "rc": 0,
+ "wall_s": 82.8
+}

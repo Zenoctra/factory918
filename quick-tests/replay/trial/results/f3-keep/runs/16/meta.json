@@ -1,0 +1,56 @@
+{
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 1,
+ "duration_ms": 112744,
+ "total_cost_usd": 0.235799,
+ "terminal_reason": "completed",
+ "stop_reason": "end_turn",
+ "result": "Yes, the research changes the round. Three things move, and the rest gets better grounding. Section numbers below refer to [the research note](https://github.com/Zenoctra/factory918/blob/research/wording-and-reader-context/docs/research/wording-and-reader-context.md). Terms as before: the **goal** i",
+ "permission_denials": [],
+ "refused_github": 0,
+ "usage": {
+  "input_tokens": 1,
+  "cache_creation_input_tokens": 423,
+  "cache_read_input_tokens": 144155,
+  "output_tokens": 10179,
+  "output_tokens_details": {
+   "thinking_tokens": 6504
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 423,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "not_available",
+  "iterations": [
+   {
+    "input_tokens": 1,
+    "output_tokens": 10179,
+    "cache_read_input_tokens": 144155,
+    "cache_creation_input_tokens": 423,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 423
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "hook_events_in_stream": [
+  "hook_response SessionStart",
+  "hook_response Stop",
+  "hook_response UserPromptSubmit",
+  "hook_started SessionStart",
+  "hook_started Stop",
+  "hook_started UserPromptSubmit"
+ ],
+ "rc": 0,
+ "wall_s": 113.8
+}

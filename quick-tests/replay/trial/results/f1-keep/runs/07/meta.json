@@ -1,0 +1,65 @@
+{
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 5,
+ "duration_ms": 110880,
+ "total_cost_usd": 1.2178732,
+ "terminal_reason": "completed",
+ "stop_reason": "end_turn",
+ "result": "I tried to post your round-one answers word for word as a comment on the ticket, and the post was declined. I haven't retried. They're saved in a local file, and I'll put them in the resolution comment when the ticket closes, unless you'd rather I post them now.\n\n## What I took from your answers\n\n- ",
+ "permission_denials": [
+  {
+   "tool": "Bash",
+   "input": "{\"command\": \"cd \\\"/private/tmp/qt-replay/f1-keep/runs/07/w/repo\\\" && gh issue comment 152 --body-file \\\"/private/tmp/qr-243eaf2e/claude-501/-private-tmp-qt-replay-f1-keep-runs-07-w-repo/a4324f6a-5e20-40c4-a5a0-0b8129efc32e/scratchpad/c.md\\\"; git log --format='%h %ad %s' --date=short -S'spec_rule=' -- template/.agents/skills/spec-review/scripts/review-brief.sh | tail -2\"}"
+  }
+ ],
+ "refused_github": 1,
+ "usage": {
+  "input_tokens": 5,
+  "cache_creation_input_tokens": 116023,
+  "cache_read_input_tokens": 362346,
+  "output_tokens": 10860,
+  "output_tokens_details": {
+   "thinking_tokens": 5258
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 116023,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "not_available",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 4720,
+    "cache_read_input_tokens": 159963,
+    "cache_creation_input_tokens": 2877,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 2877
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "hook_events_in_stream": [
+  "hook_response PostToolUse",
+  "hook_response PreToolUse",
+  "hook_response SessionStart",
+  "hook_response Stop",
+  "hook_response UserPromptSubmit",
+  "hook_started PostToolUse",
+  "hook_started PreToolUse",
+  "hook_started SessionStart",
+  "hook_started Stop",
+  "hook_started UserPromptSubmit"
+ ],
+ "rc": 0,
+ "wall_s": 112.3
+}

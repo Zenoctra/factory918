@@ -1,0 +1,55 @@
+{
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 1,
+ "duration_ms": 188456,
+ "total_cost_usd": 1.1413074,
+ "terminal_reason": "completed",
+ "stop_reason": "end_turn",
+ "result": "Yes, the research changes round one. Four things move, and I'd also change how I ask.\n\n**What changed:**\n\n1. **Round one treated \"what done means\" as a binding rule. It's where some of the worst limits hide.** People held to a measure start treating the measure as the goal, often without noticing. A",
+ "permission_denials": [],
+ "usage": {
+  "input_tokens": 1,
+  "cache_creation_input_tokens": 97765,
+  "cache_read_input_tokens": 46817,
+  "output_tokens": 17491,
+  "output_tokens_details": {
+   "thinking_tokens": 13414
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 97765,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "not_available",
+  "iterations": [
+   {
+    "input_tokens": 1,
+    "output_tokens": 17491,
+    "cache_read_input_tokens": 46817,
+    "cache_creation_input_tokens": 97765,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 97765
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "hook_events_in_stream": [
+  "hook_response SessionStart",
+  "hook_response Stop",
+  "hook_response UserPromptSubmit",
+  "hook_started SessionStart",
+  "hook_started Stop",
+  "hook_started UserPromptSubmit"
+ ],
+ "rc": 0,
+ "wall_s": 189.9
+}

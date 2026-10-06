@@ -1,0 +1,65 @@
+{
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 4,
+ "duration_ms": 106379,
+ "total_cost_usd": 0.3519526,
+ "terminal_reason": "completed",
+ "stop_reason": "end_turn",
+ "result": "Q2 and Q5 are settled. Your budget rule is saved as a standing memory so it applies beyond this map. I've kept all your answers word for word, ready for this ticket's resolution comment. Before the next questions, here's Q1 again in plainer terms, since round two builds on it.\n\n## Q1 in practice\n\nTh",
+ "permission_denials": [
+  {
+   "tool": "Bash",
+   "input": "{\"command\": \"cat /private/tmp/qt-replay/f1-keep/memory/budget-never-binds-unasked.md; ls /private/tmp/qt-replay/f1-keep/scratchpad/ 2>&1; cd /private/tmp/qt-replay/f1-keep/repo && gh issue view 152 --json assignees,state --jq '.state, [.assignees[].login]'\"}"
+  }
+ ],
+ "refused_github": 1,
+ "usage": {
+  "input_tokens": 7,
+  "cache_creation_input_tokens": 4993,
+  "cache_read_input_tokens": 628603,
+  "output_tokens": 9313,
+  "output_tokens_details": {
+   "thinking_tokens": 4484
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 4993,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "not_available",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 5580,
+    "cache_read_input_tokens": 158520,
+    "cache_creation_input_tokens": 2388,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 2388
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "hook_events_in_stream": [
+  "hook_response PostToolUse",
+  "hook_response PreToolUse",
+  "hook_response SessionStart",
+  "hook_response Stop",
+  "hook_response UserPromptSubmit",
+  "hook_started PostToolUse",
+  "hook_started PreToolUse",
+  "hook_started SessionStart",
+  "hook_started Stop",
+  "hook_started UserPromptSubmit"
+ ],
+ "rc": 0,
+ "wall_s": 107.3
+}

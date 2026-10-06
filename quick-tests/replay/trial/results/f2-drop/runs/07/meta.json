@@ -1,0 +1,62 @@
+{
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 2,
+ "duration_ms": 32771,
+ "total_cost_usd": 0.1036578,
+ "terminal_reason": "completed",
+ "stop_reason": "end_turn",
+ "result": "The background search finished. You haven't answered round one yet, and three of its findings change the questions, so here are the changes before you answer.\n\n**1. The factory has five ways of departing from a rule, and they don't agree with each other.** This replaces Q3 as I wrote it.\n- **Sign-of",
+ "permission_denials": [
+  {
+   "tool": "Bash",
+   "input": "{\"command\": \"cd \\\"/private/tmp/qt-replay/f2-drop/repo\\\" && git show research/wording-and-reader-context:docs/research/wording-and-reader-context.md | head -15; gh issue view 154 --json state,comments --jq '.state, (.comments|length)'\"}"
+  }
+ ],
+ "usage": {
+  "input_tokens": 3,
+  "cache_creation_input_tokens": 1179,
+  "cache_read_input_tokens": 215069,
+  "output_tokens": 2560,
+  "output_tokens_details": {
+   "thinking_tokens": 747
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 1179,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "not_available",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 1895,
+    "cache_read_input_tokens": 107734,
+    "cache_creation_input_tokens": 780,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 780
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "hook_events_in_stream": [
+  "hook_response PreToolUse",
+  "hook_response SessionStart",
+  "hook_response Stop",
+  "hook_response UserPromptSubmit",
+  "hook_started PreToolUse",
+  "hook_started SessionStart",
+  "hook_started Stop",
+  "hook_started UserPromptSubmit"
+ ],
+ "rc": 0,
+ "wall_s": 34.0
+}

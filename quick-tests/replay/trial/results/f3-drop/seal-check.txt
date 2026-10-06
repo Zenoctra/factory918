@@ -1,0 +1,1 @@
+2026-10-05T20:06:24 runs 1..10: new files elsewhere under ~/.claude (Claude Code's bookkeeping, or a live session's): backups/.claude.json.backup.1791248220177, backups/.claude.json.backup.1791248296010, backups/.claude.json.backup.1791248384048, backups/.claude.json.backup.1791248460369, backups/.claude.json.backup.1791248602827

@@ -1,0 +1,65 @@
+{
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 4,
+ "duration_ms": 89009,
+ "total_cost_usd": 0.3317724,
+ "terminal_reason": "completed",
+ "stop_reason": "end_turn",
+ "result": "I couldn't use GitHub just now, because the `gh` command was denied this session. Your answers are saved word for word in a scratch file, and I'll post them on the ticket once `gh` is allowed again. Two of your points also belong on the map, and I'll add them then:\n\n- **A review system of the factor",
+ "permission_denials": [
+  {
+   "tool": "Bash",
+   "input": "{\"command\": \"gh issue view 152 --json comments,assignees --jq '.assignees[].login, (.comments[]|.createdAt+\\\" \\\"+.body[0:200])'; gh issue view 146 --json body --jq .body | sed -n '/## Not yet specified/,/## Out of scope/p'\"}"
+  }
+ ],
+ "refused_github": 1,
+ "usage": {
+  "input_tokens": 7,
+  "cache_creation_input_tokens": 4918,
+  "cache_read_input_tokens": 629102,
+  "output_tokens": 8329,
+  "output_tokens_details": {
+   "thinking_tokens": 3419
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 4918,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "not_available",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 4806,
+    "cache_read_input_tokens": 158643,
+    "cache_creation_input_tokens": 2190,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 2190
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "hook_events_in_stream": [
+  "hook_response PostToolUse",
+  "hook_response PreToolUse",
+  "hook_response SessionStart",
+  "hook_response Stop",
+  "hook_response UserPromptSubmit",
+  "hook_started PostToolUse",
+  "hook_started PreToolUse",
+  "hook_started SessionStart",
+  "hook_started Stop",
+  "hook_started UserPromptSubmit"
+ ],
+ "rc": 0,
+ "wall_s": 90.2
+}

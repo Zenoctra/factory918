@@ -1,0 +1,59 @@
+{
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 2,
+ "duration_ms": 170479,
+ "total_cost_usd": 0.44316180000000005,
+ "terminal_reason": "completed",
+ "stop_reason": "end_turn",
+ "result": "Yes, the research changes them. My first round treated the problem as sorting rules into allowed and not allowed. The research says the bigger problem is how any rule lands on the reader. Findings are from [the research note](https://github.com/Zenoctra/factory918/blob/research/wording-and-reader-co",
+ "permission_denials": [],
+ "usage": {
+  "input_tokens": 3,
+  "cache_creation_input_tokens": 9328,
+  "cache_read_input_tokens": 288729,
+  "output_tokens": 15539,
+  "output_tokens_details": {
+   "thinking_tokens": 12019
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 9328,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "not_available",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 7694,
+    "cache_read_input_tokens": 144571,
+    "cache_creation_input_tokens": 8915,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 8915
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "hook_events_in_stream": [
+  "hook_response PostToolUse",
+  "hook_response PreToolUse",
+  "hook_response SessionStart",
+  "hook_response Stop",
+  "hook_response UserPromptSubmit",
+  "hook_started PostToolUse",
+  "hook_started PreToolUse",
+  "hook_started SessionStart",
+  "hook_started Stop",
+  "hook_started UserPromptSubmit"
+ ],
+ "rc": 0,
+ "wall_s": 171.7
+}

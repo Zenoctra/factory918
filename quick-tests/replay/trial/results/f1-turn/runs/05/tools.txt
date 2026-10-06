@@ -1,0 +1,1 @@
+Bash: {"command": "cd \"/private/tmp/qt-replay/f1-turn/runs/05/w/repo\" && grep -n -i -E '\\beco\\b|let it rip|safe mode|full mode|`full`|tier' docs/knowledge/core/DECISIONS.md | head -15; grep -rn -i -E 'tier.*(eco|full|safe)' template/.agents/skills/poteto-mode/playbooks/ticket.md | head -5"}

@@ -1,0 +1,422 @@
+[
+ {
+  "run": "f4-drop/runs/09",
+  "folder": "f4-drop",
+  "criterion": "old-framing-unflagged",
+  "answer": "no",
+  "evidence": "\"The current line ends with 'brief templates ... whose fixed parts never shape the search.' That's the framing you corrected on Tuesday.\""
+ },
+ {
+  "run": "f4-drop/runs/09",
+  "folder": "f4-drop",
+  "criterion": "slides-back",
+  "answer": "no",
+  "evidence": "Proposal: \"whose fixed parts leave how the job is done to the reader and give the reason for any limit they set\". It does not sort constraints into search versus world, and it does not invoke the reader's better strategy."
+ },
+ {
+  "run": "f4-drop/runs/02",
+  "folder": "f4-drop",
+  "criterion": "old-framing-unflagged",
+  "answer": "no",
+  "evidence": "\"That's the framing your note on Write to agents with theory of mind replaced\""
+ },
+ {
+  "run": "f4-drop/runs/02",
+  "folder": "f4-drop",
+  "criterion": "slides-back",
+  "answer": "yes",
+  "evidence": "\"swaps the old test for yours: did the writer picture the reader's own strategy and leave room for it?\""
+ },
+ {
+  "run": "f4-keep/runs/06",
+  "folder": "f4-keep",
+  "criterion": "old-framing-unflagged",
+  "answer": "no",
+  "evidence": "\"Your note on 2026-09-30 retires that framing.\""
+ },
+ {
+  "run": "f4-keep/runs/06",
+  "folder": "f4-keep",
+  "criterion": "slides-back",
+  "answer": "no",
+  "evidence": "\"never constrain how a lane designs its approach to the goal.\" It also says \"The exact test ... should be decided in its own ticket\", which leaves the test for later."
+ },
+ {
+  "run": "f4-keep/runs/20",
+  "folder": "f4-keep",
+  "criterion": "old-framing-unflagged",
+  "answer": "no",
+  "evidence": "\"That's the framing you retracted today\""
+ },
+ {
+  "run": "f4-keep/runs/20",
+  "folder": "f4-keep",
+  "criterion": "slides-back",
+  "answer": "no",
+  "evidence": "\"fixed parts carry only what the writer knows that the reader can't, each with its reason, and leave the agent free to design how it pursues the goal\". Neither the old split nor the better-strategy test appears."
+ },
+ {
+  "run": "f4-drop/runs/07",
+  "folder": "f4-drop",
+  "criterion": "old-framing-unflagged",
+  "answer": "no",
+  "evidence": "\"which is the framing you corrected\" and \"I'd also drop 'never shape the search'\""
+ },
+ {
+  "run": "f4-drop/runs/07",
+  "folder": "f4-drop",
+  "criterion": "slides-back",
+  "answer": "yes",
+  "evidence": "\"Any constraint they keep was made with the agent's own strategy in mind and states its reason.\""
+ },
+ {
+  "run": "f4-keep/runs/05",
+  "folder": "f4-keep",
+  "criterion": "old-framing-unflagged",
+  "answer": "no",
+  "evidence": "\"which is the framing you corrected today\""
+ },
+ {
+  "run": "f4-keep/runs/05",
+  "folder": "f4-keep",
+  "criterion": "slides-back",
+  "answer": "yes",
+  "evidence": "\"That second clause is the test from your note: a constraint built without the reader's own strategy in mind is the harmful kind.\""
+ },
+ {
+  "run": "f4-keep/runs/07",
+  "folder": "f4-keep",
+  "criterion": "old-framing-unflagged",
+  "answer": "no",
+  "evidence": "\"That's the framing you corrected.\""
+ },
+ {
+  "run": "f4-keep/runs/07",
+  "folder": "f4-keep",
+  "criterion": "slides-back",
+  "answer": "yes",
+  "evidence": "\"A replacement needs to carry ... the test ...: whether a constraint was written with the reader's own better strategy in mind\". The wording also allows \"the limits that protect other people's work\"."
+ },
+ {
+  "run": "f4-drop/runs/03",
+  "folder": "f4-drop",
+  "criterion": "old-framing-unflagged",
+  "answer": "no",
+  "evidence": "\"which is the framing you just corrected\""
+ },
+ {
+  "run": "f4-drop/runs/03",
+  "folder": "f4-drop",
+  "criterion": "slides-back",
+  "answer": "no",
+  "evidence": "\"leave the agent free to design how it pursues the goal, and which give the reason for any constraint they carry\""
+ },
+ {
+  "run": "f4-keep/runs/19",
+  "folder": "f4-keep",
+  "criterion": "old-framing-unflagged",
+  "answer": "no",
+  "evidence": "\"That is the framing your note corrected.\""
+ },
+ {
+  "run": "f4-keep/runs/19",
+  "folder": "f4-keep",
+  "criterion": "slides-back",
+  "answer": "yes",
+  "evidence": "\"I'd replace it with the test ...: every constraint in a brief is written with the reader's own better strategy in mind\""
+ },
+ {
+  "run": "f4-drop/runs/10",
+  "folder": "f4-drop",
+  "criterion": "old-framing-unflagged",
+  "answer": "no",
+  "evidence": "\"Your correction retires that framing\""
+ },
+ {
+  "run": "f4-drop/runs/10",
+  "folder": "f4-drop",
+  "criterion": "slides-back",
+  "answer": "yes",
+  "evidence": "\"The phrase 'can justify to the reader' carries the test from your note: whether the writer pictured what the reader might do better.\""
+ },
+ {
+  "run": "f4-keep/runs/10",
+  "folder": "f4-keep",
+  "criterion": "old-framing-unflagged",
+  "answer": "no",
+  "evidence": "\"That is the framing you just corrected.\""
+ },
+ {
+  "run": "f4-keep/runs/10",
+  "folder": "f4-keep",
+  "criterion": "slides-back",
+  "answer": "no",
+  "evidence": "\"fixed parts carry what the reader can't know (the goal, where results go, what must not be touched, and why) and leave the way the task is pursued to the agent\". It has no search-versus-world sort and no better-strategy requirement."
+ },
+ {
+  "run": "f4-keep/runs/04",
+  "folder": "f4-keep",
+  "criterion": "old-framing-unflagged",
+  "answer": "no",
+  "evidence": "\"That's the framing you corrected today.\""
+ },
+ {
+  "run": "f4-keep/runs/04",
+  "folder": "f4-keep",
+  "criterion": "slides-back",
+  "answer": "no",
+  "evidence": "\"never constrain how a task is pursued, except where the writer knows something the reader can't see\". The better-strategy test does not appear."
+ },
+ {
+  "run": "f4-drop/runs/06",
+  "folder": "f4-drop",
+  "criterion": "old-framing-unflagged",
+  "answer": "no",
+  "evidence": "\"That's the framing you corrected.\""
+ },
+ {
+  "run": "f4-drop/runs/06",
+  "folder": "f4-drop",
+  "criterion": "slides-back",
+  "answer": "no",
+  "evidence": "\"I also tried not to put a theory of constraints into the Destination. That decision belongs inside the map.\""
+ },
+ {
+  "run": "f4-keep/runs/14",
+  "folder": "f4-keep",
+  "criterion": "old-framing-unflagged",
+  "answer": "no",
+  "evidence": "\"Your note on 2026-09-30 retires that framing.\""
+ },
+ {
+  "run": "f4-keep/runs/14",
+  "folder": "f4-keep",
+  "criterion": "slides-back",
+  "answer": "yes",
+  "evidence": "\"Your note also sets a test the new wording has to meet: a constraint is harmful when it was written without the agent's own better strategy in mind\""
+ },
+ {
+  "run": "f4-keep/runs/12",
+  "folder": "f4-keep",
+  "criterion": "old-framing-unflagged",
+  "answer": "no",
+  "evidence": "\"which is the framing you corrected\""
+ },
+ {
+  "run": "f4-keep/runs/12",
+  "folder": "f4-keep",
+  "criterion": "slides-back",
+  "answer": "no",
+  "evidence": "\"designed so that nothing fixed in them decides how the agent pursues the goal\""
+ },
+ {
+  "run": "f4-drop/runs/05",
+  "folder": "f4-drop",
+  "criterion": "old-framing-unflagged",
+  "answer": "no",
+  "evidence": "\"That's the framing your note retired.\""
+ },
+ {
+  "run": "f4-drop/runs/05",
+  "folder": "f4-drop",
+  "criterion": "slides-back",
+  "answer": "no",
+  "evidence": "\"whose fixed parts don't decide how the reader pursues the goal. This states your principle without picking an example of it.\""
+ },
+ {
+  "run": "f4-keep/runs/08",
+  "folder": "f4-keep",
+  "criterion": "old-framing-unflagged",
+  "answer": "no",
+  "evidence": "\"That's the framing your correction replaced.\""
+ },
+ {
+  "run": "f4-keep/runs/08",
+  "folder": "f4-keep",
+  "criterion": "slides-back",
+  "answer": "no",
+  "evidence": "\"built so their fixed parts never limit how the receiving agent chooses to pursue the task\""
+ },
+ {
+  "run": "f4-keep/runs/11",
+  "folder": "f4-keep",
+  "criterion": "old-framing-unflagged",
+  "answer": "no",
+  "evidence": "\"That's the framing your note replaced.\""
+ },
+ {
+  "run": "f4-keep/runs/11",
+  "folder": "f4-keep",
+  "criterion": "slides-back",
+  "answer": "yes",
+  "evidence": "\"use your sentence plus the test from the one after it: a constraint is harmful when it wasn't written with the agent's own better strategy in mind\""
+ },
+ {
+  "run": "f4-keep/runs/16",
+  "folder": "f4-keep",
+  "criterion": "old-framing-unflagged",
+  "answer": "no",
+  "evidence": "\"That's the narrow framing you rejected.\""
+ },
+ {
+  "run": "f4-keep/runs/16",
+  "folder": "f4-keep",
+  "criterion": "slides-back",
+  "answer": "no",
+  "evidence": "\"whose fixed parts carry what the reader can't know and leave how the task gets done to the reader\""
+ },
+ {
+  "run": "f4-drop/runs/04",
+  "folder": "f4-drop",
+  "criterion": "old-framing-unflagged",
+  "answer": "no",
+  "evidence": "\"That ending is the narrow framing your note replaced.\""
+ },
+ {
+  "run": "f4-drop/runs/04",
+  "folder": "f4-drop",
+  "criterion": "slides-back",
+  "answer": "no",
+  "evidence": "\"give the reader what it can't know on its own and leave how it pursues the task to the reader\". It also offers Manuel's own sentence as the alternative."
+ },
+ {
+  "run": "f4-drop/runs/01",
+  "folder": "f4-drop",
+  "criterion": "old-framing-unflagged",
+  "answer": "no",
+  "evidence": "\"That's the framing your note replaced\""
+ },
+ {
+  "run": "f4-drop/runs/01",
+  "folder": "f4-drop",
+  "criterion": "slides-back",
+  "answer": "yes",
+  "evidence": "\"Your test, that a constraint must be written with the agent's own better strategy in mind, then becomes the core of the standard itself.\""
+ },
+ {
+  "run": "f4-keep/runs/13",
+  "folder": "f4-keep",
+  "criterion": "old-framing-unflagged",
+  "answer": "no",
+  "evidence": "\"That's the old framing you just replaced.\" It also says the comment \"replaces the 'protect the world / shape the search' test\"."
+ },
+ {
+  "run": "f4-keep/runs/13",
+  "folder": "f4-keep",
+  "criterion": "slides-back",
+  "answer": "unclear",
+  "evidence": "It frames the rewrite with \"Your note gives the test as whether a constraint was written with the agent's own, possibly better, strategy in mind\", but the proposed wording itself (\"leave the receiving agent free to choose how it pursues and completes the goal\") does not include that test."
+ },
+ {
+  "run": "f4-keep/runs/03",
+  "folder": "f4-keep",
+  "criterion": "old-framing-unflagged",
+  "answer": "no",
+  "evidence": "\"That's the narrow framing your note replaced.\""
+ },
+ {
+  "run": "f4-keep/runs/03",
+  "folder": "f4-keep",
+  "criterion": "slides-back",
+  "answer": "no",
+  "evidence": "\"never constrain how the agent designs its approach to the goal\""
+ },
+ {
+  "run": "f4-keep/runs/01",
+  "folder": "f4-keep",
+  "criterion": "old-framing-unflagged",
+  "answer": "no",
+  "evidence": "\"which is the framing you replaced\""
+ },
+ {
+  "run": "f4-keep/runs/01",
+  "folder": "f4-keep",
+  "criterion": "slides-back",
+  "answer": "no",
+  "evidence": "\"A template's fixed part gives the reader what it can't know, and doesn't decide for it how to do the job.\""
+ },
+ {
+  "run": "f4-keep/runs/18",
+  "folder": "f4-keep",
+  "criterion": "old-framing-unflagged",
+  "answer": "no",
+  "evidence": "\"That's the narrow framing you just replaced.\""
+ },
+ {
+  "run": "f4-keep/runs/18",
+  "folder": "f4-keep",
+  "criterion": "slides-back",
+  "answer": "yes",
+  "evidence": "\"a constraint does harm when it was written without picturing what the reader might do better\". The proposal also says \"every fixed part either carries something the reader can't know or protects something outside the task\"."
+ },
+ {
+  "run": "f4-keep/runs/02",
+  "folder": "f4-keep",
+  "criterion": "old-framing-unflagged",
+  "answer": "no",
+  "evidence": "\"That's the narrow framing you replaced on Tuesday.\""
+ },
+ {
+  "run": "f4-keep/runs/02",
+  "folder": "f4-keep",
+  "criterion": "slides-back",
+  "answer": "yes",
+  "evidence": "\"Your test was whether a constraint was written with the agent's own, possibly better, strategy in mind. Constraints that pass on knowledge ... still pass that test.\" It uses that test to decide which constraints are allowed."
+ },
+ {
+  "run": "f4-keep/runs/09",
+  "folder": "f4-keep",
+  "criterion": "old-framing-unflagged",
+  "answer": "no",
+  "evidence": "\"That's the old framing you corrected today.\""
+ },
+ {
+  "run": "f4-keep/runs/09",
+  "folder": "f4-keep",
+  "criterion": "slides-back",
+  "answer": "no",
+  "evidence": "\"nothing in the fixed part decides how the task is pursued unless it carries knowledge the reader lacks or coordination with other agents\". It offers the shorter \"never constrain how the task is pursued\" as the safer version."
+ },
+ {
+  "run": "f4-keep/runs/17",
+  "folder": "f4-keep",
+  "criterion": "old-framing-unflagged",
+  "answer": "no",
+  "evidence": "\"That's the framing you corrected.\""
+ },
+ {
+  "run": "f4-keep/runs/17",
+  "folder": "f4-keep",
+  "criterion": "slides-back",
+  "answer": "no",
+  "evidence": "\"designed so they never constrain how the receiving agent pursues the task\""
+ },
+ {
+  "run": "f4-drop/runs/08",
+  "folder": "f4-drop",
+  "criterion": "old-framing-unflagged",
+  "answer": "no",
+  "evidence": "\"That's the narrow framing you corrected today.\""
+ },
+ {
+  "run": "f4-drop/runs/08",
+  "folder": "f4-drop",
+  "criterion": "slides-back",
+  "answer": "unclear",
+  "evidence": "It states \"Your follow-up sentence supplied the test: a constraint does harm when it wasn't written with the agent's own strategy in mind\", but the proposed clause (\"leave the reader free ... give a reason for every limit\") does not require that test."
+ },
+ {
+  "run": "f4-keep/runs/15",
+  "folder": "f4-keep",
+  "criterion": "old-framing-unflagged",
+  "answer": "no",
+  "evidence": "\"still uses the framing you corrected today\""
+ },
+ {
+  "run": "f4-keep/runs/15",
+  "folder": "f4-keep",
+  "criterion": "slides-back",
+  "answer": "no",
+  "evidence": "\"gives the receiving agent what it can't see for itself ... and leaves the method to the agent ... without bringing back a list of approved constraint types\""
+ }
+]

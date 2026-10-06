@@ -1,0 +1,65 @@
+{
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 5,
+ "duration_ms": 190929,
+ "total_cost_usd": 0.7612673999999999,
+ "terminal_reason": "completed",
+ "stop_reason": "end_turn",
+ "result": "Yes, the research changes the round. I've read the whole note. It's on the branch `research/wording-and-reader-context` at `docs/research/wording-and-reader-context.md`, and the \u00a7 numbers below refer to its sections. It changes the questions in three ways, and it comes with one warning about itself.",
+ "permission_denials": [
+  {
+   "tool": "Bash",
+   "input": "{\"command\": \"cd \\\"/private/tmp/qt-replay/f3-turn/repo\\\" && git show research/wording-and-reader-context:docs/research/wording-and-reader-context.md | wc -l; gh issue view 154 --json state,comments --jq '.state, (.comments[]|.body[0:600])'; git show research/wording-and-reader-context:docs/research/wording-and-reader-context.md | grep -n '^#'\"}"
+  }
+ ],
+ "refused_github": 1,
+ "usage": {
+  "input_tokens": 9,
+  "cache_creation_input_tokens": 36440,
+  "cache_read_input_tokens": 564957,
+  "output_tokens": 17836,
+  "output_tokens_details": {
+   "thinking_tokens": 13058
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 36440,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "not_available",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 16819,
+    "cache_read_input_tokens": 128747,
+    "cache_creation_input_tokens": 16072,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 16072
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "hook_events_in_stream": [
+  "hook_response PostToolUse",
+  "hook_response PreToolUse",
+  "hook_response SessionStart",
+  "hook_response Stop",
+  "hook_response UserPromptSubmit",
+  "hook_started PostToolUse",
+  "hook_started PreToolUse",
+  "hook_started SessionStart",
+  "hook_started Stop",
+  "hook_started UserPromptSubmit"
+ ],
+ "rc": 0,
+ "wall_s": 192.0
+}

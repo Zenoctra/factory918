@@ -1,0 +1,60 @@
+{
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 4,
+ "duration_ms": 159600,
+ "total_cost_usd": 0.5038370000000001,
+ "terminal_reason": "completed",
+ "stop_reason": "end_turn",
+ "result": "Yes, the questions change. Having read the research, I see three shifts:\n\n1. **There is no clean line between the task and the route.** Round one assumed a brief splits into a binding part (the goal, what done means) and a route part that should be left open. The research shows the goal and the defi",
+ "permission_denials": [],
+ "refused_github": 0,
+ "usage": {
+  "input_tokens": 7,
+  "cache_creation_input_tokens": 14546,
+  "cache_read_input_tokens": 444805,
+  "output_tokens": 14924,
+  "output_tokens_details": {
+   "thinking_tokens": 10560
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 14546,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "not_available",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 14291,
+    "cache_read_input_tokens": 118225,
+    "cache_creation_input_tokens": 4700,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 4700
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "hook_events_in_stream": [
+  "hook_response PostToolUse",
+  "hook_response PreToolUse",
+  "hook_response SessionStart",
+  "hook_response Stop",
+  "hook_response UserPromptSubmit",
+  "hook_started PostToolUse",
+  "hook_started PreToolUse",
+  "hook_started SessionStart",
+  "hook_started Stop",
+  "hook_started UserPromptSubmit"
+ ],
+ "rc": 0,
+ "wall_s": 160.6
+}

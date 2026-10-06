@@ -1,0 +1,3 @@
+Bash: {"command": "cd \"/private/tmp/qt-replay/f3-turn/repo\" && git show research/wording-and-reader-context:docs/research/wording-and-reader-context.md | wc -l; git show research/wording-and-reader-context:docs/research/wording-and-reader-context.md | grep -n '^#'"}
+Bash: {"command": "cd \"/private/tmp/qt-replay/f3-turn/repo\" && git show research/wording-and-reader-context:docs/research/wording-and-reader-context.md | sed -n '1,49p;162,223p'"}
+Bash: {"command": "cd \"/private/tmp/qt-replay/f3-turn/repo\" && git show research/wording-and-reader-context:docs/research/wording-and-reader-context.md | sed -n '288,323p;361,421p'"}

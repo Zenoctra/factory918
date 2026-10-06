@@ -1,0 +1,60 @@
+{
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 3,
+ "duration_ms": 102763,
+ "total_cost_usd": 1.1831821999999999,
+ "terminal_reason": "completed",
+ "stop_reason": "end_turn",
+ "result": "Your round-one answers are saved word for word in my scratchpad, and they'll go into the ticket's resolution comment in full. Three things first, then round two.\n\n**Q1, explained in practice.** I said (c) needs both halves of the test; in use it comes down to one question. For any rule in a brief, a",
+ "permission_denials": [],
+ "refused_github": 0,
+ "usage": {
+  "input_tokens": 5,
+  "cache_creation_input_tokens": 115074,
+  "cache_read_input_tokens": 362151,
+  "output_tokens": 9507,
+  "output_tokens_details": {
+   "thinking_tokens": 4011
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 115074,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "not_available",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 3374,
+    "cache_read_input_tokens": 159766,
+    "cache_creation_input_tokens": 2125,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 2125
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "hook_events_in_stream": [
+  "hook_response PostToolUse",
+  "hook_response PreToolUse",
+  "hook_response SessionStart",
+  "hook_response Stop",
+  "hook_response UserPromptSubmit",
+  "hook_started PostToolUse",
+  "hook_started PreToolUse",
+  "hook_started SessionStart",
+  "hook_started Stop",
+  "hook_started UserPromptSubmit"
+ ],
+ "rc": 0,
+ "wall_s": 104.1
+}

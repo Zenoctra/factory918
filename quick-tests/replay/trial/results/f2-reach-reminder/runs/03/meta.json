@@ -1,0 +1,59 @@
+{
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 3,
+ "duration_ms": 72750,
+ "total_cost_usd": 0.23232939999999996,
+ "terminal_reason": "completed",
+ "stop_reason": "end_turn",
+ "result": "You haven't answered round one yet. The search turned up enough to correct one question and add three, so here they are, followed by the whole round to answer together.\n\n**What the search found that matters here**\n\n- **Today the factory has five ways to depart from a rule.** I read each one where it",
+ "permission_denials": [],
+ "usage": {
+  "input_tokens": 3,
+  "cache_creation_input_tokens": 7018,
+  "cache_read_input_tokens": 220567,
+  "output_tokens": 6603,
+  "output_tokens_details": {
+   "thinking_tokens": 3839
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 7018,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "not_available",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 5606,
+    "cache_read_input_tokens": 110484,
+    "cache_creation_input_tokens": 6617,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 6617
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "hook_events_in_stream": [
+  "hook_response PostToolUse",
+  "hook_response PreToolUse",
+  "hook_response SessionStart",
+  "hook_response Stop",
+  "hook_response UserPromptSubmit",
+  "hook_started PostToolUse",
+  "hook_started PreToolUse",
+  "hook_started SessionStart",
+  "hook_started Stop",
+  "hook_started UserPromptSubmit"
+ ],
+ "rc": 0,
+ "wall_s": 73.9
+}

@@ -1,0 +1,30 @@
+{
+ "messages": 35,
+ "thinking_blocks": 9,
+ "thinking_blocks_with_text": 0,
+ "thinking_blocks_with_signature": 9,
+ "thinking_config": {
+  "type": "adaptive"
+ },
+ "context_management": {
+  "edits": [
+   {
+    "type": "clear_thinking_20251015",
+    "keep": "all"
+   }
+  ]
+ },
+ "model": "claude-opus-5-5",
+ "blocks_removed_by_proxy": 2,
+ "instruction_reread_reminder": false,
+ "session_mandate_copies": 1,
+ "budget_line": false,
+ "lost_background_agent_notification": false,
+ "change_text_in_message_index": [
+  0
+ ],
+ "last_message_role": "system",
+ "last_message_headings": [
+  "# Environment update"
+ ]
+}

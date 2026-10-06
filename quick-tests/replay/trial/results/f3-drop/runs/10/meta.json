@@ -1,0 +1,55 @@
+{
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 1,
+ "duration_ms": 126994,
+ "total_cost_usd": 0.2517076,
+ "terminal_reason": "completed",
+ "stop_reason": "end_turn",
+ "result": "Yes, the research changes the round. Five of my earlier recommendations still point the same way, but several rested on a distinction that was too coarse. The research also raises three questions I hadn't asked, and it changes how I should present the questions to you. Here is what changed, then the",
+ "permission_denials": [],
+ "usage": {
+  "input_tokens": 1,
+  "cache_creation_input_tokens": 424,
+  "cache_read_input_tokens": 144158,
+  "output_tokens": 10974,
+  "output_tokens_details": {
+   "thinking_tokens": 7244
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 424,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "not_available",
+  "iterations": [
+   {
+    "input_tokens": 1,
+    "output_tokens": 10974,
+    "cache_read_input_tokens": 144158,
+    "cache_creation_input_tokens": 424,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 424
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "hook_events_in_stream": [
+  "hook_response SessionStart",
+  "hook_response Stop",
+  "hook_response UserPromptSubmit",
+  "hook_started SessionStart",
+  "hook_started Stop",
+  "hook_started UserPromptSubmit"
+ ],
+ "rc": 0,
+ "wall_s": 128.3
+}

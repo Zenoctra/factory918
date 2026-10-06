@@ -1,0 +1,55 @@
+{
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 1,
+ "duration_ms": 187193,
+ "total_cost_usd": 1.1321234,
+ "terminal_reason": "completed",
+ "stop_reason": "end_turn",
+ "result": "Yes, the research changes the questions. Three of my recommendations were wrong, and two questions were missing.\n\n**What changed**\n\n- **\"What done means\" isn't safe.** In round one I treated the goal and the definition of done as binding, and only the route as negotiable. But the research's stronges",
+ "permission_denials": [],
+ "usage": {
+  "input_tokens": 1,
+  "cache_creation_input_tokens": 97757,
+  "cache_read_input_tokens": 46817,
+  "output_tokens": 17035,
+  "output_tokens_details": {
+   "thinking_tokens": 14219
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 97757,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "not_available",
+  "iterations": [
+   {
+    "input_tokens": 1,
+    "output_tokens": 17035,
+    "cache_read_input_tokens": 46817,
+    "cache_creation_input_tokens": 97757,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 97757
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "hook_events_in_stream": [
+  "hook_response SessionStart",
+  "hook_response Stop",
+  "hook_response UserPromptSubmit",
+  "hook_started SessionStart",
+  "hook_started Stop",
+  "hook_started UserPromptSubmit"
+ ],
+ "rc": 0,
+ "wall_s": 188.4
+}

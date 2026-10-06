@@ -1,0 +1,6 @@
+f3-drop	abstract	yes=5 no=5 unclear=0
+f3-drop	contradiction	yes=2 no=8 unclear=0
+f3-keep	abstract	yes=7 no=13 unclear=0
+f3-keep	contradiction	yes=2 no=18 unclear=0
+f3-turn	abstract	yes=5 no=5 unclear=0
+f3-turn	contradiction	yes=2 no=8 unclear=0

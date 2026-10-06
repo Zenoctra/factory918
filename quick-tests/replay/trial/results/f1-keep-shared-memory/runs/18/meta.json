@@ -1,0 +1,69 @@
+{
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 5,
+ "duration_ms": 92816,
+ "total_cost_usd": 0.3789906,
+ "terminal_reason": "completed",
+ "stop_reason": "end_turn",
+ "result": "Posting your answers to the ticket was denied, so I didn't retry. The comment is drafted word for word in my scratchpad and I'll post it if you want it there. Your budget answer is already saved as a standing rule in my memory.\n\n## Q1, in practice\n\nFor each rule, ask two things:\n\n1. Is it about **wh",
+ "permission_denials": [
+  {
+   "tool": "Bash",
+   "input": "{\"command\": \"cd /private/tmp/qt-replay/f1-keep && ls memory/; cat memory/budget-never-binds-unasked.md 2>/dev/null; ls scratchpad/ 2>/dev/null; cd repo && gh issue view 152 --json comments --jq '.comments|length'\"}"
+  },
+  {
+   "tool": "Bash",
+   "input": "{\"command\": \"gh issue comment 152 --repo Zenoctra/factory918 --body-file \\\"/private/tmp/qr-d8c3a70f/claude-501/-private-tmp-qt-replay-f1-keep-repo/6b27156a-31d2-4e2e-b563-77a45ef4ecc0/scratchpad/152-round1.md\\\"\"}"
+  }
+ ],
+ "refused_github": 1,
+ "usage": {
+  "input_tokens": 9,
+  "cache_creation_input_tokens": 5566,
+  "cache_read_input_tokens": 789533,
+  "output_tokens": 8826,
+  "output_tokens_details": {
+   "thinking_tokens": 3915
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 5566,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "not_available",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 4645,
+    "cache_read_input_tokens": 161179,
+    "cache_creation_input_tokens": 302,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 302
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "hook_events_in_stream": [
+  "hook_response PostToolUse",
+  "hook_response PreToolUse",
+  "hook_response SessionStart",
+  "hook_response Stop",
+  "hook_response UserPromptSubmit",
+  "hook_started PostToolUse",
+  "hook_started PreToolUse",
+  "hook_started SessionStart",
+  "hook_started Stop",
+  "hook_started UserPromptSubmit"
+ ],
+ "rc": 0,
+ "wall_s": 93.8
+}

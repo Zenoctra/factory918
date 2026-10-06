@@ -1,0 +1,59 @@
+{
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 2,
+ "duration_ms": 87503,
+ "total_cost_usd": 0.2691684,
+ "terminal_reason": "completed",
+ "stop_reason": "end_turn",
+ "result": "Picking up where we left off. Your answers to Q2, Q3 and Q5 are settled. Before round two I owe you three things: a correction on Q3, a concrete version of Q1, and the five mechanisms I left out of Q4.\n\n**Recorded so far**\n- **Q5:** it's now a standing memory. In `safe`, a budget never shapes the wo",
+ "permission_denials": [],
+ "usage": {
+  "input_tokens": 3,
+  "cache_creation_input_tokens": 6685,
+  "cache_read_input_tokens": 311182,
+  "output_tokens": 7672,
+  "output_tokens_details": {
+   "thinking_tokens": 4687
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 6685,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "not_available",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 3623,
+    "cache_read_input_tokens": 156338,
+    "cache_creation_input_tokens": 5191,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 5191
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "hook_events_in_stream": [
+  "hook_response PostToolUse",
+  "hook_response PreToolUse",
+  "hook_response SessionStart",
+  "hook_response Stop",
+  "hook_response UserPromptSubmit",
+  "hook_started PostToolUse",
+  "hook_started PreToolUse",
+  "hook_started SessionStart",
+  "hook_started Stop",
+  "hook_started UserPromptSubmit"
+ ],
+ "rc": 0,
+ "wall_s": 88.5
+}

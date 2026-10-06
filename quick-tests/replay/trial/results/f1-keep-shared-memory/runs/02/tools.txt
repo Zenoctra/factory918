@@ -1,0 +1,10 @@
+Bash: {"command": "cat /private/tmp/qt-replay/f1-keep/memory/budget-never-binds-unasked.md 2>&1; ls /private/tmp/qt-replay/f1-keep/scratchpad/152-answers-round1.md 2>&1"}
+  -> error: Exit code 1
+---
+name: budget-never-binds-unasked
+description: "Token and wall-clock budgets never shape process in safe; in eco and Let It Rip they reach a brief only after Manuel says how binding they are; when in doubt, leave them out"
+metadata:
+  node_type: memory
+  type: feedback
+  originSession
+Bash: {"command": "cat > \"/private/tmp/qr-2075c6c4/claude-501/-private-tmp-qt-replay-f1-keep-repo/cfb004f3-6c49-4b39-a88b-a4f8586c0538/scratchpad/152-answers-round1.md\" <<'EOF'\nManuel's answers, #152 round 1 (research-informed version), 2026-09-30, verbatim:\n\nQ1: (c) Ill be honest, this got a little abstract for me to track. But as much as I could, C seems like a good answer, but if I need a more intuitive understanding of what that looks like in practice to answer future questions, we are gonna have to slow down and explain it to me again in a different way.\nQ2: (b) Also, on the 3rd note you 

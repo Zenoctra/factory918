@@ -1,0 +1,56 @@
+{
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 1,
+ "duration_ms": 45261,
+ "total_cost_usd": 0.0953302,
+ "terminal_reason": "completed",
+ "stop_reason": "end_turn",
+ "result": "The search for what already exists is still running. These five questions don't depend on what it finds, so I'll ask them now. Questions about where the standard lives, what happens to `writing-for-agents`, and which jobs get templates will come in the next round.\n\nEach question includes my recommen",
+ "permission_denials": [],
+ "refused_github": 0,
+ "usage": {
+  "input_tokens": 1,
+  "cache_creation_input_tokens": 421,
+  "cache_read_input_tokens": 103491,
+  "output_tokens": 3563,
+  "output_tokens_details": {
+   "thinking_tokens": 2410
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 421,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "not_available",
+  "iterations": [
+   {
+    "input_tokens": 1,
+    "output_tokens": 3563,
+    "cache_read_input_tokens": 103491,
+    "cache_creation_input_tokens": 421,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 421
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "hook_events_in_stream": [
+  "hook_response SessionStart",
+  "hook_response Stop",
+  "hook_response UserPromptSubmit",
+  "hook_started SessionStart",
+  "hook_started Stop",
+  "hook_started UserPromptSubmit"
+ ],
+ "rc": 0,
+ "wall_s": 46.2
+}

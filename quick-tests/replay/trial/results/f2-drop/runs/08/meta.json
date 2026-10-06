@@ -1,0 +1,55 @@
+{
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 1,
+ "duration_ms": 28245,
+ "total_cost_usd": 0.07559500000000001,
+ "terminal_reason": "completed",
+ "stop_reason": "end_turn",
+ "result": "The background search is back, and it changes three of the round-one questions. Your answers to round one are still open; nothing below assumes them.\n\n**What it found that matters here**\n\n- **Five different ways to depart from a rule, and they contradict each other.**\n  - \"Say so loudly and get a si",
+ "permission_denials": [],
+ "usage": {
+  "input_tokens": 1,
+  "cache_creation_input_tokens": 398,
+  "cache_read_input_tokens": 107335,
+  "output_tokens": 2547,
+  "output_tokens_details": {
+   "thinking_tokens": 1077
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 398,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "not_available",
+  "iterations": [
+   {
+    "input_tokens": 1,
+    "output_tokens": 2547,
+    "cache_read_input_tokens": 107335,
+    "cache_creation_input_tokens": 398,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 398
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "hook_events_in_stream": [
+  "hook_response SessionStart",
+  "hook_response Stop",
+  "hook_response UserPromptSubmit",
+  "hook_started SessionStart",
+  "hook_started Stop",
+  "hook_started UserPromptSubmit"
+ ],
+ "rc": 0,
+ "wall_s": 29.2
+}

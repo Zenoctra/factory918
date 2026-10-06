@@ -1,0 +1,65 @@
+{
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 6,
+ "duration_ms": 117173,
+ "total_cost_usd": 0.454857,
+ "terminal_reason": "completed",
+ "stop_reason": "end_turn",
+ "result": "I've saved your answers. I wanted to post them word for word on the ticket, but the GitHub call was denied, so they're in a local file for now. I'll post them when you allow it. Your budget rule from Q5 is already in my memory, and so is the new test from Q1.\n\n## Q1 in practice\n\nAsk two questions of",
+ "permission_denials": [
+  {
+   "tool": "Bash",
+   "input": "{\"command\": \"gh issue view 152 --json comments,assignees --jq '.assignees[].login, (.comments[]|.createdAt+\\\" \\\"+(.body[0:200]))'\"}"
+  }
+ ],
+ "refused_github": 0,
+ "usage": {
+  "input_tokens": 11,
+  "cache_creation_input_tokens": 6597,
+  "cache_read_input_tokens": 949885,
+  "output_tokens": 10603,
+  "output_tokens_details": {
+   "thinking_tokens": 5187
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 6597,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "not_available",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 6317,
+    "cache_read_input_tokens": 160131,
+    "cache_creation_input_tokens": 2381,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 2381
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "hook_events_in_stream": [
+  "hook_response PostToolUse",
+  "hook_response PreToolUse",
+  "hook_response SessionStart",
+  "hook_response Stop",
+  "hook_response UserPromptSubmit",
+  "hook_started PostToolUse",
+  "hook_started PreToolUse",
+  "hook_started SessionStart",
+  "hook_started Stop",
+  "hook_started UserPromptSubmit"
+ ],
+ "rc": 0,
+ "wall_s": 118.1
+}

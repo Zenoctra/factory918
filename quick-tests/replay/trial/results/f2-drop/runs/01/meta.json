@@ -1,0 +1,55 @@
+{
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 1,
+ "duration_ms": 28112,
+ "total_cost_usd": 0.5506674,
+ "terminal_reason": "completed",
+ "stop_reason": "end_turn",
+ "result": "The background search finished, and it confirms your correction. The worst rule it found wasn't about searching at all: it was a rule about how a review gets finished. Round one is still open, and only my recommendation on Q3 changes.\n\n**What it found, by question:**\n\n- **Q1 (what makes a rule bindi",
+ "permission_denials": [],
+ "usage": {
+  "input_tokens": 1,
+  "cache_creation_input_tokens": 60915,
+  "cache_read_input_tokens": 46817,
+  "output_tokens": 2699,
+  "output_tokens_details": {
+   "thinking_tokens": 1359
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 60915,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "not_available",
+  "iterations": [
+   {
+    "input_tokens": 1,
+    "output_tokens": 2699,
+    "cache_read_input_tokens": 46817,
+    "cache_creation_input_tokens": 60915,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 60915
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "hook_events_in_stream": [
+  "hook_response SessionStart",
+  "hook_response Stop",
+  "hook_response UserPromptSubmit",
+  "hook_started SessionStart",
+  "hook_started Stop",
+  "hook_started UserPromptSubmit"
+ ],
+ "rc": 0,
+ "wall_s": 29.4
+}

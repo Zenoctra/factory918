@@ -1,0 +1,69 @@
+{
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 11,
+ "duration_ms": 188103,
+ "total_cost_usd": 0.7662898,
+ "terminal_reason": "completed",
+ "stop_reason": "end_turn",
+ "result": "I've saved two memory notes:\n\n- **Budgets:** your Q5 rule. Another session had already written a near-identical note at the same moment, so I kept that one and deleted mine.\n- **The binding test:** the old note still had the \"protect the world\" wording, so I rewrote it to the test you picked in Q1.\n",
+ "permission_denials": [
+  {
+   "tool": "Bash",
+   "input": "{\"command\": \"cd \\\"/private/tmp/qt-replay/f1-turn/repo\\\" && grep -n -i \\\"dev server\\\" template/AGENTS.md | head -3; sed -n 18,22p template/.agents/skills/knowledge/SKILL.md; sed -n 14,20p template/AGENTS.md; grep -n -i -E '\\\\b(eco|full|safety|let it rip)\\\\b.*(mode|tier)' docs/knowledge/core/MANUAL.md | head -8; gh issue list --state open --search \\\"review in:title\\\" --json number,title --jq '.[]|\\\"\\\\(.number) \\\\(.title)\\\"' | head; ls /private/tmp/qt-replay/f1-turn/memory/\"}"
+  },
+  {
+   "tool": "Bash",
+   "input": "{\"command\": \"cd \\\"/private/tmp/qt-replay/f1-turn/repo\\\" && gh issue comment 152 --body-file \\\"/private/tmp/qr-c13a4412/claude-501/-private-tmp-qt-replay-f1-turn-repo/adc2e627-b51e-412a-a6ea-0ff6469645e8/scratchpad/round1.md\\\"\"}"
+  }
+ ],
+ "refused_github": 2,
+ "usage": {
+  "input_tokens": 17,
+  "cache_creation_input_tokens": 18309,
+  "cache_read_input_tokens": 1429849,
+  "output_tokens": 16689,
+  "output_tokens_details": {
+   "thinking_tokens": 9072
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 18309,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "not_available",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 4797,
+    "cache_read_input_tokens": 166659,
+    "cache_creation_input_tokens": 1137,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 1137
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "hook_events_in_stream": [
+  "hook_response PostToolUse",
+  "hook_response PreToolUse",
+  "hook_response SessionStart",
+  "hook_response Stop",
+  "hook_response UserPromptSubmit",
+  "hook_started PostToolUse",
+  "hook_started PreToolUse",
+  "hook_started SessionStart",
+  "hook_started Stop",
+  "hook_started UserPromptSubmit"
+ ],
+ "rc": 0,
+ "wall_s": 189.1
+}

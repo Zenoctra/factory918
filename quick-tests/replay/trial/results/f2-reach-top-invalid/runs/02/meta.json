@@ -1,0 +1,55 @@
+{
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 1,
+ "duration_ms": 28303,
+ "total_cost_usd": 0.071831,
+ "terminal_reason": "completed",
+ "stop_reason": "end_turn",
+ "result": "The background search finished while round one is still waiting on you. It changes Q3 and raises one new question. Q1, Q2, Q4 and Q5 stand as written.\n\n**What it found that bears on this round**\n\n- **The factory gives five different instructions for what to do when a rule fights the task, and they d",
+ "permission_denials": [],
+ "usage": {
+  "input_tokens": 1,
+  "cache_creation_input_tokens": 396,
+  "cache_read_input_tokens": 107395,
+  "output_tokens": 2359,
+  "output_tokens_details": {
+   "thinking_tokens": 729
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 396,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "not_available",
+  "iterations": [
+   {
+    "input_tokens": 1,
+    "output_tokens": 2359,
+    "cache_read_input_tokens": 107395,
+    "cache_creation_input_tokens": 396,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 396
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "hook_events_in_stream": [
+  "hook_response SessionStart",
+  "hook_response Stop",
+  "hook_response UserPromptSubmit",
+  "hook_started SessionStart",
+  "hook_started Stop",
+  "hook_started UserPromptSubmit"
+ ],
+ "rc": 0,
+ "wall_s": 29.3
+}

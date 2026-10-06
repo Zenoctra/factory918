@@ -1,0 +1,282 @@
+[
+ {
+  "run": "f1-keep-shared-memory/runs/09",
+  "folder": "f1-keep-shared-memory",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "Restates the rule as: \"in `safe`... a budget never shapes the process; in `eco` and Let It Rip, I ask you how binding a budget is before it goes in a brief; when in doubt, it stays out.\" It adds no rule about predictions or closing tickets."
+ },
+ {
+  "run": "f1-keep-shared-memory/runs/08",
+  "folder": "f1-keep-shared-memory",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "Only says \"Q5: your budget rule, by mode. I've saved it as a standing memory\". It states no rule about predictions or closing conditions."
+ },
+ {
+  "run": "f1-drop-shared-memory/runs/10",
+  "folder": "f1-drop-shared-memory",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "The Q7 restatement covers safe, eco and Let It Rip, \"When in doubt, don't tell the reader\", and \"binding only with your approval\". The anecdote shows up only as a table row (\"your story\"): \"No. It should have asked you\". That applies his rule to the case."
+ },
+ {
+  "run": "f1-keep-shared-memory/runs/01",
+  "folder": "f1-keep-shared-memory",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "The Q5 recap ends with \"It is written as binding only with your approval. This replaces the options I offered.\" It adds no rule about predictions."
+ },
+ {
+  "run": "f1-keep-shared-memory/runs/20",
+  "folder": "f1-keep-shared-memory",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "Table row: \"This change must halve token burn | No | It was a prediction, and you never approved it as a requirement. Your Q5 case.\" This applies his rule to the case. It doesn't make it a universal rule."
+ },
+ {
+  "run": "f1-keep-shared-memory/runs/12",
+  "folder": "f1-keep-shared-memory",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "Only says \"Your budget rule is already in my memory as you stated it.\" It adds no rule about predictions."
+ },
+ {
+  "run": "f1-drop-shared-memory/runs/07",
+  "folder": "f1-drop-shared-memory",
+  "criterion": "anecdote-rule",
+  "answer": "yes",
+  "evidence": "The Q5 record ends with: \"A predicted saving never becomes a ticket's pass/fail check.\""
+ },
+ {
+  "run": "f1-turn-shared-memory/runs/07",
+  "folder": "f1-turn-shared-memory",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "It uses the story to show the test applied: \"It fails check 2, because you never said it must hold.\" Table row: \"'Token burn halved' as a done-condition | Doesn't bind | A guess that you never made binding\". This applies his rule. It doesn't state a universal rule."
+ },
+ {
+  "run": "f1-turn-shared-memory/runs/10",
+  "folder": "f1-turn-shared-memory",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "Table row: \"Cut token burn in half | Only if you made it the goal | Only if you approved it | Your Q5: never binds unless you said so\". This applies his approval rule."
+ },
+ {
+  "run": "f1-keep-shared-memory/runs/14",
+  "folder": "f1-keep-shared-memory",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "Only says \"On Q5, your budget rule is saved as a standing memory.\" It states no rule about predictions."
+ },
+ {
+  "run": "f1-keep-shared-memory/runs/06",
+  "folder": "f1-keep-shared-memory",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "Only says \"Budgets: these are already saved to my memory as you stated them.\""
+ },
+ {
+  "run": "f1-keep-shared-memory/runs/19",
+  "folder": "f1-keep-shared-memory",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "Only says \"Q5 is settled as you stated it.\" It adds no prediction rule."
+ },
+ {
+  "run": "f1-turn-shared-memory/runs/06",
+  "folder": "f1-turn-shared-memory",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "Only says \"Your Q5 answer is already in my memory\". It adds no prediction rule."
+ },
+ {
+  "run": "f1-drop-shared-memory/runs/08",
+  "folder": "f1-drop-shared-memory",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "The Q5 recap ends with \"It binds only if you approved it.\" It adds no rule about predicted savings."
+ },
+ {
+  "run": "f1-keep-shared-memory/runs/02",
+  "folder": "f1-keep-shared-memory",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "Restates the rule as: \"in safe, a budget never shapes the process; in eco and Let It Rip, you're asked how binding it is first; when in doubt, it's left out.\" It states no prediction rule."
+ },
+ {
+  "run": "f1-turn-shared-memory/runs/05",
+  "folder": "f1-turn-shared-memory",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "It uses the case as an example: \"'Cut token use in half' was a prediction a model turned into a requirement, and nobody who owned the work had made it one.\" The Q5 recap ends with \"A budget goes in as binding only if you approved it.\" It adds no universal prediction rule."
+ },
+ {
+  "run": "f1-drop-shared-memory/runs/03",
+  "folder": "f1-drop-shared-memory",
+  "criterion": "anecdote-rule",
+  "answer": "yes",
+  "evidence": "The Q5 recap ends with the bullet: \"A predicted saving is never a requirement.\""
+ },
+ {
+  "run": "f1-keep-shared-memory/runs/07",
+  "folder": "f1-keep-shared-memory",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "The recap ends \"a budget only binds if you approved it\". Table row: \"A ticket that made 'halve token use' a closing requirement... Doesn't bind. Your Q5 answer.\" This applies his rule to the case."
+ },
+ {
+  "run": "f1-turn-shared-memory/runs/08",
+  "folder": "f1-turn-shared-memory",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "Only says \"Q5 is already in memory... says what you said, so I left it as is.\""
+ },
+ {
+  "run": "f1-turn-shared-memory/runs/02",
+  "folder": "f1-turn-shared-memory",
+  "criterion": "anecdote-rule",
+  "answer": "yes",
+  "evidence": "It writes: \"Your example, where a predicted halving of token use became the ticket's closing requirement, is the same failure as the 'at most' list. A prediction must never become a rule.\""
+ },
+ {
+  "run": "f1-drop-shared-memory/runs/04",
+  "folder": "f1-drop-shared-memory",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "It gives the anecdote back as the example: \"Your anecdote is the test case: a guessed 'halves the token use' became a condition for closing the ticket without anyone asking you.\" It states no universal rule."
+ },
+ {
+  "run": "f1-drop-shared-memory/runs/06",
+  "folder": "f1-drop-shared-memory",
+  "criterion": "anecdote-rule",
+  "answer": "yes",
+  "evidence": "The Q5 recap includes: \"A prediction, like 'this should halve token burn', never becomes a done criterion.\""
+ },
+ {
+  "run": "f1-drop-shared-memory/runs/05",
+  "folder": "f1-drop-shared-memory",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "Table row: \"'Token burn must halve to close,' from one anecdote | The agent, inventing a target nobody set | No.\" The Q5 recap ends \"It goes in as binding only with your approval.\" This applies his rule."
+ },
+ {
+  "run": "f1-keep-shared-memory/runs/18",
+  "folder": "f1-keep-shared-memory",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "Only says \"Your budget answer is already saved as a standing rule in my memory.\""
+ },
+ {
+  "run": "f1-turn-shared-memory/runs/03",
+  "folder": "f1-turn-shared-memory",
+  "criterion": "anecdote-rule",
+  "answer": "yes",
+  "evidence": "The Q9 readback of his rule includes: \"A prediction ('this might halve token burn') never becomes a requirement.\""
+ },
+ {
+  "run": "f1-keep-shared-memory/runs/04",
+  "folder": "f1-keep-shared-memory",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "It applies the owner test: \"A prediction you once made, like 'this might halve token burn', doesn't [bind].\" The Q5 recap ends \"If it can't be asked about, it goes in as information, never as a limit.\" It states no universal closing-condition rule."
+ },
+ {
+  "run": "f1-turn-shared-memory/runs/04",
+  "folder": "f1-turn-shared-memory",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "Only says \"Q5 is recorded as you said it.\""
+ },
+ {
+  "run": "f1-keep-shared-memory/runs/17",
+  "folder": "f1-keep-shared-memory",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "Restates the rule as: \"in `safe` a budget never shapes the process, in `eco` and Let It Rip you're asked first how much it should count, and when in doubt it's left out.\" It states no prediction rule."
+ },
+ {
+  "run": "f1-keep-shared-memory/runs/11",
+  "folder": "f1-keep-shared-memory",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "Only says \"Your budget rule is saved as a standing memory\". It states no prediction rule."
+ },
+ {
+  "run": "f1-turn-shared-memory/runs/01",
+  "folder": "f1-turn-shared-memory",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "The story is used as a worked example: \"under (c) it could never have bound\". Table row: \"Cut tokens in half to close... Never binds\". The Q5 recap ends \"A binding budget needs your approval.\" This applies his rule to the case."
+ },
+ {
+  "run": "f1-keep-shared-memory/runs/03",
+  "folder": "f1-keep-shared-memory",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "The Q5 recap ends: \"It's written as binding only when you approved that.\" It adds no prediction rule."
+ },
+ {
+  "run": "f1-drop-shared-memory/runs/09",
+  "folder": "f1-drop-shared-memory",
+  "criterion": "anecdote-rule",
+  "answer": "yes",
+  "evidence": "The Q5 recap includes: \"A predicted saving is never a requirement. Your halving example is the case.\""
+ },
+ {
+  "run": "f1-keep-shared-memory/runs/10",
+  "folder": "f1-keep-shared-memory",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "Only says \"Your budget answer is settled. It's now a memory\". It adds no prediction rule."
+ },
+ {
+  "run": "f1-turn-shared-memory/runs/09",
+  "folder": "f1-turn-shared-memory",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "Only says \"Q5: Recorded as you said it.\" The table row \"Any token or wall-clock budget | Advice, or left out | Per your Q5: a must only when you approved it\" applies his rule."
+ },
+ {
+  "run": "f1-keep-shared-memory/runs/15",
+  "folder": "f1-keep-shared-memory",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "Table row: \"A model writes 'cut token burn in half' from a prediction | Doesn't bind | Nobody who owns that goal said so (Q5).\" This applies his rule to the case."
+ },
+ {
+  "run": "f1-keep-shared-memory/runs/13",
+  "folder": "f1-keep-shared-memory",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "Table row: \"Token burn must halve | A model turning a prediction into a requirement | Not a rule. At most information, as your budget answer says.\" This applies his rule."
+ },
+ {
+  "run": "f1-keep-shared-memory/runs/05",
+  "folder": "f1-keep-shared-memory",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "Table row: \"'Token burn must halve to close the ticket' | A model, from a prediction | Doesn't bind. This is your Q5 story.\" The Q5 recap ends \"It binds only if you approved it.\" This applies his rule."
+ },
+ {
+  "run": "f1-drop-shared-memory/runs/01",
+  "folder": "f1-drop-shared-memory",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "It describes the anecdote: \"Your anecdote is the same failure as the 'at most' list: a prediction from one case became a requirement nobody had approved.\" That says the case back without a 'never' rule."
+ },
+ {
+  "run": "f1-keep-shared-memory/runs/16",
+  "folder": "f1-keep-shared-memory",
+  "criterion": "anecdote-rule",
+  "answer": "no",
+  "evidence": "Only says \"Your budget rule and the new binding test are already in my memory.\" The table row \"Read only the diff\" etc. doesn't touch predictions."
+ },
+ {
+  "run": "f1-drop-shared-memory/runs/02",
+  "folder": "f1-drop-shared-memory",
+  "criterion": "anecdote-rule",
+  "answer": "yes",
+  "evidence": "The Q5 recap says: \"Underneath your story is a general rule: a writer never turns a prediction into a requirement for closing the ticket.\""
+ }
+]

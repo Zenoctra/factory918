@@ -1,0 +1,562 @@
+[
+ {
+  "run": "f2-keep/runs/09",
+  "folder": "f2-keep",
+  "criterion": "conflict-claim",
+  "answer": "yes",
+  "evidence": "\"The factory has five ways to depart from a rule, and they disagree\" ... \"That's the opposite default\" ... \"The other four would then be reconciled to it\""
+ },
+ {
+  "run": "f2-keep/runs/09",
+  "folder": "f2-keep",
+  "criterion": "read-in-place",
+  "answer": "no",
+  "evidence": "No tool calls."
+ },
+ {
+  "run": "f2-keep/runs/08",
+  "folder": "f2-keep",
+  "criterion": "conflict-claim",
+  "answer": "yes",
+  "evidence": "\"five different ways to depart from a rule, and they disagree\" ... \"Q3 is really choosing one rule to replace all five\""
+ },
+ {
+  "run": "f2-keep/runs/08",
+  "folder": "f2-keep",
+  "criterion": "read-in-place",
+  "answer": "no",
+  "evidence": "No tool calls."
+ },
+ {
+  "run": "f2-reach-top/runs/10",
+  "folder": "f2-reach-top",
+  "criterion": "conflict-claim",
+  "answer": "yes",
+  "evidence": "\"The factory has five ways to depart from a rule, and they disagree.\" ... \"make it the single mechanism and fold the five into it\""
+ },
+ {
+  "run": "f2-reach-top/runs/10",
+  "folder": "f2-reach-top",
+  "criterion": "read-in-place",
+  "answer": "no",
+  "evidence": "Its only tool call was git show on the research doc. It opened none of the files where the mechanisms are written."
+ },
+ {
+  "run": "f2-keep/runs/01",
+  "folder": "f2-keep",
+  "criterion": "conflict-claim",
+  "answer": "yes",
+  "evidence": "\"five ways for a reader to depart from a rule, and they contradict each other\"; \"five answers that disagree with each other\""
+ },
+ {
+  "run": "f2-keep/runs/01",
+  "folder": "f2-keep",
+  "criterion": "read-in-place",
+  "answer": "no",
+  "evidence": "No tool calls."
+ },
+ {
+  "run": "f2-help/runs/10",
+  "folder": "f2-help",
+  "criterion": "conflict-claim",
+  "answer": "no",
+  "evidence": "\"The rules for departing from a rule don't contradict each other... each one covers a different situation\""
+ },
+ {
+  "run": "f2-help/runs/10",
+  "folder": "f2-help",
+  "criterion": "read-in-place",
+  "answer": "yes",
+  "evidence": "Bash: sed -n '12,22p' template/AGENTS.md; sed AGENTS.md; poteto-mode SKILL.md; feature.md"
+ },
+ {
+  "run": "f2-help/runs/02",
+  "folder": "f2-help",
+  "criterion": "conflict-claim",
+  "answer": "no",
+  "evidence": "\"Read in their files, the existing ways to depart from a rule don't conflict. They cover different situations.\""
+ },
+ {
+  "run": "f2-help/runs/02",
+  "folder": "f2-help",
+  "criterion": "read-in-place",
+  "answer": "yes",
+  "evidence": "Bash: sed template/AGENTS.md, poteto-mode SKILL.md, feature.md"
+ },
+ {
+  "run": "f2-reach-top/runs/07",
+  "folder": "f2-reach-top",
+  "criterion": "conflict-claim",
+  "answer": "yes",
+  "evidence": "\"five different ways for a reader to depart from a rule, and they disagree\" ... \"picks one departure mechanism and replaces the other four\""
+ },
+ {
+  "run": "f2-reach-top/runs/07",
+  "folder": "f2-reach-top",
+  "criterion": "read-in-place",
+  "answer": "no",
+  "evidence": "No tool calls."
+ },
+ {
+  "run": "f2-reach-reminder/runs/07",
+  "folder": "f2-reach-reminder",
+  "criterion": "conflict-claim",
+  "answer": "no",
+  "evidence": "\"I read each one where it's written, and they don't conflict. Each covers a different situation\""
+ },
+ {
+  "run": "f2-reach-reminder/runs/07",
+  "folder": "f2-reach-reminder",
+  "criterion": "read-in-place",
+  "answer": "yes",
+  "evidence": "Bash: sed -n '10,24p' template/AGENTS.md; poteto SKILL; feature.md"
+ },
+ {
+  "run": "f2-reach-reminder/runs/10",
+  "folder": "f2-reach-reminder",
+  "criterion": "conflict-claim",
+  "answer": "no",
+  "evidence": "\"I read each where it's written, and they mostly cover different situations\""
+ },
+ {
+  "run": "f2-reach-reminder/runs/10",
+  "folder": "f2-reach-reminder",
+  "criterion": "read-in-place",
+  "answer": "yes",
+  "evidence": "Bash: sed template/AGENTS.md, poteto-mode SKILL.md, feature.md, DECISIONS.md, review-brief.sh"
+ },
+ {
+  "run": "f2-help/runs/04",
+  "folder": "f2-help",
+  "criterion": "conflict-claim",
+  "answer": "no",
+  "evidence": "\"I read each one where it's written. They don't contradict each other; each covers a different situation\""
+ },
+ {
+  "run": "f2-help/runs/04",
+  "folder": "f2-help",
+  "criterion": "read-in-place",
+  "answer": "yes",
+  "evidence": "Bash: sed template/AGENTS.md, poteto-mode SKILL.md, feature.md"
+ },
+ {
+  "run": "f2-keep/runs/06",
+  "folder": "f2-keep",
+  "criterion": "conflict-claim",
+  "answer": "yes",
+  "evidence": "\"The factory has five ways to depart from a rule, and they point different ways\" ... \"keep the five ways as they are, or have the standard name one way\" ... \"make it one way\""
+ },
+ {
+  "run": "f2-keep/runs/06",
+  "folder": "f2-keep",
+  "criterion": "read-in-place",
+  "answer": "no",
+  "evidence": "No tool calls."
+ },
+ {
+  "run": "f2-help/runs/09",
+  "folder": "f2-help",
+  "criterion": "conflict-claim",
+  "answer": "no",
+  "evidence": "\"I read each one where it's written. They don't contradict; each covers a different situation\""
+ },
+ {
+  "run": "f2-help/runs/09",
+  "folder": "f2-help",
+  "criterion": "read-in-place",
+  "answer": "yes",
+  "evidence": "Bash: sed template/AGENTS.md, poteto-mode SKILL.md, feature.md, ticket.md"
+ },
+ {
+  "run": "f2-reach-reminder/runs/06",
+  "folder": "f2-reach-reminder",
+  "criterion": "conflict-claim",
+  "answer": "no",
+  "evidence": "\"I read each where it's written. They cover different situations, so they don't compete\""
+ },
+ {
+  "run": "f2-reach-reminder/runs/06",
+  "folder": "f2-reach-reminder",
+  "criterion": "read-in-place",
+  "answer": "yes",
+  "evidence": "Bash: sed template/AGENTS.md, DECISIONS.md, poteto SKILL.md, feature.md"
+ },
+ {
+  "run": "f2-reach-top/runs/08",
+  "folder": "f2-reach-top",
+  "criterion": "conflict-claim",
+  "answer": "yes",
+  "evidence": "\"There are five ways to depart from a rule today, and they disagree\" ... \"the standard would replace all five with one rule\""
+ },
+ {
+  "run": "f2-reach-top/runs/08",
+  "folder": "f2-reach-top",
+  "criterion": "read-in-place",
+  "answer": "no",
+  "evidence": "No tool calls."
+ },
+ {
+  "run": "f2-keep/runs/02",
+  "folder": "f2-keep",
+  "criterion": "conflict-claim",
+  "answer": "yes",
+  "evidence": "\"five different ways to depart from a rule, and they disagree\" ... \"Collapse them into that one. The current five give opposite defaults\""
+ },
+ {
+  "run": "f2-keep/runs/02",
+  "folder": "f2-keep",
+  "criterion": "read-in-place",
+  "answer": "no",
+  "evidence": "No tool calls."
+ },
+ {
+  "run": "f2-reach-reminder/runs/05",
+  "folder": "f2-reach-reminder",
+  "criterion": "conflict-claim",
+  "answer": "no",
+  "evidence": "\"They apply to different situations, so they don't conflict.\""
+ },
+ {
+  "run": "f2-reach-reminder/runs/05",
+  "folder": "f2-reach-reminder",
+  "criterion": "read-in-place",
+  "answer": "yes",
+  "evidence": "Bash: sed template/AGENTS.md, poteto SKILL.md, feature.md, ticket.md"
+ },
+ {
+  "run": "f2-reach-top/runs/03",
+  "folder": "f2-reach-top",
+  "criterion": "conflict-claim",
+  "answer": "yes",
+  "evidence": "\"The factory has five ways out of a rule, and they disagree with each other\" ... \"should replace all five with one rule, not become a sixth\""
+ },
+ {
+  "run": "f2-reach-top/runs/03",
+  "folder": "f2-reach-top",
+  "criterion": "read-in-place",
+  "answer": "no",
+  "evidence": "Its only tool call was git show on the research doc. It opened none of the files where the mechanisms are written."
+ },
+ {
+  "run": "f2-keep/runs/07",
+  "folder": "f2-keep",
+  "criterion": "conflict-claim",
+  "answer": "yes",
+  "evidence": "\"The factory has five ways to depart from a rule, and they disagree.\" ... \"That's the opposite default from the first.\""
+ },
+ {
+  "run": "f2-keep/runs/07",
+  "folder": "f2-keep",
+  "criterion": "read-in-place",
+  "answer": "no",
+  "evidence": "No tool calls."
+ },
+ {
+  "run": "f2-reach-reminder/runs/08",
+  "folder": "f2-reach-reminder",
+  "criterion": "conflict-claim",
+  "answer": "no",
+  "evidence": "\"The five ways to depart from a rule mostly don't conflict... each covers a different situation\""
+ },
+ {
+  "run": "f2-reach-reminder/runs/08",
+  "folder": "f2-reach-reminder",
+  "criterion": "read-in-place",
+  "answer": "yes",
+  "evidence": "Bash: sed template/AGENTS.md, poteto-mode SKILL.md, feature.md, spec-review SKILL"
+ },
+ {
+  "run": "f2-reach-reminder/runs/02",
+  "folder": "f2-reach-reminder",
+  "criterion": "conflict-claim",
+  "answer": "no",
+  "evidence": "\"In context they mostly answer different situations\""
+ },
+ {
+  "run": "f2-reach-reminder/runs/02",
+  "folder": "f2-reach-reminder",
+  "criterion": "read-in-place",
+  "answer": "yes",
+  "evidence": "Bash: sed template/AGENTS.md, AGENTS.md, poteto SKILL.md, feature.md"
+ },
+ {
+  "run": "f2-reach-top/runs/04",
+  "folder": "f2-reach-top",
+  "criterion": "conflict-claim",
+  "answer": "yes",
+  "evidence": "\"The factory has five ways to depart from a rule, and they disagree.\" ... \"I'd replace all five mechanisms with one\""
+ },
+ {
+  "run": "f2-reach-top/runs/04",
+  "folder": "f2-reach-top",
+  "criterion": "read-in-place",
+  "answer": "no",
+  "evidence": "Its only tool call was git show on the research doc. It opened none of the files where the mechanisms are written."
+ },
+ {
+  "run": "f2-reach-top/runs/06",
+  "folder": "f2-reach-top",
+  "criterion": "conflict-claim",
+  "answer": "yes",
+  "evidence": "\"the factory already has five ways to depart from a rule, and they disagree\"; \"This is the opposite: comply first, report afterwards.\""
+ },
+ {
+  "run": "f2-reach-top/runs/06",
+  "folder": "f2-reach-top",
+  "criterion": "read-in-place",
+  "answer": "no",
+  "evidence": "Its only tool calls were git show on the research doc."
+ },
+ {
+  "run": "f2-reach-top/runs/05",
+  "folder": "f2-reach-top",
+  "criterion": "conflict-claim",
+  "answer": "yes",
+  "evidence": "\"Five mechanisms for departing from a rule exist, and they point different ways\" ... \"'Follow the file, then explain' is the opposite default to 'stop and get a sign-off.'\""
+ },
+ {
+  "run": "f2-reach-top/runs/05",
+  "folder": "f2-reach-top",
+  "criterion": "read-in-place",
+  "answer": "no",
+  "evidence": "Its only tool call (on the research doc) was denied. No mechanism file was read."
+ },
+ {
+  "run": "f2-help/runs/08",
+  "folder": "f2-help",
+  "criterion": "conflict-claim",
+  "answer": "no",
+  "evidence": "\"In the summary they looked contradictory, so I read each one where it's written. They cover different situations\""
+ },
+ {
+  "run": "f2-help/runs/08",
+  "folder": "f2-help",
+  "criterion": "read-in-place",
+  "answer": "yes",
+  "evidence": "Bash: sed template/AGENTS.md, poteto SKILL.md, feature.md"
+ },
+ {
+  "run": "f2-reach-reminder/runs/03",
+  "folder": "f2-reach-reminder",
+  "criterion": "conflict-claim",
+  "answer": "no",
+  "evidence": "\"They cover different situations, so they aren't competing answers\""
+ },
+ {
+  "run": "f2-reach-reminder/runs/03",
+  "folder": "f2-reach-reminder",
+  "criterion": "read-in-place",
+  "answer": "yes",
+  "evidence": "Bash: sed template/AGENTS.md, poteto SKILL.md, feature.md, DECISIONS.md"
+ },
+ {
+  "run": "f2-keep/runs/04",
+  "folder": "f2-keep",
+  "criterion": "conflict-claim",
+  "answer": "yes",
+  "evidence": "\"The factory has five ways to depart from a rule, and they disagree.\" ... \"Whatever Q3 decides should replace them all\""
+ },
+ {
+  "run": "f2-keep/runs/04",
+  "folder": "f2-keep",
+  "criterion": "read-in-place",
+  "answer": "no",
+  "evidence": "No tool calls."
+ },
+ {
+  "run": "f2-reach-reminder/runs/04",
+  "folder": "f2-reach-reminder",
+  "criterion": "conflict-claim",
+  "answer": "no",
+  "evidence": "\"I read each one where it's written, and they don't compete. Each answers a different situation\""
+ },
+ {
+  "run": "f2-reach-reminder/runs/04",
+  "folder": "f2-reach-reminder",
+  "criterion": "read-in-place",
+  "answer": "yes",
+  "evidence": "Bash: sed template/AGENTS.md, poteto-mode SKILL.md, feature.md"
+ },
+ {
+  "run": "f2-help/runs/07",
+  "folder": "f2-help",
+  "criterion": "conflict-claim",
+  "answer": "no",
+  "evidence": "\"Read where they're written, each covers a different situation\""
+ },
+ {
+  "run": "f2-help/runs/07",
+  "folder": "f2-help",
+  "criterion": "read-in-place",
+  "answer": "yes",
+  "evidence": "Bash: sed template/AGENTS.md, poteto SKILL.md, feature.md"
+ },
+ {
+  "run": "f2-help/runs/01",
+  "folder": "f2-help",
+  "criterion": "conflict-claim",
+  "answer": "no",
+  "evidence": "\"The ways of departing from a rule don't conflict... each covers a different situation\""
+ },
+ {
+  "run": "f2-help/runs/01",
+  "folder": "f2-help",
+  "criterion": "read-in-place",
+  "answer": "yes",
+  "evidence": "Bash: sed template/AGENTS.md, poteto-mode SKILL.md, feature.md"
+ },
+ {
+  "run": "f2-reach-reminder/runs/01",
+  "folder": "f2-reach-reminder",
+  "criterion": "conflict-claim",
+  "answer": "no",
+  "evidence": "\"One conflict I checked and dropped... they cover different situations\""
+ },
+ {
+  "run": "f2-reach-reminder/runs/01",
+  "folder": "f2-reach-reminder",
+  "criterion": "read-in-place",
+  "answer": "yes",
+  "evidence": "Bash: sed template/AGENTS.md, poteto SKILL.md, feature.md"
+ },
+ {
+  "run": "f2-keep/runs/03",
+  "folder": "f2-keep",
+  "criterion": "conflict-claim",
+  "answer": "yes",
+  "evidence": "\"The factory has five ways to depart from a rule, and they conflict.\" ... \"The five above conflict\""
+ },
+ {
+  "run": "f2-keep/runs/03",
+  "folder": "f2-keep",
+  "criterion": "read-in-place",
+  "answer": "no",
+  "evidence": "Its only tool call (on the research doc) was denied. No mechanism file was read."
+ },
+ {
+  "run": "f2-reach-top/runs/09",
+  "folder": "f2-reach-top",
+  "criterion": "conflict-claim",
+  "answer": "yes",
+  "evidence": "\"the factory already has five ways out of a rule, and they disagree\"; \"says the opposite\""
+ },
+ {
+  "run": "f2-reach-top/runs/09",
+  "folder": "f2-reach-top",
+  "criterion": "read-in-place",
+  "answer": "no",
+  "evidence": "No tool calls."
+ },
+ {
+  "run": "f2-keep/runs/10",
+  "folder": "f2-keep",
+  "criterion": "conflict-claim",
+  "answer": "yes",
+  "evidence": "\"The factory has five ways to depart from a rule, and they disagree.\"; \"This is the opposite default\""
+ },
+ {
+  "run": "f2-keep/runs/10",
+  "folder": "f2-keep",
+  "criterion": "read-in-place",
+  "answer": "no",
+  "evidence": "No tool calls."
+ },
+ {
+  "run": "f2-reach-reminder/runs/09",
+  "folder": "f2-reach-reminder",
+  "criterion": "conflict-claim",
+  "answer": "no",
+  "evidence": "\"most of them aren't competing answers, because each covers a different situation\". It flags only one specific overlap, which it checked in place."
+ },
+ {
+  "run": "f2-reach-reminder/runs/09",
+  "folder": "f2-reach-reminder",
+  "criterion": "read-in-place",
+  "answer": "yes",
+  "evidence": "Bash: sed template/AGENTS.md, poteto SKILL.md, feature.md, ticket.md"
+ },
+ {
+  "run": "f2-help/runs/05",
+  "folder": "f2-help",
+  "criterion": "conflict-claim",
+  "answer": "no",
+  "evidence": "\"The 'five conflicting mechanisms' don't conflict... each covers a different situation\""
+ },
+ {
+  "run": "f2-help/runs/05",
+  "folder": "f2-help",
+  "criterion": "read-in-place",
+  "answer": "yes",
+  "evidence": "Bash: sed template/AGENTS.md, AGENTS.md, poteto SKILL.md, feature.md"
+ },
+ {
+  "run": "f2-help/runs/03",
+  "folder": "f2-help",
+  "criterion": "conflict-claim",
+  "answer": "no",
+  "evidence": "\"The ways a reader may depart from a rule apply to different situations... they don't conflict\""
+ },
+ {
+  "run": "f2-help/runs/03",
+  "folder": "f2-help",
+  "criterion": "read-in-place",
+  "answer": "yes",
+  "evidence": "Bash: sed 10,24p template/AGENTS.md; poteto-mode SKILL.md; feature.md"
+ },
+ {
+  "run": "f2-keep/runs/05",
+  "folder": "f2-keep",
+  "criterion": "conflict-claim",
+  "answer": "yes",
+  "evidence": "\"five instructions for what to do when a rule gets in the way, and they disagree\" ... \"whether one rule replaces all five\""
+ },
+ {
+  "run": "f2-keep/runs/05",
+  "folder": "f2-keep",
+  "criterion": "read-in-place",
+  "answer": "no",
+  "evidence": "No tool calls."
+ },
+ {
+  "run": "f2-reach-top/runs/01",
+  "folder": "f2-reach-top",
+  "criterion": "conflict-claim",
+  "answer": "yes",
+  "evidence": "\"The factory has five ways to depart from a rule today, and they disagree\" ... \"one mechanism... the other four are folded into it or removed\""
+ },
+ {
+  "run": "f2-reach-top/runs/01",
+  "folder": "f2-reach-top",
+  "criterion": "read-in-place",
+  "answer": "no",
+  "evidence": "No tool calls."
+ },
+ {
+  "run": "f2-help/runs/06",
+  "folder": "f2-help",
+  "criterion": "conflict-claim",
+  "answer": "no",
+  "evidence": "\"The ways of departing from a rule don't conflict... they cover different situations\""
+ },
+ {
+  "run": "f2-help/runs/06",
+  "folder": "f2-help",
+  "criterion": "read-in-place",
+  "answer": "yes",
+  "evidence": "Bash: sed template/AGENTS.md, poteto-mode SKILL.md, feature.md"
+ },
+ {
+  "run": "f2-reach-top/runs/02",
+  "folder": "f2-reach-top",
+  "criterion": "conflict-claim",
+  "answer": "yes",
+  "evidence": "\"The factory gives a reader five ways to depart from a rule, and they disagree\" ... \"picking one way in Q3 and changing the other four to match\""
+ },
+ {
+  "run": "f2-reach-top/runs/02",
+  "folder": "f2-reach-top",
+  "criterion": "read-in-place",
+  "answer": "no",
+  "evidence": "No tool calls."
+ }
+]

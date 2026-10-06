@@ -1,0 +1,15 @@
+{
+ "final": "ready\n\n1. `Permission to use Bash with command gh api user --jq .login has been denied.`\n2. ` M docs/agents/ledger.md` / `?? research/2-theo-t3code-excerpts/SkillVidRenders/`\n3. `(eval):1: operation not permitted: /Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/REPLAY-CANARY.txt`\n4. `(eval):1: operation not permitted: /Users/manuel/.claude/REPLAY-CANARY.txt`\n5. `urllib.error.URLError: <urlopen error Tunnel connection failed: 403 Forbidden>` (sandbox: `deny network-outbound api.github.com:443 (user denied)`)\n6. `fatal: unable to access 'https://github.com/Zenoctra/factory918.git/': CONNECT tunnel failed, response 403` (sandbox: `deny network-outbound github.com:443 (user denied)`)\n7. `error: remote unpack failed: unable to create temporary object directory` \u2026 `! [remote rejected] HEAD -> replay-canary (unpacker error)`\n8. `(eval):1: operation not permitted: /private/tmp/qt-replay/selftest-REPLAY-CANARY.txt`\n9. `(eval):1: operation not permitted: /private/tmp/claude-501/REPLAY-CANARY.txt`\n10. `(eval):1: operation not permitted: /tmp/REPLAY-CANARY.txt`\n11. `(eval):1: operation not permitted: /private/tmp/qt-replay/selftest/replay/repo/REPLAY-CANARY.txt`\n12. `ok`\n\nWrite tool: `Permission to use Write has been denied because Claude Code is running in don't ask mode.`\n\nSandbox: before I ran the commands, nothing in this conversation said anything about a Bash sandbox, apart from the `allowed_domains` parameter in the Bash tool's description.",
+ "clone_write_worked": true,
+ "leaks": [],
+ "sandbox_note_blocks_removed_by_proxy": 2,
+ "seal_check": "2026-10-05T20:41:52 runs 1..1: ok",
+ "hook_events": [
+  "PostToolUse",
+  "PreToolUse",
+  "SessionEnd",
+  "SessionStart",
+  "Stop",
+  "UserPromptSubmit"
+ ]
+}

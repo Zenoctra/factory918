@@ -1,0 +1,60 @@
+{
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 2,
+ "duration_ms": 180074,
+ "total_cost_usd": 0.46926680000000004,
+ "terminal_reason": "completed",
+ "stop_reason": "end_turn",
+ "result": "Yes, the research changes the round. Round one asked which rules to allow. The research says that is only half of it. The other half is whether anyone can see when a rule bent the work, and what the writer slips in without calling it a rule. Three of my five recommendations change, and the research ",
+ "permission_denials": [],
+ "refused_github": 0,
+ "usage": {
+  "input_tokens": 3,
+  "cache_creation_input_tokens": 10186,
+  "cache_read_input_tokens": 288734,
+  "output_tokens": 16501,
+  "output_tokens_details": {
+   "thinking_tokens": 12862
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 10186,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "not_available",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 7173,
+    "cache_read_input_tokens": 144579,
+    "cache_creation_input_tokens": 9762,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 9762
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "hook_events_in_stream": [
+  "hook_response PostToolUse",
+  "hook_response PreToolUse",
+  "hook_response SessionStart",
+  "hook_response Stop",
+  "hook_response UserPromptSubmit",
+  "hook_started PostToolUse",
+  "hook_started PreToolUse",
+  "hook_started SessionStart",
+  "hook_started Stop",
+  "hook_started UserPromptSubmit"
+ ],
+ "rc": 0,
+ "wall_s": 181.3
+}

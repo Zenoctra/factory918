@@ -1,0 +1,59 @@
+{
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 3,
+ "duration_ms": 72289,
+ "total_cost_usd": 0.2289018,
+ "terminal_reason": "completed",
+ "stop_reason": "end_turn",
+ "result": "The search finished, and so did a research note on an unmerged branch that was written for this ticket. Three things they turned up change my round, so here it is again with those changes. You haven't answered yet, so nothing is settled.\n\n**What changed:**\n- **Some rules about the route have done pr",
+ "permission_denials": [],
+ "usage": {
+  "input_tokens": 3,
+  "cache_creation_input_tokens": 7612,
+  "cache_read_input_tokens": 220569,
+  "output_tokens": 6194,
+  "output_tokens_details": {
+   "thinking_tokens": 3370
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 7612,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "not_available",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 5172,
+    "cache_read_input_tokens": 110486,
+    "cache_creation_input_tokens": 7209,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 7209
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "hook_events_in_stream": [
+  "hook_response PostToolUse",
+  "hook_response PreToolUse",
+  "hook_response SessionStart",
+  "hook_response Stop",
+  "hook_response UserPromptSubmit",
+  "hook_started PostToolUse",
+  "hook_started PreToolUse",
+  "hook_started SessionStart",
+  "hook_started Stop",
+  "hook_started UserPromptSubmit"
+ ],
+ "rc": 0,
+ "wall_s": 73.2
+}

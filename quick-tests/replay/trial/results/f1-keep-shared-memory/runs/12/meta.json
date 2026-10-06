@@ -1,0 +1,65 @@
+{
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 3,
+ "duration_ms": 96884,
+ "total_cost_usd": 0.30525880000000005,
+ "terminal_reason": "completed",
+ "stop_reason": "end_turn",
+ "result": "Your answers are saved word for word in a local file. Posting them to the ticket was declined, so they'll go into the resolution comment unless you want them posted sooner. Your budget rule is already in my memory as you stated it. A note on names: the first mode is called `safe` in the factory, and",
+ "permission_denials": [
+  {
+   "tool": "Bash",
+   "input": "{\"command\": \"f=/private/tmp/qt-replay/f1-keep/scratchpad/152-answers-round1.md && { echo \\\"Manuel's answers to the first round on this ticket, 2026-09-30, kept word for word. The questions were the research-informed version: Q1 what makes a rule binding and who can make it bind; Q2 how route knowledge is written; Q3 bars on what gets reported; Q4 one mechanism for departing from a route or a rule (re-asked, since the five current mechanisms were not listed); Q5 budgets.\\\"; echo; sed '1,2d' \\\"$f\\\" | sed 's/^/> /'; echo; echo \\\"Posted at Manuel's request, with his words quoted verbatim.\\\"; echo; echo \\\"Claude Opus 5.5, Claude Code\\\"; } > /private/tmp/qt-replay/f1-keep/scratchpad/c.md && gh issue comment 152 --body-file /private/tmp/qt-replay/f1-keep/scratchpad/c.md\"}"
+  }
+ ],
+ "refused_github": 1,
+ "usage": {
+  "input_tokens": 5,
+  "cache_creation_input_tokens": 4914,
+  "cache_read_input_tokens": 472234,
+  "output_tokens": 8574,
+  "output_tokens_details": {
+   "thinking_tokens": 4931
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 4914,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "not_available",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 5905,
+    "cache_read_input_tokens": 159979,
+    "cache_creation_input_tokens": 850,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 850
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "hook_events_in_stream": [
+  "hook_response PostToolUse",
+  "hook_response PreToolUse",
+  "hook_response SessionStart",
+  "hook_response Stop",
+  "hook_response UserPromptSubmit",
+  "hook_started PostToolUse",
+  "hook_started PreToolUse",
+  "hook_started SessionStart",
+  "hook_started Stop",
+  "hook_started UserPromptSubmit"
+ ],
+ "rc": 0,
+ "wall_s": 98.0
+}

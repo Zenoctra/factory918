@@ -1,0 +1,71 @@
+{
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 3,
+ "duration_ms": 31343,
+ "total_cost_usd": 3.2153638000000004,
+ "terminal_reason": "completed",
+ "stop_reason": "end_turn",
+ "result": "The search turned up something that changes what this session should do. I've paused charting until you tell me which version of the map is current.\n\n**What it found.** Your working copy of the factory, outside this checkout, has a local copy of this map's body at `.scratch/146-body.md`, dated Octob",
+ "permission_denials": [
+  {
+   "tool": "Bash",
+   "input": "{\"command\": \"date; git remote -v; gh issue view 146 --json title,updatedAt,comments --jq '.title, .updatedAt, (.comments|length)' 2>&1 | head; S=\\\"/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.scratch\\\"; ls -la \\\"$S/146-body.md\\\" 2>&1; sed -n '1,12p' \\\"$S/146-body.md\\\" 2>&1; grep -n -A12 '^## Decisions so far' \\\"$S/146-body.md\\\" 2>&1 | head -30\", \"description\": \"Check remote, issue access, and the local map copy\"}"
+  },
+  {
+   "tool": "Bash",
+   "input": "{\"command\": \"git remote -v && gh issue view 146 --json updatedAt,comments --jq '.updatedAt, (.comments|length)'\", \"description\": \"Check the git remote and the map issue\"}"
+  }
+ ],
+ "refused_github": 2,
+ "usage": {
+  "input_tokens": 8,
+  "cache_creation_input_tokens": 8812,
+  "cache_read_input_tokens": 339018,
+  "output_tokens": 2545,
+  "output_tokens_details": {
+   "thinking_tokens": 1465
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 8812,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "not_available",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 1360,
+    "cache_read_input_tokens": 116255,
+    "cache_creation_input_tokens": 267,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 267
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "hook_events_in_stream": [
+  "hook_response PostToolUse",
+  "hook_response PreToolUse",
+  "hook_response SessionStart",
+  "hook_response Stop",
+  "hook_response SubagentStop",
+  "hook_response UserPromptSubmit",
+  "hook_started PostToolUse",
+  "hook_started PreToolUse",
+  "hook_started SessionStart",
+  "hook_started Stop",
+  "hook_started SubagentStop",
+  "hook_started UserPromptSubmit"
+ ],
+ "rc": 0,
+ "wall_s": 398.7
+}

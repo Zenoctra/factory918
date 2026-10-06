@@ -1,0 +1,56 @@
+{
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 1,
+ "duration_ms": 34021,
+ "total_cost_usd": 0.0785352,
+ "terminal_reason": "completed",
+ "stop_reason": "end_turn",
+ "result": "The map exists but has never been charted. It has a Destination, and its fog section still says \"To be charted in the first wayfinder session.\" So this session charts it: first we settle the destination, then we lay out the open questions as tickets. Nothing gets resolved today. A subagent is checki",
+ "permission_denials": [],
+ "refused_github": 0,
+ "usage": {
+  "input_tokens": 1,
+  "cache_creation_input_tokens": 424,
+  "cache_read_input_tokens": 103496,
+  "output_tokens": 2722,
+  "output_tokens_details": {
+   "thinking_tokens": 1272
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 424,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "not_available",
+  "iterations": [
+   {
+    "input_tokens": 1,
+    "output_tokens": 2722,
+    "cache_read_input_tokens": 103496,
+    "cache_creation_input_tokens": 424,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 424
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "hook_events_in_stream": [
+  "hook_response SessionStart",
+  "hook_response Stop",
+  "hook_response UserPromptSubmit",
+  "hook_started SessionStart",
+  "hook_started Stop",
+  "hook_started UserPromptSubmit"
+ ],
+ "rc": 0,
+ "wall_s": 35.0
+}

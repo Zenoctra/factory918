@@ -1,0 +1,60 @@
+{
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 4,
+ "duration_ms": 123297,
+ "total_cost_usd": 1.2609915999999999,
+ "terminal_reason": "completed",
+ "stop_reason": "end_turn",
+ "result": "I couldn't recover the copy of your answers I'd saved, because the scratch folder was reset, so I've saved them word for word again. They'll go on the ticket with the resolution, and I'll add pointers on the map and on the Let It Rip map at the same time.\n\n## Settled from your answers\n\n- **Q2: (b).*",
+ "permission_denials": [],
+ "refused_github": 0,
+ "usage": {
+  "input_tokens": 7,
+  "cache_creation_input_tokens": 115247,
+  "cache_read_input_tokens": 521838,
+  "output_tokens": 11731,
+  "output_tokens_details": {
+   "thinking_tokens": 5950
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 115247,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "not_available",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 6442,
+    "cache_read_input_tokens": 159919,
+    "cache_creation_input_tokens": 2145,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 2145
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "hook_events_in_stream": [
+  "hook_response PostToolUse",
+  "hook_response PreToolUse",
+  "hook_response SessionStart",
+  "hook_response Stop",
+  "hook_response UserPromptSubmit",
+  "hook_started PostToolUse",
+  "hook_started PreToolUse",
+  "hook_started SessionStart",
+  "hook_started Stop",
+  "hook_started UserPromptSubmit"
+ ],
+ "rc": 0,
+ "wall_s": 124.7
+}

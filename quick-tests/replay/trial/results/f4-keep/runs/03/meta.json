@@ -1,0 +1,55 @@
+{
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 1,
+ "duration_ms": 33740,
+ "total_cost_usd": 0.0678102,
+ "terminal_reason": "completed",
+ "stop_reason": "end_turn",
+ "result": "I've loaded the map. A background agent is gathering facts I'll need later: where the writing skills live, which briefs already exist, and what came out of the earlier audits. These questions don't depend on any of that, so I'm asking them now. They're all about step one, pinning down the destinatio",
+ "permission_denials": [],
+ "usage": {
+  "input_tokens": 1,
+  "cache_creation_input_tokens": 421,
+  "cache_read_input_tokens": 103491,
+  "output_tokens": 2187,
+  "output_tokens_details": {
+   "thinking_tokens": 1064
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 421,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "not_available",
+  "iterations": [
+   {
+    "input_tokens": 1,
+    "output_tokens": 2187,
+    "cache_read_input_tokens": 103491,
+    "cache_creation_input_tokens": 421,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 421
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "hook_events_in_stream": [
+  "hook_response SessionStart",
+  "hook_response Stop",
+  "hook_response UserPromptSubmit",
+  "hook_started SessionStart",
+  "hook_started Stop",
+  "hook_started UserPromptSubmit"
+ ],
+ "rc": 0,
+ "wall_s": 34.8
+}

@@ -1,0 +1,55 @@
+{
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 1,
+ "duration_ms": 25677,
+ "total_cost_usd": 0.0680706,
+ "terminal_reason": "completed",
+ "stop_reason": "end_turn",
+ "result": "The background search finished. Three of its findings change the round I just posted, so here they are before you answer.\n\n**1. A rule about what done looks like did as much harm as the reading limits.** The constraints audit kept rules about the report's form as harmless. Its own late addendum took",
+ "permission_denials": [],
+ "usage": {
+  "input_tokens": 1,
+  "cache_creation_input_tokens": 400,
+  "cache_read_input_tokens": 107333,
+  "output_tokens": 2170,
+  "output_tokens_details": {
+   "thinking_tokens": 873
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 400,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "not_available",
+  "iterations": [
+   {
+    "input_tokens": 1,
+    "output_tokens": 2170,
+    "cache_read_input_tokens": 107333,
+    "cache_creation_input_tokens": 400,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 400
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "hook_events_in_stream": [
+  "hook_response SessionStart",
+  "hook_response Stop",
+  "hook_response UserPromptSubmit",
+  "hook_started SessionStart",
+  "hook_started Stop",
+  "hook_started UserPromptSubmit"
+ ],
+ "rc": 0,
+ "wall_s": 26.8
+}

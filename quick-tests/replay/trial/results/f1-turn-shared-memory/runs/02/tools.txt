@@ -1,0 +1,3 @@
+Bash: {"command": "grep -n -i 'eco\\b\\|`eco`\\|tier' template/.agents/skills/poteto-mode/playbooks/ticket.md | head -8; grep -n -i 'eco' docs/knowledge/core/DECISIONS.md | head -5; gh issue list --state open --search 'review in:title' --json number,title --jq '.[]|\"\\(.number) \\(.title)\"'"}
+  -> error: Permission to use Bash with command grep -n -i 'eco\b\|`eco`\|tier' template/.agents/skills/poteto-mode/playbooks/ticket.md | head -8; grep -n -i 'eco' docs/knowledge/core/DECISIONS.md | head -5; gh issue list --state open --search 'review in:title' --json number,title --jq '.[]|"\(.number) \(.title
+Read: {"file_path": "/private/tmp/qt-replay/f1-turn/repo/template/.agents/skills/poteto-mode/playbooks/ticket.md", "offset": 8, "limit": 6}
