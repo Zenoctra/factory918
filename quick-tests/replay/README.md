@@ -50,6 +50,10 @@ Add runs to an existing folder by running the same command again; numbering cont
 - `--memory <folder>`: replaces the memory the session held.
 - `--keep-sandbox-note`: lets the model see the CLI's description of the Bash sandbox (see below).
 - `--no-agents`: denies the Agent tool.
+- `--hooks FILE`: adds hooks, a JSON object `{event: [matcher groups]}` in the settings format, beside the logger. They run unsandboxed, as a user's hooks do, with `$REPLAY_RUN_DIR` set to the run's folder. `moment-detector/paired/` uses it to run the moment detector live.
+- `--persist`: keeps the forked session's transcript, so a hook that reads `transcript_path` can find it later and the run's own record survives; the batch moves it into `claude-home-leftovers/` at the end. The CLI writes that file only when the replayed message is recorded, after `UserPromptSubmit` has fired.
+
+Run one batch at a time per `--out`: two batches on one folder number their runs from the same place and overwrite each other.
 
 ## What the copy is
 

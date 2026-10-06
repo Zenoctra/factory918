@@ -5,7 +5,7 @@ This is the machinery of #174: a Claude Code hook that asks a separate model one
 ## How it is wired
 
 1. **The event.** A `UserPromptSubmit` command hook runs `md.py hook`. It fires before the main model sees the message, so its time is added to every prompt.
-2. **What the detector reads.** The hook takes the new message from its input and reads the session's transcript (`transcript_path`) for what came before it: the main model's text since the previous user message (`last_reply`), its tool calls with their paths and commands (`actions`), and optionally the previous user message. It never reads thinking. Each part is on or off, and cut to a length, in the moment's `slice`.
+2. **What the detector reads.** The hook takes the new message from its input and reads the session's transcript (`transcript_path`, or `$MD_TRANSCRIPT` when set) for what came before it: the main model's text since the previous user message (`last_reply`), its tool calls with their paths and commands (`actions`), and optionally the previous user message. It never reads thinking. Each part is on or off, and cut to a length, in the moment's `slice`.
 3. **The question.** The moment's question, optional labelled examples, the slice, and an answer format go to a fresh `claude -p` call on the subscription: `--safe-mode` (no hooks, CLAUDE.md, skills, plugins or MCP), no tools, thinking off where the model allows it, no prompt cache, no session file, a one-line system prompt, run from the temp directory. The model answers `{"score", "cue"}` as text, a score from 1 to 10, and the check fires at the moment's `threshold`; `--json-schema` costs a second turn and twice the tokens. The default is the one the scoring step chose: Opus 5.5 at low effort reading the agent's last reply and actions, with `question-definition.md`, firing at 6 (`moment-detector/scoring/README.md`).
 4. **The suggestion.** When the verdict is yes, the hook returns the moment's suggestion as `additionalContext`, which reaches the main model as a system reminder beside the message. The placeholder names the cue the detector saw, says it is a separate model reading a short slice that can be wrong, proposes one scoped step (write one sentence naming what is being corrected and what the user now means), and invites a one-line decline. It states facts and offers a choice; it carries no "must" or authority (research note, sections 6.5 and 10).
 5. **The trace.** The suggestion carries an id, `md-xxxxxx`. Taking it up means beginning the restatement with `(md-xxxxxx)`; declining means writing `(md-xxxxxx declined: <reason>)`. Both are in the reply the user reads.
@@ -49,6 +49,7 @@ A moment is a directory: `moment.json` and the files it names. `moments/correcti
 | `skip_prompt_patterns` | Regular expressions; a matching prompt is logged as skipped. The defaults match the text of task notifications, slash-command expansions and `!` shell input as they appear in transcripts; whether those reach the hook was not tested. |
 | `system_prompt`, `question`, `examples`, `answer_format` | What the detector is asked. `question` and `examples` are file names, relative to the moment or absolute; `examples` is `null` for the definition alone. `examples.synthetic.md` shows the format and is not real data. |
 | `suggestion` | The suggestion's template: `{id}`, `{cue}`, `{confidence}`, `{score}`, `{model}`. |
+| `deliver` | `false` is shadow mode: the check runs and is logged with the suggestion it would have sent, and nothing reaches the main model. The control arm of the paired runs. Default `true`. |
 
 ## For the scoring step
 
@@ -62,7 +63,7 @@ MD_LOG=scores/checks.jsonl md.py check correction --set model=sonnet --set slice
 
 `case` rebuilds, from a past transcript and the uuid of a user message (a typed or a queued one), the exact slice the hook would have read there; on the trial's transcript it matched the hook's logged case for all four turns. `check` runs one check over a case with overrides and prints the log record. `moment-detector/scoring/` drives these functions over the labelled library; its README has the method and the results. `question.md` is the short working definition the hook first shipped with, kept so that baseline can be rerun.
 
-For paired runs with and without the suggestion, replay (`quick-tests/replay/`) reads hooks from its clone, so a `--patch` that adds this hook should make it live; that has not been tried.
+For paired runs with and without the suggestion, `moment-detector/paired/` runs this hook live under replay, delivering in one arm and in shadow mode in the other; its README has the method and the results.
 
 ## What was verified, Claude Code 2.1.288, 2026-10-05
 
@@ -84,7 +85,12 @@ Verified on 2.1.288, 2026-10-06, during the scoring step:
 - The CLI writes the cache for the whole prompt at twice the input price (the 1-hour rate), and a check's prompt is never repeated, so the write is never read. `DISABLE_PROMPT_CACHING=1` halved a Sonnet check's cost (from $0.0226 to $0.0114 on the same 5,600-token prompt). The hook now sets it.
 - Sonnet 5.5 twice answered a 1 to 10 scale with 72 and 96, in 3,537 scored checks; Opus 5.5 (423) and Haiku 4.5 (1,794) never did. A score outside `score_range` is now an invalid answer.
 
-Not verified: whether the hook fires on a background agent's report (the skip patterns catch it by its text); the desktop app as opposed to the CLI; replay; Codex.
+Verified on 2.1.288, 2026-10-06, under replay (`quick-tests/replay/replay.py run --hooks --persist`, which resumes a copy of a past session with `-p --resume --fork-session`):
+
+- `UserPromptSubmit` fires on the replayed message, and the hook's `additionalContext` reaches the model and is recorded in the forked session's transcript as a `hook_additional_context` attachment, as in a live session.
+- A forked session writes its transcript only when its first message is recorded, which is after this hook runs. The hook input names the new file, which does not exist yet, so the first check of a forked session read nothing and was skipped as the session's first message. This would also hit the first message after a fork in the desktop app (not tried there). `$MD_TRANSCRIPT` points the hook at another transcript; replay sets it to the copy it resumed from, which holds what the live hook read at that message. On the one moment compared, the slice built that way matched the scoring step's `md.py case` except where a rewritten path moved the 300-character cut of a tool call.
+
+Not verified: whether the hook fires on a background agent's report (the skip patterns catch it by its text); the desktop app as opposed to the CLI; Codex.
 
 ## Measured
 
@@ -108,7 +114,7 @@ All the words in them are written for the trial. The main session ran on Opus 5.
 
 ## Open
 
-- The marker sits in the reply the user reads, and asking for it is itself a change to the main model's behaviour; paired runs should compare the work, not count markers.
+- The marker sits in the reply the user reads, and asking for it is itself a change to the main model's behaviour. The paired replays (`../paired/`) found that it tracks the restatement it asks for, not the work, and that the main model wrote it on every false alarm: measure uptake with paired runs, not markers.
 - A decline reason is cut at its first `)`.
 - The hook costs about 2 s on every message on Opus 5.5 at low effort (median 1.98 s, 90th percentile 2.9 s on the test split), against about 1 s on Haiku. The first-message skip and the skip patterns are structural gates; more of them, decided without a model, would cut the calls further.
 - An answer to `AskUserQuestion` reaches the agent as a tool result, so `UserPromptSubmit` never fires for it; two of the library's clean corrections came that way. A `PostToolUse` hook on `AskUserQuestion` could check them. Whether a slash command's arguments reach the hook, and in what form, is untested; the skip pattern for `<command-message>` drops them as transcripts record them, which lost one correction on the test split.

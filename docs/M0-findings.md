@@ -204,6 +204,8 @@ What went wrong in the harness and how it was handled. The standalone `claude` C
 
 2026-10-05. Same version. `UserPromptSubmit` input carries `prompt_id`, equal to the following user record's `promptId`, and `scratchpad_dir`. When the hook runs, the transcript holds everything before the new message; on a session's first message the file does not exist yet. `additionalContext` is recorded as an `attachment` of type `hook_additional_context`. A message typed while the model works fires the hook too, reaches the model mid-turn as a `queued_command` attachment rather than a user record, and shares the running turn's `prompt_id`. User records of a `-p` session carry no `origin` field.
 
+2026-10-06. Same version, under `quick-tests/replay/replay.py` (`-p --resume <copy> --fork-session`; #174, `moment-detector/paired/`). A forked session writes its transcript only when its first message is recorded, after `UserPromptSubmit` has fired, so the hook input's `transcript_path` names a file that does not exist yet; with `--no-session-persistence` it is never written. The hook's `additionalContext` reaches the model and is recorded in the forked transcript as a `hook_additional_context` attachment. A resumed session's `total_cost_usd` includes what the original session had spent, reported in a `result` event with `num_turns` 0 before the first turn ($1,556 on one session).
+
 ## Still open
 
 - A review costs two sub-agent floors (about 92K) before any reading; one sub-agent per review, or the orchestrator running one axis, would halve it. Manuel's call (ticket #33).
