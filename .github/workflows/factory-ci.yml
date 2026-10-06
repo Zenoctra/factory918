@@ -21,6 +21,8 @@ jobs:
         run: bash tests/shellcheck/gate.sh
       - name: The delegation hook blocks and passes what the test says
         run: bash tests/hooks/delegation.sh
+      - name: The phase hook prints and records what the test says
+        run: bash tests/hooks/mode.sh
       - name: review-comment.sh prints and refuses what the test says
         run: bash tests/spec-review/review-comment.sh
       - name: review-brief.sh writes the report shape into both briefs
