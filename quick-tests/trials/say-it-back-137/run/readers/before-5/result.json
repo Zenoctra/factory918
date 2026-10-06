@@ -1,0 +1,32 @@
+{
+  "ok": true,
+  "error": "",
+  "final": "{\"task\":\"Do a standards review of a six-commit change that adds a scenario table as a new core document and wires it into to-spec, the poteto-mode playbooks, the architect runner prompt, the patches and the records. I compare the diff against the factory's CODING_STANDARDS.md and the smell baseline, then sort each finding into one of four fixed headings.\",\"done\":\"A Markdown report exists at .scratch/review/ab47eb9/standards-report.md. It has exactly four `## ` headings in this order: Would break, Fails open, Standards breaches, Fix alongside. Items are numbered continuously across the headings and each one quotes its hunk in a fenced block. Every Would break or Fails open item also has a `Documented step:` line and a `Result:` line. The report is under 400 words and ends with the line `hard findings: N`. My reply is that path and nothing else. Zero findings is an acceptable result.\",\"may_change\":\"I may create or write only the report file at .scratch/review/ab47eb9/standards-report.md. I may read the diff at .scratch/review/ab47eb9/diff. When one finding needs context, I may read the single function or section around that hunk.\",\"must_not\":\"I must not run any commands: no tests, no build_knowledge.py, no git. I must not read whole files or browse the repository beyond what one finding needs, and that includes the onboarding reading list in CLAUDE.md. I must not edit any repository file, especially generated or vendored ones. I must not list things the CI gate already enforces, and I must not count an unsupported edge case that fails with a correctable message as a finding. My reply must not include anything besides the path.\",\"unsettled\":[\"The brief says to read nothing beyond it, but the diff is only in a file. I would treat reading that file as allowed.\",\"The changes to generated files under template/docs/factory918/ are presumably rebuild output. I would have to decide whether to treat them as such or flag them as hand edits under the 'never edited' rule without running the rebuild to check.\",\"I would have to decide whether the many coordinated edits across playbooks and patches count as a Shotgun Surgery smell or are simply how the patch system is meant to work.\",\"Without CI output, I would have to guess which issues CI already enforces so I can skip them.\",\"If a would-break finding needs a documented step, I would have to pick which document line counts as the one the user follows.\"],\"questions\":[\"Should I confirm that the template/docs/factory918/ changes match what build_knowledge.py produces, or assume they do since I can't run anything?\",\"Does the 400-word limit cover the quoted hunks inside the fenced blocks?\",\"Does the .scratch/review/ab47eb9/ directory already exist, or may I create it?\"]}",
+  "structured": {
+    "task": "Do a standards review of a six-commit change that adds a scenario table as a new core document and wires it into to-spec, the poteto-mode playbooks, the architect runner prompt, the patches and the records. I compare the diff against the factory's CODING_STANDARDS.md and the smell baseline, then sort each finding into one of four fixed headings.",
+    "done": "A Markdown report exists at .scratch/review/ab47eb9/standards-report.md. It has exactly four `## ` headings in this order: Would break, Fails open, Standards breaches, Fix alongside. Items are numbered continuously across the headings and each one quotes its hunk in a fenced block. Every Would break or Fails open item also has a `Documented step:` line and a `Result:` line. The report is under 400 words and ends with the line `hard findings: N`. My reply is that path and nothing else. Zero findings is an acceptable result.",
+    "may_change": "I may create or write only the report file at .scratch/review/ab47eb9/standards-report.md. I may read the diff at .scratch/review/ab47eb9/diff. When one finding needs context, I may read the single function or section around that hunk.",
+    "must_not": "I must not run any commands: no tests, no build_knowledge.py, no git. I must not read whole files or browse the repository beyond what one finding needs, and that includes the onboarding reading list in CLAUDE.md. I must not edit any repository file, especially generated or vendored ones. I must not list things the CI gate already enforces, and I must not count an unsupported edge case that fails with a correctable message as a finding. My reply must not include anything besides the path.",
+    "unsettled": [
+      "The brief says to read nothing beyond it, but the diff is only in a file. I would treat reading that file as allowed.",
+      "The changes to generated files under template/docs/factory918/ are presumably rebuild output. I would have to decide whether to treat them as such or flag them as hand edits under the 'never edited' rule without running the rebuild to check.",
+      "I would have to decide whether the many coordinated edits across playbooks and patches count as a Shotgun Surgery smell or are simply how the patch system is meant to work.",
+      "Without CI output, I would have to guess which issues CI already enforces so I can skip them.",
+      "If a would-break finding needs a documented step, I would have to pick which document line counts as the one the user follows."
+    ],
+    "questions": [
+      "Should I confirm that the template/docs/factory918/ changes match what build_knowledge.py produces, or assume they do since I can't run anything?",
+      "Does the 400-word limit cover the quoted hunks inside the fenced blocks?",
+      "Does the .scratch/review/ab47eb9/ directory already exist, or may I create it?"
+    ]
+  },
+  "cost_usd": 0.087824,
+  "duration_s": 14.7,
+  "num_turns": 2,
+  "model": "claude-opus-5-5",
+  "effort": "medium",
+  "mode": "read",
+  "cwd": "/private/tmp/wsbox/r-20261005-190607-1402/factory918",
+  "tool_calls": 1,
+  "denied": []
+}

@@ -324,7 +324,8 @@ def flatten(content) -> str:
     parts = []
     for b in content:
         if isinstance(b, dict):
-            parts.append(b.get("text") or json.dumps(b)[:200])
+            t = b.get("text") if b.get("text") is not None else b.get("content")
+            parts.append(t if isinstance(t, str) else json.dumps(b)[:200])
         else:
             parts.append(str(b))
     return "\n".join(parts)
@@ -400,8 +401,11 @@ def guard_check(before: dict) -> list[str]:
 
 
 def box_projects_dirs() -> list[Path]:
-    """Claude Code state dirs the CLI made for box cwds (tool-result spill files)."""
-    return [Path(p) for p in glob.glob(str(HOME / ".claude" / "projects" / (slug(BOX_ROOT) + "*")))]
+    """Claude Code state dirs the CLI made for cwds in boxes that no longer exist
+    (tool-result spill files). A live box's dir is kept: another batch may be using it."""
+    live = [slug(p) for p in BOX_ROOT.iterdir()] if BOX_ROOT.exists() else []
+    dirs = [Path(p) for p in glob.glob(str(HOME / ".claude" / "projects" / (slug(BOX_ROOT) + "-*")))]
+    return [d for d in dirs if not any(d.name.startswith(l) for l in live)]
 
 
 def check_main_untouched(before_status: str) -> list[str]:
@@ -563,8 +567,24 @@ def paths_written(calls: list[dict]) -> set[str]:
         if c["name"] in ("Write", "Edit", "NotebookEdit") and i.get("file_path"):
             out.add(i["file_path"])
         if c["name"] == "Bash":
-            for m in re.finditer(r">>?\s*\"?(/[^\"'\s;|&]+)", i.get("command", "")):
-                out.add(m.group(1))
+            cmd = i.get("command", "")
+            for m in re.finditer(r"(?:>>?|\btee(?:\s+-a)?)\s*(?:\"([^\"]+)\"|'([^']+)'|(/[^\s;|&<>]+))", cmd):
+                p = m.group(1) or m.group(2) or m.group(3)
+                if p and p.startswith("/") and not p.startswith("/dev/"):
+                    out.add(p)
+    return out
+
+
+def heredoc_writes(calls: list[dict]) -> dict[str, str]:
+    """Files the original wrote with `cat > PATH <<'X'` heredocs, last write wins."""
+    out = {}
+    pat = re.compile(r"cat\s*>\s*(?:\"([^\"]+)\"|'([^']+)'|(\S+))\s*<<-?\s*['\"]?(\w+)['\"]?\n(.*?)\n\4\s*$", re.S | re.M)
+    for c in calls:
+        if c["name"] == "Bash" and not c["is_error"]:
+            for m in pat.finditer(c["input"].get("command", "")):
+                p = m.group(1) or m.group(2) or m.group(3)
+                if p.startswith("/"):
+                    out[p] = m.group(5) + "\n"
     return out
 
 
@@ -574,6 +594,9 @@ def abs_paths_in(text: str) -> set[str]:
     for m in re.finditer(r"[`\"'](/(?:Users|private|tmp|var)/[^`\"'\n]+)[`\"']", text):
         found.add(m.group(1).rstrip("/.,:;"))
     for m in re.finditer(r"(?<![\w`\"'])(/(?:private|tmp|var)/[^\s`\"'<>)]+)", text):
+        found.add(m.group(1).rstrip("/.,:;"))
+    # A path alone on its line, spaces allowed, as briefs often set one out.
+    for m in re.finditer(r"^\s*(/(?:Users|private|tmp|var)/[^\n`\"']+?)\s*$", text, re.M):
         found.add(m.group(1).rstrip("/.,:;"))
     return found
 
@@ -595,36 +618,36 @@ def agent_meta(path: Path) -> dict:
     return json.loads(m.read_text()) if m.exists() else {}
 
 
-def parent_after(path: Path, meta: dict, turns: int = 8) -> tuple[str | None, str]:
-    """What the launching agent did after this subagent returned.
+def parent_after(path: Path, meta: dict, turns: int = 10) -> tuple[str | None, str]:
+    """What the launching agent did after this subagent finished.
 
     Finds the parent transcript holding the Agent call `meta["toolUseId"]`
-    and returns the parent's next assistant texts and tool calls, in order.
+    and returns the parent's assistant texts and tool calls stamped after the
+    subagent's last message (a background lane's result arrives later than
+    its launch returns), up to `turns` assistant messages.
     """
     tuid = meta.get("toolUseId")
     if not tuid:
         return None, ""
+    own = load_rows(path)
+    end = max((r["timestamp"] for r in own if r.get("timestamp")), default="")
     # Layout: <projects>/<session>.jsonl is the root; its subagents are under
     # <projects>/<session>/subagents/ (possibly nested). The parent is either.
-    session = next(p for p in path.parents if p.parent == projects_dir() or p.parent.name == "projects")
+    session = next(p for p in path.parents if p.parent.parent.name == "projects")
     candidates = [session.parent / (session.name + ".jsonl")]
     candidates += [Path(p) for p in glob.glob(str(session / "subagents" / "**" / "*.jsonl"), recursive=True)]
     for cand in candidates:
         if not cand.exists() or cand == path:
             continue
         rows = load_rows(cand)
-        idx = None
-        for i, r in enumerate(rows):
-            c = (r.get("message") or {}).get("content")
-            if r.get("type") == "user" and isinstance(c, list) and any(
-                    b.get("type") == "tool_result" and b.get("tool_use_id") == tuid for b in c):
-                idx = i
-                break
-        if idx is None:
+        launched = any(r.get("type") == "assistant" and any(
+            b.get("type") == "tool_use" and b.get("id") == tuid
+            for b in ((r.get("message") or {}).get("content") or []) if isinstance(b, dict)) for r in rows)
+        if not launched:
             continue
         out, n = [], 0
-        for r in rows[idx + 1:]:
-            if r.get("type") != "assistant":
+        for r in rows:
+            if r.get("type") != "assistant" or (r.get("timestamp") or "") < end:
                 continue
             for b in (r.get("message") or {}).get("content") or []:
                 if b.get("type") == "text" and b.get("text", "").strip():
@@ -795,13 +818,39 @@ def safety_preamble() -> tuple[dict, str]:
     return guard_snapshot(), git_status_main()
 
 
-def safety_verdict(before: tuple[dict, str], out_dir: Path) -> list[str]:
-    """After a batch: check the guard, the main checkout, and clear the CLI's box state dirs."""
+def account_identifiers() -> list[str]:
+    """The logged-in account's email and ids, which must never land in a pushed trial."""
+    try:
+        j = json.loads(subprocess.run([find_cli(), "auth", "status"], capture_output=True, text=True,
+                                      timeout=60).stdout)
+    except Exception:
+        return []
+    return [str(j[k]) for k in ("email", "orgId", "accountUuid") if j.get(k)]
+
+
+def privacy_check(out_dir: Path) -> list[str]:
+    """Names any file under out_dir that carries the account's email or ids (the repo is public)."""
+    ids = account_identifiers()
+    hits = []
+    for p in out_dir.rglob("*"):
+        if p.is_file():
+            try:
+                text = p.read_text(errors="ignore")
+            except OSError:
+                continue
+            if any(i in text for i in ids):
+                hits.append(f"account identifier in {p}")
+    return hits
+
+
+def safety_verdict(before: tuple[dict, str], out_dir: Path, name: str = "safety.json") -> list[str]:
+    """After a batch: check the guard, the main checkout and the output's privacy,
+    and clear the CLI's box state dirs."""
     snap, status = before
-    problems = guard_check(snap) + check_main_untouched(status)
+    problems = guard_check(snap) + check_main_untouched(status) + privacy_check(out_dir)
     leftovers = [str(p) for p in box_projects_dirs()]
     for p in box_projects_dirs():
         shutil.rmtree(p, ignore_errors=True)
-    write_json(out_dir / "safety.json", {"problems": problems, "box_state_dirs_removed": leftovers,
+    write_json(out_dir / name, {"problems": problems, "box_state_dirs_removed": leftovers,
                                           "checked_at": now_stamp()})
     return problems
