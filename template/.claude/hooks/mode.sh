@@ -18,7 +18,7 @@ ledger="${CLAUDE_PROJECT_DIR:-.}/docs/agents/ledger.md"
 if [ -f "$ledger" ]; then
   n="$(grep -c '^[0-9]\{4\}-[0-9][0-9]-[0-9][0-9] ' "$ledger" 2>/dev/null || true)"
   p="$(grep -c -- '-> promoted' "$ledger" 2>/dev/null || true)"
-  last="$(grep -o '<!-- retro [0-9-]* -->' "$ledger" | tail -1 | grep -o '[0-9]\{4\}-[0-9-]*')"
+  last="$(grep -o '<!-- retro [0-9-]* -->' "$ledger" | tail -1 | grep -o '[0-9]\{4\}-[0-9-]*' || true)"
   if [ "$n" -gt "$p" ] && { [ -z "$last" ] || [ "$(( ($(date +%s) - $(date -j -f %Y-%m-%d "$last" +%s 2>/dev/null || date -d "$last" +%s)) / 86400 ))" -ge 7 ]; }; then
     echo "LEDGER: $((n - p)) unreviewed entries; last retro ${last:-never}. /factory-retro when convenient."
   fi
