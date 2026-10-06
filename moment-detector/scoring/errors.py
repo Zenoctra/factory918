@@ -29,7 +29,7 @@ def why(raw: str) -> str:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("variant")
-    ap.add_argument("--split", choices=["dev"], default="dev")
+    ap.add_argument("--split", choices=["dev", "test"], default="dev")
     ap.add_argument("--at", type=float)
     args = ap.parse_args()
     spec = load_variants()

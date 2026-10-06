@@ -1,6 +1,6 @@
 """Run detector variants over a split of the scoring universe, through the hook's own code.
 
-    python3 moment-detector/scoring/run.py VARIANT [VARIANT ...] --split dev [--reps 1] [--jobs 8]
+    python3 moment-detector/scoring/run.py VARIANT [VARIANT ...] --split dev [--reps 1] [--jobs 8] [--retry-errors]
     python3 moment-detector/scoring/run.py --list
 
 A variant is a named set of `--set` overrides in variants.json, applied in order:
@@ -13,8 +13,9 @@ clean item in the split, the run cuts the session with `md.make_case` and runs
 `md.check`, the function the hook calls; an item the hook would skip is
 recorded as skipped, with no call. Records go to
 .scratch/moment-detector/scoring/runs/VARIANT.jsonl (they hold Manuel's words).
-A rerun does only the (item, rep) pairs that are missing or ended in an error,
-so an interrupted run resumes. The test split runs only with --final.
+A rerun does only the (item, rep) pairs that are missing, so an interrupted
+run resumes; `--retry-errors` also reruns failed checks (a timeout or an
+off-scale answer), replacing them in the score. The test split runs only with --final.
 """
 
 from __future__ import annotations
@@ -32,6 +33,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent / "hook"))
 import md  # noqa: E402
 from prepare import OUT  # noqa: E402
+from label import DEFAULT_DIR  # noqa: E402
 
 RUNS = OUT / "runs"
 
@@ -76,7 +78,6 @@ def render_example(n: int, item: dict, session: dict, label: dict, fmt: str) -> 
 def examples_file(name: str, cv: dict, fmt: str, pool: list[dict], sessions: dict, tag: str) -> str:
     """A balanced, shuffled set of examples from `pool`: half corrections (a third of them quiet),
     half not (two thirds near misses)."""
-    from label import DEFAULT_DIR
     lib = {r["id"]: r for r in load_jsonl(DEFAULT_DIR / "library.jsonl")}
     rng = random.Random(f"{cv.get('seed', 0)}:{tag}")
     half = cv["per_fold"] // 2
@@ -117,11 +118,11 @@ def moments_for_items(name: str, split: str, sessions: dict) -> dict[str, dict]:
     return {i["id"]: per_fold[fold_of(i["group"], cv["folds"])] for i in items}
 
 
-def run(name: str, split: str, reps: int, jobs: int) -> None:
+def run(name: str, split: str, reps: int, jobs: int, retry_errors: bool) -> None:
     sessions = {s["id"]: s for s in load_jsonl(OUT / "sessions.jsonl")}
     by_item = moments_for_items(name, split, sessions)
     path = RUNS / f"{name}.jsonl"
-    done = {(r["item"], r["rep"]) for r in load_jsonl(path) if not r.get("error")}
+    done = {(r["item"], r["rep"]) for r in load_jsonl(path) if not (retry_errors and r.get("error"))}
     todo = [(i, rep) for rep in range(reps) for i in items_in(split) if (i["id"], rep) not in done]
     print(f"{name}: {len(todo)} checks to run on {split}", flush=True)
     lock = threading.Lock()
@@ -152,6 +153,7 @@ def main() -> None:
     ap.add_argument("--final", action="store_true", help="allow the frozen test split")
     ap.add_argument("--reps", type=int, default=1)
     ap.add_argument("--jobs", type=int, default=8)
+    ap.add_argument("--retry-errors", action="store_true")
     ap.add_argument("--list", action="store_true")
     args = ap.parse_args()
     spec = load_variants()
@@ -165,7 +167,7 @@ def main() -> None:
     if unknown:
         sys.exit(f"unknown variants: {unknown}")
     for name in args.variants:
-        run(name, args.split, args.reps, args.jobs)
+        run(name, args.split, args.reps, args.jobs, args.retry_errors)
 
 
 if __name__ == "__main__":

@@ -169,6 +169,7 @@ def metrics(preds: dict[str, Pred], t: float, rates: dict) -> dict:
         "wall_ms": {"median": statistics.median(walls) if walls else None,
                     "p90": statistics.quantiles(walls, n=10)[-1] if len(walls) > 9 else None,
                     "max": max(walls) if walls else None,
+                    "over_5s": sum(w > 5000 for w in walls), "over_10s": sum(w > 10000 for w in walls),
                     "over_20s": sum(w > 20000 for w in walls)},
         "cost_per_check": statistics.fmean(costs) if costs else None,
         "cost_per_message": sum(costs) / len(ps) if ps else None,
