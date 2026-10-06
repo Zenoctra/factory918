@@ -30,8 +30,22 @@ KINDS_CORRECTION = ["misread_intent", "output", "action", "claim", "rule"]
 KINDS_OTHER = ["new_request", "answer", "choice", "change_of_mind", "self_correction", "extension",
                "question", "approval", "information", "other_party", "other"]
 
-HARD_CASES = ["proposal_pushback", "failure_report", "earlier_agent_work", "more_than_delivered", "cannot_follow",
-              "authorized_then_objected", "suspicion_question", "none"]
+# Manuel's ruling on each kind in definition.md: True is a correction, False is not.
+# None means the ruling turns on agent_erred (suspicion_question) or is still open (mistaken_correction).
+RULINGS = {
+    "proposal_pushback": True, "suspicion_question": None, "cannot_follow": True, "earlier_agent_work": True,
+    "more_than_delivered": False, "failure_report": False, "pattern_complaint": True,
+    "authorized_then_objected": True, "mistaken_correction": None,
+}
+HARD_CASES = [*RULINGS, "none"]
+
+
+def ruled_label(label: dict) -> bool | None:
+    """The label Manuel's rulings give a labelled message, or None when no ruling decides it."""
+    kind = label["hard_case"]
+    if kind == "suspicion_question":
+        return {"yes": True, "no": False}.get(label["agent_erred"])
+    return RULINGS.get(kind)
 
 SCHEMA = {
     "type": "object",
