@@ -1,0 +1,4 @@
+3c3
+<   "pr view --json body"*) [ -f "${FAKE_PR_BODY:-}" ] && cat "$FAKE_PR_BODY" || { echo 'no pull requests found for branch "x"' >&2; exit 1; } ;;
+---
+>   "pr view --json body"*) if [ -f "${FAKE_PR_BODY:-}" ]; then cat "$FAKE_PR_BODY"; else echo 'no pull requests found for branch "x"' >&2; exit 1; fi ;;

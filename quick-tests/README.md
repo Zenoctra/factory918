@@ -50,9 +50,9 @@ python3 quick-tests/outside-the-list.py --with with.md --without without.md --li
 2. Write `list.txt`, one list item per line. When the list is lines of its own, the tool can take the lines `without.md` lacks; when it sits in a sentence, write it.
 3. Choose the box. For a past lane's task, `rerun-subagent.py prepare` it first and pass `--seed-from` that directory: its restored inputs, its system prompt and its model come along, and `{BOX}` in a brief is filled in. Otherwise `--at` a commit.
 4. Run it. Every run is a fresh session in its own copy of the box (`--mode work`, a lane's tools with Bash sandboxed, by default).
-5. Read `DIR/report.md`. One blind judge pass over all runs of both briefs lists the distinct findings, marks which list item each one is, if any, and which runs found it. Done when you can say how many findings outside the list each brief produced, and whether the listed items were found more often with the list.
+5. Read `DIR/report.md`. One blind judge pass over all runs of both briefs lists the distinct findings, marks which list item each one is, if any, and which runs found it. Done when you can say how many findings outside the list each brief produced, and whether the listed items were found more often with the list. `--judge-only` judges the runs under `--out` again, for a new judge model or after a failed pass.
 
-The trial, `trials/outside-the-list-88/`: the run-2 blast-radius lane for #88, whose brief carried a 13-item list; see its `report.md`.
+The trial, `trials/outside-the-list-88/`: the run-2 blast-radius lane for #88 (`prepared/`), whose brief carried a 13-item "also examine" list, 3 runs per brief on the original's model (`claude-fable-5-1`), 10 minutes a run, all six in parallel. Both briefs produced 11 to 15 findings outside the list per run, and 19 distinct ones each across their runs: the list did not crowd out other findings. Without the list, 8 of the 13 items were found by no run, among them the two real bugs the list pointed at, the cached binary reused without a checksum (L3) and the glob that silently matches nothing (L11), which review rounds 1 and 2 of PR #96 found again. No run of either brief found the space-in-path bug that round 2 found, which may have come in with the round-1 fix rather than be present at `69bd412`.
 
 ## Re-run an old subagent
 
@@ -72,7 +72,7 @@ python3 quick-tests/rerun-subagent.py compare DIR [--key key.md] [--rubric rubri
 5. `compare`. Write `key.md`: numbered items the original found, missed, or that review found later. Optionally a `rubric.md` to score 0 to 3, and `note.md` with what the record says happened after. One blind judge pass covers the original and every run; the report shows each key item per output and how often it came back per label, the findings outside the key, and the launching agent's next steps (`original/after.md`).
 6. Done when you can say, per label, how often each key item came back, against the original, and whether the change moved it.
 
-The trial, `trials/rerun-89-standards/`: the #89 round-1 Standards reviewer, re-run 3 times unchanged and 3 times under #137's change (`change-137/`); see its `compare/report.md`.
+The trial, `trials/rerun-89-standards/`: the #89 round-1 Standards reviewer, whose hard finding was that the posting command wipes the ticket body. Re-run 3 times unchanged (`original-*`) and 3 times under #137's change (`pr137-*`, from `change-137/`), on the original's `claude-opus-5` at medium. The body-wipe finding came back in 2 of 3 runs under each brief; the phantom-overlap finding in 0 of 3 unchanged and 2 of 3 under #137, as did more findings outside the key. Under #137 the runs took about twice as long (6 to 15 minutes against 3 to 5), and two of the three copied the whole repository into the scratchpad to run `build_knowledge.py` and `sync` there: the say-it-back trial's open choice, resolved by the reader. Three runs per brief cannot separate the two briefs; they show the tool runs and what its output looks like.
 
 ## Judging
 

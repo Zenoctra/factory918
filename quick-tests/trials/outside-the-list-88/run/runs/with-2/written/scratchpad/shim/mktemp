@@ -1,0 +1,5 @@
+#!/bin/bash
+# Test shim: this sandbox denies the macOS per-user temp dir, so a template-less `mktemp [-d]` gets an explicit template under the scratchpad.
+d=""; [ "$1" = -d ] && { d=-d; shift; }
+if [ $# -eq 0 ]; then exec /usr/bin/mktemp $d "/private/tmp/wsbox/w-20261005-191428-dd05/scratchpad/t/tmp.XXXXXXXX"; fi
+exec /usr/bin/mktemp $d "$@"

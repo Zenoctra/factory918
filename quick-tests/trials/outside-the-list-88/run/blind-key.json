@@ -1,0 +1,11 @@
+{
+  "seed": 165272,
+  "ids": {
+    "R02": "with-1",
+    "R04": "with-2",
+    "R06": "with-3",
+    "R05": "without-1",
+    "R03": "without-2",
+    "R01": "without-3"
+  }
+}

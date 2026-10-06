@@ -1,0 +1,2 @@
+#!/bin/sh
+case "$1" in -s) echo Plan9 ;; -m) echo mips ;; esac

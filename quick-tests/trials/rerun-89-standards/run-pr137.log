@@ -1,0 +1,4 @@
+3 run(s) of 'pr137' with claude-opus-5 at medium
+  pr137-1: ok=True 894.8s turns=41 tools=40 $3.41 denied=0 
+  pr137-2: ok=True 423.8s turns=35 tools=34 $3.02 denied=0 
+  pr137-3: ok=True 376.2s turns=42 tools=41 $3.62 denied=0 

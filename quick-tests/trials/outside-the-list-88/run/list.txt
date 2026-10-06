@@ -1,0 +1,13 @@
+the download path of template/.github/shellcheck.sh on a machine without ShellCheck at the pin and without network
+the download path on a runner whose uname pair is unpinned
+a cached binary under ${TMPDIR:-/tmp}/shellcheck-0.11.0 that is reused without a checksum on later runs
+tar -xJf needing xz
+sha256sum versus shasum
+a project whose ci.yml was edited locally so factory918 update leaves a .factory-merge and no gate
+the fixture job's new step
+cmd_apply copying template/.github/shellcheck.sh with its mode
+the factory-root symlink .github/shellcheck.sh under actions/checkout and under the sync cleanliness check
+the removed bash -n step (does ShellCheck refuse everything bash -n refused?)
+a glob that matches nothing in a project that deleted its hooks
+the source-path=SCRIPTDIR directives
+the set -f claim in the delegation.sh directive reasons (is set -f really on at that point?)

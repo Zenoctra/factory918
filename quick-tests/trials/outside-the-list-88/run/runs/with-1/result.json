@@ -1,0 +1,15 @@
+{
+  "ok": true,
+  "error": "",
+  "final": "/private/tmp/wsbox/w-20261005-191428-dafc/scratchpad/blast-radius.md",
+  "structured": null,
+  "cost_usd": 6.4948612500000005,
+  "duration_s": 662.5,
+  "num_turns": 81,
+  "model": "claude-fable-5-1",
+  "effort": "high",
+  "mode": "work",
+  "cwd": "/private/tmp/wsbox/w-20261005-191428-dafc/factory918",
+  "tool_calls": 80,
+  "denied": []
+}

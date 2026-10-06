@@ -87,6 +87,8 @@ def parse_args():
     ap.add_argument("--parallel", type=int, default=6)
     ap.add_argument("--timeout", type=int, default=60, help="minutes per run")
     ap.add_argument("--seed", type=int)
+    ap.add_argument("--judge-only", action="store_true",
+                    help="skip the runs; judge the runs already under --out again")
     ap.add_argument("--out")
     return ap.parse_args()
 
@@ -113,6 +115,18 @@ def main():
     for k, v in texts.items():
         (out / f"brief.{k}.md").write_text(v)
 
+    if a.judge_only:
+        model = a.model or "?"
+        keys = [(v, i, out / "runs" / f"{v}-{i}") for v in texts for i in range(1, a.runs + 1)]
+        results, problems = [], json.loads((out / "safety.json").read_text())["problems"]
+        for _, _, rdir in keys:
+            j = json.loads((rdir / "result.json").read_text())
+            model = j.get("model", model)
+            results.append(q.RunResult(out_dir=rdir, ok=j["ok"], final=j["final"], structured=None,
+                                       cost_usd=j["cost_usd"], duration_s=j["duration_s"], num_turns=j["num_turns"]))
+        a.effort = json.loads((keys[0][2] / "result.json").read_text()).get("effort", a.effort)
+        judge_and_report(a, out, items, keys, results, model, problems)
+        return
     if a.seed_from:
         prep = json.loads((Path(a.seed_from) / "prepare.json").read_text())
         seed = q.Box(Path(prep["seed"]))
@@ -149,7 +163,11 @@ def main():
     for (variant, i, rdir), r in zip(keys, results):
         print(f"  {variant}-{i}: ok={r.ok} {r.duration_s}s tools={len(r.tool_calls)} ${r.cost_usd:.2f} {r.error[:100]}", flush=True)
 
-    # One blind judge pass over every output.
+    judge_and_report(a, out, items, keys, results, model, problems)
+
+
+def judge_and_report(a, out, items, keys, results, model, problems):
+    """One blind judge pass over every output, then the report."""
     seed_n = a.seed if a.seed is not None else random.randrange(10**6)
     ids = q.blind_ids(len(keys), seed_n)
     blind = {bid: f"{v}-{i}" for bid, (v, i, _) in zip(ids, keys)}
@@ -161,6 +179,8 @@ def main():
         text = q.re.sub(r"/private/tmp/wsbox/[^/\s`\"']+", BOX_TOKEN, text)
         blocks.append(f"===== OUTPUT {bid} =====\n{text}\n")
     prompt = JUDGE_PROMPT.format(items="\n".join(f"L{k}. {x}" for k, x in enumerate(items, 1)), outputs="\n".join(blocks))
+    if len(prompt) > 600_000:
+        sys.exit(f"the judge prompt is {len(prompt)} characters; trim the outputs (runs/*/output.md) first")
     verdict = q.judge(prompt, JUDGE_SCHEMA, out / "judge", model=a.judge_model, effort=a.judge_effort)
     q.write_json(out / "judge.json", verdict)
     write_report(out, a, items, keys, results, verdict, blind, model, problems)

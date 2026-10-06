@@ -1,0 +1,15 @@
+{
+  "ok": true,
+  "error": "",
+  "final": "/private/tmp/wsbox/w-20261005-191215-ac4a/factory918/.scratch/review/ab47eb9/standards-report.md",
+  "structured": null,
+  "cost_usd": 3.0183999999999997,
+  "duration_s": 423.8,
+  "num_turns": 35,
+  "model": "claude-opus-5",
+  "effort": "medium",
+  "mode": "work",
+  "cwd": "/private/tmp/wsbox/w-20261005-191215-ac4a/factory918",
+  "tool_calls": 34,
+  "denied": []
+}

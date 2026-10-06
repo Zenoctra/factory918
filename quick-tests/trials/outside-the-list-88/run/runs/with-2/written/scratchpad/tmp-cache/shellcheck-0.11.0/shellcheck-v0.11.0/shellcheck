@@ -1,0 +1,3 @@
+#!/bin/sh
+echo "PLANTED BINARY RAN with: $*"
+exit 0

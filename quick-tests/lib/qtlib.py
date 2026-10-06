@@ -806,42 +806,78 @@ def tree_hashes(root: Path) -> dict[str, str]:
     return out
 
 
-def collect_outputs(box: Box, seed_hashes: dict[str, str], seed_head: str | None, out_dir: Path,
-                    final: str, cap: int = 20000) -> str:
-    """Copy every file the run created or changed into out_dir/written/ and write output.md.
+KEEP_MAX = 256 * 1024     # a written file larger than this is listed, not kept
+SHOW_MAX = 20000          # characters of one file shown in output.md
+SHOW_TOTAL = 80000        # characters of files shown in output.md in all
+SHOW_FILES = 8
 
-    output.md is what a judge reads: the final message, then each changed
-    file, then the commits the run made in the box repo.
+
+def _scratch_noise(rel: str) -> bool:
+    """Temp trees and caches a run leaves behind: listed, never kept or shown."""
+    parts = rel.split("/")
+    return any(p in ("tmp", ".tmp", "node_modules", "__pycache__", ".cache") for p in parts[:-1])
+
+
+def collect_outputs(box: Box, seed_hashes: dict[str, str], seed_head: str | None, out_dir: Path,
+                    final: str) -> str:
+    """Keep every file the run created or changed under out_dir/written/ and write output.md.
+
+    Kept: files up to KEEP_MAX outside temp trees that are not copies of a seed file. output.md, what a judge
+    reads, holds the final message, then the kept files the final message names
+    (else Markdown files first) up to SHOW_FILES and SHOW_TOTAL, then the
+    names of the rest, then the commits the run made in the box repo.
     """
     now = tree_hashes(box.root)
     changed = sorted(p for p, h in now.items() if seed_hashes.get(p) != h)
     removed = sorted(p for p in seed_hashes if p not in now)
-    wdir = out_dir / "written"
+    kept, skipped = [], []
+    seed_values = set(seed_hashes.values())
     for rel in changed:
-        dst = wdir / rel
+        src = box.root / rel
+        # A new file identical to a seed file is a copy (a repo copied to scratch to run a check).
+        if _scratch_noise(rel) or src.stat().st_size > KEEP_MAX or (rel not in seed_hashes and now[rel] in seed_values):
+            skipped.append(rel)
+            continue
+        dst = out_dir / "written" / rel
         dst.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(box.root / rel, dst)
+        shutil.copy2(src, dst)
+        kept.append(rel)
     commits = ""
     if seed_head and (box.repo / ".git").exists():
         commits = subprocess.run(["git", "-C", str(box.repo), "log", "--stat", "--format=commit %h %s", f"{seed_head}..HEAD"],
                                  capture_output=True, text=True, env=git_env(box)).stdout
-    parts = ["## Final message\n", final.strip() or "(empty)", ""]
-    for rel in changed:
-        p = box.root / rel
+    write_json(out_dir / "changed-files.json", {"kept": kept, "not_kept": skipped, "removed": removed})
+    return render_output(out_dir, final, commits)
+
+
+def render_output(out_dir: Path, final: str, commits: str = "") -> str:
+    info = json.loads((out_dir / "changed-files.json").read_text())
+    kept = info.get("kept", info.get("changed", []))
+    named = [r for r in kept if r.split("/")[-1] in (final or "")]
+    order = named + [r for r in kept if r.endswith(".md") and r not in named] + [r for r in kept if r not in named and not r.endswith(".md")]
+    parts = ["## Final message\n", (final or "").strip() or "(empty)", ""]
+    shown, total = [], 0
+    for rel in order:
+        if len(shown) >= SHOW_FILES or total >= SHOW_TOTAL:
+            break
         try:
-            text = p.read_text()
+            text = (out_dir / "written" / rel).read_text()
         except (UnicodeDecodeError, OSError):
-            text = "(binary)"
-        if len(text) > cap:
-            text = text[:cap] + f"\n... ({len(text) - cap} more characters, see written/{rel})"
+            continue
+        if len(text) > SHOW_MAX:
+            text = text[:SHOW_MAX] + f"\n... ({len(text) - SHOW_MAX} more characters, see written/{rel})"
+        total += len(text)
+        shown.append(rel)
         parts += [f"## File written: {rel}\n", "```", text.rstrip(), "```", ""]
-    if removed:
-        parts += ["## Files removed\n", "\n".join(removed), ""]
+    rest = [r for r in kept if r not in shown] + info.get("not_kept", [])
+    if rest:
+        parts += ["## Other files written (not shown)\n", "\n".join(rest[:50]) + (f"\n... and {len(rest) - 50} more" if len(rest) > 50 else ""), ""]
+    if info.get("removed"):
+        parts += ["## Files removed\n", "\n".join(info["removed"][:50]), ""]
     if commits.strip():
         parts += ["## Commits made\n", "```", commits.strip(), "```", ""]
     text = "\n".join(parts)
     (out_dir / "output.md").write_text(text)
-    write_json(out_dir / "changed-files.json", {"changed": changed, "removed": removed})
     return text
 
 
@@ -879,6 +915,13 @@ def account_identifiers() -> list[str]:
     except Exception:
         return []
     return [str(j[k]) for k in ("email", "orgId", "accountUuid") if j.get(k)]
+
+
+def redact(text: str) -> str:
+    """Replace the account's email and ids with <account> (for copies of transcripts)."""
+    for i in account_identifiers():
+        text = text.replace(i, "<account>")
+    return text
 
 
 def privacy_check(out_dir: Path) -> list[str]:

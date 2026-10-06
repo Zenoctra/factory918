@@ -1,0 +1,5 @@
+#!/bin/sh
+# Sandbox shim: macOS mktemp ignores TMPDIR when called without a template, and the sandbox
+# refuses /var/folders. Append a template under TMPDIR when the caller gave none.
+for a in "$@"; do case "$a" in -*) ;; *) exec /usr/bin/mktemp "$@" ;; esac; done
+exec /usr/bin/mktemp "$@" "${TMPDIR:-/tmp}/tmp.XXXXXXXXXX"

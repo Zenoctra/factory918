@@ -113,7 +113,9 @@ def cmd_prepare(a):
     if (out / "prepare.json").exists():
         sys.exit(f"{out} is already prepared; prepare into a new directory")
     (out / "original").mkdir(parents=True, exist_ok=True)
-    shutil.copy2(t, out / "original" / "transcript.jsonl")
+    # A copy with the account's email and ids redacted (a session_context row carries
+    # them, and trials are pushed to a public repository). The source is never changed.
+    (out / "original" / "transcript.jsonl").write_text(q.redact(t.read_text()))
     mt = t.with_name(t.stem + ".meta.json")
     if mt.exists():
         shutil.copy2(mt, out / "original" / "meta.json")
@@ -395,7 +397,7 @@ def cmd_compare(a):
     for name, path, res in entries[1:]:
         ch = json.loads((path.parent / "changed-files.json").read_text())
         L.append(f"| {name} | {res['ok']} | {res['duration_s'] / 60:.1f} | {res['num_turns']} | {res['tool_calls']} | "
-                 f"${res['cost_usd']:.2f} | {len(ch['changed'])} |")
+                 f"${res['cost_usd']:.2f} | {len(ch['kept']) + len(ch['not_kept'])} |")
     L.append("")
 
     verdict = None

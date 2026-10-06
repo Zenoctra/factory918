@@ -1,0 +1,15 @@
+{
+  "ok": false,
+  "error": "success: Prompt is too long",
+  "final": "Prompt is too long",
+  "structured": null,
+  "cost_usd": 0.0,
+  "duration_s": 1.3,
+  "num_turns": 1,
+  "model": "claude-opus-5-5",
+  "effort": "high",
+  "mode": "read",
+  "cwd": "/private/tmp/wsbox/j-20261005-192541-5d08/scratchpad",
+  "tool_calls": 0,
+  "denied": []
+}

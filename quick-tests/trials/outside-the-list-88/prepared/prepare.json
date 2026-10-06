@@ -1,0 +1,703 @@
+{
+  "effort": null,
+  "transcript": "/Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/b4a8ae9c-88b9-4178-b518-8ac2ff6f1af5/subagents/agent-a52ad5fd4a47ff36c.jsonl",
+  "seed": "/private/tmp/wsbox/seed-20261005-191330-73a9",
+  "meta": {
+    "agentType": "general-purpose",
+    "description": "blast-radius for #88 diff",
+    "toolUseId": "toolu_01WDFMfN6Zt68P3hadsx6i5N",
+    "parentAgentId": "a942479d6cfa804a9",
+    "spawnDepth": 2,
+    "requestShape": "background",
+    "requestNonInteractive": true,
+    "model": "fable"
+  },
+  "started": "2026-09-22T15:27:11.834Z",
+  "commit": "69bd412",
+  "commit_full": "69bd41230e0f62e0824403196243c013118fb302",
+  "branch": "feat/shellcheck",
+  "extra_refs": {
+    "main": "ab47eb91fa42a896c1eec054e526b615b5cbf316"
+  },
+  "models": [
+    "claude-fable-5-1"
+  ],
+  "mapping": [
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a04f2da1c527e1ba3",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a6518bf8a355dc040",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a4fa463b286f50d3b",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a0e489e979e6d65f7",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-ab022dd39a26bdc93",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-ad3d0c12b1425b29a",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-af52dbfef345b734a",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-aeb704404d3fb6a4f",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-aa18a40463e57061b",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a1fb85ddeb81fc326",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-aa93144dff7a44365",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a03e3038d36b1e29a",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a368d1a67961ded8b",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-ab5a79569c263d916",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a9597f456dee127d6",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-aad730cda8bd16803",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-ac0fc71652f8accb3",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-ae3b9365b2e685ada",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-aa844324c2f940c80",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-ac6eb97a1f625c169",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a2a0d7ee9aa092f63",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-ada450082b2c4f784",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-ac4de1a6beb6630d6",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a58af710fc80a9e16",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a1fb52f925c206983",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-abc96eeb87b6f8fb4",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a3d849a7ccd5654c7",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a53a143bbeafbbb84",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a58bc08e4ccf33b94",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a85729639b254134d",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-ad73780d829507af4",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-ab577edbe2db9e4e0",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a34f29ee0e14df270",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-aaf67ead546a51f69",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-af1a10e904a9448aa",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a7a4f71ef05e6b5bb",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-ac53475dd9065ebed",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-ada03110d0be9427c",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a6a23841ac1579c93",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-aaadbbd6dddccc0c1",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a939080f3b3817c12",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a4cebe796075b9891",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/owner-89",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a9f82bd856f53642a",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a4d05209b9a7ef953",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a0e2ed7348d76cb36",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a20b14f9d888d1a1d",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a4b5fb5c6b5f5ca14",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a504d4080f02c92c4",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a7e863dda12fb2374",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a0b476869c3ba45f3",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a5809216d2cd24bda",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/owner-88",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-adc6660890773478c",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-aea525bb98081a56a",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-acb9c482825f3c72c",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a6171949172dd6b2a",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a1771b831cf5fbc10",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a5e33c85429966fe1",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-abb359587d0d299d4",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a20ceeff1bd079858",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a15f784699d8e3870",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a7040774e17a8408a",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-aacce6d6f3eb29f15",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-adc9433d41ee4f53e",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-aad7822ef789e1e17",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a113ac4423193c0dc",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a0ebaf08c1521bbf3",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a292885989e3b0d34",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-ab8c47c91a76fea19",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a32184e867322f94a",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a8412d7baeb0403e5",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-af8401a7004895fd8",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a5db7d927fb2cfd65",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-aa6d6a438d49f743b",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-ae32d61e44dab5380",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-af4d60d6aa9d63726",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-ac0c772b7d9f7a589",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-add3a32a5e752d91a",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a2998bdb7a20a5ee0",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-ad7a49825be10669a",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-aeeb4469f589590d9",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a7dda01c78060acb2",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a4fb37c2c02b42db6",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-adb6aa5c84673ed65",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a91d9f1cee64cb2f2",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a8edee7d294766f8f",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a30f3e77ac99201ea",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a92364df8ad7c4aa2",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a259c8b9e8547f7dd",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-acfe6a4a564b421c8",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a0a18023e749f533c",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-aba6ad7ebee05718b",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-ad65179bb983d9c99",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a93ebab853aae1b63",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-acddadca7020438be",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a86de29853404e1ef",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a6e196a1e1682c278",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a8100148c3e9746e5",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-af1b432e61e1326b6",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-af5fcd1627ec713ae",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a24834db699d6a270",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-aca777c6525ce91a9",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-aefdb257a24dbc1a8",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a0a3840b4b062e117",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a73dbb8e2f9e6aec5",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-adb24ba6109a9f3be",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a3b4b7d71683eed30",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-aca5c33cff4e4b2a4",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-ae8b266065c88309a",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-ac5235a404e2b864e",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-ae3a5316dde5d995a",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-ae3a45d2b2ebabf31",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a81b22fecd79daf16",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a2ce71454fd0910f0",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-aa0207569812f9c1b",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a68952e2f239ff0c9",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-adfed49e416c9760d",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-af2c9ced81b2ce774",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a1f4a8596a3ee4f63",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a9112696d5d3248b8",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a30d42cd2d2dcf788",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a229d1b484a1d88ec",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-aaed523b3536a08fa",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-ac6e09d026a1bd69c",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a13a73cf7d6494b9b",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a474323f669301980",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a38c70a0aebc65bb1",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a711bf025ab52becb",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a3d33a3391f61947f",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a343d460779018d3b",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-ac3db6cb65a81179c",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a01ce4d9bc77506d8",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a731c490f1c289084",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-ab7c37e67696606f4",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a73e2bec76ae5b295",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a38cf092608c6d42e",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a18c2e5b3aab35b4a",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a6e5272cf6f940b1b",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-aae6171cde9e7e0cb",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a69b4cf7658836d8c",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a7f886a1542242500",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/agent-a8cb3c8be984ea435",
+      "{BOX}/factory918"
+    ],
+    [
+      "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918",
+      "{BOX}/factory918"
+    ],
+    [
+      "/private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/b4a8ae9c-88b9-4178-b518-8ac2ff6f1af5/scratchpad",
+      "{BOX}/scratchpad"
+    ],
+    [
+      "/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/b4a8ae9c-88b9-4178-b518-8ac2ff6f1af5/scratchpad",
+      "{BOX}/scratchpad"
+    ]
+  ],
+  "inputs": [
+    {
+      "original_path": "/Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/b4a8ae9c-88b9-4178-b518-8ac2ff6f1af5/tool-results/banlkbg0z.txt",
+      "box_path": "/Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/b4a8ae9c-88b9-4178-b518-8ac2ff6f1af5/tool-results/banlkbg0z.txt",
+      "status": "outside the box; not restored"
+    },
+    {
+      "original_path": "/Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/b4a8ae9c-88b9-4178-b518-8ac2ff6f1af5/tool-results/bcg1eleap.txt",
+      "box_path": "/Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/b4a8ae9c-88b9-4178-b518-8ac2ff6f1af5/tool-results/bcg1eleap.txt",
+      "status": "outside the box; not restored"
+    },
+    {
+      "original_path": "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/owner-88",
+      "box_path": "{BOX}/factory918",
+      "status": "directory; its files are listed on their own"
+    },
+    {
+      "original_path": "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/owner-88/.claude/skills/blast-radius/SKILL.md",
+      "box_path": "{BOX}/factory918/.claude/skills/blast-radius/SKILL.md",
+      "status": "present (in git at the commit)"
+    },
+    {
+      "original_path": "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/.claude/worktrees/owner-88/.claude/skills/unslop/SKILL.md",
+      "box_path": "{BOX}/factory918/.claude/skills/unslop/SKILL.md",
+      "status": "present (in git at the commit)"
+    },
+    {
+      "original_path": "/private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/b4a8ae9c-88b9-4178-b518-8ac2ff6f1af5/scratchpad",
+      "box_path": "{BOX}/scratchpad",
+      "status": "directory; its files are listed on their own"
+    },
+    {
+      "original_path": "/private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/b4a8ae9c-88b9-4178-b518-8ac2ff6f1af5/scratchpad/arena/synthesis.md",
+      "box_path": "{BOX}/scratchpad/arena/synthesis.md",
+      "status": "restored from what other agents of the session wrote before the original started"
+    },
+    {
+      "original_path": "/private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/b4a8ae9c-88b9-4178-b518-8ac2ff6f1af5/scratchpad/blast-radius.md",
+      "box_path": "{BOX}/scratchpad/blast-radius.md",
+      "status": "written by the original; not restored"
+    },
+    {
+      "original_path": "/private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/b4a8ae9c-88b9-4178-b518-8ac2ff6f1af5/scratchpad/gate-with-pin-on-path.sh",
+      "box_path": "{BOX}/scratchpad/gate-with-pin-on-path.sh",
+      "status": "written by the original; not restored"
+    },
+    {
+      "original_path": "/private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/b4a8ae9c-88b9-4178-b518-8ac2ff6f1af5/scratchpad/gate-with-pin-on-path.sh.bak",
+      "box_path": "{BOX}/scratchpad/gate-with-pin-on-path.sh.bak",
+      "status": "MISSING: gone from disk and not fully read by the original"
+    },
+    {
+      "original_path": "/private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/b4a8ae9c-88b9-4178-b518-8ac2ff6f1af5/scratchpad/how.md",
+      "box_path": "{BOX}/scratchpad/how.md",
+      "status": "restored from what other agents of the session wrote before the original started"
+    },
+    {
+      "original_path": "/private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/b4a8ae9c-88b9-4178-b518-8ac2ff6f1af5/scratchpad/probe1.sh",
+      "box_path": "{BOX}/scratchpad/probe1.sh",
+      "status": "written by the original; not restored"
+    },
+    {
+      "original_path": "/private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/b4a8ae9c-88b9-4178-b518-8ac2ff6f1af5/scratchpad/probe2.sh",
+      "box_path": "{BOX}/scratchpad/probe2.sh",
+      "status": "written by the original; not restored"
+    },
+    {
+      "original_path": "/private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/b4a8ae9c-88b9-4178-b518-8ac2ff6f1af5/scratchpad/probe3.sh",
+      "box_path": "{BOX}/scratchpad/probe3.sh",
+      "status": "written by the original; not restored"
+    },
+    {
+      "original_path": "/private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/b4a8ae9c-88b9-4178-b518-8ac2ff6f1af5/scratchpad/tmp-a",
+      "box_path": "{BOX}/scratchpad/tmp-a",
+      "status": "MISSING: gone from disk and not fully read by the original"
+    },
+    {
+      "original_path": "/private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/b4a8ae9c-88b9-4178-b518-8ac2ff6f1af5/scratchpad/wt88",
+      "box_path": "{BOX}/scratchpad/wt88",
+      "status": "written by the original; not restored"
+    },
+    {
+      "original_path": "/private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core_918/factory918/b4a8ae9c-88b9-4178-b518-8ac2ff6f1af5/scratchpad/wt88",
+      "box_path": "/private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core_918/factory918/b4a8ae9c-88b9-4178-b518-8ac2ff6f1af5/scratchpad/wt88",
+      "status": "outside the box; not restored"
+    }
+  ],
+  "original_skill_listing": "- architect: Sketch types, signatures, and module structure before code, then stay in the loop while implementation fills in. Use for /architect, 'architect this', 'design this', or non-trivial work where jumping to code would lock in the wrong shape.\n- arena: Spawn N parallel candidates at the same task, pick a base, graft the strongest parts of the losers into it. Use for /arena, 'arena this', 'throw it in the arena', or when one attempt at a non-trivial artifact would lock in the wrong shape.\n- automate-me: Use for \"automate me\", \"create/update/refresh my -mode skill\", \"turn/capture my preferences or working style into a skill\", or wanting agents to follow how the user works. Drafts or revises a personal -mode skill via plugin-dev:skill-development + unslop, optionally pulling fresh evidence from recent transcripts.\n- babysit: Watch an open PR — fix failing CI, handle the straightforward review comments, and drive it to a mergeable state. Claude Code analog of Cursor's built-in /babysit. Use after opening a PR when the user wants the agent to shepherd it without re-prompting.\n- blast-radius: Find what a change could break somewhere else before it ships, beyond the diff, and prove the one fact it's safe because of by running real code instead of writing it up. Use for 'blast radius of X', 'what could this break', or reviewing a small diff you don't trust.\n- bro: Restate the last message in plain human language, with no jargon.\n- create-verification-skill: Generate a project-local verification skill that drives your app the way a user does — any language, framework, or platform. Use for /create-verification-skill, \"make a control skill for this repo\", or when a project has no scripted way to prove UI/CLI/service behavior.\n- deslop: Remove AI-generated code slop and clean up code style\n- domain-modeling: Build and sharpen a project's domain model. Use when discussing codebase terminology, writing or editing a CONTEXT.md, or recording or editing an ADR.\n- factory-doctor: Check that this repo's Factory918 layer is intact (toolchain, hooks, skills, labels, CI config, gates). Use after applying or updating the factory, after /factory-start, or when something feels off.\n- factory918: The one entry point to Factory918, for a person who knows nothing about it as much as for an agent mid-task. Use when the user is new here, asks \"what do I do now\", \"how do I set this up\" or how Factory918 works, when unsure which entry point applies, when a request spans planning and execution, or before starting work in a repo you have not worked in this session.\n- figure-it-out: Design an auditable playbook when no narrower one fits: a large migration, an ambitious multi-part change, or work a human reviews after stepping away. Scales rigor to the task, runs a hypothesis loop, and logs decisions via show-me-your-work. Use for /figure-it-out, 'figure it out', a large migration, or when no narrower playbook applies.\n- fix-ci: Find failing PR checks, inspect logs or external check links, and apply focused fixes\n- fix-merge-conflicts: Resolve merge conflicts non-interactively, validate build and tests, and finalize conflict resolution\n- get-pr-comments: Fetch and summarize review comments from the active pull request\n- grilling: Grill the user relentlessly about a plan, decision, or idea. Use when the user wants to stress-test their thinking, or uses any 'grill' trigger phrases.\n- how: Use for \"how does X work\", code walkthroughs before changing something, and placement / ownership / layering questions (\"where should this live\", \"which package owns this\", \"is this the right layer\"). Explains subsystem architecture, runtime flow, onboarding mental models. Can critique architecture. Use why for motivation.\n- interrogate: Use for \"interrogate\", \"adversarial review\", \"multi-model review\", \"challenge this\", \"stress test this code\", \"find blind spots\", or \"tear this apart\". Multiple LLM reviewers challenge changes from independent angles.\n- knowledge: Look something up in the Factory918 knowledge base without reading whole files. Use when unsure why this system does something, when a term in AGENTS.md, a playbook or a ticket is unclear, when two vendored skills seem to disagree, or when the user asks how Factory918 works or where a rule came from.\n- maintain-verification-skill: Periodic pass that keeps a project's verification skill and feature map honest: parallel source readers per feature, one live session driving every feature, at most one PR of proven corrections. Use for /maintain-verification-skill or \"audit the verify skill\".\n- make-pr-easy-to-review: Prepare PRs for review by cleaning noisy history, improving PR descriptions, and adding reviewer guidance without changing code behavior. Use for \"make this easy to review\", \"tidy this PR\", \"clean up commits\", or \"annotate the diff\".\n- poteto-mode: poteto's agent style for concise, detailed responses, deliberate subagents, unslopped prose, simple code, and verified work. Use for poteto, /poteto-mode, or requests to work in this style.\n- principle-boundary-discipline: Apply when wiring validation, error handling, or framework adapters. Concentrate guards at system boundaries (CLI, config, network, external APIs); trust internal types and keep business logic in pure functions.\n- principle-build-the-lever: Apply to any non-trivial work, not just bulk work: edits, migrations, analyses, checks. Build the tool that does it or proves it (codemod, script, generator, or a skill your subagents follow) instead of working by hand. The tool is the artifact a reviewer can rerun.\n- principle-encode-lessons-in-structure: Apply when you catch yourself writing the same instruction a second time, or notice a recurring correction. Encode the rule as a lint, metadata flag, runtime check, or script instead of more text.\n- principle-exhaust-the-design-space: Apply when facing a novel UI interaction or architectural decision with no precedent in the codebase. Build 2-3 competing prototype"
+}

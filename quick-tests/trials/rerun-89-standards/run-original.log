@@ -1,0 +1,4 @@
+3 run(s) of 'original' with claude-opus-5 at medium
+  original-1: ok=True 217.6s turns=20 tools=19 $1.92 denied=0 
+  original-2: ok=True 279.6s turns=24 tools=23 $2.26 denied=0 
+  original-3: ok=True 163.6s turns=16 tools=15 $1.50 denied=0 
