@@ -1,0 +1,237 @@
+{
+  "base": [
+    "model=haiku",
+    "effort=null",
+    "thinking_tokens=0",
+    "timeout_s=60",
+    "examples=null",
+    "question=question-definition.md",
+    "slice.prompt_chars=4000",
+    "slice.previous_user_chars=2000",
+    "slice.last_reply_chars=4000",
+    "slice.max_actions=20"
+  ],
+  "slices": {
+    "a": [
+      "slice.previous_user=false",
+      "slice.last_reply=false",
+      "slice.actions=false"
+    ],
+    "b": [
+      "slice.previous_user=false",
+      "slice.last_reply=true",
+      "slice.actions=true"
+    ],
+    "c": [
+      "slice.previous_user=true",
+      "slice.last_reply=true",
+      "slice.actions=true"
+    ],
+    "d": [
+      "slice.previous_user=true",
+      "slice.last_reply=false",
+      "slice.actions=true"
+    ]
+  },
+  "formats": {
+    "bool": {
+      "threshold": null,
+      "answer_format": "Answer with one JSON object: {\"moment\": true or false, \"cue\": \"the exact words of the new user message that make it a correction, or an empty string\", \"confidence\": \"low\", \"medium\" or \"high\"}"
+    },
+    "score": {
+      "threshold": 6,
+      "answer_format": "Answer with one JSON object and nothing else: {\"score\": an integer from 1 to 10, \"cue\": \"the exact words of the newest user message that carry the correction, or an empty string\"}. 1 means it is plainly not a correction, 10 that it plainly is, and 5 or 6 that it could be read either way."
+    },
+    "why_score": {
+      "threshold": 6,
+      "answer_format": "Answer with one JSON object and nothing else: {\"why\": \"one or two sentences: what the agent had done, and what the newest message does to it\", \"score\": an integer from 1 to 10, \"cue\": \"the exact words of the newest user message that carry the correction, or an empty string\"}. 1 means it is plainly not a correction, 10 that it plainly is, and 5 or 6 that it could be read either way."
+    },
+    "score_neutral": {
+      "threshold": 6,
+      "answer_format": "Answer with one JSON object and nothing else: {\"score\": an integer from 1 to 10, \"cue\": \"the exact words of the newest user message that make it a MOMENT_A, or an empty string\"}. 1 means it is plainly not a MOMENT_A, 10 that it plainly is, and 5 or 6 that it could be read either way."
+    }
+  },
+  "variants": {
+    "ship0": {
+      "stage": 0,
+      "about": "the hook as it shipped: Haiku, the short working question, yes or no",
+      "slice": "b",
+      "format": "bool",
+      "set": [
+        "question=question.md",
+        "timeout_s=20"
+      ]
+    },
+    "h0-a": {
+      "stage": 1,
+      "about": "Haiku, no thinking; the message alone",
+      "slice": "a",
+      "format": "score",
+      "set": []
+    },
+    "h0-b": {
+      "stage": 1,
+      "about": "Haiku, no thinking; the agent's last reply and actions",
+      "slice": "b",
+      "format": "score",
+      "set": []
+    },
+    "h0-c": {
+      "stage": 1,
+      "about": "Haiku, no thinking; slice b and the user's previous message",
+      "slice": "c",
+      "format": "score",
+      "set": []
+    },
+    "h0-d": {
+      "stage": 1,
+      "about": "Haiku, no thinking; previous message and actions, the agent's prose left out",
+      "slice": "d",
+      "format": "score",
+      "set": []
+    },
+    "slow-a": {
+      "stage": 1,
+      "about": "Sonnet 5.5 at low effort; the message alone",
+      "slice": "a",
+      "format": "score",
+      "set": [
+        "model=sonnet",
+        "effort=low"
+      ]
+    },
+    "slow-b": {
+      "stage": 1,
+      "about": "Sonnet 5.5 at low effort; the agent's last reply and actions",
+      "slice": "b",
+      "format": "score",
+      "set": [
+        "model=sonnet",
+        "effort=low"
+      ]
+    },
+    "slow-c": {
+      "stage": 1,
+      "about": "Sonnet 5.5 at low effort; slice b and the user's previous message",
+      "slice": "c",
+      "format": "score",
+      "set": [
+        "model=sonnet",
+        "effort=low"
+      ]
+    },
+    "slow-d": {
+      "stage": 1,
+      "about": "Sonnet 5.5 at low effort; previous message and actions, the agent's prose left out",
+      "slice": "d",
+      "format": "score",
+      "set": [
+        "model=sonnet",
+        "effort=low"
+      ]
+    },
+    "smed-b": {
+      "stage": 1,
+      "about": "Sonnet 5.5 at medium effort; slice b",
+      "slice": "b",
+      "format": "score",
+      "set": [
+        "model=sonnet",
+        "effort=medium"
+      ]
+    },
+    "shigh-b": {
+      "stage": 1,
+      "about": "Sonnet 5.5 at its default effort (high); slice b",
+      "slice": "b",
+      "format": "score",
+      "set": [
+        "model=sonnet"
+      ]
+    },
+    "olow-b": {
+      "stage": 1,
+      "about": "Opus 5.5 at low effort; slice b",
+      "slice": "b",
+      "format": "score",
+      "set": [
+        "model=opus",
+        "effort=low"
+      ]
+    },
+    "hthink-b": {
+      "stage": 1,
+      "about": "Haiku with a 2,048-token thinking budget; slice b",
+      "slice": "b",
+      "format": "score",
+      "set": [
+        "thinking_tokens=2048"
+      ]
+    },
+    "hwhy-b": {
+      "stage": 1,
+      "about": "Haiku, no thinking, a written reason before the score; slice b",
+      "slice": "b",
+      "format": "why_score",
+      "set": []
+    },
+    "sbool-b": {
+      "stage": 3,
+      "about": "slow-b answering yes or no with a confidence instead of a score",
+      "slice": "b",
+      "format": "bool",
+      "set": [
+        "model=sonnet",
+        "effort=low"
+      ]
+    },
+    "salt-b": {
+      "stage": 2,
+      "about": "slow-b with the definition reworded, to measure the spread across wordings",
+      "slice": "b",
+      "format": "score",
+      "set": [
+        "model=sonnet",
+        "effort=low",
+        "question=question-definition-alt.md"
+      ]
+    },
+    "sneutral-b": {
+      "stage": 2,
+      "about": "slow-b with the word 'correction' replaced by MOMENT_A: does the model follow the definition or the word?",
+      "slice": "b",
+      "format": "score_neutral",
+      "set": [
+        "model=sonnet",
+        "effort=low",
+        "question=question-neutral.md"
+      ]
+    },
+    "snotes-b": {
+      "stage": 2,
+      "about": "slow-b plus notes on where a checker goes wrong, written from slow-b's dev errors (so its dev score is in-sample)",
+      "slice": "b",
+      "format": "score",
+      "set": [
+        "model=sonnet",
+        "effort=low",
+        "question=question-definition-notes.md"
+      ]
+    },
+    "sex-b": {
+      "stage": 2,
+      "about": "slow-b plus 24 balanced labelled examples from other session groups (4-fold by group)",
+      "slice": "b",
+      "format": "score",
+      "set": [
+        "model=sonnet",
+        "effort=low"
+      ],
+      "examples_cv": {
+        "folds": 4,
+        "per_fold": 24,
+        "seed": 0
+      }
+    }
+  }
+}
