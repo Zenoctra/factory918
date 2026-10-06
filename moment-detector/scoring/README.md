@@ -1,6 +1,6 @@
 # Scoring the moment detector
 
-How well the hook in `../hook/` catches Manuel's corrections, and what each check costs, measured against the labelled library in `../moments/`. The hook now ships the configuration chosen here: Opus 5.5 at low effort, reading the agent's last reply and actions, asked the definition in `question-definition.md`, firing at a score of 6 or more. On held-out messages it caught 49 of 50 corrections and flagged 2 of 90 other messages, at about 2 s and $0.013 a check. The labels it is scored against are Opus 5.5's, applied under Manuel's rulings, not Manuel's own.
+How well the hook in `../hook/` catches Manuel's corrections, and what each check costs, measured against the labelled library in `../moments/`. The hook now ships Manuel's choice, Sonnet 5.5 at low effort, reading the agent's last reply and actions, asked the definition in `question-definition.md`, firing at a score of 6 or more. On the 148 clean test messages under the labels after his third ruling it caught 35 of 36 corrections and flagged 3 of 112 other messages, at about 1.5 s and $0.007 a check. The labels it is scored against are mostly Opus 5.5's, applied under Manuel's rulings, plus his own verdicts where he gave them; the sections after "After the third ruling" were written under the labels before it and are kept as they were measured, with the choice of Opus that they led to. "After the third ruling" has what changed.
 
 Workshop-only, like the hook. Everything that holds Manuel's words (cases, per-message runs, examples, error lists) is under the main checkout's `.scratch/moment-detector/scoring/`; this directory holds code and aggregate results only.
 
@@ -12,12 +12,69 @@ python3 moment-detector/scoring/run.py --list              # the variants in var
 python3 moment-detector/scoring/run.py slow-b olow-b --split dev [--reps 2] [--jobs 4]
 python3 moment-detector/scoring/report.py slow-b olow-b --split dev [--compare slow-b:olow-b] [--write NAME]
 python3 moment-detector/scoring/errors.py olow-b --split dev   # misses and false alarms, with the words (.scratch)
+python3 moment-detector/scoring/report.py slow-b --split dev --items .scratch/.../items-r2.jsonl   # against another set of labels
+python3 moment-detector/scoring/rescore.py --old items-r2.jsonl [--write NAME]   # saved runs against new labels, no model calls
+python3 moment-detector/scoring/run.py snew-b --split dev --ids FILE   # only the listed items
 ```
 
 - `prepare.py` builds one item per message in the library (a re-sent message counts once), marks whether the hook would call a model on it (`md.py`'s own gates), and stores the session as the hook would have read it there (`md.session_at`).
 - `run.py` runs a variant through `md.make_case` and `md.check`, the functions the hook calls. A variant is a named list of `--set` overrides in `variants.json`. A rerun does only what is missing or failed. The test split refuses to run without `--final`.
 - `report.py` puts every variant on one 0 to 10 scale (a yes or no answer maps through its stated confidence; a skipped or failed check scores 0), and reports each figure with an interval that treats the session group as the sampled unit.
 - `stats.py` is the arithmetic: Wilson intervals at the effective sample size, AUROC, and resampling of whole session groups for everything else.
+
+## After the third ruling
+
+Manuel's reason for ruling 1 was not "declining a recommendation with a reason". A pushback is a correction when what he says shows the agent failed to understand him: his priorities, values or meaning. A reason that is only a preference is not. He also ruled on the held cases (`../moments/definition.md` records the rulings with no transcript text). The labels were rebuilt: 125 messages relabelled by Sonnet 5.5 under the rewritten rule, his verdicts on the held cases written as his own, two messages dropped as test data.
+
+### The library now
+
+The library holds 610 messages; folding re-sent copies leaves 598 and 500 of the 598 are clean (before: 466 of 600). Clean: 125 corrections (36 quiet) and 375 others (178 near misses), against 160 (49) and 306 (134) before. 98 are still unclear and wait for him. The split rule, salt and frozen test ids (`714e488f27c7`) are unchanged; both dropped messages were in dev, and no message changed split.
+
+| Split | Clean messages | Session groups | Corrections (quiet) | Others (near misses) | Skipped by the hook | Unclear, held |
+|---|---|---|---|---|---|---|
+| dev | 352 | 29 | 89 (25) | 263 (128) | 30 | 66 |
+| test | 148 | 16 | 36 (11) | 112 (49) | 17 | 32 |
+
+Most of the 35 fewer corrections are pushbacks: of the 95 messages ruling 1 had reached, 50 stay corrections (29 of them now unclear), 44 were relabelled not corrections (one, an example Manuel had ruled on himself, stays a correction by his verdict) and one was already not. The 38 messages that the third-ruling labeller left unclear between answering and pushing back, and that no reading showed the agent failing to understand him on, were given his group verdict: not corrections. Four messages are flagged for him instead, because his own words state a priority or value the agent's plan missed; they are in `.scratch/moment-detector/moments/for-manuel-r3.md`.
+
+### The saved predictions against the new labels, no new model calls
+
+`rescore.py` scores the saved runs again, first run of each cell as in the stage 1 table, at threshold 6 (`results/r3-rescore.md` has every variant, the test finalists and the slice tables). Only messages with a saved prediction and a clean label under both sets can be compared; 41 dev and 18 test messages became clean and have no prediction from the old runs.
+
+| Detector | Split | Recall before | Recall after | False alarms before | False alarms after |
+|---|---|---|---|---|---|
+| Opus 5.5 low (`olow-b`) | dev | 96% [91, 99] | 98% [92, 99] | 4% [2, 7] | 7% [4, 11] |
+| Opus 5.5 low | test | 98% [89, 100] | 100% [90, 100] | 2% [1, 8] | 5% [2, 12] |
+| Sonnet 5.5 low (`slow-b`) | dev | 92% [85, 96] | 92% [84, 96] | 5% [2, 9] | 8% [4, 14] |
+| Sonnet 5.5 low | test | 90% [76, 96] | 94% [80, 99] | 1% [0, 6] | 3% [1, 9] |
+| Haiku, original (`ship0`) | dev | 82% [71, 89] | 82% [67, 91] | 16% [12, 22] | 18% [14, 24] |
+| Haiku, original | test | 88% [75, 95] | 92% [78, 97] | 11% [6, 19] | 13% [7, 21] |
+
+Why it moved: on dev, 8 messages that were corrections are now not, and Sonnet and Opus fired on 7 of them, Haiku on 6; they became false alarms. On test, 4 flipped, and Opus fired on 3 of them, Sonnet and Haiku on 2. Fifteen dev and 10 test corrections became unclear and left the set; the detectors had caught nearly all of them (14 of 15 on dev for Opus and Sonnet, 10 and 9 of 10 on test), so leaving them out moves recall little. Nothing moved the other way. On the 311 dev messages clean under both sets, the new labels raise every cell's false-alarm rate by 1 to 3 points (the interval is above 0 for every cell but Haiku's slice a) and leave recall and AUROC within noise. The detectors score a pushback with a stated preference as a correction, as the definition they were given said to; the labels now say it is not.
+
+### Did Haiku's changes track Sonnet's across the slices?
+
+Mostly not. The table has each model's change from slice b (the agent's reply and actions) to the other three, on the 311 dev messages scored by all eight cells, threshold 6. Nine contrasts per label set; "same direction" counts those where both moved the same way, whether or not the interval excluded 0.
+
+- Old labels: 5 of 9 in the same direction. Dropping the agent's prose (d) cut Haiku's false alarms by 6.0 points [-9.3, -2.1] and left Sonnet's up 0.9 [-1.1, +4.3]; the models differ by 6.9 points [-11.3, -3.4]. Adding the user's previous message (c) lifted Haiku's AUROC by 0.016 [-0.008, +0.035] and lowered Sonnet's by 0.009 [-0.019, -0.001]; they differ by 0.024 [+0.002, +0.041].
+- New labels: 2 of 9 in the same direction, 2 where one was flat. Slice d cut Haiku's false alarms by 6.7 points [-10.0, -2.6] against Sonnet's +0.4 [-1.6, +3.8]; slice c lifted Haiku's AUROC by 0.018 [-0.006, +0.039] against Sonnet's -0.008 [-0.019, +0.002], a difference of 0.026 [+0.004, +0.042].
+- Where they agree is small: slice a is slightly worse than b for both on AUROC (-0.004 to -0.014), inside the intervals except Sonnet's old -0.014 [-0.026, -0.001].
+
+What the new labels do to each cell, though, is the same for both models: on the shared dev messages every Haiku and Sonnet cell gains 1 to 3 false-alarm points, moves by -0.4 to +2.8 points of recall and under 0.01 of AUROC. So the labels shift the two models together; what a slice choice does to them differs. A slice found best on Haiku says little about Sonnet.
+
+### The shipped default, measured under the new definition
+
+`moment.json` now names `claude-sonnet-5-5`, low effort, threshold 6, and `question-definition.md` carries the rewritten ruling 1 (the old text is `question-definition-r2.md`, which the older variants still point to). The variant `snew-b` measured it with 175 Sonnet checks: the 44 dev messages whose label changed that the hook would check (5 more were skipped by its gates), and the 131 test messages the hook would check. Nothing else ran again.
+
+| On | Messages | Recall | False alarms | AUROC |
+|---|---|---|---|---|
+| Test, all clean (`snew-b`) | 148 (36 corrections, 112 others) | 35/36, 97% [83, 100] | 3/112, 3% [1, 8] | 0.991 [0.981, 1.000] |
+| Dev, the messages whose label changed | 49 (2 corrections, 47 others) | 2/2 | 7/47 | not meaningful |
+
+The test comparison with the old definition on the 130 messages both ran on (`results/r3-test-newdef.md`): `snew-b` over `slow-b` is AUROC +0.035 [+0.004, +0.097], recall +2.8 points [0, +10.0], false alarms -2.1 points [-4.9, 0]; one more correction caught, two fewer false alarms. Opus's number on the same 130 is recall 100% and false alarms 5%. The new definition did not cost recall and removed two false alarms on messages that were not corrections under the new labels. The test set has been scored twice now, and the rulings that changed its labels came after its errors had been read, so it no longer tests an untouched choice. On the dev messages that changed, the old definition fired on 7 of the 8 that flipped to not-corrections and the new fires on 3.
+
+The three false alarms and the one miss on test: all three are messages Manuel ruled not corrections: a question about whether the agent had read a repository, a message giving the agent background on a developer's access, and a message that weighs the agent's proposal to drop a review lane. The miss, an overt correction of the agent's output, scored 4. At about 1.5 s median and $0.0068 a check, the default costs half of Opus's.
+
 
 ## What was frozen, and how
 

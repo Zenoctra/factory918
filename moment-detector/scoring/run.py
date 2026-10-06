@@ -1,6 +1,6 @@
 """Run detector variants over a split of the scoring universe, through the hook's own code.
 
-    python3 moment-detector/scoring/run.py VARIANT [VARIANT ...] --split dev [--reps 1] [--jobs 8] [--retry-errors]
+    python3 moment-detector/scoring/run.py VARIANT [VARIANT ...] --split dev [--reps 1] [--jobs 8] [--retry-errors] [--ids FILE]
     python3 moment-detector/scoring/run.py --list
 
 A variant is a named set of `--set` overrides in variants.json, applied in order:
@@ -54,8 +54,12 @@ def load_jsonl(path: Path) -> list[dict]:
     return [json.loads(line) for line in open(path)] if path.exists() else []
 
 
+ONLY: set[str] | None = None  # --ids: run only these items (the ones whose label changed, say)
+
+
 def items_in(split: str) -> list[dict]:
-    return [i for i in load_jsonl(OUT / "items.jsonl") if i["split"] == split and not i["unclear"]]
+    return [i for i in load_jsonl(OUT / "items.jsonl")
+            if i["split"] == split and not i["unclear"] and (ONLY is None or i["id"] in ONLY)]
 
 
 def fold_of(group: str, folds: int) -> int:
@@ -154,8 +158,11 @@ def main() -> None:
     ap.add_argument("--reps", type=int, default=1)
     ap.add_argument("--jobs", type=int, default=8)
     ap.add_argument("--retry-errors", action="store_true")
+    ap.add_argument("--ids", type=Path, help="a file of item ids, one per line: run only these")
     ap.add_argument("--list", action="store_true")
     args = ap.parse_args()
+    global ONLY
+    ONLY = set(args.ids.read_text().split()) if args.ids else None
     spec = load_variants()
     if args.list:
         for name, v in spec["variants"].items():

@@ -105,10 +105,9 @@ def predictions(variant: str, items: list[dict], reps: int | None = None) -> dic
     return out
 
 
-def base_rate() -> dict:
+def base_rate(items: list[dict]) -> dict:
     """Corrections among all of Manuel's messages in the library, unclear ones by the labeller's verdict,
     and among the clean ones alone."""
-    items = load_jsonl(OUT / "items.jsonl")
     clean = [i for i in items if not i["unclear"]]
     return {"all": sum(i["correction"] for i in items) / len(items),
             "clean": sum(i["correction"] for i in clean) / len(clean)}
@@ -248,13 +247,16 @@ def main() -> None:
     ap.add_argument("--fpr-target", type=float)
     ap.add_argument("--compare", action="append", default=[], help="A:B")
     ap.add_argument("--reps", type=int, help="use only the first N runs of each variant")
+    ap.add_argument("--items", type=Path, default=OUT / "items.jsonl",
+                    help="score against another set of labels, e.g. items-r2.jsonl, the library before the third ruling")
     ap.add_argument("--write")
     args = ap.parse_args()
 
     spec = load_variants()
-    items = [i for i in load_jsonl(OUT / "items.jsonl") if i["split"] == args.split and not i["unclear"]]
+    universe = load_jsonl(args.items)
+    items = [i for i in universe if i["split"] == args.split and not i["unclear"]]
     at = {k: float(v) for k, v in (a.split("=") for a in args.at)}
-    rates = base_rate()
+    rates = base_rate(universe)
     preds = {v: predictions(v, items, args.reps) for v in args.variants}
     missing = {v: len(items) - len(p) for v, p in preds.items() if len(p) < len(items)}
     if missing:

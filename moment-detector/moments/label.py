@@ -31,9 +31,10 @@ KINDS_OTHER = ["new_request", "answer", "choice", "change_of_mind", "self_correc
                "question", "approval", "information", "other_party", "other"]
 
 # Manuel's ruling on each kind in definition.md: True is a correction, False is not.
-# None means the ruling turns on agent_erred (suspicion_question) or is still open (mistaken_correction).
+# None means the ruling turns on something else: agent_erred (suspicion_question), what the message shows
+# about the agent's grasp of him (proposal_pushback), or is still open (mistaken_correction).
 RULINGS = {
-    "proposal_pushback": True, "suspicion_question": None, "cannot_follow": True, "earlier_agent_work": True,
+    "proposal_pushback": None, "suspicion_question": None, "cannot_follow": True, "earlier_agent_work": True,
     "more_than_delivered": False, "failure_report": False, "pattern_complaint": True,
     "authorized_then_objected": True, "mistaken_correction": None,
 }
@@ -76,9 +77,14 @@ DELIVERY = {
 }
 
 
+def prompt_definition() -> str:
+    """definition.md as the labeller sees it: everything above the record of hand rulings."""
+    return (HERE / "definition.md").read_text().split("\n## Record of hand rulings")[0].rstrip("\n") + "\n"
+
+
 def render(m: dict, hindsight: bool = True) -> str:
     c, a = m["context"], m["after"]
-    parts = [(HERE / "definition.md").read_text(), "\n---\n\n# The moment\n"]
+    parts = [prompt_definition(), "\n---\n\n# The moment\n"]
     if c["starts_session"]:
         parts.append("This message opens the session; the agent had done nothing yet.\n")
     else:

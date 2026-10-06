@@ -29,7 +29,7 @@ Twelve messages from the labelled library (`../moments/`), all in this repositor
 
 ### Arms
 
-Both arms run the real hook (`../hook/md.py`, the shipped `correction` moment) through `replay.py run --hooks`, so the detector reads the session and calls Opus 5.5 in both. They differ in one key in `moment.json`: `deliver` is `true` in one and `false` (shadow mode) in the other. The hook's suggestion arrives as `additionalContext`, as it would live. The main model is Opus 5.5 in both arms, at the effort the session had at the cut. Four moments came from Fable 5.1 sessions and continue on Opus 5.5.
+Both arms run the real hook (`../hook/md.py`, the shipped `correction` moment) through `replay.py run --hooks`, so the detector reads the session and calls Opus 5.5 in both (the shipped default when they ran; it is now Sonnet 5.5). They differ in one key in `moment.json`: `deliver` is `true` in one and `false` (shadow mode) in the other. The hook's suggestion arrives as `additionalContext`, as it would live. The main model is Opus 5.5 in both arms, at the effort the session had at the cut. Four moments came from Fable 5.1 sessions and continue on Opus 5.5.
 
 Two things the hook needed under replay:
 
