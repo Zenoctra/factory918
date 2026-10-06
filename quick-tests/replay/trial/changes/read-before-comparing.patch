@@ -1,0 +1,13 @@
+diff --git a/AGENTS.md b/AGENTS.md
+index 056d278..5468f79 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -17,6 +17,8 @@ Files under `template/` and `profiles/` are content addressed to agents in a fut
+ 
+ ## Before you write prose
+ 
++Before you tell Manuel that two rules or mechanisms conflict, read each one where it is written. A summary strips the situation each rule was written for, and rules that look like competing answers in a summary often apply to different situations.
++
+ `/writing-for-agents` for anything an agent reads: skills, playbooks, the mandate, either `AGENTS.md`. `/technical-writing` and `/unslop` for anything a person reads: docs, the README, commit messages, PR text. `/deslop` for code. Install nothing under `~/.claude/skills/`.
+ 
+ ## Phases
