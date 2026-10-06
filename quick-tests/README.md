@@ -1,6 +1,6 @@
 # Quick tests
 
-Three tests from the starting kit of #153 (decision 3), ready for a ticket on the map #146 to run on a writing change within the ticket: **say it back**, **outside the list** and **re-run an old subagent**. Replay (restarting a past session at a turn) is a separate tool on the branch `research/quick-tests`. This kit is workshop-only (#153 decision 10): it never goes under `template/`.
+Three tests from the starting kit of #153 (decision 3), ready for a ticket on the map #146 to run on a writing change within the ticket: **say it back**, **outside the list** and **re-run an old subagent**. Replay (restarting a past session at a turn) and the two tests per change (does it help, does it reach) are in `replay/`; read `replay/README.md` before using them. This kit is workshop-only (#153 decision 10): it never goes under `template/`.
 
 Each test answers a narrow question in minutes, and a result never has to pass for a change to ship (#153 decision 2). Post what you ran and what you saw on the ticket, or say why no test fit.
 
