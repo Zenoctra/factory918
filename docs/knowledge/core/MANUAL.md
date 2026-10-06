@@ -117,7 +117,7 @@ Whenever an agent surprises you, add one line to `docs/agents/ledger.md`: date, 
 
 Work you start without a ticket, on a cadence:
 
-- After any session that surprised you: one line in `docs/agents/ledger.md`. The phase hook reminds you when unreviewed lines exist and a week has passed since the last retro.
+- After any session that surprised you: one line in `docs/agents/ledger.md`. The phase hook reminds you when unreviewed lines exist and the last retro was a week or more ago, or there has never been one.
 - Weekly: `/factory-retro`. It reads the ledger and the week's transcripts, groups what recurred, proposes a rule for each and encodes what you confirm.
 - After a session that went unusually well or badly: `/reflect`, which turns that transcript into skill edits.
 - After UI changes land: `/maintain-verification-skill` keeps `verify-<app>` honest.
