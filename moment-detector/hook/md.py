@@ -212,14 +212,20 @@ def call_model(m: dict, question: str) -> dict:
 
     --safe-mode turns off hooks, CLAUDE.md, skills, plugins and MCP while keeping
     OAuth (verified on 2.1.288; --bare also skips hooks but refuses OAuth).
-    No tools, no thinking, no session file, a minimal system prompt.
+    No tools, no session file, a minimal system prompt. `thinking_tokens` is the
+    CLI's MAX_THINKING_TOKENS: 0 turns Haiku 4.5's thinking off and a budget turns
+    it on; Sonnet 5.5 thinks whatever it is set to, and `effort` is its lever.
+    Every check's prompt is new, so a cache write (twice the input price, as
+    the CLI writes it) is never read back: `prompt_caching` is off unless set.
     """
     cmd = [find_cli(), "-p", "--safe-mode", "--no-session-persistence", "--strict-mcp-config",
            "--output-format", "json", "--model", m["model"], "--tools", "",
            "--system-prompt", m["system_prompt"]]
     if m.get("effort"):
         cmd += ["--effort", m["effort"]]
-    env = dict(os.environ, MAX_THINKING_TOKENS="0", CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC="1", **{INNER: "1"})
+    env = dict(os.environ, MAX_THINKING_TOKENS=str(m.get("thinking_tokens", 0)),
+               **({} if m.get("prompt_caching") else {"DISABLE_PROMPT_CACHING": "1"}),
+               CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC="1", **{INNER: "1"})
     t0 = time.monotonic()
     proc = subprocess.run(cmd, input=question, capture_output=True, text=True, env=env,
                           cwd=tempfile.gettempdir(), timeout=m.get("timeout_s", 20))
@@ -242,15 +248,28 @@ def call_model(m: dict, question: str) -> dict:
     }
 
 
-def parse_verdict(text: str) -> dict:
-    """The first JSON object in the reply; fences and stray prose are tolerated."""
+def parse_verdict(text: str, threshold: float | None = None, score_range: tuple[float, float] = (1, 10)) -> dict:
+    """The first JSON object in the reply; fences and stray prose are tolerated.
+
+    With a `threshold`, the reply carries a graded `score` inside `score_range`
+    and the moment is `score >= threshold`; without one, it carries a boolean
+    `moment`. A score outside the range is an invalid answer, not a strong one.
+    """
     start = text.find("{")
     if start < 0:
         raise ValueError("no JSON object in reply")
     obj, _ = json.JSONDecoder().raw_decode(text[start:])
-    if not isinstance(obj.get("moment"), bool):
-        raise ValueError("reply has no boolean `moment`")
-    return {"moment": obj["moment"], "cue": str(obj.get("cue") or ""), "confidence": str(obj.get("confidence") or "")}
+    out = {"cue": str(obj.get("cue") or ""), "confidence": str(obj.get("confidence") or "")}
+    if threshold is None:
+        if not isinstance(obj.get("moment"), bool):
+            raise ValueError("reply has no boolean `moment`")
+        return {"moment": obj["moment"], **out}
+    score = obj.get("score")
+    if isinstance(score, bool) or not isinstance(score, (int, float)):
+        raise ValueError("reply has no numeric `score`")
+    if not score_range[0] <= score <= score_range[1]:
+        raise ValueError(f"score {score} is outside {list(score_range)}")
+    return {"moment": score >= threshold, "score": score, **out}
 
 
 # --------------------------------------------------------------------------
@@ -265,7 +284,7 @@ def _sha(s: str | None) -> str | None:
 def suggestion_text(m: dict, check_id: str, verdict: dict, model_id: str) -> str:
     return moment_file(m, "suggestion").strip().format(
         id=check_id, cue=verdict["cue"].replace('"', "'"), confidence=verdict["confidence"] or "unstated",
-        model=model_id)
+        score=verdict.get("score", "unstated"), model=model_id)
 
 
 def check(m: dict, case: dict, ctx: dict) -> dict:
@@ -274,7 +293,10 @@ def check(m: dict, case: dict, ctx: dict) -> dict:
     rec = {
         "id": check_id, "ts": dt.datetime.now().astimezone().isoformat(timespec="milliseconds"),
         "moment": m["name"], **ctx,
-        "config": {"model": m["model"], "effort": m.get("effort"), "slice": m.get("slice"),
+        "config": {"model": m["model"], "effort": m.get("effort"), "thinking_tokens": m.get("thinking_tokens", 0),
+                   "prompt_caching": bool(m.get("prompt_caching")),
+                   "threshold": m.get("threshold"), "slice": m.get("slice"),
+                   "system_sha": _sha(m["system_prompt"]), "answer_format_sha": _sha(m["answer_format"]),
                    "question_sha": _sha(moment_file(m, "question")),
                    "examples": m.get("examples"), "examples_sha": _sha(moment_file(m, "examples")),
                    "suggestion_sha": _sha(moment_file(m, "suggestion"))},
@@ -285,7 +307,7 @@ def check(m: dict, case: dict, ctx: dict) -> dict:
         call = call_model(m, render_question(m, case))
         rec.update(model_id=call["model_id"], raw=call["text"], tokens=call["tokens"], cost_usd=call["cost_usd"],
                    latency_ms={"model_wall": call["wall_ms"], "api": call["api_ms"]})
-        rec["verdict"] = parse_verdict(call["text"])
+        rec["verdict"] = parse_verdict(call["text"], m.get("threshold"), tuple(m.get("score_range", (1, 10))))
         if rec["verdict"]["moment"]:
             rec["suggestion"] = suggestion_text(m, check_id, rec["verdict"], call["model_id"])
             rec["delivered"] = True
@@ -361,20 +383,24 @@ def cmd_check(args: list[str]) -> int:
     return 0
 
 
+def session_at(transcript: str, uuid: str) -> tuple[str, dict]:
+    """The prompt of a past user record (a typed message or a queued one) and the
+    session as the hook read it then."""
+    for line in open(transcript, encoding="utf-8"):
+        if uuid in line and json.loads(line).get("uuid") == uuid:
+            rec = json.loads(line)
+            queued = _queued_prompt(rec)
+            prompt = queued if queued is not None else _text_of((rec.get("message") or {}).get("content"))
+            return prompt, read_session(transcript, before_uuid=uuid)
+    raise LookupError(f"no record {uuid} in {transcript}")
+
+
 def cmd_case(args: list[str]) -> int:
     transcript, uuid = args[0], args[1]
     name = (_flag_values(args[2:], "--moment") or ["correction"])[0]
     m = load_moment(name, _flag_values(args[2:], "--set"))
-    prompt_rec = None
-    for line in open(transcript, encoding="utf-8"):
-        if uuid in line and json.loads(line).get("uuid") == uuid:
-            prompt_rec = json.loads(line)
-            break
-    if not prompt_rec:
-        sys.exit(f"no record {uuid} in {transcript}")
-    session = read_session(transcript, before_uuid=uuid)
-    print(json.dumps(make_case(_text_of(prompt_rec["message"]["content"]), session, m.get("slice", {})),
-                     ensure_ascii=False, indent=2))
+    prompt, session = session_at(transcript, uuid)
+    print(json.dumps(make_case(prompt, session, m.get("slice", {})), ensure_ascii=False, indent=2))
     return 0
 
 

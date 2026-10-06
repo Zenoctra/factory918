@@ -40,12 +40,15 @@ A moment is a directory: `moment.json` and the files it names. `moments/correcti
 |---|---|
 | `event` | The hook event it runs on. |
 | `model`, `effort` | The detector's model (an alias such as `haiku`, `sonnet`, `opus`, or a full id) and requested effort (`null` leaves it out). |
+| `thinking_tokens` | The CLI's `MAX_THINKING_TOKENS` for the call. `0` (the default) turns Haiku 4.5's thinking off; a budget such as `2048` turns it on. Sonnet 5.5 cannot have thinking turned off; `effort` is its lever. |
+| `prompt_caching` | `false` (the default) sets `DISABLE_PROMPT_CACHING` for the call. Every check's prompt is new, and the CLI writes the cache at twice the input price, so a cache write is never read back and only doubles the input cost. |
+| `threshold` | With a number, the answer carries a graded `score` and the check fires at `score >= threshold`; with `null`, the answer carries a boolean `moment`. |
 | `timeout_s` | The model call's limit; past it the check logs a timeout and delivers nothing. |
 | `slice` | `previous_user`, `last_reply`, `actions` on or off; `prompt_chars`, `previous_user_chars`, `last_reply_chars` (the tail is kept), `max_actions` (the last ones are kept). |
 | `skip_first_message` | No check when nothing came before the message: a session's first message cannot correct the agent. |
 | `skip_prompt_patterns` | Regular expressions; a matching prompt is logged as skipped. The defaults match the text of task notifications, slash-command expansions and `!` shell input as they appear in transcripts; whether those reach the hook was not tested. |
 | `system_prompt`, `question`, `examples`, `answer_format` | What the detector is asked. `question` and `examples` are file names, relative to the moment or absolute; `examples` is `null` for the definition alone. `examples.synthetic.md` shows the format and is not real data. |
-| `suggestion` | The suggestion's template: `{id}`, `{cue}`, `{confidence}`, `{model}`. |
+| `suggestion` | The suggestion's template: `{id}`, `{cue}`, `{confidence}`, `{score}`, `{model}`. |
 
 ## For the scoring step
 
