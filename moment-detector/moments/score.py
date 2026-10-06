@@ -4,6 +4,7 @@
 
 PREDICTIONS.jsonl holds one row per moment the detector saw: {"id": ..., "fired": true|false}.
 Moments the detector did not see are left out of the score and counted.
+A re-sent message counts once, as its latest copy (library.scoring_rows).
 Unclear moments are left out unless --include-unclear.
 """
 
@@ -14,6 +15,7 @@ import json
 from pathlib import Path
 
 from label import DEFAULT_DIR
+from library import scoring_rows
 
 
 def rate(hits: int, n: int) -> str:
@@ -32,11 +34,13 @@ def main() -> None:
     unknown = set(fired) - set(lib)
     if unknown:
         raise SystemExit(f"{len(unknown)} prediction ids are not in the library, e.g. {sorted(unknown)[:3]}")
-    rows = [r for r in lib.values() if r["id"] in fired and (args.include_unclear or not r["unclear"])]
+    once = scoring_rows(list(lib.values()), include_unclear=True)
+    rows = [r for r in scoring_rows(list(lib.values()), args.include_unclear) if r["id"] in fired]
     pos = [r for r in rows if r["correction"]]
     neg = [r for r in rows if not r["correction"]]
     print(f"scored {len(rows)} of {len(lib)} moments ({len(lib) - len(fired)} unseen, "
-          f"{sum(r['unclear'] for r in lib.values() if r['id'] in fired) if not args.include_unclear else 0} unclear left out)")
+          f"{len(lib) - len(once)} earlier copies of re-sent messages, "
+          f"{0 if args.include_unclear else sum(r['unclear'] for r in once if r['id'] in fired)} unclear left out)")
     print("recall, all corrections:   ", rate(sum(fired[r["id"]] for r in pos), len(pos)))
     for s in ("overt", "quiet"):
         sub = [r for r in pos if r["surface"] == s]
