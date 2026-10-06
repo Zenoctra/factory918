@@ -1,0 +1,53 @@
+{
+  "permissions": {
+    "defaultMode": "dontAsk",
+    "allow": [
+      "Read",
+      "Grep",
+      "Glob",
+      "Edit(//private/tmp/wsbox/w-20261005-191428-a222/**)",
+      "Bash",
+      "Skill",
+      "Agent",
+      "TodoWrite",
+      "ToolSearch"
+    ],
+    "deny": [
+      "WebFetch",
+      "WebSearch",
+      "Read(//Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/**)",
+      "Read(//Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/**)",
+      "Read(//private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/**)",
+      "Edit(//Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918/**)",
+      "Edit(//Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/**)",
+      "Edit(//private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/**)",
+      "Edit(//Users/manuel/.claude/**)"
+    ]
+  },
+  "sandbox": {
+    "enabled": true,
+    "failIfUnavailable": true,
+    "autoAllowBashIfSandboxed": true,
+    "allowUnsandboxedCommands": false,
+    "network": {
+      "allowedDomains": []
+    },
+    "filesystem": {
+      "allowWrite": [
+        "/private/tmp/wsbox/w-20261005-191428-a222"
+      ],
+      "denyWrite": [
+        "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918",
+        "/Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918",
+        "/private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918",
+        "/Users/manuel/.claude"
+      ],
+      "denyRead": [
+        "/Users/manuel/Desktop/Work/Under The Sun Collective/Core_918/factory918",
+        "/Users/manuel/.claude/projects/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918",
+        "/private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918"
+      ]
+    }
+  },
+  "disableAllHooks": true
+}

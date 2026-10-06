@@ -1,0 +1,8 @@
+#!/bin/sh
+# test shim: a bare `mktemp -d` or `mktemp` lands in the scratchpad; anything else passes through
+d=/private/tmp/wsbox/w-20261005-191428-b45f/scratchpad/tmp
+case "$*" in
+  -d) exec /usr/bin/mktemp -d "$d/tmp.XXXXXXXXXX" ;;
+  "") exec /usr/bin/mktemp "$d/tmp.XXXXXXXXXX" ;;
+  *) exec /usr/bin/mktemp "$@" ;;
+esac

@@ -1,0 +1,13 @@
+{
+  "kept": [
+    "scratchpad/bin/mktemp",
+    "scratchpad/blast-radius.md",
+    "scratchpad/fake-gh/gh"
+  ],
+  "not_kept": [
+    "scratchpad/tmp/blast.md",
+    "scratchpad/tmp/fake-gh/gh",
+    "scratchpad/tmp/proj/.factory918/manifest.json"
+  ],
+  "removed": []
+}

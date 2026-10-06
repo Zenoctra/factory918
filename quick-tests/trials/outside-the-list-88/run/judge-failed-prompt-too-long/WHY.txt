@@ -1,0 +1,1 @@
+The first judge pass failed: its prompt was 4.7 MB because output.md then carried every file a run left in its box, temp trees included. collect_outputs now keeps and shows only the deliverables; the runs' records were rebuilt from written/ and judged again with --judge-only.

@@ -1,0 +1,2 @@
+"/Users/manuel/Library/Application Support/Claude/claude-code/2.1.286/f2326db61802/claude.app/Contents/MacOS/claude" -p --no-session-persistence --output-format stream-json --verbose --setting-sources project --settings /private/tmp/wsbox/r-20261005-190607-1402/.box/settings-after-3.json --strict-mcp-config --model claude-opus-5-5 --effort medium --tools  --system-prompt --append-system-prompt --json-schema
+(cwd: /private/tmp/wsbox/r-20261005-190607-1402/factory918)

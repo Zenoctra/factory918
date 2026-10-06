@@ -1,0 +1,48 @@
+NOTE  branch main has no commits yet
+      fix: git add -A && git commit -m 'chore: initial commit'
+PASS  factory files reachable
+FAIL  factory918 installed
+      fix: in the factory918 clone run ./factory918.sh install, add ~/.local/bin to PATH, open a new terminal
+FAIL  one factory on this machine
+      fix: ~/.factory918 and ~/.local/bin/factory918 point at different clones; run ./factory918.sh install from the one you want
+PASS  vp matches the ADR pin
+FAIL  vp on PATH
+      fix: curl -fsSL https://vite.plus -o /tmp/vp.sh && VP_VERSION=0.3.1 VP_NODE_MANAGER=yes bash /tmp/vp.sh, then open a new terminal
+FAIL  vp env doctor
+      fix: run vp env doctor and follow its output
+FAIL  hooks installed
+      fix: vp hooks enable (no .git means this is not a repository yet: git init first)
+FAIL  .claude/skills symlink
+      fix: rm -rf .claude/skills && ln -s ../.agents/skills .claude/skills
+PASS  every skill has a name
+PASS  no duplicate skill names
+FAIL  gh authenticated
+      fix: gh auth login (install gh first: brew, apt, dnf or winget)
+FAIL  labels present
+      fix: factory918 labels (needs a GitHub remote; factory918 init creates one, or gh repo create --private --source=. --push)
+FAIL  ci workflow present
+      fix: factory918 update restores it
+FAIL  settings.json parses
+      fix: fix the JSON in .claude/settings.json, or factory918 update to restore the template copy
+FAIL  hooks executable
+      fix: chmod +x .claude/hooks/*.sh
+FAIL  state dir ignored
+      fix: append the lines from the factory clone's template/.gitignore.factory to .gitignore
+FAIL  vp check (format, lint, types)
+      fix: vp fmt, then vp check, and fix what it reports; it stops at the first failing stage
+FAIL  tests
+      fix: vp test run and read the failing test
+PASS  models sheet
+PASS  shellcheck 0.11.0
+PASS  AGENTS.md is Factory918's
+FAIL  slots filled (/factory-start)
+      fix: open Claude Code here and run /factory-start, the Day-0 interview; it fills every <slot>
+FAIL  slim knowledge present
+      fix: factory918 update restores docs/factory918/
+FAIL  glue skills resolve
+      fix: factory918 update restores the factory918, factory-start, knowledge and factory-retro skills
+FAIL  ledger exists
+      fix: factory918 update restores docs/agents/ledger.md
+FAIL  ast-grep rules test
+      fix: vp install (the rule engine is a devDependency), then pnpm sg:test; a rule without a snapshot needs ast-grep test --update-all
+start with the first FAIL

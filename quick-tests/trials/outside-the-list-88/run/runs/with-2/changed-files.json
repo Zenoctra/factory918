@@ -1,0 +1,31 @@
+{
+  "kept": [
+    "scratchpad/blast-radius.md",
+    "scratchpad/docproj/.factory918/manifest.json",
+    "scratchpad/docproj/AGENTS.md",
+    "scratchpad/doctor-lines.sh",
+    "scratchpad/doctor.out",
+    "scratchpad/fakebin/uname",
+    "scratchpad/hook/new.sh",
+    "scratchpad/hook/old.sh",
+    "scratchpad/merge/base.yml",
+    "scratchpad/merge/new.yml",
+    "scratchpad/merge/out-far.yml",
+    "scratchpad/merge/out-near.yml",
+    "scratchpad/merge/project-far.yml",
+    "scratchpad/merge/project-near.yml",
+    "scratchpad/nohooks/.github/shellcheck.sh",
+    "scratchpad/old/tests/spec-review/layout.sh",
+    "scratchpad/old/tests/spec-review/review-brief.sh",
+    "scratchpad/old/tests/spec-review/review-comment.sh",
+    "scratchpad/probe/broken.sh",
+    "scratchpad/shim/mktemp",
+    "scratchpad/shim2/mktemp",
+    "scratchpad/shim3/mktemp",
+    "scratchpad/shim4/mktemp",
+    "scratchpad/shim5/mktemp",
+    "scratchpad/tmp-cache/shellcheck-0.11.0/shellcheck-v0.11.0/shellcheck"
+  ],
+  "not_kept": [],
+  "removed": []
+}

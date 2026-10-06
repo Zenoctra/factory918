@@ -1,0 +1,14 @@
+{
+  "kept": [
+    "factory918/.scratch/review/ab47eb9/standards-report.md"
+  ],
+  "not_kept": [
+    "scratchpad/pcheck/architect/SKILL.md",
+    "scratchpad/pcheck/architect/references/design-red-flags.md",
+    "scratchpad/pcheck/architect/references/rationale-template.md",
+    "scratchpad/pcheck/architect/references/runner-prompt.md",
+    "scratchpad/pcheck/to-spec/SKILL.md",
+    "scratchpad/pcheck/to-spec/agents/openai.yaml"
+  ],
+  "removed": []
+}

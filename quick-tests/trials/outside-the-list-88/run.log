@@ -1,0 +1,16 @@
+6 runs (3 per brief) with claude-fable-5-1 at high
+  with-1: ok=True 662.5s tools=80 $6.49 
+  with-2: ok=True 561.3s tools=69 $5.62 
+  with-3: ok=True 670.3s tools=86 $6.51 
+  without-1: ok=True 593.1s tools=77 $6.11 
+  without-2: ok=True 611.7s tools=59 $5.81 
+  without-3: ok=True 565.6s tools=67 $5.45 
+Traceback (most recent call last):
+  File "/private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/a8e5b8e9-0bd5-4053-a92f-c96356d3f9d3/scratchpad/qt-reader/quick-tests/outside-the-list.py", line 237, in <module>
+    main()
+    ~~~~^^
+  File "/private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/a8e5b8e9-0bd5-4053-a92f-c96356d3f9d3/scratchpad/qt-reader/quick-tests/outside-the-list.py", line 164, in main
+    verdict = q.judge(prompt, JUDGE_SCHEMA, out / "judge", model=a.judge_model, effort=a.judge_effort)
+  File "/private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/a8e5b8e9-0bd5-4053-a92f-c96356d3f9d3/scratchpad/qt-reader/quick-tests/lib/qtlib.py", line 781, in judge
+    raise RuntimeError(f"judge returned no structured output; see {out_dir}")
+RuntimeError: judge returned no structured output; see /private/tmp/claude-501/-Users-manuel-Desktop-Work-Under-The-Sun-Collective-Core-918-factory918/a8e5b8e9-0bd5-4053-a92f-c96356d3f9d3/scratchpad/qt-reader/quick-tests/trials/outside-the-list-88/run/judge

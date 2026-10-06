@@ -1,0 +1,12 @@
+{
+  "seed": 768685,
+  "ids": {
+    "R01": "original",
+    "R04": "original-1",
+    "R03": "original-2",
+    "R07": "original-3",
+    "R05": "pr137-1",
+    "R02": "pr137-2",
+    "R06": "pr137-3"
+  }
+}

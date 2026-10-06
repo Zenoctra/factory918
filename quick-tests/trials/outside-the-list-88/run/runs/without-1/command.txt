@@ -1,0 +1,2 @@
+"/Users/manuel/Library/Application Support/Claude/claude-code/2.1.286/f2326db61802/claude.app/Contents/MacOS/claude" -p --no-session-persistence --output-format stream-json --verbose --setting-sources project --settings /private/tmp/wsbox/w-20261005-191428-d2b2/.box/settings-without-1.json --strict-mcp-config --model claude-fable-5-1 --effort high --tools Read,Grep,Glob,Edit,Write,NotebookEdit,Bash,Skill,Agent,TodoWrite,ToolSearch --system-prompt
+(cwd: /private/tmp/wsbox/w-20261005-191428-d2b2/factory918)

@@ -1,0 +1,4 @@
+#!/bin/sh
+if [ $# -eq 0 ]; then exec /usr/bin/mktemp "${TMPDIR:-/tmp}/tmp.XXXXXXXXXX"; fi
+if [ $# -eq 1 ] && [ "$1" = -d ]; then exec /usr/bin/mktemp -d "${TMPDIR:-/tmp}/tmp.XXXXXXXXXX"; fi
+exec /usr/bin/mktemp "$@"

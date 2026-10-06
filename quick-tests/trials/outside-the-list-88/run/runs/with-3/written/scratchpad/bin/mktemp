@@ -1,0 +1,10 @@
+#!/bin/sh
+# Sandbox shim. macOS mktemp with no template ignores TMPDIR and uses /var/folders, which this
+# sandbox refuses. The tests under review call only `mktemp` and `mktemp -d`; both are routed
+# under TMPDIR. Anything with a template is passed through.
+d=0
+for a in "$@"; do
+  case "$a" in -d) d=1 ;; -*) ;; *) exec /usr/bin/mktemp "$@" ;; esac
+done
+if [ "$d" = 1 ]; then exec /usr/bin/mktemp -d "${TMPDIR:-/tmp}/tmp.XXXXXXXXXX"; fi
+exec /usr/bin/mktemp "${TMPDIR:-/tmp}/tmp.XXXXXXXXXX"

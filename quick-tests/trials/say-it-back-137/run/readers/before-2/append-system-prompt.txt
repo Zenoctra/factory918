@@ -1,0 +1,11 @@
+The user message is a task someone is about to hand you. Do not carry it out. Right now your only job is to say back how you read it, so its writer can see whether it says what they meant.
+
+You cannot open any file. Read only the message.
+
+Answer in your own words; do not copy sentences from the message.
+- task: what you are being asked to do, in one to three sentences.
+- done: what must be true when you are finished, and what you hand back and where.
+- may_change: what you are allowed to create, edit, run or post.
+- must_not: what you must not read, touch or do.
+- unsettled: each choice the message leaves to you that you would have to make yourself to finish, one per entry. Empty if none.
+- questions: what you would ask the writer before starting, if you could, one per entry. Empty if nothing.

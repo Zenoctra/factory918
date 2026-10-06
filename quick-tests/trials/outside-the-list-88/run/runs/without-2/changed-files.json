@@ -1,0 +1,21 @@
+{
+  "kept": [
+    "scratchpad/a.txt",
+    "scratchpad/b.txt",
+    "scratchpad/blast-radius.md",
+    "scratchpad/d.txt",
+    "scratchpad/dl/clean.sh",
+    "scratchpad/doctor-new.txt",
+    "scratchpad/doctor-old.txt",
+    "scratchpad/doctor-proj/.factory918/manifest.json",
+    "scratchpad/fakehome/.claude/pstack-models.md",
+    "scratchpad/fakehome/.local/state/gh/device-id",
+    "scratchpad/hook-new.txt",
+    "scratchpad/hook-old.txt",
+    "scratchpad/old-hook.sh",
+    "scratchpad/probe-err.txt",
+    "scratchpad/shim/mktemp"
+  ],
+  "not_kept": [],
+  "removed": []
+}
